@@ -19,7 +19,7 @@ const UserCard: FC<UserCardProps> = ({className, user}) => {
   return (
     <div
       className={twMerge(
-        'border-normal bg-secondary flex items-center justify-between rounded-md border p-4',
+        'border-normal bg-secondary flex items-center justify-between rounded-sm border p-4',
         className
       )}
     >

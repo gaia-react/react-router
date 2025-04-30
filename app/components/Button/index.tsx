@@ -110,7 +110,7 @@ const Button: FC<ButtonProps> = ({
         VARIANTS[variant],
         SIZES[size],
         icon && ICON_SIZES[size],
-        variant !== 'custom' && 'rounded-md transition-colors duration-200',
+        variant !== 'custom' && 'rounded-sm transition-colors duration-200',
         isLoading ? 'cursor-wait' : (
           'disabled:cursor-not-allowed disabled:opacity-50'
         ),

@@ -33,7 +33,7 @@ const ThingCard: FC<ThingCardProps> = ({className, thing}) => {
   return (
     <div
       className={twMerge(
-        'bg-secondary flex justify-between gap-8 rounded-md border border-gray-500 p-4',
+        'bg-secondary flex justify-between gap-8 rounded-sm border border-gray-500 p-4',
         className
       )}
     >

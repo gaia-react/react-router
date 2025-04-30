@@ -9,7 +9,7 @@ const TechStack: FC = () => {
   const {t} = useTranslation('pages', {keyPrefix: 'index.techStack'});
 
   return (
-    <div className="flex flex-col items-center gap-4 rounded-md">
+    <div className="flex flex-col items-center gap-4 rounded-sm">
       <div className="flex w-full items-center gap-4 px-4 text-sm">
         <hr className="flex-1 border-gray-600/40" />
         <span className="text-secondary">{t('title')}</span>
