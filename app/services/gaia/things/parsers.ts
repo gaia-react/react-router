@@ -1,11 +1,11 @@
-import {z} from 'zod';
+import * as z from 'zod';
 
 export const thingSchema = z.object({
-  createdAt: z.string().datetime(),
+  createdAt: z.iso.datetime(),
   description: z.string(),
   id: z.string(),
   name: z.string(),
-  updatedAt: z.string().datetime().nullable().optional(),
+  updatedAt: z.iso.datetime().nullish(),
 });
 
 export const thingsSchema = z.array(thingSchema);

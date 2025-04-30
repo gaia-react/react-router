@@ -29,7 +29,7 @@ export default {
   },
   license: 'Released under MIT license',
   meta: {
-    siteName: 'GAIA Framework',
+    siteName: 'GAIA Template',
   },
   name: 'Name',
   next: 'Next',

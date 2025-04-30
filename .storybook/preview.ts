@@ -6,7 +6,6 @@ import i18n from './i18next';
 import brandImage from './static/gaia-logo.png';
 import viewport from './viewport';
 import './env';
-import '@fortawesome/fontawesome-svg-core/styles.css';
 import '~/styles/tailwind.css';
 
 config.autoAddCss = false;
@@ -42,12 +41,12 @@ const preview: Preview = {
         ...themes.dark,
         ...BRAND,
       },
-      darkClass: ['dark', 'bg-grey-900', 'text-white'],
+      darkClass: ['dark', 'bg-gray-900', 'text-white'],
       light: {
         ...themes.light,
         ...BRAND,
       },
-      lightClass: ['light', 'bg-white', 'text-grey-900'],
+      lightClass: ['light', 'bg-white', 'text-gray-900'],
       stylePreview: true,
     },
     i18n,

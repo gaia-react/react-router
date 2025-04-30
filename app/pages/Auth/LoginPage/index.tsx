@@ -2,20 +2,12 @@ import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useSubmit} from 'react-router';
 import {useForm} from '@rvf/react-router';
-import {withZod} from '@rvf/zod';
-import {z} from 'zod';
+import * as z from 'zod';
 import Button from '~/components/Button';
 import FormActions from '~/components/Form/FormActions';
 import FormError from '~/components/Form/FormError';
 import InputEmail from '~/components/Form/InputEmail';
 import InputPassword from '~/components/Form/InputPassword';
-
-const validator = withZod(
-  z.object({
-    email: z.string().email(),
-    password: z.string().min(6),
-  })
-);
 
 const LoginPage: FC = () => {
   const {t} = useTranslation('auth');
@@ -26,8 +18,11 @@ const LoginPage: FC = () => {
     // eslint-disable-next-line sonarjs/no-hardcoded-passwords
     defaultValues: {email: 'user@domain.com', password: 'passw0rd'},
     handleSubmit: (formData) => submit(formData, {method: 'post'}),
+    schema: z.object({
+      email: z.email(),
+      password: z.string().min(6),
+    }),
     submitSource: 'dom',
-    validator,
   });
 
   return (

@@ -1,10 +1,10 @@
 import {delay, http} from 'msw';
 import {nanoid} from 'nanoid';
-import database from 'test/mocks/database';
-import {date, DELAY} from 'test/utils';
 import {GAIA_URLS} from '~/services/gaia/urls';
 import {tryCatch} from '~/utils/function';
-import type {ServerThing} from '../../mocks/things';
+import {date, DELAY} from '../../utils';
+import database from '../database';
+import type {ServerThing} from './data';
 
 export default http.post(
   `${process.env.API_URL}${GAIA_URLS.things}`,

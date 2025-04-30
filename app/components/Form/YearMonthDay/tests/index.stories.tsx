@@ -1,8 +1,7 @@
 import {useForm} from '@rvf/react-router';
-import {withZod} from '@rvf/zod';
 import type {Meta, StoryFn} from '@storybook/react';
 import stubs from 'test/stubs';
-import {z} from 'zod';
+import * as z from 'zod';
 import YearMonthDay from '../index';
 
 const meta: Meta = {
@@ -16,10 +15,11 @@ const meta: Meta = {
 
 export default meta;
 
-const validator = withZod(z.object({dob: z.string().date()}));
-
 export const Default: StoryFn = () => {
-  const form = useForm({validator});
+  const form = useForm({
+    defaultValues: {dob: '2000-01-01'},
+    schema: z.object({dob: z.iso.date()}),
+  });
 
   return (
     <form className="max-w-md p-4" {...form.getFormProps()}>

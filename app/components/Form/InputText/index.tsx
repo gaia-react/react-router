@@ -93,7 +93,7 @@ const InputText = forwardRef<HTMLInputElement, InputProps>(
           {icon && (
             <FontAwesomeIcon
               className={twMerge(
-                'absolute top-[0.825rem] text-grey-400 dark:text-grey-600',
+                'absolute top-[0.825rem] text-gray-400 dark:text-gray-600',
                 iconPosition === 'left' ? 'left-3' : 'right-3',
                 classNameIcon
               )}

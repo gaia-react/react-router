@@ -9,11 +9,10 @@ import ToastNotification from './ToastNotification';
 
 const Toast: FC = () => (
   <Toaster
-    className="w-[22rem]"
+    className="w-88"
     duration={Number.POSITIVE_INFINITY}
     expand={true}
     offset={16}
-    pauseWhenPageIsHidden={true}
     position="top-right"
     toastOptions={{unstyled: true}}
     visibleToasts={9}

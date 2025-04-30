@@ -17,13 +17,13 @@ const ErrorStack: FC<ErrorStackProps> = ({className, stack}) => {
     return (
       <pre
         className={twMerge(
-          'relative whitespace-pre-wrap border-2 border-red-700 bg-grey-900 text-left text-sm text-white',
+          'relative border-2 border-red-700 bg-gray-900 text-left text-sm whitespace-pre-wrap text-white',
           className
         )}
       >
         <div className="sticky top-0 flex w-full justify-end">
           <button
-            className="flex items-center gap-1 rounded-bl bg-red-700 pb-1 pl-1.5 pr-1 pt-px font-sans text-xs leading-none text-white hover:bg-red-600"
+            className="flex items-center gap-1 rounded-bl bg-red-700 pt-px pr-1 pb-1 pl-1.5 font-sans text-xs leading-none text-white hover:bg-red-600"
             onClick={handleClick}
             type="button"
           >
@@ -31,7 +31,7 @@ const ErrorStack: FC<ErrorStackProps> = ({className, stack}) => {
             <span>Copy to clipboard</span>
           </button>
         </div>
-        <div className="px-4 pb-4 pt-2">{stack}</div>
+        <div className="px-4 pt-2 pb-4">{stack}</div>
       </pre>
     );
   }

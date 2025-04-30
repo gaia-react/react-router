@@ -1,5 +1,5 @@
 import {getDaysInMonth, lastDayOfMonth, set} from 'date-fns';
-import {z} from 'zod';
+import * as z from 'zod';
 import {range} from '~/utils/array';
 import {formatISO8601Date} from '~/utils/date';
 
@@ -24,7 +24,7 @@ export const DEFAULT_DATE = set(TODAY, {
 
 export const DEFAULT_VALUE = formatISO8601Date(DEFAULT_DATE);
 
-const iso8601DateSchema = z.string().date();
+const iso8601DateSchema = z.iso.date();
 
 export const getValues = (value: string) => {
   const [year, month, date] = iso8601DateSchema.parse(value).split('-');

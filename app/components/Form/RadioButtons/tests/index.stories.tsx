@@ -51,7 +51,7 @@ const pizza = [
     disabled: true,
     label: (
       <span>
-        Cheese <span className="text-xs text-grey-300">(Out of stock)</span>
+        Cheese <span className="text-xs text-gray-300">(Out of stock)</span>
       </span>
     ),
     value: 'cheese',

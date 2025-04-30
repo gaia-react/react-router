@@ -11,9 +11,9 @@ const TechStack: FC = () => {
   return (
     <div className="flex flex-col items-center gap-4 rounded-md">
       <div className="flex w-full items-center gap-4 px-4 text-sm">
-        <hr className="flex-1 border-grey-600/40" />
+        <hr className="flex-1 border-gray-600/40" />
         <span className="text-secondary">{t('title')}</span>
-        <hr className="flex-1 border-grey-600/40" />
+        <hr className="flex-1 border-gray-600/40" />
       </div>
       <TechStackGroup name={t('foundation')}>
         <Foundation />

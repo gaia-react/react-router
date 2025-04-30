@@ -1,5 +1,6 @@
 .chain {
-  @apply flex items-end;
+  display: flex;
+  align-items: flex-end;
 
   > button,
   > select,
@@ -16,25 +17,32 @@
   > [type='time'],
   > [type='week'] {
     &:first-child {
-      @apply rounded-r-none border-r-0;
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
     }
 
     &:last-child {
-      @apply rounded-l-none;
+      border-bottom-left-radius: 0;
+      border-top-left-radius: 0;
     }
 
     &:not(:first-child, :last-child) {
-      @apply rounded-none border-r-0;
+      border-radius: 0;
+      border-right-width: 0;
     }
   }
 
   > button {
     &:first-child {
-      @apply rounded-l-md border-r-grey-400;
+      border-right-color: var(--color-gray-400);
+      border-bottom-left-radius: var(--radius-md);
+      border-top-left-radius: var(--radius-md);
     }
 
     &:last-child {
-      @apply rounded-r-md border-l-grey-400;
+      border-left-color: var(--color-gray-400);
+      border-bottom-right-radius: var(--radius-md);
+      border-top-right-radius: var(--radius-md);
     }
   }
 
@@ -53,7 +61,9 @@
       [type='tel'],
       [type='time'],
       [type='week'] {
-        @apply rounded-r-none border-r-0;
+        border-right-width: 0;
+        border-bottom-right-radius: 0;
+        border-top-right-radius: 0;
       }
     }
 
@@ -71,7 +81,8 @@
       [type='tel'],
       [type='time'],
       [type='week'] {
-        @apply rounded-l-none;
+        border-bottom-left-radius: 0;
+        border-top-left-radius: 0;
       }
     }
 
@@ -89,7 +100,8 @@
       [type='tel'],
       [type='time'],
       [type='week'] {
-        @apply rounded-none border-r-0;
+        border-radius: 0;
+        border-right-width: 0;
       }
     }
   }
@@ -109,11 +121,11 @@
   > [type='tel'],
   > [type='time'],
   > [type='week'] {
-    @apply flex-grow;
+    flex-grow: 1;
   }
 
   > [role='presentation'] {
-    @apply flex-grow;
+    flex-grow: 1;
   }
 }
 
@@ -121,7 +133,7 @@
   :local .chain {
     > button {
       &:last-child {
-        @apply border-l-grey-600;
+        border-left-color: var(--color-gray-600);
       }
     }
   }

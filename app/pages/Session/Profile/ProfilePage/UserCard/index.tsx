@@ -29,7 +29,7 @@ const UserCard: FC<UserCardProps> = ({className, user}) => {
         </div>
         <div>
           <div>{t('profile.fullName', {familyName, givenName})}</div>
-          <div className="text-grey-500 dark:text-grey-400">{email}</div>
+          <div className="text-gray-500 dark:text-gray-400">{email}</div>
         </div>
       </div>
       <ExampleConsumer />

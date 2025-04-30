@@ -7,13 +7,16 @@ import {loadEnv} from 'vite';
 import tsconfigPaths from 'vite-tsconfig-paths';
 import {defineConfig} from 'vitest/config';
 
-const ignoreWarnings = ['React DevTools'];
+const ignoreWarnings = ['React DevTools', 'React Router Future Flag Warning'];
 
 export default defineConfig(({mode}) => {
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
 
   return {
     plugins: [react(), tsconfigPaths()],
+    resolve: {
+      conditions: ['module-sync'],
+    },
     test: {
       coverage: {
         exclude: [
@@ -23,7 +26,7 @@ export default defineConfig(({mode}) => {
           '**/{playwright,postcss,tailwind,vite,vitest}.config.*',
           '.{playwright,storybook}/**/*',
           '**/.eslintrc.cjs',
-          'app/{languages,routes,sessions.server,state,types,validators}/**/*',
+          'app/{languages,routes,sessions.server,state,types}/**/*',
           'app/{entry.client,entry.server,env.server,i18n,i18next.server,root}.*',
           'app/services/api/{index,uris}.ts',
           'app/services/api/**/{parsers,requests,requests.server,state,types}.*',

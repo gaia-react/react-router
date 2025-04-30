@@ -1,5 +1,5 @@
 import {factory} from '@mswjs/data';
-import things from './things';
+import things from './things/data';
 import user from './user';
 
 const database = factory({

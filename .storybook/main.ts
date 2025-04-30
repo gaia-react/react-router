@@ -17,7 +17,6 @@ const config: StorybookConfig = {
     '@storybook/addon-interactions',
     'storybook-react-i18next',
     'storybook-dark-mode',
-    '@chromatic-com/storybook',
   ],
 
   docs: {},

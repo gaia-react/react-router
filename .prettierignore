@@ -7,4 +7,4 @@ package-lock.json
 
 /public/build
 .env.example
-
+.env

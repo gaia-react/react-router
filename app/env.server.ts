@@ -1,4 +1,4 @@
-import {z} from 'zod';
+import * as z from 'zod';
 
 const schema = z.object({
   API_URL: z.string(),

@@ -38,16 +38,16 @@ export type Variant =
 
 export const VARIANTS: Record<Variant, string> = {
   borderless:
-    'bg-transparent hover:bg-grey-400/10 disabled:hover:bg-transparent dark:hover:bg-grey-500/10 dark:disabled:hover:bg-transparent',
+    'bg-transparent hover:bg-gray-400/10 disabled:hover:bg-transparent dark:hover:bg-gray-500/10 dark:disabled:hover:bg-transparent',
   custom: '',
   destructive:
     'border border-red-400 bg-red-500 text-white hover:bg-red-600 disabled:hover:bg-red-500 dark:border-red-500 dark:bg-red-600 dark:hover:bg-red-700 dark:disabled:hover:bg-red-600',
   primary:
     'border border-blue-400 bg-blue-500 text-white hover:bg-blue-600 disabled:hover:bg-blue-500 dark:border-blue-500 dark:bg-blue-600 dark:hover:bg-blue-700 dark:disabled:hover:bg-blue-600',
   secondary:
-    'border border-blue-500 bg-white text-blue-500 hover:bg-blue-50 disabled:hover:bg-white dark:border-blue-500 dark:bg-grey-900 dark:text-blue-100 dark:hover:bg-blue-900/15 dark:disabled:hover:bg-grey-900',
+    'border border-blue-500 bg-white text-blue-500 hover:bg-blue-50 disabled:hover:bg-white dark:border-blue-500 dark:bg-gray-900 dark:text-blue-100 dark:hover:bg-blue-900/15 dark:disabled:hover:bg-gray-900',
   tertiary:
-    'border border-grey-500 bg-grey-600 text-white hover:bg-grey-700 disabled:hover:bg-grey-600',
+    'border border-gray-500 bg-gray-600 text-white hover:bg-gray-700 disabled:hover:bg-gray-600',
 };
 
 export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
@@ -110,7 +110,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={twMerge(
-          'select-none whitespace-nowrap text-center',
+          'text-center whitespace-nowrap select-none',
           VARIANTS[variant],
           SIZES[size],
           icon && ICON_SIZES[size],

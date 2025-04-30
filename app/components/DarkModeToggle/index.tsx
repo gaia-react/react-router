@@ -25,7 +25,7 @@ const DarkModeToggle: FC<DarkModeToggleProps> = ({className, onChange}) => {
       aria-label={theme === 'dark' ? t('enableLightMode') : t('enableDarkMode')}
       className={twMerge(
         'relative flex items-center gap-2',
-        theme === 'dark' ? 'text-white' : 'text-grey-900',
+        theme === 'dark' ? 'text-white' : 'text-gray-900',
         className
       )}
       onClick={handleClick}
