@@ -1,6 +1,6 @@
 import {http} from 'msw';
-import database from 'test/mocks/database';
 import {GAIA_URLS} from '~/services/gaia/urls';
+import database from '../database';
 
 const one = http.get(
   `${process.env.API_URL}${GAIA_URLS.thingsId}`,

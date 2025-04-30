@@ -27,7 +27,7 @@ const toppings = [
     label: (
       <span>
         Ham{' '}
-        <span className="text-sm text-grey-400 dark:text-grey-600">
+        <span className="text-sm text-gray-400 dark:text-gray-600">
           {' '}
           (¥200)
         </span>

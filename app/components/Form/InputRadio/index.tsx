@@ -1,18 +1,36 @@
-import type {FC, InputHTMLAttributes, ReactNode} from 'react';
-import {twJoin, twMerge} from 'tailwind-merge';
+import type {ComponentProps, FC, ReactNode} from 'react';
+import {twMerge} from 'tailwind-merge';
+import type {Size} from '~/types';
 import type {RadioOption} from '../types';
 
-export type InputRadioProps<T = HTMLInputElement> = InputHTMLAttributes<T> & {
+const SIZE: Record<Size, string> = {
+  base: 'size-4',
+  lg: 'size-4.5',
+  sm: 'size-3.5',
+  xl: 'size-5',
+  xs: 'size-3',
+};
+
+const TEXT_SIZE: Record<Size, string> = {
+  base: 'text-base',
+  lg: 'text-lg',
+  sm: 'text-sm',
+  xl: 'text-xl',
+  xs: 'text-xs',
+};
+
+export type InputRadioProps = Omit<ComponentProps<'input'>, 'size' | 'type'> & {
   classNameLabel?: string;
   error?: ReactNode;
   isHorizontal?: boolean;
   name: string;
   option: RadioOption;
-  type?: never;
+  size?: Size;
 };
 
 const InputRadio: FC<InputRadioProps> = ({
   className,
+  classNameLabel,
   defaultValue,
   disabled,
   error,
@@ -21,12 +39,13 @@ const InputRadio: FC<InputRadioProps> = ({
   option,
   readOnly,
   required,
+  size = 'base',
   ...props
 }) => (
   <label
     key={option.value}
     className={twMerge(
-      'flex w-fit select-none gap-2',
+      'flex w-fit items-center gap-1.5 select-none',
       disabled || option.disabled ? 'cursor-not-allowed' : 'cursor-pointer',
       className
     )}
@@ -34,7 +53,7 @@ const InputRadio: FC<InputRadioProps> = ({
   >
     <input
       aria-label={`${id ?? name}-${option.value}`}
-      className="mt-0.5"
+      className={twMerge(SIZE[size], className)}
       defaultChecked={defaultValue === option.value}
       disabled={disabled || option.disabled || readOnly}
       id={`${id ?? name}-${option.value}`}
@@ -47,8 +66,10 @@ const InputRadio: FC<InputRadioProps> = ({
       {...props}
     />
     <div
-      className={twJoin(
-        disabled || option.disabled || readOnly ? 'text-disabled' : 'text-body'
+      className={twMerge(
+        disabled || option.disabled || readOnly ? 'text-disabled' : 'text-body',
+        TEXT_SIZE[size],
+        classNameLabel
       )}
     >
       {option.label}

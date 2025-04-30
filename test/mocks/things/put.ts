@@ -1,9 +1,9 @@
 import {delay, http} from 'msw';
-import database from 'test/mocks/database';
-import type {ServerThing} from 'test/mocks/things';
-import {date, DELAY} from 'test/utils';
+import type {ServerThing} from 'test/mocks/things/data';
 import {GAIA_URLS} from '~/services/gaia/urls';
 import {tryCatch} from '~/utils/function';
+import {date, DELAY} from '../../utils';
+import database from '../database';
 
 export default http.put(
   `${process.env.API_URL}${GAIA_URLS.thingsId}`,

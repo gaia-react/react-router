@@ -1,10 +1,17 @@
 import type {Meta, StoryFn} from '@storybook/react';
-import stubs from 'test/stubs';
 import Checkbox from '../index';
 
 const meta: Meta = {
+  argTypes: {
+    size: {
+      control: {
+        type: 'select',
+      },
+      name: 'Size',
+      options: ['xs', 'sm', 'base', 'lg', 'xl'],
+    },
+  },
   component: Checkbox,
-  decorators: [stubs.reactRouter()],
   parameters: {
     controls: {hideNoControlsWarning: true},
   },
@@ -13,14 +20,14 @@ const meta: Meta = {
 
 export default meta;
 
-export const Default: StoryFn = () => (
+const Template: StoryFn = (args) => (
   <div className="max-w-sm space-y-4 p-4">
     <div>
-      <Checkbox defaultChecked={true} name="noLabel" />
+      <Checkbox defaultChecked={true} name="noLabel" {...args} />
     </div>
     <hr />
     <div>
-      <Checkbox label="Choice" name="normal" />
+      <Checkbox label="Choice" name="normal" {...args} />
     </div>
     <hr />
     <div>
@@ -35,6 +42,7 @@ export const Default: StoryFn = () => (
           </span>
         }
         name="withLink"
+        {...args}
       />
     </div>
     <hr />
@@ -43,6 +51,7 @@ export const Default: StoryFn = () => (
         description="This has a description"
         label="Choice"
         name="description"
+        {...args}
       />
     </div>
     <hr />
@@ -52,11 +61,12 @@ export const Default: StoryFn = () => (
         label="Required Invalidated"
         name="required"
         required={true}
+        {...args}
       />
     </div>
     <hr />
     <div>
-      <Checkbox disabled={true} label="Disabled" name="disabled" />
+      <Checkbox disabled={true} label="Disabled" name="disabled" {...args} />
     </div>
     <hr />
     <div>
@@ -65,7 +75,13 @@ export const Default: StoryFn = () => (
         disabled={true}
         label="Disabled Checked"
         name="disabledChecked"
+        {...args}
       />
     </div>
   </div>
 );
+
+export const Default = Template.bind({});
+Default.args = {
+  size: 'base',
+};

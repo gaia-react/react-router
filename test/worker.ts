@@ -1,5 +1,5 @@
 import {setupWorker} from 'msw/browser';
-import handlers from './handlers';
-import ping from './handlers/ping';
+import handlers from './mocks';
+import ping from './mocks/ping';
 
 export const worker = setupWorker(ping, ...handlers);

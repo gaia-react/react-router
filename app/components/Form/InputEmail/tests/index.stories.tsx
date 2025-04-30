@@ -1,9 +1,8 @@
 import {useTranslation} from 'react-i18next';
 import {useForm} from '@rvf/react-router';
-import {withZod} from '@rvf/zod';
 import type {Meta, StoryFn} from '@storybook/react';
 import stubs from 'test/stubs';
-import {z} from 'zod';
+import * as z from 'zod';
 import Button from '~/components/Button';
 import FormActions from '~/components/Form/FormActions';
 import InputEmail from '../index';
@@ -19,14 +18,12 @@ const meta: Meta = {
 
 export default meta;
 
-const validator = withZod(z.object({email: z.string().email()}));
-
 export const Default: StoryFn = () => {
   const {t} = useTranslation('errors');
 
   const form = useForm({
     defaultValues: {email: ''},
-    validator,
+    schema: z.object({email: z.email()}),
   });
 
   return (

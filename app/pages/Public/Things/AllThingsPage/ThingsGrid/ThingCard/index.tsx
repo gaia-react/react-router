@@ -33,13 +33,13 @@ const ThingCard: FC<ThingCardProps> = ({className, thing}) => {
   return (
     <div
       className={twMerge(
-        'bg-secondary flex justify-between gap-8 rounded-md border border-grey-500 p-4',
+        'bg-secondary flex justify-between gap-8 rounded-sm border border-gray-500 p-4',
         className
       )}
     >
       <div>
         <div
-          className="line-clamp-2 text-pretty text-xl text-blue-600 dark:text-blue-400"
+          className="line-clamp-2 text-xl text-pretty text-blue-600 dark:text-blue-400"
           title={thing.name}
         >
           {thing.name}
@@ -47,7 +47,7 @@ const ThingCard: FC<ThingCardProps> = ({className, thing}) => {
         <div className="line-clamp-3 text-pretty" title={thing.description}>
           {thing.description}
         </div>
-        <div className="mt-2 text-pretty text-xs text-grey-500 dark:text-grey-400">
+        <div className="mt-2 text-xs text-pretty text-gray-500 dark:text-gray-400">
           {t('lastUpdated')}:{' '}
           {formatDate(thing.updatedAt ?? thing.createdAt, language)}
         </div>

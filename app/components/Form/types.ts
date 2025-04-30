@@ -1,7 +1,7 @@
-import type {InputHTMLAttributes, ReactNode} from 'react';
+import type {ComponentProps, ReactNode} from 'react';
 import type {IconProp} from '@fortawesome/fontawesome-svg-core';
 
-export type InputProps = InputHTMLAttributes<HTMLInputElement> &
+export type InputProps = ComponentProps<'input'> &
   SharedInputProps & {
     classNameIcon?: string;
     classNameInput?: string;

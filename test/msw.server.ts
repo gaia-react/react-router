@@ -4,7 +4,7 @@
 import type {SetupServer} from 'msw/node';
 import {setupServer} from 'msw/node';
 import {EventEmitter} from 'node:events';
-import handlers from './handlers';
+import handlers from './mocks';
 
 // Increase the default max listeners to avoid warnings
 EventEmitter.defaultMaxListeners = 15;

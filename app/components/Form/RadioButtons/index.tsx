@@ -1,9 +1,13 @@
-import type {FC, InputHTMLAttributes, ReactNode} from 'react';
+import type {ComponentProps, FC, ReactNode} from 'react';
 import Field from '~/components/Form/Field';
+import type {Size} from '~/types';
 import type {Option} from '../types';
 import BaseRadioButtons from './BaseRadioButtons';
 
-export type RadioButtonsProps<T = HTMLInputElement> = InputHTMLAttributes<T> & {
+export type RadioButtonsProps = Omit<
+  ComponentProps<'input'>,
+  'size' | 'type'
+> & {
   classNameGroup?: string;
   classNameLabel?: string;
   description?: ReactNode;
@@ -12,7 +16,7 @@ export type RadioButtonsProps<T = HTMLInputElement> = InputHTMLAttributes<T> & {
   label?: ReactNode;
   name: string;
   options: Option[];
-  type?: never;
+  size?: Size;
 };
 
 const RadioButtons: FC<RadioButtonsProps> = ({

@@ -2,6 +2,15 @@ import type {Meta, StoryFn} from '@storybook/react';
 import RadioButtons from '../index';
 
 const meta: Meta = {
+  argTypes: {
+    size: {
+      control: {
+        type: 'select',
+      },
+      name: 'Size',
+      options: ['xs', 'sm', 'base', 'lg', 'xl'],
+    },
+  },
   component: RadioButtons,
   parameters: {
     controls: {hideNoControlsWarning: true},
@@ -51,7 +60,7 @@ const pizza = [
     disabled: true,
     label: (
       <span>
-        Cheese <span className="text-xs text-grey-300">(Out of stock)</span>
+        Cheese <span className="text-xs text-gray-300">(Out of stock)</span>
       </span>
     ),
     value: 'cheese',
@@ -59,14 +68,15 @@ const pizza = [
   {label: 'Pepperoni', value: 'pepperoni'},
 ];
 
-export const Default: StoryFn = () => (
-  <form className="grid max-w-3xl grid-cols-2 gap-8 p-4">
+const Template: StoryFn = (args) => (
+  <form className="grid max-w-4xl grid-cols-2 gap-8 p-4">
     <RadioButtons
       description="Aloha this is help text"
       isHorizontal={true}
       label="Horizontal Hawaiian"
       name="hawaii"
       options={hawaii}
+      {...args}
     />
     <RadioButtons
       defaultValue="glazed"
@@ -76,13 +86,20 @@ export const Default: StoryFn = () => (
       label="Disabled Doughnuts"
       name="doughnuts"
       options={doughnuts}
+      {...args}
     />
     <RadioButtons
       label="Vertical Vegetables"
       name="vegetables"
       options={vegetables}
+      {...args}
     />
-    <RadioButtons label="Partial Pizza" name="pizza" options={pizza} />
+    <RadioButtons
+      label="Partial Pizza"
+      name="pizza"
+      options={pizza}
+      {...args}
+    />
     <RadioButtons
       description="Shoyu ramen is not available"
       error="You must choose one"
@@ -90,6 +107,12 @@ export const Default: StoryFn = () => (
       name="ramen"
       options={ramen}
       required={true}
+      {...args}
     />
   </form>
 );
+
+export const Default = Template.bind({});
+Default.args = {
+  size: 'base',
+};

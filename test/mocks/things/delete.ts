@@ -1,7 +1,7 @@
 import {delay, http} from 'msw';
-import database from 'test/mocks/database';
-import {DELAY} from 'test/utils';
 import {GAIA_URLS} from '~/services/gaia/urls';
+import {DELAY} from '../../utils';
+import database from '../database';
 
 export default http.delete(
   `${process.env.API_URL}${GAIA_URLS.thingsId}`,

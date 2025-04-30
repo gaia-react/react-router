@@ -24,11 +24,11 @@ if (!isChromaticSnapshot) {
 
     if (isDark) {
       document.documentElement.classList.add('dark');
-      docsStory?.classList.add('bg-grey-900');
+      docsStory?.classList.add('bg-gray-900');
       docsStory?.classList.add('text-white');
     } else {
       document.documentElement.classList.remove('dark');
-      docsStory?.classList.remove('bg-grey-900');
+      docsStory?.classList.remove('bg-gray-900');
       docsStory?.classList.remove('text-white');
     }
   });

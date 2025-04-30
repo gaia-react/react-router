@@ -1,8 +1,8 @@
 import {http} from 'msw';
 import SparkMD5 from 'spark-md5';
-import database from 'test/mocks/database';
 import {GAIA_URLS} from '~/services/gaia/urls';
 import {tryCatch} from '~/utils/function';
+import database from '../database';
 
 export default http.post(
   `${process.env.API_URL}${GAIA_URLS.login}`,

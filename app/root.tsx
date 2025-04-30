@@ -1,9 +1,10 @@
 import type {FC} from 'react';
 import {useEffect} from 'react';
-import type {LinksFunction, LoaderFunctionArgs} from 'react-router';
+import type {LoaderFunctionArgs} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import {useChangeLanguage} from 'remix-i18next/react';
 import {getToast, setToastCookieOptions} from 'remix-toast';
 import {twJoin} from 'tailwind-merge';
@@ -19,8 +20,7 @@ import State from '~/state';
 import {useTheme} from '~/state/theme';
 import {isProductionHost} from '~/utils/http.server';
 import {env, envClient} from './env.server';
-import tailwind from '~/styles/tailwind.css?url';
-import '@fortawesome/fontawesome-svg-core/styles.css';
+import './styles/tailwind.css';
 
 config.autoAddCss = false;
 
@@ -56,8 +56,6 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
   );
 };
 
-export const links: LinksFunction = () => [{href: tailwind, rel: 'stylesheet'}];
-
 const App: FC = () => {
   const loaderData = useLoaderData<typeof loader>();
   const [theme] = useTheme();
@@ -73,8 +71,11 @@ const App: FC = () => {
 
   useEffect(() => {
     if (toast) {
-      if (notify[toast.type]) {
-        notify[toast.type](toast);
+      // TODO: Remove when Zod 4 is officially released and remix-toast is made compatible
+      const toastType = toast.type as 'error' | 'info' | 'success' | 'warning';
+
+      if (notify[toastType]) {
+        notify[toastType](toast);
       } else {
         notify.error({
           message: `Unknown toast type ${toast.type}`,
@@ -99,7 +100,9 @@ const App: FC = () => {
           })}`,
         }}
       />
-      <Outlet />
+      <Tooltip.Provider>
+        <Outlet />
+      </Tooltip.Provider>
       <Toast />
     </Document>
   );

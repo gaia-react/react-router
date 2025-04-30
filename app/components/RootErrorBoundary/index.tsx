@@ -29,8 +29,8 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
                 <span className="text-2xl leading-none">{error.status}</span>
                 {error.statusText && (
                   <>
-                    <span className="mt-[0.1875rem] h-8 w-px bg-grey-900" />
-                    <span className="mt-0.5 text-base font-light leading-none">
+                    <span className="mt-[0.1875rem] h-8 w-px bg-gray-900" />
+                    <span className="mt-0.5 text-base leading-none font-light">
                       {error.statusText}
                     </span>
                   </>

@@ -13,7 +13,7 @@ const ChromaticDecorator: DecoratorFunction<ReactRenderer> = (
   return (
     <>
       <div
-        className="relative bg-white text-grey-900"
+        className="relative bg-white text-gray-900"
         style={{
           minHeight: parameters.chromatic?.excludeDark ? '100vh' : '50vh',
         }}
@@ -22,7 +22,7 @@ const ChromaticDecorator: DecoratorFunction<ReactRenderer> = (
       </div>
       {!parameters.chromatic?.excludeDark && (
         <div
-          className="dark relative bg-grey-900 text-white"
+          className="dark relative bg-gray-900 text-white"
           style={{minHeight: '50vh'}}
         >
           {storyFn()}

@@ -13,7 +13,6 @@ const shared = {
     'prefer-arrow',
     'react',
     'sonarjs',
-    'tailwindcss',
     'unicorn',
     'vitest',
     'you-dont-need-lodash-underscore',
@@ -28,7 +27,6 @@ const shared = {
     'plugin:jsx-a11y/recommended',
     'plugin:canonical/recommended',
     'plugin:sonarjs/recommended-legacy',
-    'plugin:tailwindcss/recommended',
     'plugin:unicorn/recommended',
     'plugin:perfectionist/recommended-natural-legacy',
     'prettier',
@@ -94,6 +92,7 @@ const shared = {
         specialLink: ['to'],
       },
     ],
+    'jsx-a11y/no-autofocus': 'off',
     'max-params': ['error'],
     'no-relative-import-paths/no-relative-import-paths': [
       'error',
@@ -176,26 +175,28 @@ const shared = {
       'error',
       {
         propTypeNames: ['bool', 'mutuallyExclusiveTrueProps'],
-        rule: '^((is|has|can|show|hide)[A-Z]([A-Za-z0-9]?)+|(show|hide|disabled|required|checked))',
+        rule: '^((can|has|hide|is|show)[A-Z]([A-Za-z0-9]?)+|(checked|disabled|hide|required|show))',
       },
     ],
     'react/function-component-definition': 'off',
     'react/jsx-boolean-value': ['error', 'always'],
     'react/jsx-filename-extension': 'off',
+    // off by default because it doesn't handle props onXyz function names correctly
+    // turn this on from time to time to check for misnamed handlers elsewhere
+    'react/jsx-handler-names': ['off', {checkLocalVariables: true}],
     'react/jsx-newline': ['error', {prevent: true}],
     'react/jsx-props-no-spreading': 'off',
     'react/no-danger': 'off',
     'react/prop-types': 'off',
     'react/require-default-props': 'off',
-    'sonarjs/cognitive-complexity': 'off',
+    'sonarjs/cognitive-complexity': 'error',
     'sonarjs/fixme-tag': 'off',
     'sonarjs/no-nested-conditional': 'off',
     'sonarjs/no-commented-code': 'off',
+    'sonarjs/no-selector-parameter': 'off',
     'sonarjs/todo-tag': 'off',
     'sonarjs/regex-complexity': 'off',
     'spaced-comment': 'off',
-    // classnames order handled by prettier-plugin-tailwindcss
-    'tailwindcss/classnames-order': 'off',
     'unicorn/consistent-destructuring': 'error',
     'unicorn/filename-case': 'off',
     'unicorn/new-for-builtins': 'off',
@@ -223,6 +224,7 @@ const shared = {
           'res',
           /args/i,
           /fn/i,
+          /param/i,
           /params/i,
           /props/i,
           /ref/i,
@@ -290,9 +292,6 @@ module.exports = {
           pragma: 'React',
           version: 'detect',
         },
-        jest: {
-          version: 28,
-        },
         linkComponents: [
           {linkAttribute: 'to', name: 'Link'},
           {linkAttribute: 'to', name: 'NavLink'},
@@ -307,6 +306,7 @@ module.exports = {
       rules: {
         ...shared.rules,
         'no-undef': 'off',
+        'import/consistent-type-specifier-style': ['error', 'prefer-top-level'],
         '@typescript-eslint/array-type': ['error', {default: 'array'}],
         '@typescript-eslint/ban-ts-comment': 'off',
         '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
@@ -400,6 +400,7 @@ module.exports = {
       files: ['**/routes/**/*.tsx'],
       rules: {
         'canonical/filename-match-exported': 'off',
+        'no-empty-pattern': 'off',
         'react/display-name': 'off',
       },
     },
@@ -428,7 +429,7 @@ module.exports = {
       },
     },
     {
-      files: ['.playwright/**/*.ts'],
+      files: ['.playwright/**/*.ts?(x)'],
       extends: ['plugin:playwright/recommended'],
       rules: {
         'canonical/filename-match-exported': 'off',

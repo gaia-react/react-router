@@ -28,7 +28,7 @@ export default {
   },
   license: 'MITライセンスに基づいてリリース',
   meta: {
-    siteName: 'GAIA React',
+    siteName: 'GAIA テンプレート',
   },
   name: '名前',
   next: '次へ',
