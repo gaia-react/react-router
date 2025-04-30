@@ -83,7 +83,7 @@
 
   [type='checkbox'],
   [type='radio'] {
-    @apply size-5 cursor-pointer text-blue-500;
+    @apply cursor-pointer checked:bg-blue-500;
     @apply group-active:border-blue-500 checked:border-blue-500 active:border-blue-500;
     @apply invalid:border-red-500 invalid:ring invalid:ring-red-600 invalid:ring-offset-0 invalid:focus-visible:border-blue-600 invalid:focus-visible:ring-blue-400;
     @apply dark:checked:border-blue-500 dark:checked:bg-blue-600;
@@ -110,17 +110,12 @@
   [type='tel'],
   [type='time'],
   [type='week'] {
-    @apply rounded-md text-gray-900;
+    @apply rounded-sm text-gray-900;
     @apply read-only:cursor-not-allowed read-only:text-gray-600;
     @apply read-only:focus-visible:border-gray-400 read-only:focus-visible:ring-transparent;
     @apply dark:text-white;
     @apply read-only:text-disabled;
     @apply placeholder:text-placeholder disabled:placeholder:text-disabled;
-  }
-
-  [type='checkbox'],
-  select {
-    @apply rounded-md;
   }
 
   [type='checkbox'] {

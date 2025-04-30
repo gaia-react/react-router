@@ -1,6 +1,5 @@
 /* eslint-disable react/button-has-type */
-import type {ButtonHTMLAttributes, ReactNode} from 'react';
-import {forwardRef} from 'react';
+import type {ComponentProps, FC, ReactNode} from 'react';
 import type {IconProp} from '@fortawesome/fontawesome-svg-core';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twJoin, twMerge} from 'tailwind-merge';
@@ -50,7 +49,7 @@ export const VARIANTS: Record<Variant, string> = {
     'border border-gray-500 bg-gray-600 text-white hover:bg-gray-700 disabled:hover:bg-gray-600',
 };
 
-export type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> &
+export type ButtonProps = ComponentProps<'button'> &
   IconUnion & {
     isLoading?: boolean;
     size?: Size;
@@ -73,77 +72,71 @@ type OnlyIcon = {
   iconPosition?: never;
 };
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  (
-    {
-      children,
-      className,
-      classNameIcon,
-      disabled,
-      icon,
-      iconPosition = 'left',
-      isLoading,
-      size = 'base',
-      type = 'button',
-      variant = 'primary',
-      ...props
-    },
-    ref
-  ) => {
-    const iconComponent =
-      icon ?
-        <FontAwesomeIcon
-          className={twJoin(children && 'flex-none', classNameIcon)}
-          fixedWidth={true}
-          icon={icon}
-          size="1x"
-        />
-      : null;
+const Button: FC<ButtonProps> = ({
+  children,
+  className,
+  classNameIcon,
+  disabled,
+  icon,
+  iconPosition = 'left',
+  isLoading,
+  ref,
+  size = 'base',
+  type = 'button',
+  variant = 'primary',
+  ...props
+}) => {
+  const iconComponent =
+    icon ?
+      <FontAwesomeIcon
+        className={twJoin(children && 'flex-none', classNameIcon)}
+        fixedWidth={true}
+        icon={icon}
+        size="1x"
+      />
+    : null;
 
-    const innerClassName = twJoin(
-      icon &&
-        children &&
-        `flex items-center justify-center gap-1.5 ${ICON_POSITION[iconPosition]}`
-    );
+  const innerClassName = twJoin(
+    icon &&
+      children &&
+      `flex items-center justify-center gap-1.5 ${ICON_POSITION[iconPosition]}`
+  );
 
-    return (
-      <button
-        ref={ref}
-        className={twMerge(
-          'text-center whitespace-nowrap select-none',
-          VARIANTS[variant],
-          SIZES[size],
-          icon && ICON_SIZES[size],
-          variant !== 'custom' && 'rounded-md transition-colors duration-200',
-          isLoading ? 'cursor-wait' : (
-            'disabled:cursor-not-allowed disabled:opacity-50'
-          ),
-          className
-        )}
-        disabled={disabled ?? isLoading}
-        type={type}
-        {...props}
-      >
-        {isLoading ?
-          <span className="relative block">
-            <span className={twJoin('invisible', innerClassName)}>
-              {iconComponent}
-              {children}
-            </span>
-            <span className="absolute inset-0 flex items-center justify-center">
-              <Spinner size={size} />
-            </span>
-          </span>
-        : <span className={innerClassName}>
+  return (
+    <button
+      ref={ref}
+      className={twMerge(
+        'text-center whitespace-nowrap select-none',
+        VARIANTS[variant],
+        SIZES[size],
+        icon && ICON_SIZES[size],
+        variant !== 'custom' && 'rounded-md transition-colors duration-200',
+        isLoading ? 'cursor-wait' : (
+          'disabled:cursor-not-allowed disabled:opacity-50'
+        ),
+        className
+      )}
+      disabled={disabled ?? isLoading}
+      type={type}
+      {...props}
+    >
+      {isLoading ?
+        <span className="relative block">
+          <span className={twJoin('invisible', innerClassName)}>
             {iconComponent}
             {children}
           </span>
-        }
-      </button>
-    );
-  }
-);
-
-Button.displayName = 'Button';
+          <span className="absolute inset-0 flex items-center justify-center">
+            <Spinner size={size} />
+          </span>
+        </span>
+      : <span className={innerClassName}>
+          {iconComponent}
+          {children}
+        </span>
+      }
+    </button>
+  );
+};
 
 export default Button;

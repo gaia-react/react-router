@@ -45,7 +45,7 @@
     "autosize": "6.0.1",
     "date-fns": "4.1.0",
     "dotenv": "16.5.0",
-    "i18next": "24.2.3",
+    "i18next": "25.0.2",
     "i18next-browser-languagedetector": "8.0.5",
     "isbot": "5.1.27",
     "ky": "1.8.1",
@@ -160,6 +160,7 @@
   },
   "overrides": {
     "eslint-plugin-react-hooks": "5.2.0",
+    "i18next": "25.0.2",
     "zod": "4.0.0-beta.20250414T061543"
   },
   "msw": {

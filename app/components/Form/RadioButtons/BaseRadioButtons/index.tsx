@@ -1,17 +1,20 @@
-import type {FC, InputHTMLAttributes, ReactNode} from 'react';
+import type {ComponentProps, FC, ReactNode} from 'react';
 import CheckboxRadioGroup from '~/components/Form/CheckboxRadioGroup';
 import InputRadio from '~/components/Form/InputRadio';
 import type {RadioOption} from '~/components/Form/types';
+import type {Size} from '~/types';
 
-export type BaseRadioButtonsProps<T = HTMLInputElement> =
-  InputHTMLAttributes<T> & {
-    classNameLabel?: string;
-    error?: ReactNode;
-    isHorizontal?: boolean;
-    name: string;
-    options: RadioOption[];
-    type?: never;
-  };
+export type BaseRadioButtonsProps = Omit<
+  ComponentProps<'input'>,
+  'size' | 'type'
+> & {
+  classNameLabel?: string;
+  error?: ReactNode;
+  isHorizontal?: boolean;
+  name: string;
+  options: RadioOption[];
+  size?: Size;
+};
 
 const BaseRadioButtons: FC<BaseRadioButtonsProps> = ({
   children,

@@ -1,4 +1,5 @@
 import type {FC, ReactNode} from 'react';
+import type {Size} from '~/types';
 import Checkbox from '../Checkbox';
 import CheckboxRadioGroup from '../CheckboxRadioGroup';
 import Field from '../Field';
@@ -13,6 +14,7 @@ export type CheckboxesProps = {
   label?: ReactNode;
   options: CheckboxOption[];
   required?: boolean;
+  size?: Size;
 };
 
 type CheckboxOption = {
