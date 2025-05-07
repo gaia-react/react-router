@@ -99,7 +99,7 @@ const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
         <div className="flex items-start gap-1">
           <FontAwesomeIcon className={ICON_COLOR[type]} icon={ICON[type]} />
           <div
-            className="-mt-0.5 text-pretty font-semibold leading-tight"
+            className="-mt-0.5 leading-tight font-semibold text-pretty"
             dangerouslySetInnerHTML={{__html: message}}
           />
         </div>

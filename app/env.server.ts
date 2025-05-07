@@ -6,10 +6,7 @@ const schema = z.object({
     .string()
     .optional()
     .transform((value) => value?.slice(0, 6)),
-  MSW_ENABLED: z
-    .string()
-    .transform((value) => Boolean(structuredClone(value)))
-    .optional(),
+  MSW_ENABLED: z.stringbool().optional(),
   NODE_ENV: z.string(),
   npm_package_version: z.string(),
   SESSION_SECRET: z.string(),

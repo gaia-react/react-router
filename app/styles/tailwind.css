@@ -168,6 +168,10 @@
   }
 }
 
+@utility container {
+  margin-inline: auto;
+}
+
 @utility bg-body {
   @apply bg-white dark:bg-gray-900;
 }

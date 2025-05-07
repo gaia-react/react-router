@@ -14,7 +14,7 @@ const IndexPage: FC = () => {
       <div className="flex flex-col items-center gap-4">
         <div className="flex flex-col items-center">
           <GaiaLogo height={125} />
-          <h1 className="inline-block text-pretty text-center text-xl font-bold uppercase tracking-wider text-[#797979]">
+          <h1 className="inline-block text-center text-xl font-bold tracking-wider text-pretty text-[#797979] uppercase">
             {t('title')}
           </h1>
         </div>
