@@ -17,6 +17,7 @@
   > [type='time'],
   > [type='week'] {
     &:first-child {
+      border-right-width: 0;
       border-bottom-right-radius: 0;
       border-top-right-radius: 0;
     }
@@ -29,6 +30,7 @@
     &:not(:first-child, :last-child) {
       border-radius: 0;
       border-right-width: 0;
+      border-left-width: 0;
     }
   }
 
@@ -40,9 +42,16 @@
     }
 
     &:last-child {
-      border-left-color: var(--color-gray-400);
       border-bottom-right-radius: var(--radius-md);
       border-top-right-radius: var(--radius-md);
+
+      &:nth-child(2) {
+        border-left-width: 0;
+      }
+
+      &:not(:nth-child(2)) {
+        border-left-color: var(--color-gray-400);
+      }
     }
   }
 
