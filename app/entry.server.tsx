@@ -5,34 +5,35 @@
  * For more information, see https://remix.run/file-conventions/entry.server
  */
 
-import type {EntryContext} from 'react-router';
+import type {RenderToPipeableStreamOptions} from 'react-dom/server';
+import type {EntryContext, unstable_RouterContextProvider} from 'react-router';
 import {renderToPipeableStream} from 'react-dom/server';
-import {I18nextProvider, initReactI18next} from 'react-i18next';
+import {I18nextProvider} from 'react-i18next';
 import {ServerRouter} from 'react-router';
 import {createReadableStreamFromReadable} from '@react-router/node';
-import {createInstance} from 'i18next';
 import {isbot} from 'isbot';
 import {PassThrough} from 'node:stream';
-import {getLanguageSession} from '~/sessions.server/language';
+import {getInstance} from '~/middleware/i18next';
 import {startApiMocks} from '../test/msw.server';
 import {env} from './env.server';
-import i18n from './i18n';
-import i18next from './i18next.server';
 import 'dotenv/config';
 
 if (env.NODE_ENV !== 'production' && env.MSW_ENABLED) {
   startApiMocks();
 }
 
-const ABORT_DELAY = 5000;
+const streamTimeout = 5000;
 
 // eslint-disable-next-line max-params
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
   responseHeaders: Headers,
-  reactRouterContext: EntryContext
+  entryContext: EntryContext,
+  routerContext: unstable_RouterContextProvider
 ) {
+  let shellRendered = false;
+
   const url = new URL(request.url);
 
   // disallow www subdomain
@@ -58,30 +59,32 @@ export default async function handleRequest(
 
   const userAgent = request.headers.get('user-agent') ?? '';
 
-  const callbackName = isbot(userAgent) ? 'onAllReady' : 'onShellReady';
-
-  const instance = createInstance({detection: {}});
-  const languageCookie = await getLanguageSession(request);
-  const detectedLanguage = await i18next.getLocale(request);
-  const lng = languageCookie.get() || detectedLanguage;
-  const ns = i18next.getRouteNamespaces(reactRouterContext);
-
-  await instance.use(initReactI18next).init({
-    ...i18n,
-    lng,
-    ns,
-  });
+  const readyOption: keyof RenderToPipeableStreamOptions =
+    (userAgent && isbot(userAgent)) || entryContext.isSpaMode ?
+      'onAllReady'
+    : 'onShellReady';
 
   return new Promise((resolve, reject) => {
-    let didError = false;
-
     const {abort, pipe} = renderToPipeableStream(
-      <I18nextProvider i18n={instance}>
-        <ServerRouter context={reactRouterContext} url={request.url} />
+      <I18nextProvider i18n={getInstance(routerContext)}>
+        <ServerRouter context={entryContext} url={request.url} />
       </I18nextProvider>,
       {
-        [callbackName]: () => {
+        onError(error: unknown) {
+          // eslint-disable-next-line sonarjs/no-parameter-reassignment
+          responseStatusCode = 500;
+
+          if (shellRendered) {
+            console.error(error);
+          }
+        },
+        onShellError(error: unknown) {
+          reject(error);
+        },
+        [readyOption]: () => {
+          shellRendered = true;
           const body = new PassThrough();
+          const stream = createReadableStreamFromReadable(body);
 
           responseHeaders.set('Content-Type', 'text/html');
 
@@ -95,25 +98,17 @@ export default async function handleRequest(
           */
 
           resolve(
-            new Response(createReadableStreamFromReadable(body), {
+            new Response(stream, {
               headers: responseHeaders,
-              status: didError ? 500 : responseStatusCode,
+              status: responseStatusCode,
             })
           );
 
           pipe(body);
         },
-        onError(error: unknown) {
-          didError = true;
-
-          console.error(error);
-        },
-        onShellError(error: unknown) {
-          reject(error);
-        },
       }
     );
 
-    setTimeout(abort, ABORT_DELAY);
+    setTimeout(abort, streamTimeout + 1000);
   });
 }

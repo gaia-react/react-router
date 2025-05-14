@@ -5,12 +5,12 @@ import type {
 } from 'react-router';
 import {data, useLoaderData} from 'react-router';
 import {redirectWithInfo} from 'remix-toast';
-import i18next from '~/i18next.server';
+import {getInstance} from '~/middleware/i18next';
 import ThingPage from '~/pages/Public/Things/ThingPage';
 import {attempt} from '~/services/api/helpers';
 import {api} from '~/services/index.server';
 
-export const action: ActionFunction = async ({request}) => {
+export const action: ActionFunction = async ({context, request}) => {
   if (request.method === 'PUT') {
     const formData = await request.formData();
 
@@ -18,13 +18,20 @@ export const action: ActionFunction = async ({request}) => {
       api.gaia.things.updateThing(formData)
     );
 
-    const t = await i18next.getFixedT(request, 'pages');
+    const i18next = getInstance(context);
 
     if (error) {
-      return data({error: t('things.duplicateName')}, error);
+      return data(
+        {error: i18next.t('things.duplicateName', {ns: 'pages'})},
+        error
+      );
     }
 
-    return redirectWithInfo('/things', t('things.thingUpdated'), {status: 303});
+    return redirectWithInfo(
+      '/things',
+      i18next.t('things.thingUpdated', {ns: 'pages'}),
+      {status: 303}
+    );
   }
 
   return data(null, {status: 400});

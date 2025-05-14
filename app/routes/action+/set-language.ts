@@ -1,9 +1,8 @@
 import type {ActionFunction} from 'react-router';
 import {data, redirect, replace} from 'react-router';
-import {getLanguageSession} from '~/sessions.server/language';
+import {languageCookie} from '~/sessions.server/language';
 
 export const action: ActionFunction = async ({request}) => {
-  const languageSession = await getLanguageSession(request);
   const requestText = await request.text();
   const form = new URLSearchParams(requestText);
   const language = form.get('language') as string;
@@ -19,11 +18,9 @@ export const action: ActionFunction = async ({request}) => {
     );
   }
 
-  languageSession.set(language);
-
   return replace(redirectUrl, {
     headers: {
-      'Set-Cookie': await languageSession.commit(),
+      'Set-Cookie': await languageCookie.serialize(language),
     },
   });
 };

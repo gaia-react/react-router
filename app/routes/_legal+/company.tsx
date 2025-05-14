@@ -1,12 +1,12 @@
 import type {LoaderFunctionArgs, MetaFunction} from 'react-router';
 import {useLoaderData} from 'react-router';
 import Layout from '~/components/Layout';
-import i18next from '~/i18next.server';
+import {getInstance} from '~/middleware/i18next';
 
-export const loader = async ({request}: LoaderFunctionArgs) => {
-  const t = await i18next.getFixedT(request, 'pages');
-  const title = t('legal.company.title');
-  const description = t('legal.company.description');
+export const loader = async ({context}: LoaderFunctionArgs) => {
+  const i18next = getInstance(context);
+  const title = i18next.t('legal.company.title', {ns: 'pages'});
+  const description = i18next.t('legal.company.description', {ns: 'pages'});
 
   return {description, title};
 };
