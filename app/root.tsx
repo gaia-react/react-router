@@ -11,10 +11,10 @@ import {twJoin} from 'tailwind-merge';
 import Document from '~/components/Document';
 import RootErrorBoundary from '~/components/RootErrorBoundary';
 import Toast, {toast as notify} from '~/components/Toast';
-import i18next from '~/i18next.server';
+import {getLanguage, i18nextMiddleware} from '~/middleware/i18next';
 import {setApiLanguage} from '~/services/api';
 import {getAuthenticatedUser} from '~/sessions.server/auth';
-import {getLanguageSession} from '~/sessions.server/language';
+import {languageCookie} from '~/sessions.server/language';
 import {getThemeSession} from '~/sessions.server/theme';
 import State from '~/state';
 import {useTheme} from '~/state/theme';
@@ -24,14 +24,15 @@ import './styles/tailwind.css';
 
 config.autoAddCss = false;
 
-export const loader = async ({request}: LoaderFunctionArgs) => {
+// eslint-disable-next-line @typescript-eslint/naming-convention
+export const unstable_middleware = [i18nextMiddleware];
+
+export const loader = async ({context, request}: LoaderFunctionArgs) => {
   const isProduction = isProductionHost(request);
 
   const user = await getAuthenticatedUser(request);
 
-  const languageSession = await getLanguageSession(request);
-
-  const language = languageSession.get() || (await i18next.getLocale(request));
+  const language = getLanguage(context);
 
   setApiLanguage(language);
 
@@ -40,6 +41,8 @@ export const loader = async ({request}: LoaderFunctionArgs) => {
   setToastCookieOptions({secrets: [env.SESSION_SECRET]});
 
   const {headers, toast} = await getToast(request);
+
+  headers.append('Set-Cookie', await languageCookie.serialize(language));
 
   headers.set('Vary', 'Cookie');
 
@@ -63,10 +66,6 @@ const App: FC = () => {
 
   const {ENV, language, noIndex, toast} = loaderData;
 
-  // This hook will change the i18n instance language to the current language
-  // detected by the loader, this way, when we do something to change the
-  // language, this language will change and i18next will load the correct
-  // translation files
   useChangeLanguage(language);
 
   useEffect(() => {
@@ -88,9 +87,9 @@ const App: FC = () => {
   return (
     <Document
       className={twJoin(theme)}
-      dir={i18n.dir()}
+      dir={i18n.dir(i18n.language)}
       isSsrTheme={!!loaderData.theme}
-      lang={language}
+      lang={i18n.language}
       noIndex={noIndex}
     >
       <script

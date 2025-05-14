@@ -4,7 +4,7 @@ import type {
   MetaFunction,
 } from 'react-router';
 import {redirect} from 'react-router';
-import i18next from '~/i18next.server';
+import {getInstance} from '~/middleware/i18next';
 import LoginPage from '~/pages/Auth/LoginPage';
 import {
   authenticator,
@@ -12,13 +12,13 @@ import {
   sessionStorage,
 } from '~/sessions.server/auth';
 
-export const action: ActionFunction = async ({request}) => {
+export const action: ActionFunction = async ({context, request}) => {
   const user = await authenticator.authenticate('form', request);
 
   if (!user) {
-    const t = await i18next.getFixedT(request, 'errors');
+    const i18next = getInstance(context);
 
-    return {error: t('invalidCredentials')};
+    return {error: i18next.t('invalidCredentials', {ns: 'errors'})};
   }
 
   const session = await sessionStorage.getSession(
@@ -32,11 +32,11 @@ export const action: ActionFunction = async ({request}) => {
   });
 };
 
-export const loader = async ({request}: LoaderFunctionArgs) => {
+export const loader = async ({context, request}: LoaderFunctionArgs) => {
   await requireNotAuthenticated(request);
 
-  const t = await i18next.getFixedT(request, 'auth');
-  const title = t('login');
+  const i18next = getInstance(context);
+  const title = i18next.t('login', {ns: 'auth'});
 
   return {title};
 };

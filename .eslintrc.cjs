@@ -94,6 +94,7 @@ const shared = {
     ],
     'jsx-a11y/no-autofocus': 'off',
     'max-params': ['error'],
+    'no-param-reassign': 'off', // handled by sonarjs
     'no-relative-import-paths/no-relative-import-paths': [
       'error',
       {

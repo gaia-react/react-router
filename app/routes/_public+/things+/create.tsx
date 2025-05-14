@@ -5,12 +5,12 @@ import type {
 } from 'react-router';
 import {data} from 'react-router';
 import {redirectWithSuccess} from 'remix-toast';
-import i18next from '~/i18next.server';
+import {getInstance} from '~/middleware/i18next';
 import CreateThingPage from '~/pages/Public/Things/CreateThingPage';
 import {attempt} from '~/services/api/helpers';
 import {api} from '~/services/index.server';
 
-export const action: ActionFunction = async ({request}) => {
+export const action: ActionFunction = async ({context, request}) => {
   if (request.method === 'POST') {
     const formData = await request.formData();
 
@@ -18,24 +18,31 @@ export const action: ActionFunction = async ({request}) => {
       api.gaia.things.createThing(formData)
     );
 
-    const t = await i18next.getFixedT(request, 'pages');
+    const i18next = getInstance(context);
 
     if (error) {
-      return data({error: t('things.duplicateName')}, error);
+      return data(
+        {error: i18next.t('things.duplicateName', {ns: 'pages'})},
+        error
+      );
     }
 
-    return redirectWithSuccess('/things', t('things.thingCreated'), {
-      status: 303,
-    });
+    return redirectWithSuccess(
+      '/things',
+      i18next.t('things.thingCreated', {ns: 'pages'}),
+      {
+        status: 303,
+      }
+    );
   }
 
   return data(null, {status: 400});
 };
 
-export const loader = async ({request}: LoaderFunctionArgs) => {
-  const t = await i18next.getFixedT(request, 'pages');
-  const title = t('things.meta.title');
-  const description = t('things.meta.description');
+export const loader = async ({context}: LoaderFunctionArgs) => {
+  const i18next = getInstance(context);
+  const title = i18next.t('things.meta.title', {ns: 'pages'});
+  const description = i18next.t('things.meta.description', {ns: 'pages'});
 
   return {description, title};
 };
