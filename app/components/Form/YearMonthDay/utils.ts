@@ -1,5 +1,5 @@
 import {getDaysInMonth, lastDayOfMonth, set} from 'date-fns';
-import * as z from 'zod';
+import {z} from 'zod/v4';
 import {range} from '~/utils/array';
 import {formatISO8601Date} from '~/utils/date';
 

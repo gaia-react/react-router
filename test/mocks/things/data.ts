@@ -1,6 +1,6 @@
 import {nullable, primaryKey} from '@mswjs/data';
+import {z} from 'zod/v4';
 import {date} from 'test/utils';
-import * as z from 'zod';
 
 export const serverThingSchema = z.object({
   created_at: z.iso.datetime(),

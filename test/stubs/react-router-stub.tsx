@@ -4,9 +4,9 @@ import type {
   LoaderFunctionArgs,
 } from 'react-router';
 import {createRoutesStub} from 'react-router';
-import {addons} from '@storybook/preview-api';
-import type {ReactRenderer} from '@storybook/react';
-import type {PartialStoryFn} from '@storybook/types';
+import type {ReactRenderer} from '@storybook/react-vite';
+import type {PartialStoryFn} from 'storybook/internal/types';
+import {addons} from 'storybook/preview-api';
 
 const methods = ['DELETE', 'GET', 'PATCH', 'POST', 'PUT'];
 type Action = ActionFunction | SimpleAction | string;

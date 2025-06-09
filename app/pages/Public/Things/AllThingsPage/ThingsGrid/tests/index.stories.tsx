@@ -1,5 +1,5 @@
 import {useTranslation} from 'react-i18next';
-import type {Meta, StoryFn} from '@storybook/react';
+import type {Meta, StoryFn} from '@storybook/react-vite';
 import database from 'test/mocks/database';
 import stubs from 'test/stubs';
 import {ThingsProvider} from '~/services/gaia/things/state';

@@ -1,6 +1,6 @@
 import userEvent from '@testing-library/user-event';
-import {render, screen} from 'test/rtl';
 import {describe, expect, test, vi} from 'vitest';
+import {render, screen} from 'test/rtl';
 import Button from '../index';
 
 describe('Button', () => {

@@ -1,6 +1,6 @@
 import {Fragment} from 'react';
 import {faStar} from '@fortawesome/free-solid-svg-icons';
-import type {Meta, StoryFn} from '@storybook/react';
+import type {Meta, StoryFn} from '@storybook/react-vite';
 import stubs from 'test/stubs';
 import type {Variant} from '~/components/Button';
 import type {Size} from '~/types';

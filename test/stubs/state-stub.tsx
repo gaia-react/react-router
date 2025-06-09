@@ -1,6 +1,6 @@
 /* eslint-disable react/display-name */
-import type {ReactRenderer} from '@storybook/react';
-import type {PartialStoryFn} from '@storybook/types';
+import type {ReactRenderer} from '@storybook/react-vite';
+import type {PartialStoryFn} from 'storybook/internal/types';
 import State from '~/state';
 import type {Maybe} from '~/types';
 

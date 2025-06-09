@@ -1,5 +1,5 @@
 import {faSearch} from '@fortawesome/free-solid-svg-icons';
-import type {Meta, StoryFn} from '@storybook/react';
+import type {Meta, StoryFn} from '@storybook/react-vite';
 import Button from '~/components/Button';
 import InputText from '~/components/Form/InputText';
 import Select from '~/components/Form/Select';

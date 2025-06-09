@@ -1,5 +1,5 @@
 import {primaryKey} from '@mswjs/data';
-import * as z from 'zod';
+import {z} from 'zod/v4';
 
 export const serverUserSchema = z.object({
   email: z.email(),

@@ -1,4 +1,4 @@
-import * as z from 'zod';
+import {z} from 'zod/v4';
 
 export const thingSchema = z.object({
   createdAt: z.iso.datetime(),

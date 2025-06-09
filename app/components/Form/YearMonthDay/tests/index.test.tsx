@@ -1,8 +1,8 @@
-import {composeStory} from '@storybook/react';
-import {within} from '@storybook/test';
+import {composeStory} from '@storybook/react-vite';
 import userEvent from '@testing-library/user-event';
-import {render, screen} from 'test/rtl';
+import {within} from 'storybook/test';
 import {describe, expect, test} from 'vitest';
+import {render, screen} from 'test/rtl';
 import Meta, {Default} from './index.stories';
 
 const YearMonthDay = composeStory(Default, Meta);

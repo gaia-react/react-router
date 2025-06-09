@@ -1,4 +1,4 @@
-import type {Meta, StoryFn} from '@storybook/react';
+import type {Meta, StoryFn} from '@storybook/react-vite';
 import database from 'test/mocks/database';
 import stubs from 'test/stubs';
 import type {Things} from '~/services/gaia/things/types';

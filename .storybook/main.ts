@@ -5,21 +5,17 @@ import tsconfigPaths from 'vite-tsconfig-paths';
 const config: StorybookConfig = {
   addons: [
     '@storybook/addon-links',
-    {
-      name: '@storybook/addon-essentials',
-      options: {
-        backgrounds: false,
-        grid: false,
-        measure: false,
-        outline: false,
-      },
-    },
-    '@storybook/addon-interactions',
     'storybook-react-i18next',
-    'storybook-dark-mode',
+    '@vueless/storybook-dark-mode',
   ],
 
   docs: {},
+
+  features: {
+    backgrounds: false,
+    measure: false,
+    outline: false,
+  },
 
   framework: {
     name: '@storybook/react-vite',

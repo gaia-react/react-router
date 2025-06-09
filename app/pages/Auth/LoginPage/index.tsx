@@ -2,7 +2,7 @@ import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useSubmit} from 'react-router';
 import {useForm} from '@rvf/react-router';
-import * as z from 'zod';
+import {z} from 'zod/v4';
 import Button from '~/components/Button';
 import FormActions from '~/components/Form/FormActions';
 import FormError from '~/components/Form/FormError';

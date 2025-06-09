@@ -1,7 +1,7 @@
 import {useForm} from '@rvf/react-router';
-import type {Meta, StoryFn} from '@storybook/react';
+import type {Meta, StoryFn} from '@storybook/react-vite';
+import {z} from 'zod/v4';
 import stubs from 'test/stubs';
-import * as z from 'zod';
 import YearMonthDay from '../index';
 
 const meta: Meta = {

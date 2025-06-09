@@ -1,5 +1,5 @@
-import type {ReactRenderer} from '@storybook/react';
-import type {DecoratorFunction} from '@storybook/types';
+import type {ReactRenderer} from '@storybook/react-vite';
+import type {DecoratorFunction} from 'storybook/internal/types';
 import Toast from '~/components/Toast';
 
 const ToastDecorator: DecoratorFunction<ReactRenderer> = (storyFn) => (

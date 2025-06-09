@@ -1,7 +1,7 @@
-import {composeStory} from '@storybook/react';
+import {composeStory} from '@storybook/react-vite';
 import userEvent from '@testing-library/user-event';
-import {render, screen} from 'test/rtl';
 import {describe, expect, test} from 'vitest';
+import {render, screen} from 'test/rtl';
 import Meta, {Default} from './index.stories';
 
 const Radio = composeStory(Default, Meta);
