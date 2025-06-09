@@ -1,8 +1,8 @@
 import type {FC, ReactNode} from 'react';
 
-type FieldErrorProps = {
+interface FieldErrorProps {
   error?: ReactNode;
-};
+}
 
 const FieldError: FC<FieldErrorProps> = ({error}) => (
   <div

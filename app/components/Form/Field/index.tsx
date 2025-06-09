@@ -18,29 +18,29 @@ type FieldProps = (WithLabel | WithMaxLength | WithoutLabel | WithValue) & {
   required?: boolean;
 };
 
-type WithLabel = {
+interface WithLabel {
   maxLength?: never;
   name: string;
   type: 'select';
-};
+}
 
-type WithMaxLength = {
+interface WithMaxLength {
   maxLength?: number;
   name: string;
   type: 'input' | 'password' | 'textarea';
-};
+}
 
-type WithoutLabel = {
+interface WithoutLabel {
   maxLength?: never;
   name?: never;
   type: 'button' | 'checkbox' | 'radio';
-};
+}
 
-type WithValue = {
+interface WithValue {
   maxLength?: never;
   name?: never;
   type: 'value';
-};
+}
 
 const Field: FC<FieldProps> = ({
   children,

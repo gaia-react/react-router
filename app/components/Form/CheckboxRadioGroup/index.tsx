@@ -2,12 +2,12 @@ import type {FC, ReactNode} from 'react';
 import {twMerge} from 'tailwind-merge';
 import styles from './styles.module.css';
 
-export type CheckboxRadioGroupProps = {
+export interface CheckboxRadioGroupProps {
   children: ReactNode;
   className?: string;
   isButton?: boolean;
   isHorizontal?: boolean;
-};
+}
 
 const CheckboxRadioGroup: FC<CheckboxRadioGroupProps> = ({
   children,

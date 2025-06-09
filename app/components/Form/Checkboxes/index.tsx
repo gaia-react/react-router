@@ -4,7 +4,7 @@ import Checkbox from '../Checkbox';
 import CheckboxRadioGroup from '../CheckboxRadioGroup';
 import Field from '../Field';
 
-export type CheckboxesProps = {
+export interface CheckboxesProps {
   className?: string;
   classNameGroup?: string;
   description?: ReactNode;
@@ -15,15 +15,15 @@ export type CheckboxesProps = {
   options: CheckboxOption[];
   required?: boolean;
   size?: Size;
-};
+}
 
-type CheckboxOption = {
+interface CheckboxOption {
   disabled?: boolean;
   error?: boolean;
   label: ReactNode;
   name: string;
   required?: boolean | string;
-};
+}
 
 const Checkboxes: FC<CheckboxesProps> = ({
   className,

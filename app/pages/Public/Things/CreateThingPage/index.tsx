@@ -8,9 +8,9 @@ import FormError from '~/components/Form/FormError';
 import InputText from '~/components/Form/InputText';
 import LinkButton from '~/components/LinkButton';
 
-type CreateThingPageProps = {
+interface CreateThingPageProps {
   className?: string;
-};
+}
 
 const CreateThingPage: FC<CreateThingPageProps> = ({className}) => {
   const {t} = useTranslation('common');

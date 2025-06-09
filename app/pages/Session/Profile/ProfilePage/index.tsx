@@ -6,9 +6,9 @@ import Button from '~/components/Button';
 import UserCard from '~/pages/Session/Profile/ProfilePage/UserCard';
 import {useUser} from '~/state/user';
 
-type ProfilePageProps = {
+interface ProfilePageProps {
   className?: string;
-};
+}
 
 const ProfilePage: FC<ProfilePageProps> = ({className}) => {
   const {t} = useTranslation('pages');

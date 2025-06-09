@@ -5,10 +5,10 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twMerge} from 'tailwind-merge';
 import {useTheme} from '~/state/theme';
 
-type DarkModeToggleProps = {
+interface DarkModeToggleProps {
   className?: string;
   onChange?: () => void;
-};
+}
 
 const DarkModeToggle: FC<DarkModeToggleProps> = ({className, onChange}) => {
   const {t} = useTranslation('common', {keyPrefix: 'theme'});

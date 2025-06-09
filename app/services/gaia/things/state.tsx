@@ -22,10 +22,10 @@ export const useThings = () => {
   return context;
 };
 
-type ThingsProviderProps = {
+interface ThingsProviderProps {
   children: ReactNode;
   things?: Maybe<Things>;
-};
+}
 
 export const ThingsProvider: FC<ThingsProviderProps> = ({children, things}) => (
   <ThingsContext.Provider value={things}>{children}</ThingsContext.Provider>

@@ -3,10 +3,10 @@ import {useId} from 'react';
 import {twMerge} from 'tailwind-merge';
 import type {Size} from '~/types';
 
-export type SpinnerProps = {
+export interface SpinnerProps {
   className?: string;
   size?: Size;
-};
+}
 
 const SIZES: Record<Size, string> = {
   base: 'h-5',

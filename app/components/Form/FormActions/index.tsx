@@ -1,11 +1,11 @@
 import type {FC, ReactNode} from 'react';
 import {twMerge} from 'tailwind-merge';
 
-export type FormActionsProps = {
+export interface FormActionsProps {
   align?: 'left' | 'right';
   children: ReactNode;
   className?: string;
-};
+}
 
 const FormActions: FC<FormActionsProps> = ({
   align = 'right',

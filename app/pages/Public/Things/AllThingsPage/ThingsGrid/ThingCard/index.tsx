@@ -10,10 +10,10 @@ import LinkButton from '~/components/LinkButton';
 import useBreakpoint from '~/hooks/useBreakpoint';
 import type {Thing} from '~/services/gaia/things/types';
 
-type ThingCardProps = {
+interface ThingCardProps {
   className?: string;
   thing: Thing;
-};
+}
 
 const formatDate = (date: string, language: string) =>
   format(new Date(date), 'P p', {locale: language === 'ja' ? ja : undefined});

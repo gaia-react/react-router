@@ -4,9 +4,9 @@ import {twJoin} from 'tailwind-merge';
 import LinkButton from '~/components/LinkButton';
 import ThingsGrid from './ThingsGrid';
 
-type AllThingsPageProps = {
+interface AllThingsPageProps {
   className?: string;
-};
+}
 
 const AllThingsPage: FC<AllThingsPageProps> = ({className}) => {
   const {t} = useTranslation('pages', {keyPrefix: 'things'});

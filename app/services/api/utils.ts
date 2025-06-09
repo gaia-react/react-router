@@ -59,7 +59,6 @@ export const appendSearchParams = (
   }
 
   const casedParams =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     useSnakeCase ? toSnakeCase<any>(searchParams) : searchParams;
 
   const safeParams = queryString.stringify(casedParams, {arrayFormat});

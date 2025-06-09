@@ -1,12 +1,11 @@
-/* eslint-disable react/display-name */
 import type {ReactRenderer} from '@storybook/react-vite';
 import type {PartialStoryFn} from 'storybook/internal/types';
 import State from '~/state';
 import type {Maybe} from '~/types';
 
-type StateDecoratorProps = {
+interface StateDecoratorProps {
   example?: Maybe<number>;
-};
+}
 
 const decorator =
   (props?: StateDecoratorProps) => (Story: PartialStoryFn<ReactRenderer>) => (

@@ -6,10 +6,10 @@ import {twMerge} from 'tailwind-merge';
 import ExampleConsumer from '~/components/ExampleConsumer';
 import type {User} from '~/services/gaia/auth/types';
 
-type UserCardProps = {
+interface UserCardProps {
   className?: string;
   user: User;
-};
+}
 
 const UserCard: FC<UserCardProps> = ({className, user}) => {
   const {t} = useTranslation('pages');

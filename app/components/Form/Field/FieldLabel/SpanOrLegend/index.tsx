@@ -1,10 +1,10 @@
 import type {FC, ReactNode} from 'react';
 
-export type SpanOrLegendProps = {
+export interface SpanOrLegendProps {
   children: ReactNode;
   className?: string;
   isLegend?: boolean;
-};
+}
 
 const SpanOrLegend: FC<SpanOrLegendProps> = ({
   children,

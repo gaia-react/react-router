@@ -1,11 +1,11 @@
 import type {FC} from 'react';
 import {twJoin} from 'tailwind-merge';
 
-type MaxLengthProps = {
+interface MaxLengthProps {
   className?: string;
   length: number;
   maxLength: number;
-};
+}
 
 const MIN_WIDTHS = [0, 34, 49, 65, 80, 95, 100, 111];
 

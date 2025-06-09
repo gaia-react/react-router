@@ -2,9 +2,9 @@ import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
 import {twMerge} from 'tailwind-merge';
 
-type FooterProps = {
+interface FooterProps {
   className?: string;
-};
+}
 
 const Footer: FC<FooterProps> = ({className}) => {
   const {t} = useTranslation('common');

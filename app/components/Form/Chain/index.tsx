@@ -2,11 +2,11 @@ import type {FC, ReactNode} from 'react';
 import {twJoin} from 'tailwind-merge';
 import styles from './styles.module.css';
 
-export type ChainProps = {
+export interface ChainProps {
   children: ReactNode;
   className?: string;
   isFullWidth?: boolean;
-};
+}
 
 const Chain: FC<ChainProps> = ({children, className, isFullWidth}) => (
   <div

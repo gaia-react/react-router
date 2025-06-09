@@ -1,7 +1,6 @@
 import type {FormatFunction} from 'i18next';
 import resources, {LANGUAGES} from '~/languages';
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const formatFn: FormatFunction = (value: any, format?: string) =>
   format === 'number' ? Number(value).toLocaleString() : value;
 

@@ -3,12 +3,12 @@ import {faCopy} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twJoin, twMerge} from 'tailwind-merge';
 
-type ErrorStackProps = {
+interface ErrorStackProps {
   className?: string;
   stack?: string;
   status?: number;
   statusText?: string;
-};
+}
 
 const ErrorStack: FC<ErrorStackProps> = ({
   className,

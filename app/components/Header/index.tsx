@@ -6,9 +6,9 @@ import {twMerge} from 'tailwind-merge';
 import DarkModeToggle from '~/components/DarkModeToggle';
 import LanguageSelect from '~/components/LanguageSelect';
 
-type HeaderProps = {
+interface HeaderProps {
   className?: string;
-};
+}
 
 const Header: FC<HeaderProps> = ({className}) => {
   const {t} = useTranslation();

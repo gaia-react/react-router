@@ -71,7 +71,7 @@ const App: FC = () => {
   useEffect(() => {
     if (toast) {
       // TODO: Remove when Zod 4 is officially released and remix-toast is made compatible
-      const toastType = toast.type as 'error' | 'info' | 'success' | 'warning';
+      const toastType = toast.type;
 
       if (notify[toastType]) {
         notify[toastType](toast);

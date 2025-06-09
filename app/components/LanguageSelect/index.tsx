@@ -8,10 +8,10 @@ const OPTIONS = [
   {label: '日本語', value: 'ja'},
 ];
 
-type LanguageSelectProps = {
+interface LanguageSelectProps {
   className?: string;
   onChange?: () => void;
-};
+}
 
 const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
   const {

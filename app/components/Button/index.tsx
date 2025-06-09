@@ -58,19 +58,19 @@ export type ButtonProps = ComponentProps<'button'> &
 
 export type IconUnion = MaybeIcon | OnlyIcon;
 
-type MaybeIcon = {
+interface MaybeIcon {
   children: ReactNode;
   classNameIcon?: string;
   icon?: IconProp;
   iconPosition?: 'left' | 'right';
-};
+}
 
-type OnlyIcon = {
+interface OnlyIcon {
   children?: never;
   classNameIcon?: string;
   icon: IconProp;
   iconPosition?: never;
-};
+}
 
 const Button: FC<ButtonProps> = ({
   children,
