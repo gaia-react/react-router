@@ -148,6 +148,8 @@ const typescriptConfig = [
 ];
 
 const tsEslintConfig = tseslint.config([
+  tseslint.configs.strict,
+  tseslint.configs.stylistic,
   {
     files: ['**/*.ts?(x)'],
     plugins: {
