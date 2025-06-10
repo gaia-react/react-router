@@ -3,10 +3,10 @@ import {twMerge} from 'tailwind-merge';
 import Footer from '~/components/Footer';
 import Header from '~/components/Header';
 
-interface LayoutProps {
+type LayoutProps = {
   children: ReactNode;
   className?: string;
-}
+};
 
 const Layout: FC<LayoutProps> = ({children, className}) => (
   <div className={twMerge('flex h-dvh flex-col', className)}>

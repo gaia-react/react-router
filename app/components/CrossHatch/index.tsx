@@ -2,9 +2,9 @@ import type {FC} from 'react';
 import {twJoin} from 'tailwind-merge';
 import styles from './styles.module.css';
 
-interface CrossHatchProps {
+type CrossHatchProps = {
   className?: string;
-}
+};
 
 const CrossHatch: FC<CrossHatchProps> = ({className}) => (
   <div

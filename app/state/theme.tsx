@@ -43,10 +43,10 @@ export const getPreferredTheme = (): Theme => {
   return window.matchMedia(prefersDarkMQ).matches ? 'dark' : 'light';
 };
 
-interface ThemeProviderProps {
+type ThemeProviderProps = {
   children: ReactNode;
   initialState: Theme;
-}
+};
 
 export const ThemeProvider: FC<ThemeProviderProps> = ({
   children,
@@ -167,9 +167,9 @@ const clientThemeCode = `
   .replaceAll(/((?<=[^:])\/\/.*|\s)+/g, ' ')
   .trim();
 
-interface ThemeHeadProps {
+type ThemeHeadProps = {
   isSsrTheme?: boolean;
-}
+};
 
 export const ThemeHead: FC<ThemeHeadProps> = ({isSsrTheme}) => {
   const [theme] = useTheme();

@@ -12,12 +12,12 @@ const methods = ['DELETE', 'GET', 'PATCH', 'POST', 'PUT'];
 type Action = ActionFunction | SimpleAction | string;
 type Method = (typeof methods)[number];
 
-interface ReactRouterDecoratorOptions {
+type ReactRouterDecoratorOptions = {
   action?: Action;
   loader?: (args: LoaderFunctionArgs) => Promise<unknown>;
   path?: string;
   routes?: Routes;
-}
+};
 
 type Routes = {path: string; storyId: string}[];
 

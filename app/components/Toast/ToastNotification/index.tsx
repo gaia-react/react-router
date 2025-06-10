@@ -39,11 +39,11 @@ const ICON_COLOR: Record<ToastType, string> = {
 
 const DEFAULT_DURATION = 60_000;
 
-interface ToastNotificationProps {
+type ToastNotificationProps = {
   id: number | string;
   payload: Partial<ToastMessage> | string;
   type: ToastType;
-}
+};
 
 const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
   const [isHovered, setIsHovered] = useState(false);

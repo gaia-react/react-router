@@ -16,6 +16,7 @@ import preferArrow from 'eslint-plugin-prefer-arrow';
 import prettier from 'eslint-plugin-prettier';
 import react from 'eslint-plugin-react';
 import sonarjs from 'eslint-plugin-sonarjs';
+import storybook from 'eslint-plugin-storybook';
 import unicorn from 'eslint-plugin-unicorn';
 import lodashUnderscore from 'eslint-plugin-you-dont-need-lodash-underscore';
 import tseslint from 'typescript-eslint';
@@ -148,7 +149,7 @@ const typescriptConfig = [
 
 const tsEslintConfig = tseslint.config([
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts?(x)'],
     plugins: {
       '@typescript-eslint': tseslint.plugin,
     },
@@ -165,7 +166,7 @@ const tsEslintConfig = tseslint.config([
     },
   },
   {
-    files: ['app/routes/**/*', 'app/sessions.server/**/*'],
+    files: ['app/hooks/**/*', 'app/routes/**/*', 'app/sessions.server/**/*'],
     rules: {
       '@typescript-eslint/only-throw-error': 'off',
     },
@@ -273,11 +274,11 @@ const checkFileConfig = [
           // React component files must be named index.tsx
           'app/{components,pages}/**/!(assets|hooks|state|tests|utils)/*.tsx':
             'index+()',
-          // Non-component files inside specific components folders must be kebab-case
-          'app/{components,pages}/**/(assets|hooks|state|tests|utils)/*.{ts,tsx}':
-            'KEBAB_CASE',
           // Generally, non-component files must be named kebab-case
-          'app/{components,pages}/**/*.ts': 'KEBAB_CASE',
+          'app/{components,pages}/**/!(hooks)/*.ts': 'KEBAB_CASE',
+          // Non-component files inside specific components folders must be kebab-case
+          'app/{components,pages}/**/(assets|state|tests|utils)/*.{ts,tsx}':
+            'KEBAB_CASE',
           'test/**/*.ts?(x)': 'KEBAB_CASE',
         },
         {
@@ -540,6 +541,24 @@ const sonarConfig = [
   },
 ];
 
+const storybookConfig = [...storybook.configs['flat/recommended']];
+
+const testHarnessConfig = [
+  {
+    files: ['*.test.ts?(x)', '*.stories.ts?(x)', 'test/**/*.ts?(x)'],
+    plugins: {
+      'jest-dom': jestDom,
+      vitest,
+    },
+  },
+  {
+    files: ['*.test.ts?(x)', '*.stories.ts?(x)'],
+    rules: {
+      ...vitest.configs.recommended.rules,
+    },
+  },
+];
+
 const unicornConfig = [
   unicorn.configs.recommended,
   {
@@ -593,22 +612,6 @@ const unicornConfig = [
   },
 ];
 
-const testHarnessConfig = [
-  {
-    files: ['*.test.ts?(x)', '*.stories.ts?(x)', 'test/**/*.ts?(x)'],
-    plugins: {
-      'jest-dom': jestDom,
-      vitest,
-    },
-  },
-  {
-    files: ['*.test.ts?(x)', '*.stories.ts?(x)'],
-    rules: {
-      ...vitest.configs.recommended.rules,
-    },
-  },
-];
-
 export default [
   // Ignore .gitignore files/folder in eslint
   includeIgnoreFile(gitignorePath),
@@ -619,6 +622,7 @@ export default [
       '/.react-router/**',
       'public/**',
       '**/*.css',
+      '**/*.svg',
     ],
   },
   // Javascript Config
@@ -641,6 +645,7 @@ export default [
   ...playwrightConfig,
   ...preferArrowConfig,
   ...sonarConfig,
+  ...storybookConfig,
   ...testHarnessConfig,
   ...unicornConfig,
 ];

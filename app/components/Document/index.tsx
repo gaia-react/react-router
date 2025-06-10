@@ -3,7 +3,7 @@ import {Links, Meta, Scripts, ScrollRestoration} from 'react-router';
 import {ThemeHead} from '~/state/theme';
 import MetaHydrated from './MetaHydrated';
 
-interface DocumentProps {
+type DocumentProps = {
   children: ReactNode;
   className?: string;
   dir?: string;
@@ -12,7 +12,7 @@ interface DocumentProps {
   // eslint-disable-next-line react/boolean-prop-naming
   noIndex?: boolean;
   title?: string;
-}
+};
 
 const Document: FC<DocumentProps> = ({
   children,

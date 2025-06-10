@@ -4,7 +4,7 @@ import SpanOrLegend from '~/components/Form/Field/FieldLabel/SpanOrLegend';
 import FieldExtra from './FieldExtra';
 import FieldRequiredText from './FieldRequiredText';
 
-interface FieldLabelProps {
+type FieldLabelProps = {
   children: ReactNode;
   className?: string;
   disabled?: boolean;
@@ -13,7 +13,7 @@ interface FieldLabelProps {
   htmlFor?: string;
   isLegend?: boolean;
   required?: boolean;
-}
+};
 
 const FieldLabel: FC<FieldLabelProps> = ({
   children,

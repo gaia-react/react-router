@@ -4,9 +4,9 @@ import {faComputerMouse} from '@fortawesome/free-solid-svg-icons';
 import Button from '~/components/Button';
 import {useExample} from '~/state/example';
 
-interface ExampleConsumerProps {
+type ExampleConsumerProps = {
   className?: string;
-}
+};
 
 const ExampleConsumer: FC<ExampleConsumerProps> = ({className}) => {
   const {t} = useTranslation('common');

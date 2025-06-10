@@ -5,14 +5,14 @@ import {faClose} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twMerge} from 'tailwind-merge';
 
-interface FormActionData {
+type FormActionData = {
   error?: string;
-}
+};
 
-interface FormResultProps {
+type FormResultProps = {
   className?: string;
   hide?: boolean;
-}
+};
 
 const FormError: FC<FormResultProps> = ({className, hide}) => {
   const {error} = useActionData<FormActionData>() ?? {};

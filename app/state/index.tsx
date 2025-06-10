@@ -7,11 +7,11 @@ import {ThemeProvider} from '~/state/theme';
 import {UserProvider} from '~/state/user';
 import type {Maybe} from '~/types';
 
-interface StateProps {
+type StateProps = {
   example?: Maybe<number>;
   theme?: Theme;
   user?: Maybe<User>;
-}
+};
 
 const State: FC<StateProps & {children: ReactNode}> = ({
   children,

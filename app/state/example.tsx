@@ -25,10 +25,10 @@ export const useExample = () => {
   return context;
 };
 
-interface ExampleProviderProps {
+type ExampleProviderProps = {
   children: ReactNode;
   initialState?: Maybe<number>;
-}
+};
 
 export const ExampleProvider: FC<ExampleProviderProps> = ({
   children,

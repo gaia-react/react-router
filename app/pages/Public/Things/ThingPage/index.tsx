@@ -9,10 +9,10 @@ import InputText from '~/components/Form/InputText';
 import LinkButton from '~/components/LinkButton';
 import type {Thing} from '~/services/gaia/things/types';
 
-interface ThingPageProps {
+type ThingPageProps = {
   className?: string;
   thing: Thing;
-}
+};
 
 const ThingPage: FC<ThingPageProps> = ({className, thing}) => {
   const {t} = useTranslation('common');

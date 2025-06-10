@@ -1,12 +1,12 @@
 import type {FC, ReactNode} from 'react';
 import {twJoin} from 'tailwind-merge';
 
-interface FieldDescriptionProps {
+type FieldDescriptionProps = {
   description?: ReactNode;
   disabled?: boolean;
   id?: string;
   maxLength?: number;
-}
+};
 
 const FieldDescription: FC<FieldDescriptionProps> = ({
   description,

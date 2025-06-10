@@ -4,7 +4,7 @@ import FieldDescription from './FieldDescription';
 import FieldError from './FieldError';
 import MaxLength from './MaxLength';
 
-interface FieldStatusProps {
+type FieldStatusProps = {
   className?: string;
   description?: ReactNode;
   disabled?: boolean;
@@ -13,7 +13,7 @@ interface FieldStatusProps {
   id?: string;
   length?: number;
   maxLength?: number;
-}
+};
 
 const FieldStatus: FC<FieldStatusProps> = ({
   className,

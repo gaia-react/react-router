@@ -1,9 +1,9 @@
 import type {FC} from 'react';
 import {getApplicationVersion} from '~/utils/environment';
 
-interface AppVersionProps {
+type AppVersionProps = {
   className?: string;
-}
+};
 
 const AppVersion: FC<AppVersionProps> = ({className}) => (
   <small className={className}>{getApplicationVersion()}</small>

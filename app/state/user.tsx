@@ -12,10 +12,10 @@ export const useUser = (): User => useContext(UserContext) as User;
 
 export const useMaybeUser = (): Maybe<User> => useContext(UserContext);
 
-interface UserProviderProps {
+type UserProviderProps = {
   children: ReactNode;
   initialState?: Maybe<User>;
-}
+};
 
 export const UserProvider: FC<UserProviderProps> = ({
   children,

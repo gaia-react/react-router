@@ -2,11 +2,11 @@ import type {FC, ReactNode} from 'react';
 import {Trans} from 'react-i18next';
 import {twJoin} from 'tailwind-merge';
 
-interface FieldRequiredTextProps {
+type FieldRequiredTextProps = {
   className?: string;
   disabled?: boolean;
   error?: ReactNode;
-}
+};
 
 const FieldRequiredText: FC<FieldRequiredTextProps> = ({
   className,
