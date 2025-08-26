@@ -18,6 +18,7 @@ import prettier from 'eslint-plugin-prettier';
 import react from 'eslint-plugin-react';
 import sonarjs from 'eslint-plugin-sonarjs';
 import storybook from 'eslint-plugin-storybook';
+import tsEnum from 'eslint-plugin-typescript-enum';
 import unicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import lodashUnderscore from 'eslint-plugin-you-dont-need-lodash-underscore';
@@ -643,6 +644,19 @@ const testHarnessConfig = [
   },
 ];
 
+const tsEnumConfig = [
+  {
+    files: ['**/*.ts?(x)'],
+    name: 'typescript-enum',
+    plugins: {
+      'typescript-enum': tsEnum,
+    },
+    rules: {
+      ...tsEnum.configs.recommended.rules,
+    },
+  },
+];
+
 const unicornConfig = [
   unicorn.configs.recommended,
   {
@@ -750,6 +764,7 @@ export default [
   // TypeScript Config
   ...typescriptConfig,
   ...tsEslintConfig,
+  ...tsEnumConfig,
   // React Config
   ...reactConfig,
   // Prettier Config
