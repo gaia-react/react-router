@@ -49,7 +49,7 @@ const pizza = [
     label: (
       <span>
         Hawaiian
-        <span className="ml-2 rounded bg-purple-600 px-1.5 py-0.5 text-xs text-white">
+        <span className="ml-2 rounded-sm bg-purple-600 px-1.5 py-0.5 text-xs text-white">
           Special Offer $3.99
         </span>
       </span>

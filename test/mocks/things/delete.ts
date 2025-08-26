@@ -15,10 +15,12 @@ export default http.delete(
       );
     }
 
+    const id = params.id as string;
+
     const deletedThing = database.things.delete({
       where: {
         id: {
-          equals: String(params.id),
+          equals: String(id),
         },
       },
     });
@@ -26,7 +28,7 @@ export default http.delete(
     if (!deletedThing) {
       return new Response(
         JSON.stringify({
-          error: `Thing with id "${params.id}" not found`,
+          error: `Thing with id "${id}" not found`,
         }),
         {status: 404}
       );

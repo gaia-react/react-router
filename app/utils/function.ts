@@ -12,7 +12,6 @@ export const tryCatch = async <T, A extends readonly unknown[]>(
   let result;
 
   try {
-    // eslint-disable-next-line sonarjs/no-invalid-await
     result = await fn(...args);
   } catch (caughtError) {
     error = caughtError as Error;

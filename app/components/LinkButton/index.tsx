@@ -35,7 +35,6 @@ const LinkButton: FC<LinkButtonProps> = ({
     icon ?
       <FontAwesomeIcon
         className={twJoin(children && 'flex-none', classNameIcon)}
-        fixedWidth={true}
         icon={icon}
         size="1x"
       />

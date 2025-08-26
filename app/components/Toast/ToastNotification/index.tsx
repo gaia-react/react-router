@@ -37,7 +37,9 @@ const ICON_COLOR: Record<ToastType, string> = {
   warning: 'text-yellow-300',
 };
 
-const DEFAULT_DURATION = 60_000;
+const DEFAULT_DURATION = 10_000;
+// Error notifications last longer to allow users to read/copy the stack
+const DEFAULT_ERROR_DURATION = 30_000;
 
 type ToastNotificationProps = {
   id: number | string;
@@ -51,7 +53,8 @@ const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
 
   const {description, duration, message, stack} = parsePayload(payload);
 
-  const toastDuration = duration ?? DEFAULT_DURATION;
+  const toastDuration =
+    duration ?? (type === 'error' ? DEFAULT_ERROR_DURATION : DEFAULT_DURATION);
 
   const handleClose = useCallback(() => {
     if (timeoutRef.current) {
@@ -82,11 +85,15 @@ const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
   return (
     <div
       className={twJoin(
-        'relative w-[22rem] rounded p-3 text-sm text-white',
+        'relative w-[22rem] rounded-sm p-3 text-sm text-white',
         COLOR[type]
       )}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      onMouseEnter={() => {
+        setIsHovered(true);
+      }}
+      onMouseLeave={() => {
+        setIsHovered(false);
+      }}
     >
       <button
         className="relative float-end ms-2 size-3 text-sm leading-none opacity-50 transition-transform hover:scale-125 hover:opacity-100"
@@ -112,7 +119,7 @@ const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
       )}
       {stack && (
         <details className={twJoin((message ?? description) && 'mt-1.5')}>
-          <summary className="cursor-pointer">Details</summary>
+          <summary className="cursor-pointer">Stack trace</summary>
           <ErrorStack
             className="max-h-60 overflow-y-auto text-xs"
             stack={stack}

@@ -32,13 +32,8 @@ const DarkModeToggle: FC<DarkModeToggleProps> = ({className, onChange}) => {
       type="button"
     >
       {theme === 'dark' ?
-        <FontAwesomeIcon
-          fixedWidth={true}
-          icon={faMoon}
-          size="sm"
-          transform={{rotate: -20}}
-        />
-      : <FontAwesomeIcon fixedWidth={true} icon={faSun} size="sm" />}
+        <FontAwesomeIcon icon={faMoon} size="sm" transform={{rotate: -20}} />
+      : <FontAwesomeIcon icon={faSun} size="sm" />}
     </button>
   );
 };

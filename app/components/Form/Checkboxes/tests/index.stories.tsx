@@ -16,7 +16,7 @@ const toppings = [
     label: (
       <span>
         Cheese{' '}
-        <span className="text-secondary rounded px-2 py-0.5 text-sm">
+        <span className="text-secondary rounded-sm px-2 py-0.5 text-sm">
           Included
         </span>
       </span>

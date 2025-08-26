@@ -3,7 +3,7 @@ import {useEffect, useRef, useState} from 'react';
 
 // Use trigger if you want to force a measurement based on a variable changing
 const useComponentRect = (
-  ref: RefObject<HTMLElement>,
+  ref: RefObject<HTMLElement | null>,
   trigger?: unknown
 ): DOMRect => {
   const [rect, setRect] = useState<DOMRect>({
@@ -21,22 +21,20 @@ const useComponentRect = (
   const timeoutRef = useRef<null | number>(null);
 
   useEffect(() => {
-    if (ref) {
+    if (ref.current) {
       const onUpdate = () => {
         if (ref.current) {
           setRect(ref.current.getBoundingClientRect());
         }
       };
 
-      if (ref.current) {
-        window.addEventListener('resize', onUpdate);
-        window.addEventListener('scroll', onUpdate);
+      window.addEventListener('resize', onUpdate);
+      window.addEventListener('scroll', onUpdate);
 
-        if (timeoutRef.current) {
-          clearTimeout(timeoutRef.current);
-        }
-        timeoutRef.current = window.setTimeout(onUpdate);
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
       }
+      timeoutRef.current = window.setTimeout(onUpdate);
 
       return () => {
         if (timeoutRef.current) {

@@ -19,7 +19,7 @@ const handleClick = (type: string) => {
   if (type === 'error') {
     toast.error({
       message: JSON.stringify({
-        description: 'Expand the Details to view the stack trace',
+        description: 'Expand to view the stack trace',
         message: 'Error with stack trace',
         stack,
       }),
@@ -51,16 +51,40 @@ export const Default: StoryFn = () => (
       width: 'fit-content',
     }}
   >
-    <Button onClick={() => handleClick('error')} size="sm" variant="tertiary">
+    <Button
+      onClick={() => {
+        handleClick('error');
+      }}
+      size="sm"
+      variant="tertiary"
+    >
       Error
     </Button>
-    <Button onClick={() => handleClick('success')} size="sm" variant="tertiary">
+    <Button
+      onClick={() => {
+        handleClick('success');
+      }}
+      size="sm"
+      variant="tertiary"
+    >
       Success
     </Button>
-    <Button onClick={() => handleClick('warning')} size="sm" variant="tertiary">
+    <Button
+      onClick={() => {
+        handleClick('warning');
+      }}
+      size="sm"
+      variant="tertiary"
+    >
       Warning
     </Button>
-    <Button onClick={() => handleClick('info')} size="sm" variant="tertiary">
+    <Button
+      onClick={() => {
+        handleClick('info');
+      }}
+      size="sm"
+      variant="tertiary"
+    >
       Info
     </Button>
   </div>

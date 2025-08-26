@@ -1,6 +1,9 @@
 import type {FC} from 'react';
 import {useEffect} from 'react';
-import type {LoaderFunctionArgs} from 'react-router';
+import type {
+  LoaderFunctionArgs,
+  unstable_RouterContextProvider,
+} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
@@ -32,7 +35,7 @@ export const loader = async ({context, request}: LoaderFunctionArgs) => {
 
   const user = await getAuthenticatedUser(request);
 
-  const language = getLanguage(context);
+  const language = getLanguage(context as unstable_RouterContextProvider);
 
   setApiLanguage(language);
 
@@ -70,17 +73,7 @@ const App: FC = () => {
 
   useEffect(() => {
     if (toast) {
-      // TODO: Remove when Zod 4 is officially released and remix-toast is made compatible
-      const toastType = toast.type;
-
-      if (notify[toastType]) {
-        notify[toastType](toast);
-      } else {
-        notify.error({
-          message: `Unknown toast type ${toast.type}`,
-          type: 'error',
-        });
-      }
+      notify[toast.type](toast);
     }
   }, [toast]);
 

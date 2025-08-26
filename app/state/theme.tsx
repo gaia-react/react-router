@@ -98,6 +98,7 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
 
     localStorage.setItem(LOCAL_STORAGE_KEY, theme);
 
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     persistThemeRef.current.submit(
       {theme},
       {action: 'action/set-theme', method: 'POST'}
@@ -117,7 +118,9 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
 
     mediaQuery.addEventListener('change', handleChange);
 
-    return () => mediaQuery.removeEventListener('change', handleChange);
+    return () => {
+      mediaQuery.removeEventListener('change', handleChange);
+    };
   }, [setTheme]);
 
   return (

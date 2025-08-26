@@ -21,7 +21,7 @@ const responseToCamelCase = async (
   response: Response
 ) => {
   const [, result] = await tryCatch(async () => {
-    const original = await response.json();
+    const original = (await response.json()) as unknown;
 
     return new Response(JSON.stringify(toCamelCase(original)), response);
   });
@@ -52,15 +52,17 @@ export const appendSearchParams = (
     arrayFormat = 'comma',
     searchParams,
     useSnakeCase = true,
-  } = options || {};
+  } = options ?? {};
 
   if (!searchParams) {
     return uri;
   }
 
   const casedParams =
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    useSnakeCase ? toSnakeCase<any>(searchParams) : searchParams;
+    useSnakeCase ?
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (toSnakeCase<any>(searchParams) as Record<string, unknown>)
+    : searchParams;
 
   const safeParams = queryString.stringify(casedParams, {arrayFormat});
   const q = uri.includes('?') ? '&' : '?';

@@ -17,7 +17,9 @@ const ExampleConsumer: FC<ExampleConsumerProps> = ({className}) => {
     <Button
       className={className}
       icon={faComputerMouse}
-      onClick={() => setExample((p) => (p ?? 0) + 1)}
+      onClick={() => {
+        setExample((p) => (p ?? 0) + 1);
+      }}
       size="sm"
       variant="tertiary"
     >

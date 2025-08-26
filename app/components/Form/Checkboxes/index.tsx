@@ -37,7 +37,7 @@ const Checkboxes: FC<CheckboxesProps> = ({
   required,
   ...rest
 }) => {
-  const isDisabled = disabled || options.every((option) => option.disabled);
+  const isDisabled = disabled ?? options.every((option) => option.disabled);
   const isRequired = options.every((option) => option.required);
 
   return (

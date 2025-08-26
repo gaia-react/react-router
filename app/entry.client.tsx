@@ -15,8 +15,8 @@ import i18n from './i18n';
 
 const prepareApp = async () => {
   if (
-    window.process?.env.NODE_ENV === 'development' &&
-    window.process?.env.MSW_ENABLED === true
+    window.process.env.NODE_ENV === 'development' &&
+    window.process.env.MSW_ENABLED === true
   ) {
     const {worker} = await import('../test/worker');
 
@@ -37,7 +37,7 @@ const hydrate = async () => {
       ns: getInitialNamespaces(),
     });
 
-  prepareApp().then(() => {
+  await prepareApp().then(() => {
     startTransition(() => {
       hydrateRoot(
         document,

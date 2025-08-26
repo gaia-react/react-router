@@ -84,7 +84,7 @@ export const convertCase = (
     return Object.entries(obj).reduce(
       (acc: Record<string, unknown>, [key, value]) => {
         if (Array.isArray(value)) {
-          acc[fn(key)] = value.map((item) =>
+          acc[fn(key)] = value.map<unknown>((item) =>
             isObject(item) ? convertCase(fn, item) : item
           );
         } else if (isObject(value)) {

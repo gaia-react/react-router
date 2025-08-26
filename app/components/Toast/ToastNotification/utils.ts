@@ -11,7 +11,7 @@ export const parsePayload = (
 
   if (payload.message) {
     try {
-      const parsed = JSON.parse(payload.message);
+      const parsed = JSON.parse(payload.message) as ToastMessage;
 
       if (parsed.message) {
         return {

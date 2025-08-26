@@ -158,11 +158,6 @@
     }
   }
 
-  .input-invalid {
-    @apply border-red-500 ring-1 ring-red-600 ring-offset-0;
-    @apply border-red-400 ring-red-600;
-  }
-
   hr {
     @apply border-normal;
   }
@@ -226,6 +221,11 @@
 
 @utility bg-invalid {
   @apply bg-red-600;
+}
+
+@utility input-invalid {
+  @apply border-red-500 ring-1 ring-red-600 ring-offset-0;
+  @apply border-red-400 ring-red-600;
 }
 
 @utility hide-required {

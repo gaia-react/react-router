@@ -16,7 +16,7 @@ const InputEmail: FC<InputProps> = ({
     <InputText
       ref={ref}
       autoComplete={autoComplete}
-      label={label || t('email')}
+      label={label ?? t('email')}
       placeholder={placeholder ?? t('emailPlaceholder')}
       {...props}
     />

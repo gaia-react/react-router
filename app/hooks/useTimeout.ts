@@ -10,7 +10,9 @@ const useTimeout = (delay: number, trigger?: unknown): boolean => {
       clearTimeout(timeoutRef.current);
     }
     setComplete(false);
-    timeoutRef.current = window.setTimeout(() => setComplete(true), delay);
+    timeoutRef.current = window.setTimeout(() => {
+      setComplete(true);
+    }, delay);
 
     return () => {
       if (timeoutRef.current) {

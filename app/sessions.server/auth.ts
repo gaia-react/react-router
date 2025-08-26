@@ -6,9 +6,10 @@ import {env} from '~/env.server';
 import {setApiAuthorization} from '~/services/api';
 import type {User} from '~/services/gaia/auth/types';
 import {api} from '~/services/index.server';
+import type {Maybe} from '~/types';
 
-// Based on SergioDXA's remix-auth
-// https://remix.run/resources/remix-auth
+// Built on @sergiodxa's remix-auth
+// https://github.com/sergiodxa/remix-auth
 
 export const sessionStorage = createCookieSessionStorage({
   cookie: {
@@ -18,8 +19,7 @@ export const sessionStorage = createCookieSessionStorage({
     path: '/', // remember to add this so the cookie will work in all routes
     sameSite: 'lax', // this helps with CSRF
     secrets: [env.SESSION_SECRET],
-    // You cannot set true in Safari unless you're in production
-    secure: env.NODE_ENV === 'production',
+    secure: env.NODE_ENV === 'production', // for Safari compatability
   },
 });
 
@@ -39,12 +39,11 @@ authenticator.use(
 
     const user = await api.gaia.auth.login(formData);
 
-    if (user) {
-      setApiAuthorization(user.token);
-    }
+    setApiAuthorization(user.token);
 
     return user;
-  })
+  }),
+  'form'
 );
 
 export const getAuthenticatedUser = async (request: Request) => {
@@ -52,7 +51,7 @@ export const getAuthenticatedUser = async (request: Request) => {
     request.headers.get('Cookie')
   );
 
-  return session.get('user');
+  return session.get('user') as Maybe<User>;
 };
 
 // utility for routes which require a session
@@ -60,7 +59,7 @@ export const requireAuthenticatedUser = async (request: Request) => {
   const session = await sessionStorage.getSession(
     request.headers.get('cookie')
   );
-  const user = session.get('user');
+  const user = session.get('user') as Maybe<User>;
 
   if (!user) {
     throw redirect('/login');
@@ -74,7 +73,7 @@ export const requireNotAuthenticated = async (request: Request) => {
   const session = await sessionStorage.getSession(
     request.headers.get('cookie')
   );
-  const user = session.get('user');
+  const user = session.get('user') as Maybe<User>;
 
   if (user) {
     throw redirect('/profile');

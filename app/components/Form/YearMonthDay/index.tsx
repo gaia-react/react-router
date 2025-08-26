@@ -93,7 +93,7 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
     return Array(differenceInDays(end, start) + 1)
       .fill(start)
       .map((s, index) => {
-        const d = addDays(s, index);
+        const d: Date = addDays(s, index);
 
         return {
           label:

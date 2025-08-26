@@ -1,5 +1,5 @@
 import {HTTPError} from 'ky';
-import {ZodError} from 'zod/v4';
+import {ZodError} from 'zod';
 import {tryCatch} from '~/utils/function';
 
 type ApiError = {status: number; statusText: string};

@@ -1,4 +1,4 @@
-import type {z} from 'zod/v4';
+import type {z} from 'zod';
 import type {thingSchema, thingsSchema} from './parsers';
 
 export type Thing = z.infer<typeof thingSchema>;

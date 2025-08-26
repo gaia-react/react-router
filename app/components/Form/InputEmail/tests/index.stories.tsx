@@ -1,7 +1,7 @@
 import {useTranslation} from 'react-i18next';
 import {useForm} from '@rvf/react-router';
 import type {Meta, StoryFn} from '@storybook/react-vite';
-import {z} from 'zod/v4';
+import {z} from 'zod';
 import stubs from 'test/stubs';
 import Button from '~/components/Button';
 import FormActions from '~/components/Form/FormActions';
