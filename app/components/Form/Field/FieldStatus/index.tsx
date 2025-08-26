@@ -43,8 +43,8 @@ const FieldStatus: FC<FieldStatusProps> = ({
       {!hideMaxLength && maxLength && length !== undefined ?
         <>
           <div className="flex items-start justify-between">
-            {descriptionElement || errorElement}
-            {!(descriptionElement || errorElement) && (
+            {descriptionElement ?? errorElement}
+            {!(descriptionElement ?? errorElement) && (
               <span className="flex-1 text-sm">&nbsp;</span>
             )}
             <MaxLength length={length} maxLength={maxLength} />

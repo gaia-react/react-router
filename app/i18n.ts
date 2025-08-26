@@ -3,6 +3,7 @@ import resources, {LANGUAGES} from '~/languages';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const formatFn: FormatFunction = (value: any, format?: string) =>
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   format === 'number' ? Number(value).toLocaleString() : value;
 
 const i18n = {

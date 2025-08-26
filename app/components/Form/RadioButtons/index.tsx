@@ -35,7 +35,7 @@ const RadioButtons: FC<RadioButtonsProps> = ({
   <Field
     className={className}
     description={description}
-    disabled={disabled || readOnly}
+    disabled={disabled ?? readOnly}
     error={error}
     label={label}
     required={required}

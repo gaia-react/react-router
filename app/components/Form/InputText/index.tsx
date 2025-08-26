@@ -49,7 +49,7 @@ const InputText: FC<InputProps> = ({
       classNameDescription={classNameDescription}
       classNameLabel={classNameLabel}
       description={description}
-      disabled={disabled || readOnly}
+      disabled={disabled ?? readOnly}
       error={error}
       extra={extra}
       hideMaxLength={hideMaxLength}
@@ -61,7 +61,7 @@ const InputText: FC<InputProps> = ({
       required={required}
       type="input"
     >
-      <div className={twJoin((icon || children) && 'relative')}>
+      <div className={twJoin((icon ?? children) && 'relative')}>
         <input
           ref={ref}
           aria-label={
@@ -94,7 +94,6 @@ const InputText: FC<InputProps> = ({
               iconPosition === 'left' ? 'left-3' : 'right-3',
               classNameIcon
             )}
-            fixedWidth={true}
             icon={icon}
           />
         )}

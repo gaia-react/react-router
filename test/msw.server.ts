@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle,vars-on-top,no-var,no-console */
+/* eslint-disable @typescript-eslint/naming-convention,no-underscore-dangle,vars-on-top,no-console */
 // noinspection ES6ConvertVarToLetConst
 
 import type {SetupServer} from 'msw/node';
@@ -24,8 +24,12 @@ const setup = () => {
 const start = (server: SetupServer) => {
   server.listen({onUnhandledRequest: 'bypass'});
 
-  process.once('SIGTERM', () => server.close());
-  process.once('SIGINT', () => server.close());
+  process.once('SIGTERM', () => {
+    server.close();
+  });
+  process.once('SIGINT', () => {
+    server.close();
+  });
 
   console.info('\u001B[31m', '\n[MSW] Mocking enabled\n', '\u001B[0m');
 };

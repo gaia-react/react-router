@@ -1,5 +1,5 @@
 import {getDaysInMonth, lastDayOfMonth, set} from 'date-fns';
-import {z} from 'zod/v4';
+import {z} from 'zod';
 import {range} from '~/utils/array';
 import {formatISO8601Date} from '~/utils/date';
 
@@ -12,7 +12,7 @@ const TODAY = set(new Date(), {
 
 const THIS_YEAR = TODAY.getFullYear();
 
-export const YEARS = range(THIS_YEAR - 120, THIS_YEAR - 12).reverse();
+export const YEARS = range(THIS_YEAR - 120, THIS_YEAR - 12).toReversed();
 
 export const MONTHS = range(1, 12);
 

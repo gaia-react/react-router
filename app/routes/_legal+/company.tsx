@@ -1,20 +1,24 @@
-import type {LoaderFunctionArgs, MetaFunction} from 'react-router';
+import type {
+  LoaderFunctionArgs,
+  MetaFunction,
+  unstable_RouterContextProvider,
+} from 'react-router';
 import {useLoaderData} from 'react-router';
 import Layout from '~/components/Layout';
 import {getInstance} from '~/middleware/i18next';
 
-export const loader = async ({context}: LoaderFunctionArgs) => {
-  const i18next = getInstance(context);
+export const loader = ({context}: LoaderFunctionArgs) => {
+  const i18next = getInstance(context as unstable_RouterContextProvider);
   const title = i18next.t('legal.company.title', {ns: 'pages'});
   const description = i18next.t('legal.company.description', {ns: 'pages'});
 
   return {description, title};
 };
 
-export const meta: MetaFunction<typeof loader> = ({data}) => [
-  {title: data?.title},
+export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
+  {title: loaderData?.title},
   {
-    content: data?.description,
+    content: loaderData?.description,
     name: 'description',
   },
 ];

@@ -3,6 +3,7 @@ import CheckboxRadioGroup from '~/components/Form/CheckboxRadioGroup';
 import InputRadio from '~/components/Form/InputRadio';
 import type {RadioOption} from '~/components/Form/types';
 import type {Size} from '~/types';
+import {md5} from '~/utils/object';
 
 export type BaseRadioButtonsProps = Omit<
   ComponentProps<'input'>,
@@ -27,7 +28,7 @@ const BaseRadioButtons: FC<BaseRadioButtonsProps> = ({
   <CheckboxRadioGroup className={className} isHorizontal={isHorizontal}>
     {options.map((option) => (
       <InputRadio
-        key={`${option.label}-${option.value}`}
+        key={md5(option)}
         className={classNameLabel}
         option={option}
         {...props}

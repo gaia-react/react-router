@@ -61,7 +61,7 @@ const Foundation: FC = () => (
       rel="noreferrer"
       target="_blank"
     >
-      <FontAwesomeIcon fixedWidth={true} icon={faFontAwesome} />
+      <FontAwesomeIcon icon={faFontAwesome} />
     </a>
   </>
 );

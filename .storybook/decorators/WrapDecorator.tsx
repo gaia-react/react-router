@@ -6,7 +6,7 @@ const WrapDecorator: DecoratorFunction<ReactRenderer> = (
   {parameters}
 ) =>
   parameters.wrap ?
-    <div className={parameters.wrap}>{storyFn()}</div>
+    <div className={parameters.wrap as string}>{storyFn()}</div>
   : storyFn();
 
 export default WrapDecorator;

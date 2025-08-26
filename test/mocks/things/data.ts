@@ -1,5 +1,5 @@
 import {nullable, primaryKey} from '@mswjs/data';
-import {z} from 'zod/v4';
+import {z} from 'zod';
 import {date} from 'test/utils';
 
 export const serverThingSchema = z.object({

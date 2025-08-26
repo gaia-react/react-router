@@ -47,7 +47,7 @@ const Select: FC<SelectProps> = ({
   ...props
 }) => {
   const [currentValue, setCurrentValue] = useState(
-    () => value || defaultValue || ''
+    () => value ?? defaultValue ?? ''
   );
 
   const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
@@ -57,7 +57,7 @@ const Select: FC<SelectProps> = ({
 
   return (
     <Field
-      aria-label={props['aria-label'] ?? (label || name)}
+      aria-label={props['aria-label'] ?? label ?? name}
       className={className}
       classNameLabel={classNameLabel}
       description={description}

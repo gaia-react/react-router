@@ -90,7 +90,6 @@ const Button: FC<ButtonProps> = ({
     icon ?
       <FontAwesomeIcon
         className={twJoin(children && 'flex-none', classNameIcon)}
-        fixedWidth={true}
         icon={icon}
         size="1x"
       />

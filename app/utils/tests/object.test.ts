@@ -82,12 +82,12 @@ describe('object utils', () => {
   });
 
   test('mapValues', () => {
-    expect(mapValues({bar: 'baz', foo: 'bar'}, (value) => `${value}1`)).toEqual(
-      {
-        bar: 'baz1',
-        foo: 'bar1',
-      }
-    );
+    expect(
+      mapValues({bar: 'baz', foo: 'bar'}, (value) => `${String(value)}1`)
+    ).toEqual({
+      bar: 'baz1',
+      foo: 'bar1',
+    });
   });
 
   test('convertCase', () => {

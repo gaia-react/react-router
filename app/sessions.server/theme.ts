@@ -22,10 +22,12 @@ export const getThemeSession = async (request: Request) => {
   return {
     commit: () => themeStorage.commitSession(session),
     getTheme: () => {
-      const themeValue = session.get('theme');
+      const themeValue = session.get('theme') as unknown;
 
       return isSupportedTheme(themeValue) ? themeValue : null;
     },
-    setTheme: (theme: Theme) => session.set('theme', theme),
+    setTheme: (theme: Theme) => {
+      session.set('theme', theme);
+    },
   };
 };

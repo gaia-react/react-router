@@ -2,6 +2,7 @@ import type {
   ActionFunction,
   LoaderFunctionArgs,
   MetaFunction,
+  unstable_RouterContextProvider,
 } from 'react-router';
 import {data} from 'react-router';
 import {redirectWithSuccess} from 'remix-toast';
@@ -18,7 +19,7 @@ export const action: ActionFunction = async ({context, request}) => {
       api.gaia.things.createThing(formData)
     );
 
-    const i18next = getInstance(context);
+    const i18next = getInstance(context as unstable_RouterContextProvider);
 
     if (error) {
       return data(
@@ -40,17 +41,17 @@ export const action: ActionFunction = async ({context, request}) => {
 };
 
 export const loader = async ({context}: LoaderFunctionArgs) => {
-  const i18next = getInstance(context);
+  const i18next = getInstance(context as unstable_RouterContextProvider);
   const title = i18next.t('things.meta.title', {ns: 'pages'});
   const description = i18next.t('things.meta.description', {ns: 'pages'});
 
   return {description, title};
 };
 
-export const meta: MetaFunction<typeof loader> = (loaderData) => [
-  {title: loaderData?.data?.title},
+export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
+  {title: loaderData?.title},
   {
-    content: loaderData?.data?.description,
+    content: loaderData?.description,
     name: 'description',
   },
 ];

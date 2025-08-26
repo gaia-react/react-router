@@ -23,8 +23,8 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
 
   const redirectUrl = `${location.pathname}${location.search}${location.hash}`;
 
-  const handleChange = (event: FormEvent<HTMLFormElement>) => {
-    fetcher.submit(event.currentTarget, {
+  const handleChange = async (event: FormEvent<HTMLFormElement>) => {
+    await fetcher.submit(event.currentTarget, {
       action: '/action/set-language',
       method: 'POST',
     });
@@ -41,7 +41,7 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
     >
       <input name="redirectUrl" type="hidden" value={redirectUrl} />
       <select
-        className="cursor-pointer border-none !bg-transparent bg-none p-0 text-sm !ring-0"
+        className="cursor-pointer border-none bg-transparent! bg-none p-0 text-sm ring-0!"
         defaultValue={language}
         name="language"
       >

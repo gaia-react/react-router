@@ -14,10 +14,12 @@ const one = http.get(
       );
     }
 
+    const id = params.id as string;
+
     const data = database.things.findFirst({
       where: {
         id: {
-          equals: String(params.id),
+          equals: String(id),
         },
       },
     });
@@ -25,7 +27,7 @@ const one = http.get(
     if (!data) {
       return new Response(
         JSON.stringify({
-          error: `Thing with id "${params.id}" not found`,
+          error: `Thing with id "${id}" not found`,
         }),
         {status: 404}
       );

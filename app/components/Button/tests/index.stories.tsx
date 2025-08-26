@@ -3,8 +3,8 @@ import {faStar} from '@fortawesome/free-solid-svg-icons';
 import type {Meta, StoryFn} from '@storybook/react-vite';
 import {twJoin} from 'tailwind-merge';
 import type {Size} from '~/types';
-import type {Variant} from '../index';
-import Button from '../index';
+import type {Variant} from '..';
+import Button from '..';
 
 const meta: Meta = {
   component: Button,

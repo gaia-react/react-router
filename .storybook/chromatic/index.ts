@@ -9,7 +9,8 @@ import ChromaticDecorator from './decorator';
 export const isChromaticSnapshot =
   isChromatic() ||
   (process.env.NODE_ENV === 'production' ?
-    [...(window?.location.ancestorOrigins || {length: 0})].some((origin) =>
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    [...(window?.location.ancestorOrigins ?? {length: 0})].some((origin) =>
       origin.includes('www.chromatic.com')
     )
     // @ts-ignore

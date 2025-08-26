@@ -15,7 +15,7 @@ const InputPassword: FC<InputProps> = ({
     <InputText
       ref={ref}
       autoComplete={autoComplete}
-      label={label || t('password')}
+      label={label ?? t('password')}
       {...props}
       placeholder="••••••••"
       type="password"

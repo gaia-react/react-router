@@ -93,7 +93,7 @@ const decorator =
       ...routes.map((route) => ({
         Component: () => <Story />,
         ...rest,
-        loader: async () => {
+        loader: () => {
           channel.emit('selectStory', {storyId: route.storyId});
 
           return null;

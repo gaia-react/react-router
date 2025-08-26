@@ -14,6 +14,7 @@ config();
 const TEST_ALL_BROWSERS = false;
 
 const otherBrowsers =
+  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   !process.env.CI && TEST_ALL_BROWSERS ?
     [
       {

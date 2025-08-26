@@ -27,7 +27,9 @@ const FormError: FC<FormResultProps> = ({className, hide}) => {
     return null;
   }
 
-  const handleClick = () => setResult('');
+  const handleClick = () => {
+    setResult('');
+  };
 
   return (
     <button

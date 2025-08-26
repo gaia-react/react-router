@@ -8,7 +8,7 @@ describe('Button', () => {
     const handleClick = vi.fn();
     render(<Button onClick={handleClick}>Test</Button>);
     const button = screen.getByRole('button');
-    expect(button?.textContent).toBe('Test');
+    expect(button.textContent).toBe('Test');
     await userEvent.click(button);
     expect(handleClick).toHaveBeenCalled();
   });

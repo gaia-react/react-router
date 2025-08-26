@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import {isRouteErrorResponse} from 'react-router';
 import type {Route} from '.react-router/types/app/+types/root';
 import {twJoin} from 'tailwind-merge';
@@ -9,7 +10,6 @@ import {canUseDOM} from '~/utils/dom';
 const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
   if (!canUseDOM) {
     // Server-Side log of error
-    // eslint-disable-next-line no-console
     console.log(error);
   }
   const theme = getPreferredTheme();
@@ -40,7 +40,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
                 error.status !== 404 && (
                   <ErrorStack
                     className="max-h-[32rem] overflow-y-auto"
-                    stack={error.data}
+                    stack={error.data as string}
                   />
                 )}
             </div>

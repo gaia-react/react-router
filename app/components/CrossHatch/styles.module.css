@@ -5,17 +5,17 @@
   background-image:
     repeating-linear-gradient(
       45deg,
-      rgba(var(--line-color), 0),
-      rgba(var(--line-color), 0) 5px,
-      rgba(var(--line-color), 1) 5px,
-      rgba(var(--line-color), 1) 6px
+      rgb(var(--line-color), 0),
+      rgb(var(--line-color), 0) 5px,
+      rgb(var(--line-color), 1) 5px,
+      rgb(var(--line-color), 1) 6px
     ),
     repeating-linear-gradient(
       -45deg,
-      rgba(var(--line-color), 0),
-      rgba(var(--line-color), 0) 5px,
-      rgba(var(--line-color), 1) 5px,
-      rgba(var(--line-color), 1) 6px
+      rgb(var(--line-color), 0),
+      rgb(var(--line-color), 0) 5px,
+      rgb(var(--line-color), 1) 5px,
+      rgb(var(--line-color), 1) 6px
     );
   background-size:
     8px 8px,
