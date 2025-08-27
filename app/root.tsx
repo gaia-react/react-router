@@ -7,7 +7,6 @@ import type {
 import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
-import * as Tooltip from '@radix-ui/react-tooltip';
 import {useChangeLanguage} from 'remix-i18next/react';
 import {getToast, setToastCookieOptions} from 'remix-toast';
 import {twJoin} from 'tailwind-merge';
@@ -92,9 +91,7 @@ const App: FC = () => {
           })}`,
         }}
       />
-      <Tooltip.Provider>
-        <Outlet />
-      </Tooltip.Provider>
+      <Outlet />
       <Toast />
     </Document>
   );
