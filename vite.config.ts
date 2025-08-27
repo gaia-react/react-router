@@ -22,7 +22,7 @@ export default defineConfig({
     open: true,
   },
   ssr: {
-    noExternal: ['lodash'],
+    noExternal: ['lodash', '@fortawesome/react-fontawesome'],
     optimizeDeps: {
       include: ['lodash'],
     },

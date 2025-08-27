@@ -7,5 +7,11 @@ export default defineConfig(({mode}) => {
 
   return {
     plugins: [tailwindcss(), tsconfigPaths()],
+    ssr: {
+      noExternal: ['lodash', '@fortawesome/react-fontawesome'],
+      optimizeDeps: {
+        include: ['lodash'],
+      },
+    },
   };
 });

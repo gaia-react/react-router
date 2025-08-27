@@ -17,6 +17,12 @@ export default defineConfig(({mode}) => {
     resolve: {
       conditions: ['module-sync'],
     },
+    ssr: {
+      noExternal: ['lodash', '@fortawesome/react-fontawesome'],
+      optimizeDeps: {
+        include: ['lodash'],
+      },
+    },
     test: {
       coverage: {
         exclude: [
