@@ -29,7 +29,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
                 <span className="text-2xl leading-none">{error.status}</span>
                 {error.statusText && (
                   <>
-                    <span className="mt-[0.1875rem] h-8 w-px bg-gray-900" />
+                    <span className="mt-0.75 h-8 w-px bg-gray-900" />
                     <span className="mt-0.5 text-base leading-none font-light">
                       {error.statusText}
                     </span>
@@ -39,7 +39,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
               {process.env.NODE_ENV !== 'production' &&
                 error.status !== 404 && (
                   <ErrorStack
-                    className="max-h-[32rem] overflow-y-auto"
+                    className="max-h-128 overflow-y-auto"
                     stack={error.data as string}
                   />
                 )}

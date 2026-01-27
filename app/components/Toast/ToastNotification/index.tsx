@@ -85,7 +85,7 @@ const ToastNotification: FC<ToastNotificationProps> = ({id, payload, type}) => {
   return (
     <div
       className={twJoin(
-        'relative w-[22rem] rounded-sm p-3 text-sm text-white',
+        'relative w-88 rounded-sm p-3 text-sm text-white',
         COLOR[type]
       )}
       onMouseEnter={() => {

@@ -2,7 +2,7 @@ import type {
   ActionFunction,
   LoaderFunctionArgs,
   MetaFunction,
-  unstable_RouterContextProvider,
+  RouterContextProvider,
 } from 'react-router';
 import {redirect} from 'react-router';
 import {getInstance} from '~/middleware/i18next';
@@ -18,7 +18,7 @@ export const action: ActionFunction = async ({context, request}) => {
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!user) {
-    const i18next = getInstance(context as unstable_RouterContextProvider);
+    const i18next = getInstance(context as RouterContextProvider);
 
     return {error: i18next.t('invalidCredentials', {ns: 'errors'})};
   }
@@ -37,7 +37,7 @@ export const action: ActionFunction = async ({context, request}) => {
 export const loader = async ({context, request}: LoaderFunctionArgs) => {
   await requireNotAuthenticated(request);
 
-  const i18next = getInstance(context as unstable_RouterContextProvider);
+  const i18next = getInstance(context as RouterContextProvider);
   const title = i18next.t('login', {ns: 'auth'});
 
   return {title};

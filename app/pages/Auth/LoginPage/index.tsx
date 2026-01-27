@@ -17,7 +17,7 @@ const LoginPage: FC = () => {
   const form = useForm({
     // eslint-disable-next-line sonarjs/no-hardcoded-passwords
     defaultValues: {email: 'user@domain.com', password: 'passw0rd'},
-    handleSubmit: (formData) => submit(formData, {method: 'post'}),
+    handleSubmit: async (formData) => submit(formData, {method: 'post'}),
     schema: z.object({
       email: z.email(),
       password: z.string().min(6),

@@ -9,7 +9,7 @@ const ThingsGrid: FC = () => {
   const things = useThings();
 
   return (
-    <div className="mx-auto grid max-w-screen-lg grid-cols-1 gap-8 px-4 md:grid-cols-2">
+    <div className="mx-auto grid max-w-5xl grid-cols-1 gap-8 px-4 md:grid-cols-2">
       {things.length === 0 ?
         <div className="text-lg md:col-span-2">{t('none')}</div>
       : things.map((thing) => <ThingCard key={thing.id} thing={thing} />)}

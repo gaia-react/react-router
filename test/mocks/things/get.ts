@@ -6,10 +6,10 @@ const one = http.get(
   `${process.env.API_URL}${GAIA_URLS.thingsId}`,
   ({params}) => {
     if (!params.id) {
-      return new Response(
-        JSON.stringify({
+      return Response.json(
+        {
           error: 'Thing ID is required',
-        }),
+        },
         {status: 400}
       );
     }
@@ -25,26 +25,22 @@ const one = http.get(
     });
 
     if (!data) {
-      return new Response(
-        JSON.stringify({
+      return Response.json(
+        {
           error: `Thing with id "${id}" not found`,
-        }),
+        },
         {status: 404}
       );
     }
 
-    return new Response(JSON.stringify({data}));
+    return Response.json({data});
   }
 );
 
-const all = http.get(
-  `${process.env.API_URL}${GAIA_URLS.things}`,
-  () =>
-    new Response(
-      JSON.stringify({
-        data: database.things.getAll(),
-      })
-    )
+const all = http.get(`${process.env.API_URL}${GAIA_URLS.things}`, () =>
+  Response.json({
+    data: database.things.getAll(),
+  })
 );
 
 export default [one, all];

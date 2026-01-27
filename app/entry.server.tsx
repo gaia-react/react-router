@@ -6,7 +6,7 @@
  */
 
 import type {RenderToPipeableStreamOptions} from 'react-dom/server';
-import type {EntryContext, unstable_RouterContextProvider} from 'react-router';
+import type {EntryContext, RouterContextProvider} from 'react-router';
 import {renderToPipeableStream} from 'react-dom/server';
 import {I18nextProvider} from 'react-i18next';
 import {ServerRouter} from 'react-router';
@@ -30,7 +30,7 @@ export default async function handleRequest(
   responseStatusCode: number,
   responseHeaders: Headers,
   entryContext: EntryContext,
-  routerContext: unstable_RouterContextProvider
+  routerContext: RouterContextProvider
 ) {
   let shellRendered = false;
 

@@ -1,13 +1,9 @@
 import type {FC} from 'react';
 import {useEffect} from 'react';
-import type {
-  LoaderFunctionArgs,
-  unstable_RouterContextProvider,
-} from 'react-router';
+import type {LoaderFunctionArgs, RouterContextProvider} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
-import {useChangeLanguage} from 'remix-i18next/react';
 import {getToast, setToastCookieOptions} from 'remix-toast';
 import {twJoin} from 'tailwind-merge';
 import Document from '~/components/Document';
@@ -26,15 +22,14 @@ import './styles/tailwind.css';
 
 config.autoAddCss = false;
 
-// eslint-disable-next-line @typescript-eslint/naming-convention
-export const unstable_middleware = [i18nextMiddleware];
+export const middleware = [i18nextMiddleware];
 
 export const loader = async ({context, request}: LoaderFunctionArgs) => {
   const isProduction = isProductionHost(request);
 
   const user = await getAuthenticatedUser(request);
 
-  const language = getLanguage(context as unstable_RouterContextProvider);
+  const language = getLanguage(context as RouterContextProvider);
 
   setApiLanguage(language);
 
@@ -68,7 +63,12 @@ const App: FC = () => {
 
   const {ENV, language, noIndex, toast} = loaderData;
 
-  useChangeLanguage(language);
+  useEffect(() => {
+    i18n
+      .changeLanguage(language)
+      .then(() => {})
+      .catch(() => {});
+  }, [i18n, language]);
 
   useEffect(() => {
     if (toast) {

@@ -2,7 +2,7 @@ import type {
   ActionFunction,
   LoaderFunctionArgs,
   MetaFunction,
-  unstable_RouterContextProvider,
+  RouterContextProvider,
 } from 'react-router';
 import {useLoaderData} from 'react-router';
 import {dataWithError, dataWithSuccess} from 'remix-toast';
@@ -19,7 +19,7 @@ export const action: ActionFunction = async ({context, request}) => {
     const id = result.get('id') as string;
 
     if (id) {
-      const i18next = getInstance(context as unstable_RouterContextProvider);
+      const i18next = getInstance(context as RouterContextProvider);
 
       const [error] = await attempt(async () =>
         api.gaia.things.deleteThing(id)
@@ -40,7 +40,7 @@ export const action: ActionFunction = async ({context, request}) => {
 };
 
 export const loader = async ({context}: LoaderFunctionArgs) => {
-  const i18next = getInstance(context as unstable_RouterContextProvider);
+  const i18next = getInstance(context as RouterContextProvider);
   const title = i18next.t('things.meta.title', {ns: 'pages'});
   const description = i18next.t('things.meta.description', {ns: 'pages'});
 

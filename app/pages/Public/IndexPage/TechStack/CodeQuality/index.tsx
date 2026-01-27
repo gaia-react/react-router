@@ -7,36 +7,36 @@ import TSLogo from '~/components/Logos/TSLogo';
 const CodeQuality: FC = () => (
   <>
     <a
-      href="https://www.typescriptlang.org/"
       aria-label="TypeScript"
       className="plain-link"
+      href="https://www.typescriptlang.org/"
       rel="noreferrer"
       target="_blank"
     >
       <TSLogo height={26} />
     </a>
     <a
-      href="https://prettier.io/"
       aria-label="Prettier"
       className="plain-link"
+      href="https://prettier.io/"
       rel="noreferrer"
       target="_blank"
     >
       <PrettierLogo height={26} />
     </a>
     <a
-      href="https://eslint.org/"
       aria-label="ESLint"
       className="plain-link"
+      href="https://eslint.org/"
       rel="noreferrer"
       target="_blank"
     >
       <ESLintLogo height={26} />
     </a>
     <a
-      href="https://stylelint.io/"
       aria-label="Stylelint"
       className="plain-link text-white"
+      href="https://stylelint.io/"
       rel="noreferrer"
       target="_blank"
     >

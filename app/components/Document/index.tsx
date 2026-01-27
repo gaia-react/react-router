@@ -32,8 +32,8 @@ const Document: FC<DocumentProps> = ({
       <Links />
       <link href="https://fonts.googleapis.com" rel="preconnect" />
       <link
-        href="https://fonts.gstatic.com"
         crossOrigin="anonymous"
+        href="https://fonts.gstatic.com"
         rel="preconnect"
       />
       <link

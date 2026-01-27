@@ -15,7 +15,7 @@ export default http.put(
     });
 
     if (error) {
-      return new Response(JSON.stringify({error}), {status: 400});
+      return Response.json({error}, {status: 400});
     }
 
     const duplicateName = database.things.findFirst({
@@ -48,6 +48,6 @@ export default http.put(
 
     await delay(DELAY);
 
-    return new Response(JSON.stringify({data}), {status: 200});
+    return Response.json({data}, {status: 200});
   }
 );

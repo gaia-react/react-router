@@ -14,7 +14,7 @@ const AllThingsPage: FC<AllThingsPageProps> = ({className}) => {
   return (
     <section className={twJoin('container space-y-8 py-12', className)}>
       <ThingsGrid />
-      <div className="mx-auto flex max-w-screen-lg justify-end px-4">
+      <div className="mx-auto flex max-w-5xl justify-end px-4">
         <LinkButton size="sm" to="/things/create" variant="tertiary">
           {t('create')}
         </LinkButton>

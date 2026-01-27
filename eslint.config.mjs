@@ -1,13 +1,12 @@
 import {includeIgnoreFile} from '@eslint/compat';
 import js from '@eslint/js';
 import vitest from '@vitest/eslint-plugin';
-import {configs, plugins} from 'eslint-config-airbnb-extended';
+import {configs, plugins, rules} from 'eslint-config-airbnb-extended';
 import {rules as prettierConfigRules} from 'eslint-config-prettier';
 import betterTailwind from 'eslint-plugin-better-tailwindcss';
 import canonical from 'eslint-plugin-canonical';
 import checkFile from 'eslint-plugin-check-file';
 import eslintComments from 'eslint-plugin-eslint-comments';
-import importX from 'eslint-plugin-import-x';
 import jestDom from 'eslint-plugin-jest-dom';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import noSwitchStatements from 'eslint-plugin-no-switch-statements';
@@ -15,30 +14,34 @@ import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import preferArrow from 'eslint-plugin-prefer-arrow';
 import prettier from 'eslint-plugin-prettier';
-import react from 'eslint-plugin-react';
 import sonarjs from 'eslint-plugin-sonarjs';
 import storybook from 'eslint-plugin-storybook';
 import tsEnum from 'eslint-plugin-typescript-enum';
 import unicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import lodashUnderscore from 'eslint-plugin-you-dont-need-lodash-underscore';
-import tseslint from 'typescript-eslint';
+import {defineConfig} from 'eslint/config';
 import path from 'node:path';
 
-export const projectRoot = path.resolve('.');
+const gitignorePath = path.resolve('.', '.gitignore');
 
-export const gitignorePath = path.resolve(projectRoot, '.gitignore');
-
-const jsConfig = [
-  // ESLint Recommended Rules
+const jsConfig = defineConfig([
+  // ESLint recommended config
   {
     name: 'js/config',
     ...js.configs.recommended,
   },
-  // Stylistic Plugin
+  // Stylistic plugin
   plugins.stylistic,
-  // Airbnb Base Recommended Config
+  // Import X plugin
+  plugins.importX,
+  // Airbnb base recommended config
   ...configs.base.recommended,
+  // Strict import rules
+  rules.base.importsStrict,
+]);
+
+const jsCustomConfig = [
   {
     name: 'you-dont-need-lodash-underscore',
     plugins: {
@@ -73,20 +76,20 @@ const jsConfig = [
   },
 ];
 
-const reactConfig = [
-  // React Plugin
+const reactConfig = defineConfig([
+  // React plugin
   plugins.react,
-  // React Hooks Plugin
+  // React hooks plugin
   plugins.reactHooks,
-  // React JSX A11y Plugin
+  // React JSX A11y plugin
   plugins.reactA11y,
-  // Airbnb React Recommended Config
+  // Airbnb React recommended config
   ...configs.react.recommended,
+]);
+
+const reactCustomConfig = [
   {
-    name: 'react',
-    plugins: {
-      react,
-    },
+    name: 'react-custom',
     rules: {
       'jsx-a11y/control-has-associated-label': 'off',
       'jsx-a11y/no-autofocus': 'off',
@@ -138,12 +141,15 @@ const reactConfig = [
   },
 ];
 
-const typescriptConfig = [
-  // TypeScript ESLint Plugin
+const typescriptConfig = defineConfig([
+  // TypeScript ESLint plugin
   plugins.typescriptEslint,
-  // Airbnb Base TypeScript Config
+  // Airbnb base TypeScript config
   ...configs.base.typescript,
-  // Airbnb React TypeScript Config
+  // Strict TypeScript rules
+  rules.typescript.typescriptEslintStrict,
+  rules.typescript.stylistic,
+  // Airbnb React TypeScript config
   ...configs.react.typescript,
   {
     files: ['./*.ts'],
@@ -153,22 +159,18 @@ const typescriptConfig = [
       'no-void': 'off',
     },
   },
-];
+]);
 
-const tsEslintConfig = tseslint.config([
-  tseslint.configs.strict,
-  tseslint.configs.stylistic,
+const tsEslintConfig = [
   {
     files: ['**/*.ts?(x)'],
     name: 'typescript/config',
-    plugins: {
-      '@typescript-eslint': tseslint.plugin,
-    },
     rules: {
       '@typescript-eslint/array-type': ['error', {default: 'array'}],
       '@typescript-eslint/ban-ts-comment': 'off',
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
       '@typescript-eslint/consistent-type-imports': 'error',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
       '@typescript-eslint/method-signature-style': 'error',
       '@typescript-eslint/no-confusing-void-expression': [
         'error',
@@ -232,15 +234,28 @@ const tsEslintConfig = tseslint.config([
       '@typescript-eslint/no-unused-vars': 'off',
     },
   },
-]);
+];
 
-const prettierConfig = [
-  // Prettier Plugin
+const tsEnumConfig = [
+  {
+    files: ['**/*.ts?(x)'],
+    name: 'typescript-enum',
+    plugins: {
+      'typescript-enum': tsEnum,
+    },
+    rules: {
+      ...tsEnum.configs.recommended.rules,
+    },
+  },
+];
+
+const prettierConfig = defineConfig([
+  // Prettier plugin
   {
     name: 'prettier/plugin/config',
     plugins: {prettier},
   },
-  // Prettier Config
+  // Prettier config
   {
     name: 'prettier/config',
     rules: {
@@ -265,7 +280,7 @@ const prettierConfig = [
       'prettier/prettier': ['error', {endOfLine: 'auto'}],
     },
   },
-];
+]);
 
 const betterTailwindConfig = [
   {
@@ -274,12 +289,13 @@ const betterTailwindConfig = [
       'better-tailwindcss': betterTailwind,
     },
     rules: {
+      'better-tailwindcss/enforce-canonical-classes': 'error',
       'better-tailwindcss/enforce-consistent-important-position': 'error',
       'better-tailwindcss/enforce-consistent-variable-syntax': 'error',
       'better-tailwindcss/enforce-shorthand-classes': 'error',
       'better-tailwindcss/no-conflicting-classes': 'error',
       'better-tailwindcss/no-deprecated-classes': 'error',
-      'better-tailwindcss/no-unregistered-classes': [
+      'better-tailwindcss/no-unknown-classes': [
         'error',
         {ignore: ['plain-link', 'plain-table']},
       ],
@@ -408,10 +424,8 @@ const eslintCommentsConfig = [
 ];
 
 const importXConfig = [
-  importX.flatConfigs.recommended,
-  importX.flatConfigs.typescript,
   {
-    name: 'import-x',
+    name: 'import-x-all-files',
     rules: {
       'import-x/consistent-type-specifier-style': ['error', 'prefer-top-level'],
       'import-x/extensions': 'off',
@@ -423,6 +437,7 @@ const importXConfig = [
           allowObject: true,
         },
       ],
+      'import-x/no-namespace': 'off',
       'import-x/no-rename-default': 'off',
       'import-x/no-useless-path-segments': 'off',
       'import-x/order': 'off',
@@ -509,42 +524,55 @@ const perfectionistConfig = [
       'perfectionist/sort-imports': [
         'error',
         {
-          customGroups: {
-            type: {
-              'react-other-type': ['^react-.+'],
-              'react-type': ['^react$'],
+          customGroups: [
+            {
+              elementNamePattern: '^react$',
+              groupName: 'react-type',
+              selector: 'type',
             },
-            value: {
-              react: ['^react$'],
-              'react-other': ['^react-.+'],
+            {
+              elementNamePattern: '^react$',
+              groupName: 'react',
             },
-          },
+            {
+              elementNamePattern: '^react-.+',
+              groupName: 'react-other-type',
+              selector: 'type',
+            },
+            {
+              elementNamePattern: '^react-.+',
+              groupName: 'react-other',
+            },
+          ],
           groups: [
             'react-type',
             'react',
             'react-other-type',
             'react-other',
-            ['external-type', 'external'],
-            ['builtin-type', 'builtin'],
-            ['internal-type', 'internal'],
-            ['parent-type', 'parent'],
-            ['sibling-type', 'sibling'],
-            ['index-type', 'index'],
-            ['object', 'unknown'],
+            ['type-external', 'external'],
+            ['type-builtin', 'builtin'],
+            ['type-internal', 'internal'],
+            ['type-parent', 'parent'],
+            ['type-sibling', 'sibling'],
+            ['type-index', 'index'],
+            'unknown',
             'style',
             'side-effect',
             'side-effect-style',
           ],
-          newlinesBetween: 'never',
+          newlinesBetween: 0,
           type: 'natural',
         },
       ],
       'perfectionist/sort-jsx-props': [
         'error',
         {
-          customGroups: {
-            reserved: ['key', 'ref'],
-          },
+          customGroups: [
+            {
+              elementNamePattern: ['^key$', '^ref$'],
+              groupName: 'reserved',
+            },
+          ],
           groups: ['reserved'],
           type: 'natural',
         },
@@ -644,19 +672,6 @@ const testHarnessConfig = [
   },
 ];
 
-const tsEnumConfig = [
-  {
-    files: ['**/*.ts?(x)'],
-    name: 'typescript-enum',
-    plugins: {
-      'typescript-enum': tsEnum,
-    },
-    rules: {
-      ...tsEnum.configs.recommended.rules,
-    },
-  },
-];
-
 const unicornConfig = [
   unicorn.configs.recommended,
   {
@@ -746,12 +761,12 @@ const unusedImportsConfig = [
 ];
 
 export default [
-  // Ignore .gitignore files/folder in eslint
+  // Ignore files and folders listed in .gitignore
   includeIgnoreFile(gitignorePath),
   {
     ignores: [
-      '!.storybook',
-      '!.playwright',
+      '.storybook',
+      '.playwright',
       '/.react-router/**',
       'public/**',
       '**/*.css',
@@ -759,19 +774,20 @@ export default [
     ],
     name: 'ignored-files',
   },
-  // Javascript Config
+  // JavaScript config
   ...jsConfig,
-  // TypeScript Config
+  ...jsCustomConfig,
+  // React config
+  ...reactConfig,
+  ...reactCustomConfig,
+  // TypeScript config
   ...typescriptConfig,
   ...tsEslintConfig,
   ...tsEnumConfig,
-  // React Config
-  ...reactConfig,
-  // Prettier Config
+  // Prettier config
   ...prettierConfig,
-  // Tailwind Config
+  // Extended configs
   ...betterTailwindConfig,
-  // Custom
   ...canonicalConfig,
   ...checkFileConfig,
   ...eslintCommentsConfig,

@@ -1,4 +1,4 @@
-import type {FC, FormEvent} from 'react';
+import type {ChangeEvent, FC} from 'react';
 import {useTranslation} from 'react-i18next';
 import {useFetcher, useLocation} from 'react-router';
 import {twMerge} from 'tailwind-merge';
@@ -23,7 +23,7 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
 
   const redirectUrl = `${location.pathname}${location.search}${location.hash}`;
 
-  const handleChange = async (event: FormEvent<HTMLFormElement>) => {
+  const handleChange = async (event: ChangeEvent<HTMLFormElement>) => {
     await fetcher.submit(event.currentTarget, {
       action: '/action/set-language',
       method: 'POST',

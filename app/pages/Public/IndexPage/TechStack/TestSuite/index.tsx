@@ -9,54 +9,54 @@ import VitestLogo from '~/components/Logos/VitestLogo';
 const TestSuite: FC = () => (
   <>
     <a
-      href="https://storybook.com"
       aria-label="Storybook"
       className="plain-link"
+      href="https://storybook.com"
       rel="noreferrer"
       target="_blank"
     >
       <StorybookLogo height={32} />
     </a>
     <a
-      href="https://chromatic.com"
       aria-label="Chromatic"
       className="plain-link"
+      href="https://chromatic.com"
       rel="noreferrer"
       target="_blank"
     >
       <ChromaticLogo height={32} />
     </a>
     <a
-      href="https://vitest.dev/"
       aria-label="Vitest"
       className="plain-link"
+      href="https://vitest.dev/"
       rel="noreferrer"
       target="_blank"
     >
       <VitestLogo height={32} />
     </a>
     <a
-      href="https://testing-library.com/docs/react-testing-library/intro/"
       aria-label="React Testing Library"
       className="plain-link"
+      href="https://testing-library.com/docs/react-testing-library/intro/"
       rel="noreferrer"
       target="_blank"
     >
       <RTLLogo height={32} />
     </a>
     <a
-      href="https://mswjs.io/"
       aria-label="MSW"
       className="plain-link"
+      href="https://mswjs.io/"
       rel="noreferrer"
       target="_blank"
     >
       <MSWLogo height={32} />
     </a>
     <a
-      href="https://playwright.dev/"
       aria-label="Playwright"
       className="plain-link"
+      href="https://playwright.dev/"
       rel="noreferrer"
       target="_blank"
     >

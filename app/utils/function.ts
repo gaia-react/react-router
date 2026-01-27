@@ -26,7 +26,7 @@ export const tryCatch = async <T, A extends readonly unknown[]>(
 
 export const noop = () => {};
 
-export const sleep = (ms: number) =>
+export const sleep = async (ms: number) =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });

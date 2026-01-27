@@ -2,7 +2,7 @@ import type {
   ActionFunction,
   LoaderFunctionArgs,
   MetaFunction,
-  unstable_RouterContextProvider,
+  RouterContextProvider,
 } from 'react-router';
 import {data, useLoaderData} from 'react-router';
 import {redirectWithInfo} from 'remix-toast';
@@ -19,7 +19,7 @@ export const action: ActionFunction = async ({context, request}) => {
       api.gaia.things.updateThing(formData)
     );
 
-    const i18next = getInstance(context as unstable_RouterContextProvider);
+    const i18next = getInstance(context as RouterContextProvider);
 
     if (error) {
       return data(

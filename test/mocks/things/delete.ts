@@ -7,10 +7,10 @@ export default http.delete(
   `${process.env.API_URL}${GAIA_URLS.thingsId}`,
   async ({params}) => {
     if (!params.id) {
-      return new Response(
-        JSON.stringify({
+      return Response.json(
+        {
           error: 'Thing ID is required',
-        }),
+        },
         {status: 400}
       );
     }
@@ -26,10 +26,10 @@ export default http.delete(
     });
 
     if (!deletedThing) {
-      return new Response(
-        JSON.stringify({
+      return Response.json(
+        {
           error: `Thing with id "${id}" not found`,
-        }),
+        },
         {status: 404}
       );
     }

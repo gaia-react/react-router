@@ -20,7 +20,7 @@ export const getThemeSession = async (request: Request) => {
   const session = await themeStorage.getSession(request.headers.get('cookie'));
 
   return {
-    commit: () => themeStorage.commitSession(session),
+    commit: async () => themeStorage.commitSession(session),
     getTheme: () => {
       const themeValue = session.get('theme') as unknown;
 

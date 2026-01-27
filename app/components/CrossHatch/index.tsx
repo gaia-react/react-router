@@ -8,10 +8,7 @@ type CrossHatchProps = {
 
 const CrossHatch: FC<CrossHatchProps> = ({className}) => (
   <div
-    className={twJoin(
-      'bg-gradient-to-b from-[#373737] to-[#141414]',
-      className
-    )}
+    className={twJoin('bg-linear-to-b from-[#373737] to-[#141414]', className)}
   >
     <div className={twJoin('size-full', styles.crossHatch)} />
   </div>

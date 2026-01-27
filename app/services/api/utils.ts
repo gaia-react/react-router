@@ -23,7 +23,7 @@ const responseToCamelCase = async (
   const [, result] = await tryCatch(async () => {
     const original = (await response.json()) as unknown;
 
-    return new Response(JSON.stringify(toCamelCase(original)), response);
+    return Response.json(toCamelCase(original), response);
   });
 
   if (result) {

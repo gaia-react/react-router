@@ -68,9 +68,9 @@ const LinkButton: FC<LinkButtonProps> = ({
   if (to.startsWith('http')) {
     return (
       <a
-        href={to}
         className={css}
         data-disabled={disabled ? true : undefined}
+        href={to}
         rel="noopener noreferrer"
         tabIndex={disabled ? -1 : undefined}
         target="_blank"
@@ -84,9 +84,9 @@ const LinkButton: FC<LinkButtonProps> = ({
   if (isNav) {
     return (
       <NavLink
-        prefetch={prefetch}
         className={({isActive}) => twMerge(css, !isActive && VARIANTS.tertiary)}
         data-disabled={disabled ? true : undefined}
+        prefetch={prefetch}
         tabIndex={disabled ? -1 : undefined}
         to={to}
         {...props}
@@ -98,9 +98,9 @@ const LinkButton: FC<LinkButtonProps> = ({
 
   return (
     <Link
-      prefetch={prefetch}
       className={css}
       data-disabled={disabled ? true : undefined}
+      prefetch={prefetch}
       tabIndex={disabled ? -1 : undefined}
       to={to}
       {...props}

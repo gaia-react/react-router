@@ -1,4 +1,4 @@
-import type {ComponentProps, FC, FormEvent, ReactNode} from 'react';
+import type {ChangeEvent, ComponentProps, FC, ReactNode} from 'react';
 import {useMemo} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
@@ -53,7 +53,7 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
 
   const [year, month, date] = getValues(value);
 
-  const handleChange = (event: FormEvent<HTMLSelectElement>) => {
+  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
     if (event.currentTarget.name.includes('Date')) {
       onChange(`${year}-${month}-${event.currentTarget.value}`);
     } else {
