@@ -9,6 +9,10 @@ node_modules
 .env
 !.env.example
 
+# documentation
+/docs/.vitepress/cache
+/docs/.vitepress/dist
+
 # IDEs
 .idea
 .vscode

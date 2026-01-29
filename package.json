@@ -24,7 +24,7 @@
     "chromatic": "npx chromatic --auto-accept-changes 'main' --storybook-build-dir 'storybook-static' --only-changed --exit-once-uploaded --exit-zero-on-changes --skip '@(renovate/**|dependabot/**)'",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build --test",
-    "docs": "vitepress dev docs --port 5175 --open true",
+    "docs": "vitepress dev docs --port 5175 --open",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs"
   },
