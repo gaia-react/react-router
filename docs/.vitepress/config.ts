@@ -2,7 +2,7 @@ import {defineConfig} from 'vitepress';
 
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
-  base: '/docs/',
+  base: '/react-router/',
   lang: 'en-US',
   title: 'Docs',
   description:
