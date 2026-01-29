@@ -39,7 +39,7 @@ GAIA React has many great features built-in:
 
 No matter what your skill level or experience, GAIA will make your life and your code better.
 
-Read the [GAIA Documentation](https://gaia-react.github.io/docs/) for detailed information about working with GAIA.
+Read the [GAIA Documentation](https://gaia-react.github.io/react-router/) for detailed information about working with GAIA.
 
 ## Is this associated with the GAIA Flash Framework?
 
@@ -69,7 +69,7 @@ Duplicate the `.env.example` file and name it `.env`.
 
 ### Setup Fix on Save in your IDE
 
-Follow these [instructions](/docs/tech-stack/code-quality/#setup-fix-on-save).
+Follow these [instructions](/react-router/tech-stack/code-quality/#setup-fix-on-save).
 
 ## Development
 

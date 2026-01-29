@@ -7,6 +7,6 @@ layout: doc
 
 GAIA comes with a full testing suite already configured.
 
-- <a href="/testing/visual">Visual Tests</a>
-- <a href="/testing/unit-integration">Unit and Integration Tests</a>
-- <a href="/testing/e2e">E2E Tests</a>
+- [Visual Tests](/tech-stack/testing/visual)
+- [Unit and Integration Tests](/tech-stack/testing/unit-and-integration)
+- [E2E Tests](/tech-stack/testing/e2e)

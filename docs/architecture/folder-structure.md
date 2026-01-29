@@ -8,19 +8,19 @@ outline: deep
 
 Inside the `app` folder, you will find the following folders:
 
-- <a href="/architecture/assets">assets</a>
-- <a href="/architecture/components">components</a>
-- <a href="/architecture/hooks">hooks</a>
-- <a href="/architecture/languages">languages</a>
-- <a href="/architecture/middleware">middleware</a>
-- <a href="/architecture/pages">pages</a>
-- <a href="/architecture/routes">routes</a>
-- <a href="/architecture/services">services</a>
-- <a href="/architecture/sessions">sessions.server</a>
-- <a href="/architecture/state">state</a>
-- <a href="/architecture/styles">styles</a>
-- <a href="/architecture/types">types</a>
-- <a href="/architecture/utils">utils</a>
+- [assets](/architecture/assets)
+- [components](/architecture/components)
+- [hooks](/architecture/hooks)
+- [languages](/architecture/languages)
+- [middleware](/architecture/middleware)
+- [pages](/architecture/pages)
+- [routes](/architecture/routes)
+- [services](/architecture/services)
+- [sessions.server](/architecture/sessions)
+- [state](/architecture/state)
+- [styles](/architecture/styles)
+- [types](/architecture/types)
+- [utils](/architecture/utils)
 
 ## Files
 

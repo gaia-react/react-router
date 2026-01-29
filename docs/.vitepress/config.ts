@@ -14,7 +14,7 @@ export default defineConfig({
       {
         rel: 'apple-touch-icon',
         sizes: '180x180',
-        href: '/docs/assets/favicons/apple-touch-icon.png',
+        href: '/react-router/assets/favicons/apple-touch-icon.png',
       },
     ],
     [
@@ -22,7 +22,7 @@ export default defineConfig({
       {
         rel: 'icon',
         sizes: '192x192',
-        href: '/docs/assets/favicons/android-chrome-192x192.png',
+        href: '/react-router/assets/favicons/android-chrome-192x192.png',
       },
     ],
     [
@@ -30,7 +30,7 @@ export default defineConfig({
       {
         rel: 'icon',
         sizes: '512x512',
-        href: '/docs/assets/favicons/android-chrome-512x512.png',
+        href: '/react-router/assets/favicons/android-chrome-512x512.png',
       },
     ],
     [
@@ -39,7 +39,7 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '16x16',
-        href: '/docs/assets/favicons/favicon-16x16.png',
+        href: '/react-router/assets/favicons/favicon-16x16.png',
       },
     ],
     [
@@ -48,11 +48,14 @@ export default defineConfig({
         rel: 'icon',
         type: 'image/png',
         sizes: '32x32',
-        href: '/docs/assets/favicons/favicon-32x32.png',
+        href: '/react-router/assets/favicons/favicon-32x32.png',
       },
     ],
-    ['link', {rel: 'icon', href: '/docs/assets/favicon/favicon.ico'}],
-    ['link', {rel: 'manifest', href: '/docs/assets/favicon/site.webmanifest'}],
+    ['link', {rel: 'icon', href: '/react-router/assets/favicon/favicon.ico'}],
+    [
+      'link',
+      {rel: 'manifest', href: '/react-router/assets/favicon/site.webmanifest'},
+    ],
   ],
   themeConfig: {
     // https://vitepress.dev/reference/default-theme-config

@@ -6,7 +6,7 @@ hero:
   name: "GAIA React Template"
   tagline: "A comprehensive template for building professional and scalable React Router applications"
   actions:
-    - theme: alt
+    - theme: brand
       text: Quick Start
       link: /general/quick-start
     - theme: alt
