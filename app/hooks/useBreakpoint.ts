@@ -10,7 +10,7 @@ const BREAKPOINTS = {
 
 type BreakpointType = keyof typeof BREAKPOINTS;
 
-const useBreakpoint = (breakpoint: BreakpointType): boolean => {
+export const useBreakpoint = (breakpoint: BreakpointType): boolean => {
   const [isBreakpoint, setIsBreakpoint] = useState(true);
 
   useEffect(() => {
@@ -28,5 +28,3 @@ const useBreakpoint = (breakpoint: BreakpointType): boolean => {
 
   return isBreakpoint;
 };
-
-export default useBreakpoint;

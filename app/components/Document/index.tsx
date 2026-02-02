@@ -1,13 +1,12 @@
 import type {FC, ReactNode} from 'react';
 import {Links, Meta, Scripts, ScrollRestoration} from 'react-router';
-import {ThemeHead} from '~/state/theme';
+import ClientHintCheck from './ClientHintCheck';
 import MetaHydrated from './MetaHydrated';
 
 type DocumentProps = {
   children: ReactNode;
   className?: string;
   dir?: string;
-  isSsrTheme?: boolean;
   lang: string;
   // eslint-disable-next-line react/boolean-prop-naming
   noIndex?: boolean;
@@ -18,13 +17,13 @@ const Document: FC<DocumentProps> = ({
   children,
   className,
   dir,
-  isSsrTheme,
   lang,
   noIndex,
   title,
 }) => (
   <html className={className} dir={dir} lang={lang}>
     <head>
+      <ClientHintCheck />
       <meta charSet="utf-8" />
       <meta content="width=device-width,initial-scale=1" name="viewport" />
       <MetaHydrated />
@@ -40,7 +39,6 @@ const Document: FC<DocumentProps> = ({
         href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap"
         rel="stylesheet"
       />
-      <ThemeHead isSsrTheme={isSsrTheme} />
       {noIndex && <meta content="noindex" name="robots" />}
       {title && <title>{title}</title>}
     </head>

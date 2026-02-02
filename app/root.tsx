@@ -13,10 +13,10 @@ import {getLanguage, i18nextMiddleware} from '~/middleware/i18next';
 import {setApiLanguage} from '~/services/api';
 import {getAuthenticatedUser} from '~/sessions.server/auth';
 import {languageCookie} from '~/sessions.server/language';
-import {getThemeSession} from '~/sessions.server/theme';
 import State from '~/state';
-import {useTheme} from '~/state/theme';
+import {getHints} from '~/utils/client-hints';
 import {isProductionHost} from '~/utils/http.server';
+import {getTheme} from '~/utils/theme.server';
 import {env, envClient} from './env.server';
 import './styles/tailwind.css';
 
@@ -33,8 +33,6 @@ export const loader = async ({context, request}: LoaderFunctionArgs) => {
 
   setApiLanguage(language);
 
-  const themeSession = await getThemeSession(request);
-
   setToastCookieOptions({secrets: [env.SESSION_SECRET]});
 
   const {headers, toast} = await getToast(request);
@@ -43,12 +41,20 @@ export const loader = async ({context, request}: LoaderFunctionArgs) => {
 
   headers.set('Vary', 'Cookie');
 
+  const requestInfo = {
+    hints: getHints(request),
+    path: new URL(request.url).pathname,
+    userPreferences: {
+      theme: getTheme(request),
+    },
+  };
+
   return data(
     {
       ENV: envClient,
       language,
       noIndex: !isProduction,
-      theme: themeSession.getTheme(),
+      requestInfo,
       toast,
       user,
     },
@@ -58,10 +64,9 @@ export const loader = async ({context, request}: LoaderFunctionArgs) => {
 
 const App: FC = () => {
   const loaderData = useLoaderData<typeof loader>();
-  const [theme] = useTheme();
   const {i18n} = useTranslation();
 
-  const {ENV, language, noIndex, toast} = loaderData;
+  const {ENV, language, noIndex, requestInfo, toast} = loaderData;
 
   useEffect(() => {
     i18n
@@ -78,9 +83,8 @@ const App: FC = () => {
 
   return (
     <Document
-      className={twJoin(theme)}
+      className={twJoin(requestInfo.userPreferences.theme)}
       dir={i18n.dir(i18n.language)}
-      isSsrTheme={!!loaderData.theme}
       lang={i18n.language}
       noIndex={noIndex}
     >
@@ -98,10 +102,10 @@ const App: FC = () => {
 };
 
 const AppWithState = () => {
-  const {theme, user} = useLoaderData<typeof loader>();
+  const {user} = useLoaderData<typeof loader>();
 
   return (
-    <State theme={theme} user={user}>
+    <State user={user}>
       <App />
     </State>
   );

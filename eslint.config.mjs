@@ -484,6 +484,14 @@ const importXConfig = [
       'import-x/no-unresolved': 'off',
     },
   },
+  {
+    files: ['docs/**/*.ts'],
+    name: 'import-x/vitepress',
+    rules: {
+      'canonical/filename-match-exported': 'off',
+      'import-x/no-extraneous-dependencies': 'off',
+    },
+  },
 ];
 
 const noRelativeImportPathsConfig = [
@@ -767,6 +775,7 @@ export default [
     ignores: [
       '.storybook',
       '.playwright',
+      '.vitepress/cache',
       '/.react-router/**',
       'public/**',
       '**/*.css',
