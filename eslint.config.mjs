@@ -469,6 +469,13 @@ const importXConfig = [
     },
   },
   {
+    files: ['app/**/hooks/*.ts?(x)'],
+    name: 'import-x/hooks',
+    rules: {
+      'import-x/no-default-export': 'error',
+    },
+  },
+  {
     files: ['test/**/*.ts?(x)'],
     name: 'import-x/test-config-files',
     rules: {
@@ -504,7 +511,7 @@ const noRelativeImportPathsConfig = [
       'no-relative-import-paths/no-relative-import-paths': [
         'error',
         {
-          allowedDepth: 1,
+          allowedDepth: 2,
           allowSameFolder: true,
           prefix: '~',
           rootDir: 'app',
