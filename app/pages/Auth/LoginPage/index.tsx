@@ -1,6 +1,6 @@
 import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
-import {useNavigation} from 'react-router';
+import {Form, useNavigation} from 'react-router';
 import {getFormProps, getInputProps, useForm} from '@conform-to/react';
 import {parseWithZod} from '@conform-to/zod/v4';
 import {z} from 'zod';
@@ -30,7 +30,7 @@ const LoginPage: FC = () => {
   return (
     <section className="mx-auto w-full max-w-screen-sm space-y-4 px-4 py-12">
       <h1 className="text-2xl font-bold">{t('login')}</h1>
-      <form
+      <Form
         className="hide-required space-y-6"
         method="POST"
         {...getFormProps(form)}
@@ -59,7 +59,7 @@ const LoginPage: FC = () => {
             {t('login')}
           </Button>
         </FormActions>
-      </form>
+      </Form>
     </section>
   );
 };
