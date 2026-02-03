@@ -1,5 +1,7 @@
 import type {FC, ReactNode} from 'react';
 import {Links, Meta, Scripts, ScrollRestoration} from 'react-router';
+import {twJoin} from 'tailwind-merge';
+import type {Theme} from '~/state/theme';
 import {ThemeHead} from '~/state/theme';
 import MetaHydrated from './MetaHydrated';
 
@@ -11,6 +13,7 @@ type DocumentProps = {
   lang: string;
   // eslint-disable-next-line react/boolean-prop-naming
   noIndex?: boolean;
+  theme?: Theme;
   title?: string;
 };
 
@@ -21,9 +24,14 @@ const Document: FC<DocumentProps> = ({
   isSsrTheme,
   lang,
   noIndex,
+  theme,
   title,
 }) => (
-  <html className={className} dir={dir} lang={lang}>
+  <html
+    className={twJoin(theme === 'dark' && 'dark', className)}
+    dir={dir}
+    lang={lang}
+  >
     <head>
       <meta charSet="utf-8" />
       <meta content="width=device-width,initial-scale=1" name="viewport" />

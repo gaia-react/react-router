@@ -30,6 +30,7 @@
     "**/.client/**/*.tsx",
     ".react-router/types/**/*",
     ".storybook/**/*",
-    ".playwright/**/*"
+    ".playwright/**/*",
+    "docs/.vitepress/**/*"
   ]
 }

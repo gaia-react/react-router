@@ -2,7 +2,7 @@ import type {RefObject} from 'react';
 import {useEffect, useRef, useState} from 'react';
 
 // Use trigger if you want to force a measurement based on a variable changing
-const useComponentRect = (
+export const useComponentRect = (
   ref: RefObject<HTMLElement | null>,
   trigger?: unknown
 ): DOMRect => {
@@ -50,5 +50,3 @@ const useComponentRect = (
 
   return rect;
 };
-
-export default useComponentRect;

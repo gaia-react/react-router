@@ -1,7 +1,7 @@
 {
   "extends": [
     "stylelint-config-standard",
-    "stylelint-config-idiomatic-order",
+    "stylelint-config-clean-order",
     "stylelint-config-tailwindcss"
   ],
   "ignoreFiles": ["public/build/**/*.css"],

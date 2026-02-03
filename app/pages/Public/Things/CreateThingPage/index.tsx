@@ -22,7 +22,7 @@ const CreateThingPage: FC<CreateThingPageProps> = ({className}) => {
     <section
       className={twJoin('mx-auto w-full max-w-screen-sm px-4 py-12', className)}
     >
-      <Form className="space-y-8" method="post">
+      <Form className="space-y-8" method="POST">
         <InputText
           defaultValue=""
           label={t('name')}

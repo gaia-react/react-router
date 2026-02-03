@@ -1,26 +1,26 @@
 /* eslint-disable no-console */
 import {isRouteErrorResponse} from 'react-router';
-import type {Route} from '.react-router/types/app/+types/root';
-import {twJoin} from 'tailwind-merge';
 import Document from '~/components/Document';
-import ErrorStack from '~/components/ErrorStack';
+import ErrorStack from '~/components/Errors/ErrorStack';
 import {getPreferredTheme} from '~/state/theme';
 import {canUseDOM} from '~/utils/dom';
+import type {Route} from '../../../../.react-router/types/app/+types/root';
 
 const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
   if (!canUseDOM) {
     // Server-Side log of error
     console.log(error);
   }
+
   const theme = getPreferredTheme();
 
   try {
     if (isRouteErrorResponse(error)) {
       return (
         <Document
-          className={twJoin(theme)}
           lang="en"
           noIndex={true}
+          theme={theme}
           title={error.statusText}
         >
           <main className="absolute inset-0 flex items-center justify-center p-4">
@@ -54,12 +54,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
 
   if (error instanceof Error) {
     return (
-      <Document
-        className={twJoin(theme)}
-        lang="en"
-        noIndex={true}
-        title="Error"
-      >
+      <Document lang="en" noIndex={true} theme={theme} title="Error">
         <main className="space-y-4 p-4">
           <h1 className="text-2xl">Error</h1>
           <p>{error.message}</p>
@@ -70,12 +65,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
   }
 
   return (
-    <Document
-      className={twJoin(theme)}
-      lang="en"
-      noIndex={true}
-      title="Unexpected error"
-    >
+    <Document lang="en" noIndex={true} theme={theme} title="Unexpected error">
       <main className="p-4">
         <h1 className="text-2xl">An unexpected error occurred</h1>
       </main>

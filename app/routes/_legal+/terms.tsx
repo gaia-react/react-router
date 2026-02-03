@@ -28,7 +28,7 @@ const TermsRoute = () => {
 
   return (
     <Layout>
-      <div className="prose dark:prose-invert pt-4">
+      <div className="prose dark:prose-invert p-4">
         <h1>{title}</h1>
         <p>{description}</p>
       </div>

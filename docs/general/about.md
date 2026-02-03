@@ -45,4 +45,3 @@ All the linting configuration files are included. You can leave it as-is, or cus
 [Storybook](https://storybook.js.org/) is included with GAIA to facilitate [Component-Driven Development](https://www.componentdriven.org/) which is a proven methodology for building web applications. It involves breaking down the UI into small, reusable components that can be developed, tested, and documented in isolation. This makes it easier to build, maintain, and scale applications.
 
 Check out the [Testing](/tech-stack/testing/) section for more information.
-

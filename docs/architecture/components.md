@@ -12,7 +12,7 @@ GAIA uses the following structure for components folders:
 
 - PascalCase for folder names
 - `index.tsx` for the main component file
-- `styles.module.css` for component-specific css module styles 
+- `styles.module.css` for component-specific css module styles
 - `types.ts` for component types (when necessary)
 - `utils.ts` for component utility functions (when necessary)
 
@@ -36,6 +36,7 @@ We discovered that putting test files (Storybook and Vitest) into a dedicated `t
 Enforcing this structure with ESLint ensures that all components are built consistently. Eliminating unnecessary variability makes work easier for everyone on the team.
 
 ### Lifting Components
+
 A good rule-of-thumb is to "lift" a child component only up to its highest level where it is shared.
 
 This structure makes it easy to find and work with components, and to understand how they are used in the application by where they are placed in the folder hierarchy. It also makes refactoring and moving components around easier and more predictable.

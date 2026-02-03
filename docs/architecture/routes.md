@@ -18,7 +18,7 @@ GAIA organizes the routes using Flat Routes nested folder syntax, prefixing with
 
 ### `_auth+`
 
-This folder contains routes related to authentication, such as login, registration, and password reset. These routes require a user to *not* have an authenticated session, and will redirect to the `_session+` routes if they do.
+This folder contains routes related to authentication, such as login, registration, and password reset. These routes require a user to _not_ have an authenticated session, and will redirect to the `_session+` routes if they do.
 
 ### `_legal+`
 
@@ -37,6 +37,7 @@ This folder contains routes that require a user to have an authenticated session
 This folder is for root-level [React Router 7 actions](https://reactrouter.com/start/framework/actions).
 
 GAIA comes with 3 root-level actions:
+
 - Logout
 - Set Language
 - Set Theme (Light/Dark)

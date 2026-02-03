@@ -1,22 +1,22 @@
 import type {FC} from 'react';
 import {faFontAwesome} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
-import I18NextLogo from '~/components/Logos/I18NextLogo';
-import RemixR from '~/components/Logos/RemixR';
-import RVFLogo from '~/components/Logos/RVFLogo';
-import TailwindLogo from '~/components/Logos/TailwindLogo';
-import ZodLogo from '~/components/Logos/ZodLogo';
+import ConformLogo from '../Logos/ConformLogo';
+import I18NextLogo from '../Logos/I18NextLogo';
+import ReactRouter from '../Logos/ReactRouterLogo';
+import TailwindLogo from '../Logos/TailwindLogo';
+import ZodLogo from '../Logos/ZodLogo';
 
 const Foundation: FC = () => (
   <>
     <a
-      aria-label="Remix Run"
+      aria-label="React Router"
       className="plain-link text-white"
-      href="https://remix.run"
+      href="https://reactrouter.com/"
       rel="noreferrer"
       target="_blank"
     >
-      <RemixR height={32} />
+      <ReactRouter height={32} />
     </a>
     <a
       aria-label="TailwindCSS"
@@ -34,16 +34,7 @@ const Foundation: FC = () => (
       rel="noreferrer"
       target="_blank"
     >
-      <ZodLogo height={38} />
-    </a>
-    <a
-      aria-label="RVF"
-      className="plain-link"
-      href="https://www.rvf-js.io/"
-      rel="noreferrer"
-      target="_blank"
-    >
-      <RVFLogo height={26} />
+      <ZodLogo height={34} />
     </a>
     <a
       aria-label="React-i18next"
@@ -62,6 +53,16 @@ const Foundation: FC = () => (
       target="_blank"
     >
       <FontAwesomeIcon icon={faFontAwesome} />
+    </a>
+
+    <a
+      aria-label="Conform"
+      className="plain-link"
+      href="https://conform.guide/"
+      rel="noreferrer"
+      target="_blank"
+    >
+      <ConformLogo height={26} />
     </a>
   </>
 );

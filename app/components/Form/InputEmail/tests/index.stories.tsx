@@ -1,5 +1,6 @@
 import {useTranslation} from 'react-i18next';
-import {useForm} from '@rvf/react-router';
+import {getFormProps, getInputProps, useForm} from '@conform-to/react';
+import {parseWithZod} from '@conform-to/zod/v4';
 import type {Meta, StoryFn} from '@storybook/react-vite';
 import {z} from 'zod';
 import stubs from 'test/stubs';
@@ -18,19 +19,21 @@ const meta: Meta = {
 
 export default meta;
 
+const schema = z.object({email: z.email()});
+
 export const Default: StoryFn = () => {
   const {t} = useTranslation('errors');
 
-  const form = useForm({
-    defaultValues: {email: ''},
-    schema: z.object({email: z.email()}),
+  const [form, fields] = useForm({
+    defaultValue: {email: ''},
+    onValidate: ({formData}) => parseWithZod(formData, {schema}),
   });
 
   return (
-    <form className="max-w-md space-y-4 p-4" {...form.getFormProps()}>
+    <form className="max-w-md space-y-4 p-4" {...getFormProps(form)}>
       <InputEmail
-        error={form.error('email') ? t('invalidEmail') : undefined}
-        name="email"
+        error={fields.email.errors?.length ? t('invalidEmail') : undefined}
+        {...getInputProps(fields.email, {type: 'email'})}
       />
       <FormActions>
         <Button type="submit">{t('form.submit', {ns: 'common'})}</Button>

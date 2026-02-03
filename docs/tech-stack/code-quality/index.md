@@ -26,7 +26,7 @@ Additionally, GAIA comes with [husky](https://typicode.github.io/husky/) and [li
 
 GAIA comes with a robust set of plugins and rules to keep your code clean and consistent.
 
-All the rules being used are available in the `eslint.config.mjs` file. You can modify them to suit your needs. As outlined in the article, the most important thing is you have consistent rules, whatever they might be. 
+All the rules being used are available in the `eslint.config.mjs` file. You can modify them to suit your needs. As outlined in the article, the most important thing is you have consistent rules, whatever they might be.
 
 ## Setup Fix on Save
 
@@ -65,6 +65,6 @@ let g:ale_fix_on_save = 1
 
 ## TypeScript
 
-[TypeScript](https://www.typescriptlang.org/) is an industry-standard way of building frontend projects. 
+[TypeScript](https://www.typescriptlang.org/) is an industry-standard way of building frontend projects.
 
 GAIA comes with TypeScript support out of the box.
