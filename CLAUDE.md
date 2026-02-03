@@ -134,3 +134,9 @@ Dependencies should always be pinned to exact versions. Use the `-E` flag when i
 ```
 npm install <package-name> -E
 ```
+
+## Documentation
+
+You can reference the documentation in the `docs` folder if you need more details on specific technologies and patterns used in this project.
+
+Update the documentation and/or the CLAUDE.md file if you make changes to the architecture or replace any of the packages mentioned in the documentation.
