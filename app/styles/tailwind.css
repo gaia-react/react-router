@@ -21,16 +21,6 @@
     @apply h-dvh;
   }
 
-  @media (width >= 640px) {
-    html {
-      @apply h-auto;
-
-      body {
-        @apply h-auto;
-      }
-    }
-  }
-
   body {
     @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-white;
     @apply selection:bg-blue-500 selection:text-white;
@@ -53,6 +43,16 @@
 
   button {
     @apply cursor-pointer;
+  }
+
+  @media (width >= 640px) {
+    html {
+      @apply h-auto;
+
+      body {
+        @apply h-auto;
+      }
+    }
   }
 }
 
@@ -251,6 +251,6 @@
 }
 
 :focus:not(.focus-visible) {
-  box-shadow: none;
   outline: none;
+  box-shadow: none;
 }

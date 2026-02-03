@@ -1,7 +1,8 @@
 import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
-import {useSubmit} from 'react-router';
-import {useForm} from '@rvf/react-router';
+import {useNavigation} from 'react-router';
+import {getFormProps, getInputProps, useForm} from '@conform-to/react';
+import {parseWithZod} from '@conform-to/zod/v4';
 import {z} from 'zod';
 import Button from '~/components/Button';
 import FormActions from '~/components/Form/FormActions';
@@ -9,45 +10,52 @@ import FormError from '~/components/Form/FormError';
 import InputEmail from '~/components/Form/InputEmail';
 import InputPassword from '~/components/Form/InputPassword';
 
+const schema = z.object({
+  email: z.email(),
+  password: z.string().min(6),
+});
+
 const LoginPage: FC = () => {
   const {t} = useTranslation('auth');
 
-  const submit = useSubmit();
+  const navigation = useNavigation();
+  const isSubmitting = navigation.state === 'submitting';
 
-  const form = useForm({
+  const [form, fields] = useForm({
     // eslint-disable-next-line sonarjs/no-hardcoded-passwords
-    defaultValues: {email: 'user@domain.com', password: 'passw0rd'},
-    handleSubmit: async (formData) => submit(formData, {method: 'post'}),
-    schema: z.object({
-      email: z.email(),
-      password: z.string().min(6),
-    }),
-    submitSource: 'dom',
+    defaultValue: {email: 'user@domain.com', password: 'passw0rd'},
+    onValidate: ({formData}) => parseWithZod(formData, {schema}),
   });
 
   return (
     <section className="mx-auto w-full max-w-screen-sm space-y-4 px-4 py-12">
       <h1 className="text-2xl font-bold">{t('login')}</h1>
-      <form className="hide-required space-y-6" {...form.getFormProps()}>
+      <form
+        className="hide-required space-y-6"
+        method="POST"
+        {...getFormProps(form)}
+      >
         <InputEmail
           error={
-            form.error('email') ? t('invalidEmail', {ns: 'errors'}) : undefined
+            fields.email.errors?.length ?
+              t('invalidEmail', {ns: 'errors'})
+            : undefined
           }
           required={true}
-          {...form.getInputProps('email')}
+          {...getInputProps(fields.email, {type: 'email'})}
         />
         <InputPassword
           error={
-            form.error('password') ?
+            fields.password.errors?.length ?
               t('invalidPassword', {ns: 'errors'})
             : undefined
           }
           required={true}
-          {...form.getInputProps('password')}
+          {...getInputProps(fields.password, {type: 'password'})}
         />
-        <FormError hide={form.formState.isSubmitting} />
+        <FormError hide={isSubmitting} />
         <FormActions>
-          <Button isLoading={form.formState.isSubmitting} type="submit">
+          <Button isLoading={isSubmitting} type="submit">
             {t('login')}
           </Button>
         </FormActions>

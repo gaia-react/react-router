@@ -1,17 +1,34 @@
 import {describe, expect, test} from 'vitest';
-import {tryCatch} from '../function';
+import {sleep, tryCatch} from '../function';
 
 describe('function utils', () => {
-  test('tryCatch result', async () => {
-    expect(await tryCatch((value: number) => 10 / value, 5)).toEqual([
-      undefined,
-      2,
-    ]);
+  test('tryCatch async result', async () => {
+    expect(
+      await tryCatch(async (value: number) => {
+        await sleep(100);
+
+        return 10 / value;
+      }, 5)
+    ).toEqual([undefined, 2]);
   });
 
-  test('tryCatch error', async () => {
+  test('tryCatch async error', async () => {
     expect(
-      await tryCatch(() => {
+      await tryCatch(async () => {
+        await sleep(100);
+
+        throw new Error('failed');
+      })
+    ).toEqual([new Error('failed'), undefined]);
+  });
+
+  test('tryCatch sync result', async () => {
+    expect(tryCatch((value: number) => 10 / value, 5)).toEqual([undefined, 2]);
+  });
+
+  test('tryCatch sync error', async () => {
+    expect(
+      tryCatch(() => {
         throw new Error('failed');
       })
     ).toEqual([new Error('failed'), undefined]);

@@ -25,7 +25,7 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
 
   const handleChange = async (event: ChangeEvent<HTMLFormElement>) => {
     await fetcher.submit(event.currentTarget, {
-      action: '/action/set-language',
+      action: '/actions/set-language',
       method: 'POST',
     });
 
@@ -34,7 +34,7 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
 
   return (
     <fetcher.Form
-      action="/action/set-language"
+      action="/actions/set-language"
       className={twMerge('relative flex-none text-sm', className)}
       method="POST"
       onChange={handleChange}

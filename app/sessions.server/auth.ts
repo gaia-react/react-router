@@ -59,6 +59,7 @@ export const requireAuthenticatedUser = async (request: Request) => {
   const session = await sessionStorage.getSession(
     request.headers.get('cookie')
   );
+
   const user = session.get('user') as Maybe<User>;
 
   if (!user) {
@@ -73,6 +74,7 @@ export const requireNotAuthenticated = async (request: Request) => {
   const session = await sessionStorage.getSession(
     request.headers.get('cookie')
   );
+
   const user = session.get('user') as Maybe<User>;
 
   if (user) {

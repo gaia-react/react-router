@@ -28,7 +28,6 @@ The `Public` folder contains components that are accessible to all users, such a
 
 The `Session` folder contains components that require user authentication, such as the user dashboard and profile page.
 
-
 ## Legal Pages
 
 GAIA doesn't come with a folder for the legal pages, although you can add one if you like.

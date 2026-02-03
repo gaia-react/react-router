@@ -1,8 +1,8 @@
 import type {FC} from 'react';
-import ESLintLogo from '~/components/Logos/ESLintLogo';
-import PrettierLogo from '~/components/Logos/PrettierLogo';
-import StylelintLogo from '~/components/Logos/StylelintLogo';
-import TSLogo from '~/components/Logos/TSLogo';
+import ESLintLogo from '../Logos/ESLintLogo';
+import PrettierLogo from '../Logos/PrettierLogo';
+import StylelintLogo from '../Logos/StylelintLogo';
+import TSLogo from '../Logos/TSLogo';
 
 const CodeQuality: FC = () => (
   <>

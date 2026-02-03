@@ -132,13 +132,6 @@ const reactCustomConfig = [
       'react/jsx-props-no-spreading': 'off',
     },
   },
-  {
-    files: ['app/?(components|hooks|pages|services|utils)/**/*.ts?(x)'],
-    name: 'react/components',
-    rules: {
-      'max-lines': 'error',
-    },
-  },
 ];
 
 const typescriptConfig = defineConfig([

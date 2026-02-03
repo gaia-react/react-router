@@ -5,4 +5,4 @@ export const metatag = (page: Page, name: string) =>
   page.locator(`head > meta[name="${name}"]`);
 
 export const hydration = async (page: Page) =>
-  expect(metatag(page, 'hydrated')).resolves.toHaveAttribute('content', 'true');
+  expect(metatag(page, 'hydrated')).toHaveAttribute('content', 'true');

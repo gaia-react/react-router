@@ -14,7 +14,6 @@ Make sure you have [Node.js](https://nodejs.org/en/) >=22.19.0 LTS installed, pr
 
 All you need to do is run this installation command and follow the prompts.
 
-
 ```sh
 npx create-react-router@latest --template gaia-react/react-router
 ```

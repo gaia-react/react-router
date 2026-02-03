@@ -13,6 +13,7 @@ GAIA's foundation includes the following:
 [React Router 7](https://reactrouter.com/) is a full stack web framework that lets you focus on the user interface and work back through web standards to deliver a fast, slick, and resilient user experience.
 
 GAIA's React Router 7 setup includes the following helpful libraries:
+
 - [remix-auth](https://github.com/sergiodxa/remix-auth#readme)
 - [remix-flat-routes](https://github.com/kiliman/remix-flat-routes#readme)
 - [remix-development-tools](https://github.com/forge42dev/Remix-Dev-Tools#readme)
@@ -26,14 +27,17 @@ GAIA's React Router 7 setup includes the following helpful libraries:
 GAIA's Tailwind setup includes the following great tools which make working with Tailwind even better:
 
 **Class Management**
+
 - [tailwind-merge](https://github.com/dcastil/tailwind-merge#readme)
 
 **Linting**
+
 - [eslint-plugin-better-tailwind](https://github.com/schoero/eslint-plugin-better-tailwindcss#readme)
 - [prettier-plugin-tailwindcss](https://github.com/tailwindlabs/prettier-plugin-tailwindcss#readme)
 - [stylelint-config-tailwindcss](https://github.com/zhilidali/stylelint-config-tailwindcss#readme)
 
 **Plugins**
+
 - [@tailwindcss/forms](https://github.com/tailwindlabs/tailwindcss-forms#readme)
 - [@tailwindcss/typography](https://github.com/tailwindlabs/tailwindcss-typography#readme)
 
@@ -52,6 +56,7 @@ Even if your site only has one language, being able to externalize your strings 
 GAIA's Storybook setup includes the [storybook-react-i18next](https://github.com/stevensacks/storybook-react-i18next) addon so you can test your components in different languages.
 
 ### Translation Files
+
 GAIA uses `.ts` files for language files, instead of JSON. There are many reasons for this:
 
 - ESLint keeps the files organized and formatted consistently.
@@ -62,9 +67,9 @@ GAIA uses `.ts` files for language files, instead of JSON. There are many reason
 
 ## Form Validation
 
-GAIA includes [RVF](https://www.rvf-js.io/) for form validation.
+GAIA includes [Conform](https://conform.guide/) for form validation.
 
-There are other libraries you can use instead, such as [remix-forms](https://remix-forms.seasoned.cc/), [conform](https://conform.guide/), etc.
+There are other libraries you can use instead, such as [remix-forms](https://remix-forms.seasoned.cc/), [RVF](https://www.rvf-js.io/), etc.
 
 ## Icons
 

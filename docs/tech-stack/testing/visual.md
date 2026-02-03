@@ -41,11 +41,9 @@ The most common one to use is `wrap: 'p-4'` which will add padding of `1rem` aro
 
 There are examples of this in use throughout the project.
 
-
 ### Google Fonts
 
-Google Fonts are preloaded in the `.storybook/preview-head.html` file.  You can modify or remove which fonts are loaded by modifying this file.
-
+Google Fonts are preloaded in the `.storybook/preview-head.html` file. You can modify or remove which fonts are loaded by modifying this file.
 
 ## Chromatic
 
@@ -60,24 +58,29 @@ If you are using a different CI/CD service than GitHub actions, you'll need to m
 If you don't want to use Chromatic, you need to make the following changes:
 
 Uninstall these packages:
+
 ```sh
 npm un -D chromatic && npm un -D @chromatic-com/storybook
 ```
 
 Delete these:
+
 - `.github/workflows/chromatic.yml`
 - `.storybook/chromatic`
 
 Edit `.storybook/preview.ts`
+
 ```ts
 import {decorators} from './chromatic'; // delete this import
 import WrapDecorator from './decorators/WrapDecorator'; // add this import
 
 // in the preview object set decorators:
-decorators: [WrapDecorator]
-    
+decorators: [WrapDecorator];
+
 // and delete this line:
-chromatic: {viewports: [1280]}
+chromatic: {
+  viewports: [1280];
+}
 ```
 
 Remove `chromatic: {disableSnapshot: true},` from any stories which have it.

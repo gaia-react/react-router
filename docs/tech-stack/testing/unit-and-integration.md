@@ -22,7 +22,6 @@ GAIA comes with [MSW](https://mswjs.io/), which allows you to mock your API requ
 
 It also includes [@mswjs/data](https://github.com/mswjs/data#readme) which allows you to create interactive mocks for the data in your tests.
 
-
 ## test folder
 
 The test folder contains the setup, configuration, and mocks for tests.
