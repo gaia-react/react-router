@@ -1,5 +1,6 @@
 import type {ActionFunction} from 'react-router';
 import {data, redirect, replace} from 'react-router';
+import {LANGUAGES} from '~/languages';
 import {languageCookie} from '~/sessions.server/language';
 
 export const action: ActionFunction = async ({request}) => {
@@ -8,7 +9,7 @@ export const action: ActionFunction = async ({request}) => {
   const language = form.get('language') as string;
   const redirectUrl = form.get('redirectUrl') as string;
 
-  if (!['en', 'ja'].includes(language) || !redirectUrl) {
+  if (!LANGUAGES.includes(language) || !redirectUrl) {
     return data(
       {
         message: `language value of ${language} is not a valid language`,
