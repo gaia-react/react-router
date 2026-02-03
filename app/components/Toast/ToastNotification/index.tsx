@@ -11,7 +11,7 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import type {ToastMessage} from 'remix-toast';
 import {toast} from 'sonner';
 import {twJoin} from 'tailwind-merge';
-import ErrorStack from '~/components/ErrorStack';
+import ErrorStack from '~/components/Errors/ErrorStack';
 import {parsePayload} from './utils';
 
 type ToastType = 'error' | 'info' | 'success' | 'warning';
@@ -37,7 +37,7 @@ const ICON_COLOR: Record<ToastType, string> = {
   warning: 'text-yellow-300',
 };
 
-const DEFAULT_DURATION = 10_000;
+const DEFAULT_DURATION = 5000;
 // Error notifications last longer to allow users to read/copy the stack
 const DEFAULT_ERROR_DURATION = 30_000;
 

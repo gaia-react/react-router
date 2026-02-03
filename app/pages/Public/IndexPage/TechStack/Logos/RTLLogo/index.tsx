@@ -1,4 +1,3 @@
-/* eslint-disable max-lines */
 import type {FC, SVGProps} from 'react';
 
 type RTLLogoProps = Omit<SVGProps<SVGSVGElement>, 'height' | 'width'> &

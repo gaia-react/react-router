@@ -5,26 +5,24 @@ import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twMerge} from 'tailwind-merge';
 import {useTheme} from '~/state/theme';
 
-type DarkModeToggleProps = {
+type ThemeSwitchProps = {
   className?: string;
-  onChange?: () => void;
 };
 
-const DarkModeToggle: FC<DarkModeToggleProps> = ({className, onChange}) => {
+const ThemeSwitcher: FC<ThemeSwitchProps> = ({className}) => {
   const {t} = useTranslation('common', {keyPrefix: 'theme'});
 
   const [theme, setTheme] = useTheme();
 
   const handleClick = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
-    onChange?.();
   };
 
   return (
     <button
       aria-label={theme === 'dark' ? t('enableLightMode') : t('enableDarkMode')}
       className={twMerge(
-        'relative flex items-center gap-2',
+        'relative flex size-4.5 items-center gap-2',
         theme === 'dark' ? 'text-white' : 'text-gray-900',
         className
       )}
@@ -38,4 +36,4 @@ const DarkModeToggle: FC<DarkModeToggleProps> = ({className, onChange}) => {
   );
 };
 
-export default DarkModeToggle;
+export default ThemeSwitcher;

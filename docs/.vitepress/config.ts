@@ -3,67 +3,72 @@ import {defineConfig} from 'vitepress';
 // https://vitepress.dev/reference/site-config
 export default defineConfig({
   base: '/react-router/',
-  lang: 'en-US',
-  title: 'Docs',
   description:
     'GAIA is a comprehensive template for building React Router 7 applications',
-  lastUpdated: true,
   head: [
     [
       'link',
       {
+        href: '/react-router/assets/favicons/apple-touch-icon.png',
         rel: 'apple-touch-icon',
         sizes: '180x180',
-        href: '/react-router/assets/favicons/apple-touch-icon.png',
       },
     ],
     [
       'link',
       {
+        href: '/react-router/assets/favicons/android-chrome-192x192.png',
         rel: 'icon',
         sizes: '192x192',
-        href: '/react-router/assets/favicons/android-chrome-192x192.png',
       },
     ],
     [
       'link',
       {
+        href: '/react-router/assets/favicons/android-chrome-512x512.png',
         rel: 'icon',
         sizes: '512x512',
-        href: '/react-router/assets/favicons/android-chrome-512x512.png',
       },
     ],
     [
       'link',
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '16x16',
         href: '/react-router/assets/favicons/favicon-16x16.png',
+        rel: 'icon',
+        sizes: '16x16',
+        type: 'image/png',
       },
     ],
     [
       'link',
       {
-        rel: 'icon',
-        type: 'image/png',
-        sizes: '32x32',
         href: '/react-router/assets/favicons/favicon-32x32.png',
+        rel: 'icon',
+        sizes: '32x32',
+        type: 'image/png',
       },
     ],
-    ['link', {rel: 'icon', href: '/react-router/assets/favicon/favicon.ico'}],
+    ['link', {href: '/react-router/assets/favicon/favicon.ico', rel: 'icon'}],
     [
       'link',
-      {rel: 'manifest', href: '/react-router/assets/favicon/site.webmanifest'},
+      {href: '/react-router/assets/favicon/site.webmanifest', rel: 'manifest'},
     ],
   ],
+  lang: 'en-US',
+  lastUpdated: true,
   themeConfig: {
+    footer: {
+      copyright:
+        'Copyright ©2026, <a href="https://github.com/stevensacks" target="_blank" rel="noreferrer">Steven Sacks</a>',
+      message: 'Released under the MIT License',
+    },
+
     // https://vitepress.dev/reference/default-theme-config
     logo: '/assets/images/gaia-logo.svg',
 
     nav: [
-      {text: 'Home', link: '/'},
-      {text: 'Support', link: 'https://github.com/sponsors/gaia-react'},
+      {link: '/', text: 'Home'},
+      {link: 'https://github.com/sponsors/gaia-react', text: 'Support'},
     ],
 
     search: {
@@ -72,63 +77,58 @@ export default defineConfig({
 
     sidebar: [
       {
-        text: 'General',
         collapsed: true,
         items: [
-          {text: 'Quick Start', link: '/general/quick-start'},
-          {text: 'About', link: '/general/about'},
-          {text: 'Features', link: '/general/features'},
+          {link: '/general/quick-start', text: 'Quick Start'},
+          {link: '/general/about', text: 'About'},
+          {link: '/general/features', text: 'Features'},
         ],
+        text: 'General',
       },
       {
-        text: 'Tech Stack',
         collapsed: true,
         items: [
-          {text: 'Foundation', link: '/tech-stack/foundation/'},
-          {text: 'Code Quality', link: '/tech-stack/code-quality/'},
+          {link: '/tech-stack/foundation/', text: 'Foundation'},
+          {link: '/tech-stack/code-quality/', text: 'Code Quality'},
           {
-            text: 'Testing',
-            link: '/tech-stack/testing/',
             items: [
-              {text: 'Visual', link: '/tech-stack/testing/visual'},
+              {link: '/tech-stack/testing/visual', text: 'Visual'},
               {
-                text: 'Unit and Integration',
                 link: '/tech-stack/testing/unit-and-integration',
+                text: 'Unit and Integration',
               },
-              {text: 'End to End', link: '/tech-stack/testing/e2e'},
+              {link: '/tech-stack/testing/e2e', text: 'End to End'},
             ],
+            link: '/tech-stack/testing/',
+            text: 'Testing',
           },
         ],
+        text: 'Tech Stack',
       },
       {
-        text: 'Architecture',
         collapsed: true,
         items: [
-          {text: 'Folder Structure', link: '/architecture/folder-structure'},
-          {text: 'Assets', link: '/architecture/assets'},
-          {text: 'Components', link: '/architecture/components'},
-          {text: 'Hooks', link: '/architecture/hooks'},
-          {text: 'Languages', link: '/architecture/languages'},
-          {text: 'Middleware', link: '/architecture/middleware'},
-          {text: 'Pages', link: '/architecture/pages'},
-          {text: 'Routes', link: '/architecture/routes'},
-          {text: 'Services', link: '/architecture/services'},
-          {text: 'Sessions', link: '/architecture/sessions'},
-          {text: 'State', link: '/architecture/state'},
-          {text: 'Styles', link: '/architecture/styles'},
-          {text: 'Utils', link: '/architecture/utils'},
+          {link: '/architecture/folder-structure', text: 'Folder Structure'},
+          {link: '/architecture/assets', text: 'Assets'},
+          {link: '/architecture/components', text: 'Components'},
+          {link: '/architecture/hooks', text: 'Hooks'},
+          {link: '/architecture/languages', text: 'Languages'},
+          {link: '/architecture/middleware', text: 'Middleware'},
+          {link: '/architecture/pages', text: 'Pages'},
+          {link: '/architecture/routes', text: 'Routes'},
+          {link: '/architecture/services', text: 'Services'},
+          {link: '/architecture/sessions', text: 'Sessions'},
+          {link: '/architecture/state', text: 'State'},
+          {link: '/architecture/styles', text: 'Styles'},
+          {link: '/architecture/utils', text: 'Utils'},
         ],
+        text: 'Architecture',
       },
     ],
 
     socialLinks: [
       {icon: 'github', link: 'https://github.com/gaia-react/react-router'},
     ],
-
-    footer: {
-      message: 'Released under the MIT License',
-      copyright:
-        'Copyright ©2026, <a href="https://github.com/stevensacks" target="_blank" rel="noreferrer">Steven Sacks</a>',
-    },
   },
+  title: 'Docs',
 });

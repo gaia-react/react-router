@@ -12,21 +12,21 @@ const Examples: FC = () => {
       <div className="flex items-center justify-center gap-8">
         <LinkButton
           className="inline-block"
-          icon={faCloudArrowUp}
-          size="sm"
-          to="/things"
-          variant="tertiary"
-        >
-          {t('serviceExample')}
-        </LinkButton>
-        <LinkButton
-          className="inline-block"
           icon={faCircleUser}
           size="sm"
           to="/login"
           variant="tertiary"
         >
           {t('authExample')}
+        </LinkButton>{' '}
+        <LinkButton
+          className="inline-block"
+          icon={faCloudArrowUp}
+          size="sm"
+          to="/things"
+          variant="tertiary"
+        >
+          {t('serviceExample')}
         </LinkButton>
       </div>
       <ExampleConsumer className="mt-4 w-full" />

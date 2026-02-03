@@ -19,7 +19,7 @@ GAIA React has many great features built-in:
 - [remix-auth](https://remix.run/resources/remix-auth) with a working authentication example
 - Toast notifications with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
 - Internationalization via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with sample files already in place
-- [RVF](https://www.rvf-js.io/) for form management and validation
+- [Conform](https://conform.guide/) for form management and validation
 - [FontAwesome](https://fontawesome.com/) icons
 - A convenient and flexible wrapper around fetch that simplifies API calls
 - Many example components, ready for you to use and modify

@@ -100,6 +100,11 @@ const decorator =
         },
         path: route.path,
       })),
+      // to prevent theme provider error
+      {
+        action: () => {},
+        path: '/actions/set-theme',
+      },
     ]);
 
     return reactRouterStub({initialEntries: [path]});

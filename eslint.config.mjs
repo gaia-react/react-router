@@ -132,13 +132,6 @@ const reactCustomConfig = [
       'react/jsx-props-no-spreading': 'off',
     },
   },
-  {
-    files: ['app/?(components|hooks|pages|services|utils)/**/*.ts?(x)'],
-    name: 'react/components',
-    rules: {
-      'max-lines': 'error',
-    },
-  },
 ];
 
 const typescriptConfig = defineConfig([
@@ -469,6 +462,13 @@ const importXConfig = [
     },
   },
   {
+    files: ['app/**/hooks/*.ts?(x)'],
+    name: 'import-x/hooks',
+    rules: {
+      'import-x/no-default-export': 'error',
+    },
+  },
+  {
     files: ['test/**/*.ts?(x)'],
     name: 'import-x/test-config-files',
     rules: {
@@ -484,6 +484,14 @@ const importXConfig = [
       'import-x/no-unresolved': 'off',
     },
   },
+  {
+    files: ['docs/**/*.ts'],
+    name: 'import-x/vitepress',
+    rules: {
+      'canonical/filename-match-exported': 'off',
+      'import-x/no-extraneous-dependencies': 'off',
+    },
+  },
 ];
 
 const noRelativeImportPathsConfig = [
@@ -496,7 +504,7 @@ const noRelativeImportPathsConfig = [
       'no-relative-import-paths/no-relative-import-paths': [
         'error',
         {
-          allowedDepth: 1,
+          allowedDepth: 2,
           allowSameFolder: true,
           prefix: '~',
           rootDir: 'app',
@@ -767,6 +775,7 @@ export default [
     ignores: [
       '.storybook',
       '.playwright',
+      '.vitepress/cache',
       '/.react-router/**',
       'public/**',
       '**/*.css',

@@ -1,28 +1,50 @@
-type TryCatchError = [error: Error, result: null | undefined];
-type TryCatchResult<T> = TryCatchError | TryCatchSuccess<T>;
-// Based on forthcoming Safe Assignment Operator ?=
-// https://github.com/arthurfiorette/proposal-safe-assignment-operator
-type TryCatchSuccess<T> = [error: null | undefined, result: Awaited<T>];
+// Based on proposed Safe Assignment Operator ?=
+// https://github.com/arthurfiorette/proposal-try-operator/tree/old/proposal-safe-assignment-operator
+type TryCatchError = [error: Error, result: undefined];
+type TryCatchResult<T> =
+  T extends Promise<unknown> ?
+    Promise<TryCatchError | TryCatchSuccess<Awaited<T>>>
+  : TryCatchError | TryCatchSuccess<T>;
+type TryCatchSuccess<T> = [error: undefined, result: Awaited<T>];
 
-export const tryCatch = async <T, A extends readonly unknown[]>(
+export const tryCatch = <T, A extends readonly unknown[]>(
   fn: (...args: A) => T,
   ...args: A
-): Promise<TryCatchResult<T>> => {
+): TryCatchResult<T> => {
   let error;
   let result;
 
   try {
-    result = await fn(...args);
+    result = fn(...args);
   } catch (caughtError) {
     error = caughtError as Error;
   }
 
-  if (result) {
-    return [undefined, result] as TryCatchSuccess<T>;
+  if (result instanceof Promise) {
+    return result
+      .then((promiseResult: T) => [undefined, promiseResult])
+      .catch((caughtError: Error) => [
+        caughtError,
+        undefined,
+      ]) as TryCatchResult<T>;
   }
 
-  return [error, undefined] as TryCatchError;
+  if (result) {
+    return [undefined, result] as TryCatchResult<T>;
+  }
+
+  return [error, undefined] as TryCatchResult<T>;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-unsafe-function-type
+export const compose = (...fns: Function[]): Function =>
+  // eslint-disable-next-line sonarjs/reduce-initial-value
+  fns.reduce(
+    (f, g) =>
+      (...args: unknown[]) =>
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+        f(g(...args))
+  );
 
 export const noop = () => {};
 

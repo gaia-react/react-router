@@ -24,7 +24,7 @@ const ThingPage: FC<ThingPageProps> = ({className, thing}) => {
     <section
       className={twJoin('mx-auto w-full max-w-screen-sm px-4 py-12', className)}
     >
-      <Form className="space-y-8" method="put">
+      <Form className="space-y-8" method="PUT">
         <input name="id" type="hidden" value={thing.id} />
         <InputText
           defaultValue={thing.name}

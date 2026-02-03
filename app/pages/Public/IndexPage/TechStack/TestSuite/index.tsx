@@ -1,10 +1,10 @@
 import type {FC} from 'react';
-import ChromaticLogo from '~/components/Logos/ChromaticLogo';
-import MSWLogo from '~/components/Logos/MSWLogo';
-import PlaywrightLogo from '~/components/Logos/PlaywrightLogo';
-import RTLLogo from '~/components/Logos/RTLLogo';
-import StorybookLogo from '~/components/Logos/StorybookLogo';
-import VitestLogo from '~/components/Logos/VitestLogo';
+import ChromaticLogo from '../Logos/ChromaticLogo';
+import MSWLogo from '../Logos/MSWLogo';
+import PlaywrightLogo from '../Logos/PlaywrightLogo';
+import RTLLogo from '../Logos/RTLLogo';
+import StorybookLogo from '../Logos/StorybookLogo';
+import VitestLogo from '../Logos/VitestLogo';
 
 const TestSuite: FC = () => (
   <>

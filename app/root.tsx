@@ -5,10 +5,9 @@ import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
 import {getToast, setToastCookieOptions} from 'remix-toast';
-import {twJoin} from 'tailwind-merge';
 import Document from '~/components/Document';
-import RootErrorBoundary from '~/components/RootErrorBoundary';
-import Toast, {toast as notify} from '~/components/Toast';
+import RootErrorBoundary from '~/components/Errors/RootErrorBoundary';
+import Toast, {notify} from '~/components/Toast';
 import {getLanguage, i18nextMiddleware} from '~/middleware/i18next';
 import {setApiLanguage} from '~/services/api';
 import {getAuthenticatedUser} from '~/sessions.server/auth';
@@ -78,11 +77,11 @@ const App: FC = () => {
 
   return (
     <Document
-      className={twJoin(theme)}
       dir={i18n.dir(i18n.language)}
       isSsrTheme={!!loaderData.theme}
       lang={i18n.language}
       noIndex={noIndex}
+      theme={theme}
     >
       <script
         dangerouslySetInnerHTML={{

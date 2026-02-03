@@ -4,10 +4,6 @@ import {useFetcher} from 'react-router';
 import type {Maybe} from '~/types';
 import {noop} from '~/utils/function';
 
-// Based on a combination of Kent C Dodds' and Matt Stobb's blog posts:
-// https://kentcdodds.com/blog/how-to-use-react-context-effectively
-// https://www.mattstobbs.com/remix-dark-mode/
-
 export type Theme = Maybe<'dark' | 'light'>;
 const themes = ['dark', 'light'];
 
@@ -77,33 +73,38 @@ export const ThemeProvider: FC<ThemeProviderProps> = ({
   const [theme, setTheme] = state;
 
   const persistTheme = useFetcher();
-  // TODO: remove this when persistTheme is memoized properly
+
   const persistThemeRef = useRef(persistTheme);
+
   useEffect(() => {
     persistThemeRef.current = persistTheme;
   }, [persistTheme]);
 
-  const mountRun = useRef(false);
-
   useEffect(() => {
-    if (!mountRun.current) {
-      mountRun.current = true;
+    // saving the initial theme prevents a hydration error
+    // in ThemeSwitcher after the first time the site loads
+    const saveInitialTheme = () => {
+      const detectedTheme: Theme = theme ?? getPreferredTheme();
 
-      return;
+      if (detectedTheme) {
+        localStorage.setItem(LOCAL_STORAGE_KEY, detectedTheme);
+
+        // eslint-disable-next-line @typescript-eslint/no-floating-promises
+        persistThemeRef.current.submit(
+          {theme: detectedTheme},
+          {action: 'actions/set-theme', method: 'POST'}
+        );
+
+        setTheme(detectedTheme);
+      }
+    };
+
+    if (theme) {
+      saveInitialTheme();
+    } else {
+      setTimeout(saveInitialTheme);
     }
-
-    if (!theme) {
-      return;
-    }
-
-    localStorage.setItem(LOCAL_STORAGE_KEY, theme);
-
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    persistThemeRef.current.submit(
-      {theme},
-      {action: 'action/set-theme', method: 'POST'}
-    );
-  }, [theme]);
+  }, [setTheme, theme]);
 
   useEffect(() => {
     const mediaQuery = window.matchMedia(prefersDarkMQ);

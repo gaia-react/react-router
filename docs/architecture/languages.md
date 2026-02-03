@@ -31,7 +31,7 @@ The tradeoff is that all the strings for all the pages for all the languages are
 
 GAIA recommends starting with the convenience of the TypeScript approach, and only switching to JSON if and when you actually need to optimize by switching to JSON and loading each language and translation file on-demand, instead.
 
-## Structure 
+## Structure
 
 The index file inside each language folder imports the root level files for that language.
 
@@ -40,19 +40,23 @@ GAIA's example structure has auth, common, and error string at the root level, a
 Inside the pages folder, there are subfolders for each page, and each page folder contains a file called `index.ts` which imports any sub-pages for that page. You will also see a file named `_index.ts`. This file contains the strings for the root of that page, rather than put them in the index file, which is reserved for importing sub-pages.
 
 In most cases, the `_index` will be imported using destructuring like this:
+
 ```ts
 import index from './_index';
 
 export default {
-    ...index,
+  ...index,
 };
 ```
+
 However, in the GAIA example, you will see on the root of pages, it is imported like this:
+
 ```ts
 import index from './_index';
 
 export default {
-    index,
+  index,
 };
 ```
+
 This is because in this case, it is the actual index page of the entire site, so it is named "index" accordingly.

@@ -3,8 +3,8 @@ import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router';
 import AppVersion from 'app/components/AppVersion';
 import {twMerge} from 'tailwind-merge';
-import DarkModeToggle from '~/components/DarkModeToggle';
 import LanguageSelect from '~/components/LanguageSelect';
+import ThemeSwitcher from '~/components/ThemeSwitcher';
 
 type HeaderProps = {
   className?: string;
@@ -24,7 +24,7 @@ const Header: FC<HeaderProps> = ({className}) => {
         </div>
         <div className="flex items-center gap-4">
           <LanguageSelect />
-          <DarkModeToggle />
+          <ThemeSwitcher />
         </div>
       </div>
     </header>

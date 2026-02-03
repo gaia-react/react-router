@@ -3,8 +3,8 @@
 layout: home
 
 hero:
-  name: "GAIA React Template"
-  tagline: "A comprehensive template for building professional and scalable React Router applications"
+  name: 'GAIA React Template'
+  tagline: 'A comprehensive template for building professional and scalable React Router applications'
   actions:
     - theme: brand
       text: Quick Start
@@ -19,7 +19,7 @@ hero:
 features:
   - title: Solid Foundation
     icon: 🚀
-    details: Built on React Router, TailwindCSS, Zod, i18next, Remix Auth, Remix Toast, RVF, FontAwesome, and more
+    details: Built on React Router, TailwindCSS, Zod, i18next, Remix Auth, Remix Toast, Conform, FontAwesome, and more
   - title: Maintain Code Quality
     icon: ️✅
     details: Pre-configured with TypeScript, robust ESLint ruleset, Prettier, Stylelint, Husky and Lint-Staged

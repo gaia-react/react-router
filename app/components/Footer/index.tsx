@@ -12,7 +12,7 @@ const Footer: FC<FooterProps> = ({className}) => {
   return (
     <footer className={twMerge('bg-secondary w-full px-4 py-2', className)}>
       <div className="flex w-full flex-col items-center justify-between sm:flex-row">
-        <small>&copy;2024 GAIA Framework</small>
+        <small>&copy;2026 GAIA Framework</small>
         <small>
           <a
             href="https://github.com/gaia-react/remix?tab=MIT-1-ov-file#readme"

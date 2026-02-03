@@ -7,7 +7,7 @@ import {ja} from 'date-fns/locale';
 import {twMerge} from 'tailwind-merge';
 import Button from '~/components/Button';
 import LinkButton from '~/components/LinkButton';
-import useBreakpoint from '~/hooks/useBreakpoint';
+import {useBreakpoint} from '~/hooks/useBreakpoint';
 import type {Thing} from '~/services/gaia/things/types';
 
 type ThingCardProps = {
