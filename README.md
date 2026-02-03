@@ -51,7 +51,7 @@ GAIA React is its spiritual successor. It has been reborn as a React template. L
 
 ## Installation
 
-Make sure you have [Node.js](https://nodejs.org/en/) >=20.17.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
+Make sure you have [Node.js](https://nodejs.org/en/) >=22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
 
 All you need to do is run this installation command and get to work.
 
@@ -70,6 +70,24 @@ Duplicate the `.env.example` file and name it `.env`.
 ### Setup Fix on Save in your IDE
 
 Follow these [instructions](/react-router/tech-stack/code-quality/#setup-fix-on-save).
+
+## Documentation
+
+GAIA comes with the documentation included. Run it locally with:
+
+```sh
+npm run docs
+```
+
+It is recommended that you keep these docs up to date as you build your project.
+
+Claude knows how to reference the documentation when necessary.
+
+## Claude
+
+GAIA comes with [Claude](https://claude.ai/) support built-in.
+
+Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
 
 ## Development
 

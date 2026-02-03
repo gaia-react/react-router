@@ -82,6 +82,7 @@ export default defineConfig({
           {link: '/general/quick-start', text: 'Quick Start'},
           {link: '/general/about', text: 'About'},
           {link: '/general/features', text: 'Features'},
+          {link: '/general/claude/', text: 'Claude Integration'},
         ],
         text: 'General',
       },

@@ -13,3 +13,5 @@ However, if there is a new version, update the following packages in `package.js
 
 2. Delete the `node_modules` folder and the `package-lock.json` file.
 3. Run `npm install`.
+4. Check the React Router CHANGELOG at https://github.com/remix-run/react-router/blob/main/CHANGELOG.md for any unstable or breaking changes.
+5. If there are unstable or breaking changes, modify the codebase accordingly, following migration steps for the new version, if provided.
