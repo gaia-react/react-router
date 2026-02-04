@@ -49,7 +49,7 @@ GAIA React is a comprehensive template for building modern React web application
 ├── /hooks            # Custom React hooks
 ├── /state            # State management
 ├── /styles           # Tailwind CSS stylesheets
-├── /languages        # i18n translation files (27 languages)
+├── /languages        # i18n translation files
 ├── /types            # TypeScript type definitions
 ├── /pages            # Page components
 ├── /middleware       # Server middleware
@@ -75,8 +75,8 @@ GAIA React is a comprehensive template for building modern React web application
 
 ### File Naming Conventions
 
-- **Components**: Must be in PascalCase folders with `index.tsx` as the main file
-- **Hooks**: Must be camelCase (to match the hook name)
+- **Components**: Must be in PascalCase folders with `index.tsx` as the main file and the component named after the folder
+- **Hooks**: Must be camelCase (to match the hook name) with named export
 - **Other files**: Must be kebab-case
 - **Tests/Stories**: Must be inside `tests/` folders within components
 
@@ -85,28 +85,29 @@ GAIA React is a comprehensive template for building modern React web application
 - Use `type` keyword instead of `interface` (enforced)
 - Use consistent type imports: `import type { Foo } from 'bar'`
 - Arrays must use bracket notation: `string[]` not `Array<string>`
-- Boolean props must follow pattern: `^((can|has|hide|is|show)[A-Z]|checked|disabled|hide|required|show)`
+- Boolean props and variables must follow pattern: `^((can|has|hide|is|show)[A-Z]|checked|disabled|hide|required|show)`
 
 ### Import Rules
 
 - React imports must come first
 - Use absolute imports with `~` prefix for app imports
 - Relative imports allowed only within same folder or two levels deep
+- ESLint will automatically sort and group imports
 
 ### Code Patterns
 
-- Arrow functions preferred over function declarations
-- No switch statements (use object maps or if/else)
+- Arrow functions preferred over function declarations (enforced)
+- No switch statements (use if/else or object maps)
 - No TypeScript enums (use const objects with `as const`)
-- JSX boolean props must use explicit `={true}` syntax
+- JSX boolean props must use explicit `={true}` syntax (enforced)
 - Max 3 function parameters (enforced)
 
 ### Testing
 
 - Test files: `./app/**/tests/*.test.{ts,tsx}`
 - Storybook files: `./app/**/tests/*.stories.tsx`
-- E2E tests: `./.playwright/e2e/*.spec.ts`
-- Use happy-dom environment for unit tests
+- Playwright tests: `./.playwright/e2e/*.spec.ts`
+- Use vitest for unit tests
 
 ## Pre-commit Hooks
 
@@ -118,7 +119,7 @@ Husky runs on staged files:
 
 ## Environment Variables
 
-Copy `.env.example` to `.env`:
+Rename `.env.example` to `.env`:
 
 ```
 SITE_URL=http://localhost:5173
@@ -137,6 +138,6 @@ npm install <package-name> -E
 
 ## Documentation
 
-You can reference the documentation in the `docs` folder if you need more details on specific technologies and patterns used in this project.
+You can reference the Vitepress documentation in @docs if you need more details on specific technologies and patterns used in this project.
 
 Update the documentation and/or the CLAUDE.md file if you make changes to the architecture or replace any of the packages mentioned in the documentation.

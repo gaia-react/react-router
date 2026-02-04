@@ -62,6 +62,10 @@ Based on user's language selection:
 
 5. **Update Playwright Test**: Edit `.playwright/e2e/language-switch.spec.ts` with the selected languages.
 
+## Step 6: Check .env file
+
+If the `.env` file does not exist, rename `.env.example` to `.env`.
+
 ## Step 6: Verify
 
 Run these commands sequentially, stopping if any fails:
