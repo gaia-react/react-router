@@ -19,6 +19,7 @@ The Developer Experience (DX) is designed to be top-notch.
 - Utilities, hooks, authentication, components, services, styles, tests, stories, and other code examples are all included to help you get started quickly.
 - Unit, integration, visual regression, and end-to-end tests are set up.
 - While GAIA comes with recommended packages, conventions, and settings, you're free to change or remove them to suit your needs!
+- Claude Code integration with built-in commands to help you build faster.
 
 ## Background
 
