@@ -66,7 +66,7 @@ npx create-react-router@latest --template gaia-react/react-router
 npm install
 ```
 
-Duplicate the `.env.example` file and name it `.env`.
+Duplicate the `.env.example` file and name it `.env` (or you can let Claude handle this for you with the `/gaia-init` command).
 
 ### Setup Fix on Save in your IDE
 
@@ -80,7 +80,7 @@ GAIA comes with the documentation included. Run it locally with:
 npm run docs
 ```
 
-It is recommended that you keep these docs up to date as you build your project.
+It is recommended that you keep these docs up to date as you build your project. There is also a GitHub action to deploy the docs to your repository's GitHub Pages.
 
 Claude knows how to reference the documentation when necessary.
 
@@ -159,9 +159,9 @@ npx playwright test --ui
 
 ## Deployment
 
-GAIA comes with the default Remix deployment configuration. You can change this to whatever deployment process you prefer.
+GAIA comes with the default React Router deployment configuration. You can change this to whatever deployment process you prefer.
 
-Here's the basic Remix deployment process:
+Here's the basic React Router deployment process:
 
 ```sh
 npm run build
@@ -173,11 +173,11 @@ Then run the app in production mode:
 npm start
 ```
 
-You'll need to pick a host to deploy it to. Jacob Paris wrote a [great article](https://www.jacobparis.com/content/where-to-host-remix) on where to host your React Router 7 app.
+You'll need to pick a host to deploy it to. Jacob Paris wrote an [article](https://www.jacobparis.com/content/where-to-host-remix) on where you can host your React Router 7 app.
 
 ### DIY
 
-If you're familiar with deploying Node applications, the built-in Remix app server is production-ready.
+If you're familiar with deploying Node applications, the built-in React Router app server is production-ready.
 
 Make sure to deploy the output of `npm run build`
 

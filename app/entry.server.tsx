@@ -1,4 +1,4 @@
-/* eslint-disable prefer-arrow/prefer-arrow-functions,no-console */
+/* eslint-disable max-params, no-console */
 /**
  * By default, Remix will handle generating the HTTP Response for you.
  * You are free to delete this file if you'd like to, but if you ever want it revealed again, you can run `npx remix reveal` ✨
@@ -24,7 +24,6 @@ if (env.NODE_ENV !== 'production' && env.MSW_ENABLED) {
 
 const streamTimeout = 5000;
 
-// eslint-disable-next-line max-params
 export default async function handleRequest(
   request: Request,
   responseStatusCode: number,
@@ -70,7 +69,7 @@ export default async function handleRequest(
         <ServerRouter context={entryContext} url={request.url} />
       </I18nextProvider>,
       {
-        onError(error: unknown) {
+        onError: (error: unknown) => {
           // eslint-disable-next-line sonarjs/no-parameter-reassignment
           responseStatusCode = 500;
 
@@ -78,7 +77,7 @@ export default async function handleRequest(
             console.error(error);
           }
         },
-        onShellError(error: unknown) {
+        onShellError: (error: unknown) => {
           reject(error);
         },
         [readyOption]: () => {

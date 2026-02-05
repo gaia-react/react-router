@@ -3,6 +3,7 @@
 If there is no output and the package is up to date, no further action is needed.
 
 However, if there is a new version, update the following packages in `package.json` to the new version, ensuring they are all the same version:
+
 - "@react-router/node"
 - "@react-router/remix-routes-option-adapter"
 - "@react-router/serve"

@@ -57,5 +57,3 @@ jobs:
           name: playwright-traces
           path: .playwright/output
           retention-days: 5
-
-

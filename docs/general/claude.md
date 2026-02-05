@@ -4,7 +4,7 @@ layout: doc
 outline: deep
 ---
 
-# Claude Integration 
+# Claude Integration
 
 GAIA comes with [Claude](https://claude.ai/) support built-in.
 

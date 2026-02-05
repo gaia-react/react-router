@@ -12,7 +12,7 @@ import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
 import noSwitchStatements from 'eslint-plugin-no-switch-statements';
 import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
-import preferArrow from 'eslint-plugin-prefer-arrow';
+import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions';
 import prettier from 'eslint-plugin-prettier';
 import sonarjs from 'eslint-plugin-sonarjs';
 import storybook from 'eslint-plugin-storybook';
@@ -597,28 +597,21 @@ const playwrightConfig = [
   },
 ];
 
-const preferArrowConfig = [
+const preferArrowFunctionsConfig = [
   {
     name: 'prefer-arrow',
     plugins: {
-      'prefer-arrow': preferArrow,
+      'prefer-arrow-functions': preferArrowFunctions,
     },
     rules: {
-      'prefer-arrow/prefer-arrow-functions': [
-        'error',
-        {
-          classPropertiesAllowed: false,
-          disallowPrototype: true,
-          singleReturnOnly: false,
-        },
-      ],
+      'prefer-arrow-functions/prefer-arrow-functions': 'error',
     },
   },
   {
     files: ['**/*.d.ts'],
     name: 'ts-definition-files/prefer-arrow-off',
     rules: {
-      'prefer-arrow/prefer-arrow-functions': 'off',
+      'prefer-arrow-functions/prefer-arrow-functions': 'off',
     },
   },
 ];
@@ -805,7 +798,7 @@ export default [
   ...noSwitchStatementsConfig,
   ...perfectionistConfig,
   ...playwrightConfig,
-  ...preferArrowConfig,
+  ...preferArrowFunctionsConfig,
   ...sonarConfig,
   ...storybookConfig,
   ...testHarnessConfig,
