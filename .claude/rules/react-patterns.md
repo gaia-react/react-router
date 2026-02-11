@@ -1,4 +1,4 @@
-# React Rules
+# React Patterns and Conventions
 
 Rules to follow when writing React code.
 
@@ -11,7 +11,7 @@ Always use named imports from `react` — never `import React from 'react'`.
 
 ## FC Rule
 
-Always use the named import `FC` for functional components. 
+Always use the named import `FC` for functional components.
 
 If the component has no props, define it as `FC` without generics.
 
