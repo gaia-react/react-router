@@ -6,7 +6,7 @@ export const useComponentRect = (
   ref: RefObject<HTMLElement | null>,
   trigger?: unknown
 ): DOMRect => {
-  const [rect, setRect] = useState<DOMRect>({
+  const [rect, setRect] = useState({
     bottom: 0,
     height: 0,
     left: 0,

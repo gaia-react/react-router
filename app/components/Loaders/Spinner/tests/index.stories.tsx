@@ -1,5 +1,4 @@
 import type {Meta, StoryFn} from '@storybook/react-vite';
-import type {SpinnerProps} from '../index';
 import Spinner from '../index';
 
 const meta: Meta = {
@@ -22,7 +21,7 @@ const meta: Meta = {
 
 export default meta;
 
-const Template: StoryFn<SpinnerProps> = (args) => <Spinner {...args} />;
+const Template: StoryFn = (args) => <Spinner {...args} />;
 
 export const Default = Template.bind({});
 Default.args = {

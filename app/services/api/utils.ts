@@ -31,7 +31,10 @@ const responseToCamelCase = async (
   }
 };
 
-export const getHooks = (useSnakeCase?: boolean, hooks?: Hooks) =>
+export const getHooks = (
+  useSnakeCase?: boolean,
+  hooks?: Hooks
+): Hooks | undefined =>
   useSnakeCase ?
     {
       afterResponse: [responseToCamelCase, ...(hooks?.afterResponse ?? [])],
@@ -47,7 +50,7 @@ export const appendSearchParams = (
     searchParams?: Record<string, unknown>;
     useSnakeCase?: boolean;
   }
-) => {
+): string => {
   const {
     arrayFormat = 'comma',
     searchParams,
@@ -74,7 +77,7 @@ export const appendSearchParams = (
 export const setPathParams = (
   url: string,
   pathParams?: Record<string, unknown>
-) =>
+): string =>
   pathParams ?
     Object.entries(pathParams).reduce(
       (acc, [key, value]) => acc.replace(`:${key}`, value as string),
@@ -93,9 +96,9 @@ export const getUri = (
     searchParams?: Record<string, unknown>;
     useSnakeCase?: boolean;
   } = {}
-) => appendSearchParams(setPathParams(uri, pathParams), options);
+): string => appendSearchParams(setPathParams(uri, pathParams), options);
 
-export const getBaseUrl = () => {
+export const getBaseUrl = (): string => {
   if (process.env.API_URL) {
     // server api call
     return process.env.API_URL;

@@ -1,4 +1,4 @@
-export const range = (start: number, end: number) =>
+export const range = (start: number, end: number): number[] =>
   (Array(end - start + 1) as number[])
     .fill(start)
     .map((value, index) => value + index);
@@ -6,7 +6,7 @@ export const range = (start: number, end: number) =>
 export const uniqBy = <T, K extends keyof T>(
   array: T[],
   iteratee: (item: T) => T[K]
-) =>
+): T[] =>
   array.filter(
     (value, index, self) =>
       index === self.findIndex((other) => iteratee(other) === iteratee(value))

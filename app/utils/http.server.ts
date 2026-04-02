@@ -1,6 +1,6 @@
 import type {HeadersFunction} from 'react-router';
 
-export const isProductionHost = (request: Request) =>
+export const isProductionHost = (request: Request): boolean =>
   request.headers.get('host') === 'domain.tld';
 
 // based on Jacob Paris' blog post:

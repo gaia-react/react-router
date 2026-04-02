@@ -34,7 +34,7 @@ export const create = <ApiResponseType>({
   return async (
     uri: string,
     {pathParams, searchParams, ...options}: RequestOptions = {}
-  ) =>
+  ): Promise<ApiResponseType> =>
     kyInstance<ApiResponseType>(
       getUri(uri, {arrayFormat, pathParams, searchParams, useSnakeCase}),
       options
@@ -42,7 +42,7 @@ export const create = <ApiResponseType>({
 };
 
 // Set Authorization Bearer header for all instances
-export const setApiAuthorization = (token: string) => {
+export const setApiAuthorization = (token: string): void => {
   instances.forEach((kyInstance) => {
     kyInstance.extend({
       hooks: {
@@ -59,7 +59,7 @@ export const setApiAuthorization = (token: string) => {
 const apiLanguage = i18n.fallbackLng;
 
 // Set Accept-Language header for all instances
-export const setApiLanguage = (language: string) => {
+export const setApiLanguage = (language: string): void => {
   if (apiLanguage !== language) {
     instances.forEach((kyInstance) => {
       kyInstance.extend({

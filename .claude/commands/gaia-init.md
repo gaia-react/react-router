@@ -87,7 +87,38 @@ Run these commands sequentially, stopping if any fails:
 npm run typecheck && npm run test:ci && npm run lint && npm run build
 ```
 
-## Step 9: Complete
+## Step 9: Claude Configuration
+
+If any of the following fail during installation or require the user to do it, provide the user with step-by-step instructions to run those manually.
+
+### Install Skills
+
+[React Doctor](https://github.com/millionco/react-doctor)
+
+- `curl -fsSL https://react.doctor/install-skill.sh`
+
+[Matt Pocock's TDD Skill](https://www.aihero.dev/skill-test-driven-development-claude-code)
+
+- `npx skills add mattpocock/skills/tdd`
+
+[Playwright CLI](https://github.com/microsoft/playwright-cli)
+
+- `playwright-cli install --skills`
+
+### Install Plugins
+
+typescript-lsp plugin
+
+- `/plugin install typescript-lsp@claude-plugins-official`
+
+### Update Code Review Audit Agent
+
+Update .claude/agents/code-review-audit.md `{variables}` to match this project and operating system paths:
+
+- `{project_directory}` (example: `/Users/username/Documents/projects/my-gaia-app`)
+- The "Session transcript logs" path should be updated based on the OS and where the global .claude logs for this project are stored
+
+## Step 10: Complete
 
 1. Remove the gaia-init command from the project to prevent accidental re-runs.
 

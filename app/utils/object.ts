@@ -5,7 +5,7 @@ import SparkMD5 from 'spark-md5';
   Generates an MD5 hash for a given input object
   It is most commonly used for creating unique keys for React components
 */
-export const md5 = (obj: Record<string, unknown>) =>
+export const md5 = (obj: Record<string, unknown>): string =>
   SparkMD5.hash(JSON.stringify(obj));
 
 /*
@@ -14,7 +14,7 @@ export const md5 = (obj: Record<string, unknown>) =>
 export const every = (
   obj: Record<string, unknown>,
   predicate: (value: unknown) => boolean
-) => {
+): boolean => {
   const values = Object.values(obj);
 
   return values.length > 0 && values.every(predicate);
@@ -26,12 +26,13 @@ export const every = (
 export const some = (
   obj: Record<string, unknown>,
   predicate: (value: unknown) => boolean
-) => Object.values(obj).some(predicate);
+): boolean => Object.values(obj).some(predicate);
 
 /*
   Utility function to check if a value is null or undefined
  */
-export const isNil = (value: unknown) => value === null || value === undefined;
+export const isNil = (value: unknown): boolean =>
+  value === null || value === undefined;
 
 /*
   Recursively removes all null and undefined values from an object or array
@@ -69,7 +70,7 @@ export const deepRemoveNil = (input: unknown): unknown => {
 export const mapKeys = (
   obj: Record<string, unknown>,
   fn: (key: string) => string
-) =>
+): Record<string, unknown> =>
   Object.entries(obj).reduce<Record<string, unknown>>((acc, [key, value]) => {
     acc[fn(key)] = value;
 
@@ -82,7 +83,7 @@ export const mapKeys = (
 export const mapValues = (
   obj: Record<string, unknown>,
   fn: (p: unknown) => unknown
-) =>
+): Record<string, unknown> =>
   Object.entries(obj).reduce<Record<string, unknown>>((acc, [key, value]) => {
     acc[key] = fn(value);
 
@@ -129,13 +130,13 @@ export const convertCase = (
 /*
   Converts the keys of an object to snake_case
  */
-export const toSnakeCase = <T = unknown>(obj: unknown) =>
+export const toSnakeCase = <T = unknown>(obj: unknown): T | undefined =>
   obj ? (convertCase(snakeCase, obj) as T) : undefined;
 
 /*
   Converts the keys of an object to camelCase
  */
-export const toCamelCase = <T = unknown>(obj: unknown) =>
+export const toCamelCase = <T = unknown>(obj: unknown): T | undefined =>
   obj ? (convertCase(camelCase, obj) as T) : undefined;
 
 /*
@@ -144,7 +145,7 @@ export const toCamelCase = <T = unknown>(obj: unknown) =>
 export const compact = (
   obj: Record<string, unknown>,
   options?: {keepEmptyArray?: boolean; keepFalsy?: boolean}
-) =>
+): Record<string, unknown> =>
   Object.entries(obj).reduce<Record<string, unknown>>((acc, [key, value]) => {
     if (
       ((options?.keepFalsy && !isNil(value)) || value) &&

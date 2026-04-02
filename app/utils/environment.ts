@@ -5,5 +5,5 @@ const COMMIT_SHA =
 
 export const VERSION_WITH_SHA = `${VERSION}${COMMIT_SHA}`;
 
-export const getApplicationVersion = (omitSHA?: boolean) =>
+export const getApplicationVersion = (omitSHA?: boolean): string | undefined =>
   omitSHA ? VERSION : VERSION_WITH_SHA;

@@ -18,6 +18,7 @@ const i18n = {
   react: {useSuspense: false},
   resources,
   returnNull: false,
+  showSupportNotice: false,
   supportedLngs: LANGUAGES,
 };
 

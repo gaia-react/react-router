@@ -17,7 +17,7 @@ type FormResultProps = {
 const FormError: FC<FormResultProps> = ({className, hide}) => {
   const {error} = useActionData<FormActionData>() ?? {};
 
-  const [result, setResult] = useState<string>('');
+  const [result, setResult] = useState('');
 
   useEffect(() => {
     setResult(hide ? '' : (error ?? ''));

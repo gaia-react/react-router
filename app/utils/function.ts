@@ -46,9 +46,9 @@ export const compose = (...fns: Function[]): Function =>
         f(g(...args))
   );
 
-export const noop = () => {};
+export const noop = (): void => {};
 
-export const sleep = async (ms: number) =>
+export const sleep = async (ms: number): Promise<void> =>
   new Promise((resolve) => {
     setTimeout(resolve, ms);
   });

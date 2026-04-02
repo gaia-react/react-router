@@ -1,4 +1,4 @@
-node_modules
+node_modules/
 
 # react-router
 /.cache
@@ -6,7 +6,9 @@ node_modules
 /public/build
 .react-router/
 
+# Environment
 .env
+.env.*
 !.env.example
 
 # documentation
@@ -27,6 +29,7 @@ npm-debug.log*
 /playwright
 .playwright/.cache/
 .playwright/output/
+.playwright-mcp
 coverage
 .jest-cache
 
@@ -38,3 +41,8 @@ coverage
 
 # Optional eslint cache
 .eslintcache
+
+# Claude files
+.claude/agent-memory/
+.claude/worktrees/
+.claude/handoff/

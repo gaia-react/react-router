@@ -22,7 +22,6 @@ const LoginPage: FC = () => {
   const isSubmitting = navigation.state === 'submitting';
 
   const [form, fields] = useForm({
-    // eslint-disable-next-line sonarjs/no-hardcoded-passwords
     defaultValue: {email: 'user@domain.com', password: 'passw0rd'},
     onValidate: ({formData}) => parseWithZod(formData, {schema}),
   });

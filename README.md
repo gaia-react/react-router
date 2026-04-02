@@ -66,7 +66,9 @@ npx create-react-router@latest --template gaia-react/react-router
 npm install
 ```
 
-Duplicate the `.env.example` file and name it `.env` (or you can let Claude handle this for you with the `/gaia-init` command).
+If you're using [Claude Code](https://code.claude.com/docs/en/overview), you can run the `/gaia-init` command once you're ready (see below)
+
+If not, duplicate the `.env.example` file and name it `.env`, and you can optionally delete the `.claude` folder.
 
 ### Setup Fix on Save in your IDE
 

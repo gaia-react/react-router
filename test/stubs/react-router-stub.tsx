@@ -4,7 +4,6 @@ import type {
   LoaderFunctionArgs,
 } from 'react-router';
 import {createRoutesStub} from 'react-router';
-import type {ReactRenderer} from '@storybook/react-vite';
 import type {PartialStoryFn} from 'storybook/internal/types';
 import {addons} from 'storybook/preview-api';
 
@@ -78,8 +77,7 @@ const getAction = (action?: Action) => {
 };
 
 const decorator =
-  (options?: ReactRouterDecoratorOptions) =>
-  (Story: PartialStoryFn<ReactRenderer>) => {
+  (options?: ReactRouterDecoratorOptions) => (Story: PartialStoryFn) => {
     const {action, path = '/', routes = [], ...rest} = options ?? {};
 
     const reactRouterStub = createRoutesStub([

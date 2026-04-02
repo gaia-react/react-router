@@ -34,7 +34,7 @@ export const ExampleProvider: FC<ExampleProviderProps> = ({
   children,
   initialState,
 }) => {
-  const value = useState<Maybe<number>>(initialState);
+  const value = useState(initialState);
 
   return (
     <ExampleContext.Provider value={value}>{children}</ExampleContext.Provider>

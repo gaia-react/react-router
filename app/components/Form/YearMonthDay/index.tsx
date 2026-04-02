@@ -1,5 +1,5 @@
 import type {ChangeEvent, ComponentProps, FC, ReactNode} from 'react';
-import {useMemo} from 'react';
+import {useCallback, useMemo, useRef} from 'react';
 import {useTranslation} from 'react-i18next';
 import {
   addDays,
@@ -26,6 +26,7 @@ import {
 
 export type YearMonthDayProps = Omit<ComponentProps<'select'>, 'onChange'> & {
   className?: string;
+  classNameSelect?: string;
   error?: ReactNode;
   label?: string;
   name?: string;
@@ -37,6 +38,7 @@ export type YearMonthDayProps = Omit<ComponentProps<'select'>, 'onChange'> & {
 
 const YearMonthDay: FC<YearMonthDayProps> = ({
   className,
+  classNameSelect,
   error,
   label,
   name = 'dob',
@@ -51,14 +53,33 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
     t,
   } = useTranslation('common');
 
+  const hiddenRef = useRef<HTMLInputElement>(null);
   const [year, month, date] = getValues(value);
 
-  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    if (event.currentTarget.name.includes('Date')) {
-      onChange(`${year}-${month}-${event.currentTarget.value}`);
-    } else {
-      onChange(getSafeValue(value, event.currentTarget));
+  // Use a native event listener to stop input events from reaching Conform's
+  // document-level handler, which reads stale FormData and resets controlled
+  // select values. React's onInput doesn't work for this because SSR hydrates
+  // on `document`, so both React and Conform handlers are on the same node
+  // and stopPropagation has no effect between handlers on the same element.
+  const containerRef = useCallback((node: HTMLDivElement | null) => {
+    if (node) {
+      node.addEventListener('input', (event) => event.stopPropagation());
     }
+  }, []);
+
+  const handleChange = (event: ChangeEvent<HTMLSelectElement>) => {
+    const newValue =
+      event.currentTarget.name.includes('Date') ?
+        `${year}-${month}-${event.currentTarget.value}`
+      : getSafeValue(value, event.currentTarget);
+
+    // Sync the hidden input's DOM value before onChange dispatches events,
+    // so Conform reads the correct value during revalidation.
+    if (hiddenRef.current) {
+      hiddenRef.current.value = newValue;
+    }
+
+    onChange(newValue);
   };
 
   const years = useMemo(
@@ -110,12 +131,16 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
       <FieldLabel error={error} isLegend={true} required={required}>
         {label ?? t('form.dateOfBirth')}
       </FieldLabel>
-      <div className="mt-2 flex justify-between gap-4 md:gap-6">
-        <input name={name} type="hidden" value={value} />
+      <div
+        ref={containerRef}
+        className="mt-2 flex justify-between gap-4 md:gap-6"
+      >
+        <input ref={hiddenRef} name={name} type="hidden" value={value} />
         <Select
           ref={ref}
           aria-label={t('date.year')}
           className="flex-1"
+          classNameSelect={classNameSelect}
           name={`${name}Year`}
           onChange={handleChange}
           options={years}
@@ -124,6 +149,7 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
         <Select
           aria-label={t('date.month')}
           className="flex-1"
+          classNameSelect={classNameSelect}
           name={`${name}Month`}
           onChange={handleChange}
           options={months}
@@ -132,6 +158,7 @@ const YearMonthDay: FC<YearMonthDayProps> = ({
         <Select
           aria-label={t('date.day')}
           className="flex-1"
+          classNameSelect={classNameSelect}
           name={`${name}Date`}
           onChange={handleChange}
           options={dates}

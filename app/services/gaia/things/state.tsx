@@ -12,7 +12,7 @@ type ThingsContextValue = Maybe<Things>;
 
 const ThingsContext = createContext<ThingsContextValue>(undefined);
 
-export const useThings = () => {
+export const useThings = (): Things => {
   const context = useContext(ThingsContext) as Maybe<ThingsContextValue>;
 
   if (!context) {

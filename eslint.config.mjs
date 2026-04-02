@@ -63,6 +63,7 @@ const jsCustomConfig = [
       'guard-for-in': 'off',
       'max-params': 'off',
       'no-await-in-loop': 'off',
+      'no-plusplus': 'off',
       'no-restricted-syntax': 'off',
     },
   },
@@ -152,6 +153,13 @@ const typescriptConfig = defineConfig([
       'no-void': 'off',
     },
   },
+  {
+    files: ['**/*.ts?(x)'],
+    name: 'no-void',
+    rules: {
+      'no-void': ['error', {allowAsStatement: true}],
+    },
+  },
 ]);
 
 const tsEslintConfig = [
@@ -203,6 +211,13 @@ const tsEslintConfig = [
     },
   },
   {
+    files: ['app/utils/**', 'app/services/**', 'app/hooks/**'],
+    name: 'typescript/explicit-return-types',
+    rules: {
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
+    },
+  },
+  {
     files: ['**/*.test.ts?(x)', '**/*.stories.ts?(x)'],
     name: 'typescript/test-files',
     rules: {
@@ -216,6 +231,7 @@ const tsEslintConfig = [
     name: 'typescript/test-config',
     rules: {
       '@typescript-eslint/no-var-requires': 'off',
+      'no-plusplus': 'off',
     },
   },
   {
@@ -679,6 +695,7 @@ const unicornConfig = [
     name: 'unicorn',
     rules: {
       'unicorn/consistent-destructuring': 'error',
+      'unicorn/consistent-template-literal-escape': 'off',
       'unicorn/filename-case': 'off',
       'unicorn/new-for-builtins': 'off',
       'unicorn/no-array-callback-reference': 'off',
@@ -770,9 +787,13 @@ export default [
       '.playwright',
       '.vitepress/cache',
       '/.react-router/**',
+      '.claude/**/*.js',
+      '.claude/**/*.cjs',
+      'scripts',
       'public/**',
       '**/*.css',
       '**/*.svg',
+      '**/*.md',
     ],
     name: 'ignored-files',
   },
