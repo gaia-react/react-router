@@ -7,8 +7,8 @@ One `useTranslation()` per component. Use `{ns: 'other'}` for cross-namespace ac
 ```tsx
 // GOOD
 const {t} = useTranslation('pages');
-t('onboarding.step1.title'); // 'pages' namespace
-t('previous', {ns: 'common'}); // override to 'common'
+t('onboarding.step1.title');         // 'pages' namespace
+t('previous', {ns: 'common'});       // override to 'common'
 
 // BAD
 const {t} = useTranslation('pages');
@@ -19,16 +19,22 @@ Choose whichever namespace is used most frequently. If more calls override than 
 
 ## keyPrefix
 
-Use `keyPrefix` when many keys share a prefix. But if you also need namespace overrides, remove `keyPrefix` and prefix keys manually:
+`keyPrefix` is useful when many keys share a deep prefix — it keeps `t()` calls short. But it conflicts with `{ns: '...'}` overrides (the prefix is applied before the namespace switch, producing wrong keys). If you need both, drop `keyPrefix` and prefix manually:
 
 ```tsx
-// BAD — keyPrefix prevents namespace overrides
+// GOOD — keyPrefix alone, no namespace overrides needed
 const {t} = useTranslation('pages', {keyPrefix: 'onboarding.step1'});
+t('title');    // → pages:onboarding.step1.title
+t('subtitle'); // → pages:onboarding.step1.subtitle
 
-// GOOD — prefix manually when namespace overrides needed
+// BAD — keyPrefix + namespace override: prefix is misapplied
+const {t} = useTranslation('pages', {keyPrefix: 'onboarding.step1'});
+t('previous', {ns: 'common'}); // ❌ looks up common:onboarding.step1.previous
+
+// GOOD — drop keyPrefix when namespace overrides needed
 const {t} = useTranslation('pages');
 t('onboarding.step1.title');
-t('previous', {ns: 'common'});
+t('previous', {ns: 'common'}); // ✓
 ```
 
 ## Dynamic Translation Keys
@@ -71,11 +77,13 @@ previousWorkout: 'Previous <accent>Workout</accent>',
 // Component
 import {Trans} from 'react-i18next';
 
+// Pass ns as a separate prop — never embed it in i18nKey.
+// i18nKey is namespace-relative: "dashboard.previousWorkout", not "pages:dashboard.previousWorkout"
 <Trans
   components={{accent: <span className="text-orange-500" />}}
   i18nKey="dashboard.previousWorkout"
   ns="pages"
-/>;
+/>
 ```
 
 ## String Deduplication
@@ -89,6 +97,25 @@ Before adding a new key:
 
 ### Where shared labels belong
 
-- **Enum display labels** → `common` namespace, snake_case keys matching DB values (enables ``t(`key.${dbValue}`, {ns: 'common'})``)
+- **Enum display labels** → `common` namespace, snake_case keys matching DB values (enables `` t(`key.${dbValue}`, {ns: 'common'}) ``)
 - **Generic UI actions** (Save, Cancel, Edit, etc.) → already in `common`
 - **Page-specific content** → page's namespace
+
+**Japanese placeholder:** copy the English string verbatim — no empty strings, no TODO comments. Translation happens in a separate pass.
+
+## Plurals
+
+i18next uses `_one`/`_other` key suffixes for pluralization:
+
+```ts
+// Translation file (en)
+exerciseCount_one: '{{count}} exercise',
+exerciseCount_other: '{{count}} exercises',
+```
+
+```tsx
+// Component — i18next selects the right suffix automatically
+t('exerciseCount', {count: n});
+```
+
+Always define both `_one` and `_other`. For Japanese, use `_other` only (Japanese has no grammatical plural).

@@ -29,17 +29,20 @@ const schema = z.object({
 
 ```tsx
 export const action = async ({request}: ActionFunctionArgs) => {
-  const {supabase, headers} = createSupabaseServerClient(request);
   const formData = await request.formData();
   const submission = parseWithZod(formData, {schema});
 
   if (submission.status !== 'success') {
-    return data({result: submission.reply()}, {headers});
+    return data({result: submission.reply()});
   }
 
   // Use submission.value for typed data
-  await supabase.from('users').insert(submission.value);
-  return redirect('/users', {headers});
+  await fetch('/api/users', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify(submission.value),
+  });
+  return redirect('/users');
 };
 ```
 
@@ -48,12 +51,10 @@ export const action = async ({request}: ActionFunctionArgs) => {
 ```tsx
 import {useForm, getFormProps, getInputProps} from '@conform-to/react';
 import {getZodConstraint, parseWithZod} from '@conform-to/zod/v4';
-
-type LoaderData = {
-  // ...
-};
+import {useTranslation} from 'react-i18next';
 
 const MyPage: FC = () => {
+  const {t} = useTranslation('pages');
   const actionData = useActionData<{result: SubmissionResult}>();
 
   const [form, fields] = useForm({
@@ -90,15 +91,20 @@ const MyPage: FC = () => {
 
 ## Form Component Mapping
 
-| Native element                   | Form component   | Notes                                       |
-| -------------------------------- | ---------------- | ------------------------------------------- |
-| `<input type="text/email/etc.">` | `InputText`      | Pass `type` via `getInputProps`             |
-| `<input type="password">`        | `InputPassword`  |                                             |
-| `<input type="checkbox">`        | `Checkbox`       |                                             |
-| `<select>`                       | `Select`         | Requires `name` + `options: SelectOption[]` |
-| `<textarea>`                     | `TextArea`       | Requires `name`; auto-resizes               |
-| `<input type="hidden">`          | Native `<input>` | Always use native                           |
-| `<input type="file">`            | Native `<input>` | Custom upload flows                         |
+| Native element | Form component | Notes |
+|---|---|---|
+| `<input type="text">` | `InputText` (`~/components/Form/InputText`) | |
+| `<input type="email">` | `InputEmail` (`~/components/Form/InputEmail`) | |
+| `<input type="password">` | `InputPassword` (`~/components/Form/InputPassword`) | |
+| `<input type="checkbox">` (single) | `Checkbox` (`~/components/Form/Checkbox`) | |
+| `<input type="checkbox">` (group) | `Checkboxes` (`~/components/Form/Checkboxes`) | Needs `options: Option[]` |
+| `<input type="radio">` / radio group | `RadioButtons` (`~/components/Form/RadioButtons`) | Needs `options: Option[]` |
+| `<select>` | `Select` (`~/components/Form/Select`) | Needs `name` + `options: SelectOption[]` |
+| `<textarea>` | `TextArea` (`~/components/Form/TextArea`) | Needs `name`; auto-resizes |
+| Date (year/month/day) | `YearMonthDay` (`~/components/Form/YearMonthDay`) | |
+| Field with label + error + description | `Field` (`~/components/Form/Field`) | |
+| `<input type="hidden">` | Native `<input>` | Always use native |
+| `<input type="file">` | Native `<input>` | Custom upload flows |
 
 ## Compound Component Gotcha
 
@@ -107,4 +113,3 @@ Conform reads stale hidden input values from compound components (YearMonthDay, 
 ## Zod Patterns
 
 - Use `z.literal()` not `z.enum()` — sort values alphanumerically
-- camelCase for all schema field names (DB mapping happens at Supabase call boundary)
