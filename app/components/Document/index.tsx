@@ -1,5 +1,5 @@
 import type {FC, ReactNode} from 'react';
-import {Links, Meta, Scripts, ScrollRestoration} from 'react-router';
+import {Links, Scripts, ScrollRestoration} from 'react-router';
 import {twJoin} from 'tailwind-merge';
 import type {Theme} from '~/state/theme';
 import {ThemeHead} from '~/state/theme';
@@ -37,7 +37,6 @@ const Document: FC<DocumentProps> = ({
       <meta charSet="utf-8" />
       <meta content="width=device-width,initial-scale=1" name="viewport" />
       <MetaHydrated />
-      <Meta />
       <Links />
       <link href="https://fonts.googleapis.com" rel="preconnect" />
       <link
