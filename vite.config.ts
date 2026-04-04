@@ -7,6 +7,12 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
   },
+  define: {
+    'process.env.COMMIT_SHA': JSON.stringify(process.env.COMMIT_SHA ?? ''),
+    'process.env.npm_package_version': JSON.stringify(
+      process.env.npm_package_version ?? ''
+    ),
+  },
   optimizeDeps: {
     include: [
       '@fortawesome/fontawesome-svg-core',
@@ -18,7 +24,7 @@ export default defineConfig({
       'i18next',
       'i18next-browser-languagedetector',
       'ky',
-      'lodash',
+      'lodash-es',
       'msw',
       'msw/browser',
       'nanoid',
@@ -35,10 +41,7 @@ export default defineConfig({
       'zod',
     ],
   },
-  plugins: [
-    tailwindcss(),
-    reactRouter(),
-  ],
+  plugins: [tailwindcss(), reactRouter()],
   resolve: {
     tsconfigPaths: true,
   },
@@ -46,6 +49,6 @@ export default defineConfig({
     open: true,
   },
   ssr: {
-    noExternal: ['lodash', '@fortawesome/react-fontawesome'],
+    noExternal: ['@fortawesome/react-fontawesome'],
   },
 });

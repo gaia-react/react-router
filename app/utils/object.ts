@@ -1,5 +1,8 @@
-import {camelCase, isObject, snakeCase} from 'lodash';
+import {camelCase, snakeCase} from 'lodash-es';
 import SparkMD5 from 'spark-md5';
+
+const isObject = (value: unknown): value is Record<string, unknown> =>
+  value !== null && typeof value === 'object' && !Array.isArray(value);
 
 /*
   Generates an MD5 hash for a given input object
@@ -53,11 +56,8 @@ export const deepRemoveNil = (input: unknown): unknown => {
 
     return Object.fromEntries(
       keys
-        .filter((key) => !isNil((input as Record<string, unknown>)[key]))
-        .map((key) => [
-          key,
-          deepRemoveNil((input as Record<string, unknown>)[key]),
-        ])
+        .filter((key) => !isNil(input[key]))
+        .map((key) => [key, deepRemoveNil(input[key])])
     );
   }
 
