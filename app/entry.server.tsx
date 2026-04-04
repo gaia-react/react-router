@@ -11,8 +11,10 @@ import {renderToPipeableStream} from 'react-dom/server';
 import {I18nextProvider} from 'react-i18next';
 import {ServerRouter} from 'react-router';
 import {createReadableStreamFromReadable} from '@react-router/node';
+import {createInstance} from 'i18next';
 import {isbot} from 'isbot';
 import {PassThrough} from 'node:stream';
+import i18nConfig from '~/i18n';
 import {getInstance} from '~/middleware/i18next';
 import {startApiMocks} from '../test/msw.server';
 import {env} from './env.server';
@@ -58,6 +60,19 @@ export default async function handleRequest(
 
   const userAgent = request.headers.get('user-agent') ?? '';
 
+  const i18n = (() => {
+    try {
+      return getInstance(routerContext);
+    } catch {
+      // Middleware didn't run (e.g. unmatched routes like Chrome DevTools probes)
+      const fallback = createInstance();
+
+      void fallback.init({...i18nConfig, lng: i18nConfig.fallbackLng});
+
+      return fallback;
+    }
+  })();
+
   const readyOption: keyof RenderToPipeableStreamOptions =
     (userAgent && isbot(userAgent)) || entryContext.isSpaMode ?
       'onAllReady'
@@ -65,7 +80,7 @@ export default async function handleRequest(
 
   return new Promise((resolve, reject) => {
     const {abort, pipe} = renderToPipeableStream(
-      <I18nextProvider i18n={getInstance(routerContext)}>
+      <I18nextProvider i18n={i18n}>
         <ServerRouter context={entryContext} url={request.url} />
       </I18nextProvider>,
       {

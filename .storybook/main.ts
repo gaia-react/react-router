@@ -1,6 +1,5 @@
 import type {StorybookConfig} from '@storybook/react-vite';
 import {mergeConfig} from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
 const config: StorybookConfig = {
   addons: [
@@ -43,7 +42,7 @@ const config: StorybookConfig = {
         ),
         'import.meta.env.SITE_URL': JSON.stringify(process.env.SITE_URL),
       },
-      plugins: [tsconfigPaths()],
+      resolve: {tsconfigPaths: true},
     }),
 };
 

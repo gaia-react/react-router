@@ -4,7 +4,6 @@
 
 import react from '@vitejs/plugin-react';
 import {loadEnv} from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 import {defineConfig} from 'vitest/config';
 
 const ignoreWarnings = ['React DevTools', 'React Router Future Flag Warning'];
@@ -13,15 +12,13 @@ export default defineConfig(({mode}) => {
   Object.assign(process.env, loadEnv(mode, process.cwd(), ''));
 
   return {
-    plugins: [react(), tsconfigPaths()],
+    plugins: [react()],
     resolve: {
       conditions: ['module-sync'],
+      tsconfigPaths: true,
     },
     ssr: {
       noExternal: ['lodash', '@fortawesome/react-fontawesome'],
-      optimizeDeps: {
-        include: ['lodash'],
-      },
     },
     test: {
       coverage: {

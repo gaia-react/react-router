@@ -31,6 +31,7 @@ const Document: FC<DocumentProps> = ({
     className={twJoin(theme === 'dark' && 'dark', className)}
     dir={dir}
     lang={lang}
+    suppressHydrationWarning={true}
   >
     <head>
       <meta charSet="utf-8" />
