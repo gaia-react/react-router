@@ -1,9 +1,4 @@
-import type {
-  ActionFunction,
-  LoaderFunctionArgs,
-  MetaFunction,
-  RouterContextProvider,
-} from 'react-router';
+import type {RouterContextProvider} from 'react-router';
 import {useLoaderData} from 'react-router';
 import {dataWithError, dataWithSuccess} from 'remix-toast';
 import {getInstance} from '~/middleware/i18next';
@@ -11,8 +6,9 @@ import AllThingsPage from '~/pages/Public/Things/AllThingsPage';
 import {attempt} from '~/services/api/helpers';
 import {ThingsProvider} from '~/services/gaia/things/state';
 import {api} from '~/services/index.server';
+import type {Route} from './+types/_index';
 
-export const action: ActionFunction = async ({context, request}) => {
+export const action = async ({context, request}: Route.ActionArgs) => {
   if (request.method === 'DELETE') {
     const result = await request.formData();
 
@@ -39,7 +35,7 @@ export const action: ActionFunction = async ({context, request}) => {
   return null;
 };
 
-export const loader = async ({context}: LoaderFunctionArgs) => {
+export const loader = async ({context}: Route.LoaderArgs) => {
   const i18next = getInstance(context as RouterContextProvider);
   const title = i18next.t('things.meta.title', {ns: 'pages'});
   const description = i18next.t('things.meta.description', {ns: 'pages'});
@@ -49,21 +45,17 @@ export const loader = async ({context}: LoaderFunctionArgs) => {
   return {description, things, title};
 };
 
-export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
-  {title: loaderData?.title},
-  {
-    content: loaderData?.description,
-    name: 'description',
-  },
-];
-
 const ThingsRoute = () => {
-  const {things} = useLoaderData<typeof loader>();
+  const {description, things, title} = useLoaderData<typeof loader>();
 
   return (
-    <ThingsProvider things={things}>
-      <AllThingsPage />
-    </ThingsProvider>
+    <>
+      <title>{title}</title>
+      <meta content={description} name="description" />
+      <ThingsProvider things={things}>
+        <AllThingsPage />
+      </ThingsProvider>
+    </>
   );
 };
 

@@ -1,17 +1,13 @@
-import type {
-  ActionFunction,
-  LoaderFunctionArgs,
-  MetaFunction,
-  RouterContextProvider,
-} from 'react-router';
+import type {RouterContextProvider} from 'react-router';
 import {data, useLoaderData} from 'react-router';
 import {redirectWithInfo} from 'remix-toast';
 import {getInstance} from '~/middleware/i18next';
 import ThingPage from '~/pages/Public/Things/ThingPage';
 import {attempt} from '~/services/api/helpers';
 import {api} from '~/services/index.server';
+import type {Route} from './+types/$id';
 
-export const action: ActionFunction = async ({context, request}) => {
+export const action = async ({context, request}: Route.ActionArgs) => {
   if (request.method === 'PUT') {
     const formData = await request.formData();
 
@@ -38,24 +34,22 @@ export const action: ActionFunction = async ({context, request}) => {
   return data(null, {status: 400});
 };
 
-export const loader = async ({params}: LoaderFunctionArgs) => {
-  const thing = await api.gaia.things.getThingById(params.id!);
+export const loader = async ({params}: Route.LoaderArgs) => {
+  const thing = await api.gaia.things.getThingById(params.id);
 
   return {thing};
 };
 
-export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
-  {title: loaderData?.thing.name},
-  {
-    content: loaderData?.thing.description,
-    name: 'description',
-  },
-];
-
 const ThingRoute = () => {
   const {thing} = useLoaderData<typeof loader>();
 
-  return <ThingPage thing={thing} />;
+  return (
+    <>
+      <title>{thing.name}</title>
+      <meta content={thing.description} name="description" />
+      <ThingPage thing={thing} />
+    </>
+  );
 };
 
 export default ThingRoute;

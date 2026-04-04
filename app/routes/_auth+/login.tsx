@@ -1,10 +1,5 @@
-import type {
-  ActionFunction,
-  LoaderFunctionArgs,
-  MetaFunction,
-  RouterContextProvider,
-} from 'react-router';
-import {redirect} from 'react-router';
+import type {RouterContextProvider} from 'react-router';
+import {redirect, useLoaderData} from 'react-router';
 import {getInstance} from '~/middleware/i18next';
 import LoginPage from '~/pages/Auth/LoginPage';
 import {
@@ -12,8 +7,9 @@ import {
   requireNotAuthenticated,
   sessionStorage,
 } from '~/sessions.server/auth';
+import type {Route} from './+types/login';
 
-export const action: ActionFunction = async ({context, request}) => {
+export const action = async ({context, request}: Route.ActionArgs) => {
   const user = await authenticator.authenticate('form', request);
 
   // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
@@ -29,12 +25,12 @@ export const action: ActionFunction = async ({context, request}) => {
 
   session.set('user', user);
 
-  throw redirect('/profile', {
+  return redirect('/profile', {
     headers: {'Set-Cookie': await sessionStorage.commitSession(session)},
   });
 };
 
-export const loader = async ({context, request}: LoaderFunctionArgs) => {
+export const loader = async ({context, request}: Route.LoaderArgs) => {
   await requireNotAuthenticated(request);
 
   const i18next = getInstance(context as RouterContextProvider);
@@ -43,10 +39,15 @@ export const loader = async ({context, request}: LoaderFunctionArgs) => {
   return {title};
 };
 
-export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
-  {title: loaderData?.title},
-];
+const LoginRoute = () => {
+  const {title} = useLoaderData<typeof loader>();
 
-const LoginRoute = () => <LoginPage />;
+  return (
+    <>
+      <title>{title}</title>
+      <LoginPage />
+    </>
+  );
+};
 
 export default LoginRoute;

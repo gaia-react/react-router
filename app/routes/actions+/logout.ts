@@ -1,10 +1,11 @@
-import type {ActionFunction, RouterContextProvider} from 'react-router';
+import type {RouterContextProvider} from 'react-router';
 import {redirect} from 'react-router';
 import {redirectWithInfo} from 'remix-toast';
 import {getInstance} from '~/middleware/i18next';
 import {sessionStorage} from '~/sessions.server/auth';
+import type {Route} from './+types/logout';
 
-export const action: ActionFunction = async ({context, request}) => {
+export const action = async ({context, request}: Route.ActionArgs) => {
   const session = await sessionStorage.getSession(
     request.headers.get('cookie')
   );

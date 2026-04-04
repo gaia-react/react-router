@@ -1,9 +1,9 @@
-import type {ActionFunction} from 'react-router';
 import {data, redirect, replace} from 'react-router';
 import {LANGUAGES} from '~/languages';
 import {languageCookie} from '~/sessions.server/language';
+import type {Route} from './+types/set-language';
 
-export const action: ActionFunction = async ({request}) => {
+export const action = async ({request}: Route.ActionArgs) => {
   const requestText = await request.text();
   const form = new URLSearchParams(requestText);
   const language = form.get('language') as string;

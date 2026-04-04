@@ -1,9 +1,9 @@
-import type {ActionFunction} from 'react-router';
 import {data, redirect} from 'react-router';
 import {getThemeSession} from '~/sessions.server/theme';
 import {isSupportedTheme} from '~/state/theme';
+import type {Route} from './+types/set-theme';
 
-export const action: ActionFunction = async ({request}) => {
+export const action = async ({request}: Route.ActionArgs) => {
   const themeSession = await getThemeSession(request);
   const requestText = await request.text();
   const form = new URLSearchParams(requestText);

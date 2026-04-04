@@ -1,12 +1,10 @@
-import type {
-  LoaderFunctionArgs,
-  MetaFunction,
-  RouterContextProvider,
-} from 'react-router';
+import type {RouterContextProvider} from 'react-router';
+import {useLoaderData} from 'react-router';
 import {getInstance} from '~/middleware/i18next';
 import IndexPage from '~/pages/Public/IndexPage';
+import type {Route} from './+types/_index';
 
-export const loader = async ({context}: LoaderFunctionArgs) => {
+export const loader = async ({context}: Route.LoaderArgs) => {
   const i18next = getInstance(context as RouterContextProvider);
   const title = i18next.t('index.meta.title', {ns: 'pages'});
   const description = i18next.t('index.meta.description', {ns: 'pages'});
@@ -14,14 +12,16 @@ export const loader = async ({context}: LoaderFunctionArgs) => {
   return {description, title};
 };
 
-export const meta: MetaFunction<typeof loader> = ({loaderData}) => [
-  {title: loaderData?.title},
-  {
-    content: loaderData?.description,
-    name: 'description',
-  },
-];
+const IndexRoute = () => {
+  const {description, title} = useLoaderData<typeof loader>();
 
-const IndexRoute = () => <IndexPage />;
+  return (
+    <>
+      <title>{title}</title>
+      <meta content={description} name="description" />
+      <IndexPage />
+    </>
+  );
+};
 
 export default IndexRoute;
