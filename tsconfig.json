@@ -1,18 +1,17 @@
 {
   "compilerOptions": {
     "allowJs": true,
-    "baseUrl": ".",
     "esModuleInterop": true,
     "forceConsistentCasingInFileNames": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
-    "lib": ["DOM", "DOM.Iterable", "ESNext", "ESNext.Array"],
+    "lib": ["DOM", "ESNext"],
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "noEmit": true,
     "paths": {
       "~/*": ["./app/*"],
-      "test": ["./test/*"]
+      "test/*": ["./test/*"]
     },
     "resolveJsonModule": true,
     "rootDirs": [".", "./.react-router/types"],
