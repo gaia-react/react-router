@@ -14,6 +14,14 @@
           {
             "type": "command",
             "command": ".claude/hooks/block-vitest-globals-tsconfig.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-i18n-strings.sh"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/check-story-exists.sh"
           }
         ]
       }

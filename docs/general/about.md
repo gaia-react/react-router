@@ -6,43 +6,27 @@ outline: deep
 
 # About
 
-GAIA React Template is a **comprehensive** template for building modern React web applications.
+Starting a new React project means days of setup before writing a single feature. Linting, testing, i18n, auth, CI, pre-commit hooks, dark mode, Storybook. All of it needs to be configured, integrated, and wired together correctly.
 
-It is designed to be the best possible starting point for any professional React project.
+GAIA React is the most thoroughly configured React Router 7 template available. Every tool is set up, every integration tested, every convention documented. You start writing features on day one.
 
-It comes with **EVERYTHING** you need, fully configured and ready to go.
-
-The Developer Experience (DX) is designed to be top-notch.
-
-- Automated and robust code quality tools are all set up, keeping your code clean and tech debt to a minimum.
-- Best practices are baked into the source code examples for you to follow.
-- Utilities, hooks, authentication, components, services, styles, tests, stories, and other code examples are all included to help you get started quickly.
-- Unit, integration, visual regression, and end-to-end tests are set up.
-- While GAIA comes with recommended packages, conventions, and settings, you're free to change or remove them to suit your needs!
-- Claude Code integration with built-in commands to help you build faster.
-
-## Background
-
-GAIA React is the spiritual successor to the GAIA Flash Framework, which was the most popular Flash framework in the world. It was used to build over 100,000 Flash sites and relied upon by every major digital agency worldwide. GAIA was known for its comprehensive feature set, ease of use, and robustness. It was designed to make Flash development easier and more efficient, and it succeeded in that goal.
-
-GAIA React has been in development for over 4 years, with multiple developers on different teams contributing to its development. It has been used in production on multiple projects, and has been refined and improved over time.
-
-## Why GAIA?
-
-Back in the Flash days, almost all projects were greenfield, and Flash engineers had many opportunities every year to build projects from scratch. This gave us a lot of practice learning the hard way what worked and what didn't. We didn't have npm, we had to build everything ourselves everytime. And we got to do it over and over again.
-
-Nowadays, there are few opportunities for engineers to practice and learn from building greenfield projects. Most projects are maintenance projects, where you're working on someone else's code, and your ability to make fundamental changes can be limited. In the worst cases, the main thing you're learning is how to cope with a project that has too much tech debt.
-
-GAIA React is the culmination of years of experience building greenfield projects. It is a solid foundation for how a modern React project should be structured, organized, and sufficiently reinforced with linting and tests to ensure bugs and technical debt are kept to a minimum.
+See the full [Features](/general/features) list for specifics.
 
 ## Philosophy
 
-GAIA is built upon the philosophy that the best way to produce cohesive well-written, easy-to-read and easy-to-maintain code, regardless of skill level, is having automated tooling to maintain code quality. GAIA's robust linting setup has fix-on-save functionality that automatically keeps code clean and high quality so you and your fellow developers can focus on what really matters.
+GAIA is a **base template**, not a full-stack kit. It deliberately does not include a component library. You choose what fits your project. The value is in the infrastructure and developer experience that every project needs but nobody wants to set up twice.
 
-All the linting configuration files are included. You can leave it as-is, or customize to your preferences. Detailed information about the linting setup can be found in the [Code Quality](/tech-stack/code-quality/) section.
+- 20+ ESLint plugins with fix-on-save, pre-commit hooks that typecheck, lint, and test, and a quality gate that catches issues before they compound. Let the tooling enforce consistency so your team can focus on features. Details in [Code Quality](/tech-stack/code-quality/).
+- **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer different icons? Swap them. All configuration files are included and customizable.
+- Working examples of auth flows, API services, form validation, and [Component-Driven Development](https://www.componentdriven.org/) with [Storybook](https://storybook.js.org/). Patterns you can follow, not a wiki you'll never read.
+- Unit, integration, visual regression, and E2E testing share a mocking infrastructure and have working examples at every level. Details in [Testing](/tech-stack/testing/).
 
-## Component-Driven Development
+## Why GAIA?
 
-[Storybook](https://storybook.js.org/) is included with GAIA to facilitate [Component-Driven Development](https://www.componentdriven.org/) which is a proven methodology for building web applications. It involves breaking down the UI into small, reusable components that can be developed, tested, and documented in isolation. This makes it easier to build, maintain, and scale applications.
+Most engineers rarely get to build projects from scratch. When they do, the first few days disappear into tooling setup, and the choices made in those first days determine the project's quality for its lifetime. A weak foundation turns into tech debt that gets harder to fix the longer it sits.
 
-Check out the [Testing](/tech-stack/testing/) section for more information.
+GAIA comes from decades of building greenfield projects, learning the hard way what works, what breaks at scale, and what pays off long-term. It's a solid foundation for how a modern React project should be structured, organized, and reinforced with linting and tests to keep bugs and tech debt to a minimum.
+
+## Background
+
+GAIA React is the spiritual successor to the GAIA Flash Framework, which was the most popular Flash framework in the world. It was used to build over 100,000 Flash sites and relied upon by every major digital agency. GAIA React has been in development for over 4 years, refined across multiple production projects with different teams.

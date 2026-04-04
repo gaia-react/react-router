@@ -4,7 +4,7 @@ layout: home
 
 hero:
   name: 'GAIA React Template'
-  tagline: 'A comprehensive template for building professional and scalable React Router applications'
+  tagline: 'The most thoroughly configured React Router 7 template available. Every tool set up, every integration tested, every convention documented.'
   actions:
     - theme: brand
       text: Quick Start
@@ -19,11 +19,14 @@ hero:
 features:
   - title: Solid Foundation
     icon: 🚀
-    details: Built on React Router, TailwindCSS, Zod, i18next, Remix Auth, Remix Toast, Conform, FontAwesome, and more
-  - title: Maintain Code Quality
+    details: React Router 7, TailwindCSS, Conform + Zod forms, i18n with working examples, auth with session management, dark mode end-to-end
+  - title: Quality Enforced by Default
     icon: ️✅
-    details: Pre-configured with TypeScript, robust ESLint ruleset, Prettier, Stylelint, Husky and Lint-Staged
-  - title: Comprehensive Testing
+    details: 20+ ESLint plugins, Prettier, Stylelint, pre-commit hooks that typecheck, lint, and test before code reaches CI
+  - title: Four Layers of Testing
     icon: 🛠
-    details: Comes with a full testing suite including Storybook, Vitest, Mock Service Worker, React Testing Library, Chromatic, and Playwright
+    details: Unit (Vitest), integration (React Testing Library + MSW), visual regression (Storybook + Chromatic), and E2E (Playwright), all sharing a common mocking layer
+  - title: Claude Code Integration
+    icon: 🤖
+    details: Scaffolding commands, auto-activating rules, code review agent, and quality gate built into the development workflow
 ---

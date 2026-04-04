@@ -4,7 +4,7 @@ import {defineConfig} from 'vitepress';
 export default defineConfig({
   base: '/react-router/',
   description:
-    'GAIA is a comprehensive template for building React Router 7 applications',
+    'The most thoroughly configured React Router 7 template available',
   head: [
     [
       'link',
@@ -82,7 +82,7 @@ export default defineConfig({
           {link: '/general/quick-start', text: 'Quick Start'},
           {link: '/general/about', text: 'About'},
           {link: '/general/features', text: 'Features'},
-          {link: '/general/claude/', text: 'Claude Integration'},
+          {link: '/general/claude', text: 'Claude Integration'},
         ],
         text: 'General',
       },

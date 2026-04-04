@@ -42,9 +42,9 @@ Claude knows how to reference the documentation when necessary.
 
 ## Claude
 
-GAIA comes with [Claude](https://claude.ai/) support built-in.
+GAIA comes with [Claude Code](https://claude.ai/) support built-in: scaffolding commands, quality rules, and a code review agent. See [Claude Integration](/general/claude) for the full list.
 
-Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
+Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project. From there, use `/new-route`, `/new-component`, `/new-service`, and `/new-hook` to scaffold new code that follows GAIA conventions.
 
 ## Development
 

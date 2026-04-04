@@ -6,7 +6,7 @@ outline: deep
 
 # Utils
 
-This folder contains utility functions and helpers that are used throughout the application. These utilities help streamline common tasks, improve code readability, and promote reusability across different components and modules.
+This folder contains utility functions and helpers that are used throughout the application.
 
 The utilities should be well-named, self-explanatory, and have unit tests (whenever possible).
 

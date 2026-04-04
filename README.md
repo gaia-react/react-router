@@ -1,54 +1,54 @@
-# Welcome to GAIA React!
+# GAIA React
 
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
-GAIA React is a **fully comprehensive** template for building modern React web applications.
+Starting a new React project means days of setup before writing a single feature. Linting, testing, i18n, auth, CI, pre-commit hooks, dark mode, Storybook. All of it needs to be configured, integrated, and wired together correctly.
 
-It is designed to be the best possible starting point for any professional React project.
+GAIA React is the most thoroughly configured React Router 7 template available. Every tool is set up, every integration tested, every convention documented. You start writing features on day one.
 
-It comes with **EVERYTHING** you need, fully configured and ready to go.
+## What You Get
 
-The Developer Experience (DX) is designed to be top-notch.
+- **20+ ESLint plugins** pre-configured with [Prettier](https://prettier.io/) and [Stylelint](https://stylelint.io/) for consistent code from the first commit
+- **Pre-commit hooks** ([Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)) that typecheck, lint, and test before code reaches CI
+- **Unit, integration, E2E, and visual regression testing** with [Vitest](https://vitest.dev), [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/), [Playwright](https://playwright.dev/docs/intro), and [Chromatic](https://chromatic.com/), all sharing a common mocking layer
+- **i18n in 2 languages** via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with working examples, not just the package installed
+- **Auth flow** with login, session management, and route guards via [remix-auth](https://remix.run/resources/remix-auth)
+- **Form components with validation** using [Conform](https://conform.guide/) + [Zod](https://zod.dev/), the star of the template
+- **Dark mode end-to-end**: context, session, CSS, and Storybook all in sync
+- **[Storybook](https://storybook.js.org/) with React Router support**, including i18n, dark mode, and [MSW](https://mswjs.io/) integration
+- **API mocking** with [Mock Service Worker](https://mswjs.io/) and [msw/data](https://github.com/mswjs/data), with working handlers for tests and Storybook
+- **Toast notifications** with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
+- **Claude Code integration** with scaffolding commands, quality rules, and code review (see [Claude](#claude) section)
+- **Documentation site** via [VitePress](https://vitepress.dev/) with GitHub Pages deployment
+- Built on [React Router 7](https://reactrouter.com/), [TailwindCSS](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
 
-- Automated and robust code quality tools are all set up, keeping your code clean and tech debt to a minimum.
-- Best practices are baked into the source code examples for you to follow.
-- Utilities, hooks, authentication, components, services, styles, tests, stories, and other code examples are all included to help you get started quickly.
-- Unit, integration, visual regression, and end-to-end tests are set up.
-- While GAIA comes with recommended packages, conventions, and settings, you're free to change or remove them to suit your needs!
-- Claude Code integration with built-in commands to help you build faster.
+## Philosophy
 
-GAIA React has many great features built-in:
+GAIA is a **base template**, not a full-stack kit. It deliberately does not include a component library. You choose what fits your project.
 
-- Built with [React Router 7](https://reactrouter.com/), a fantastic full-stack React framework for the modern web
-- [TailwindCSS](https://tailwindcss.com/) for styling
-- [Zod](https://zod.dev/) for data validation
-- Robust ESLint ruleset along with [Prettier](https://prettier.io/) and [Stylelint](https://stylelint.io/)
-- [Husky](https://typicode.github.io/husky/) and [Lint-Staged](https://github.com/lint-staged/lint-staged) for pre-commit checks to ensure code quality
-- A complete testing suite with [Vitest](https://vitest.dev), [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/), and [PlayWright](https://playwright.dev/docs/intro)
-- [Storybook](https://storybook.js.org/) and [Chromatic](https://chromatic.com/), with a [React Router Stub](https://reactrouter.com/start/framework/testing) decorator included
-- [Mock Service Worker](https://mswjs.io/) with working handlers, and [msw/data](https://github.com/mswjs/data) for data mocking
-- [remix-auth](https://remix.run/resources/remix-auth) with a working authentication example
-- Toast notifications with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
-- Internationalization via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with sample files already in place
-- [Conform](https://conform.guide/) for form management and validation
-- [FontAwesome](https://fontawesome.com/) icons
-- A convenient and flexible wrapper around fetch that simplifies API calls
-- Many example components, ready for you to use and modify
-- Useful utility functions and hooks
-- Dark mode support
-- And much more!
+- Configuring 20+ linting rules, four layers of testing, i18n, auth, and CI correctly takes days. GAIA solves that once.
+- **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer a different icon set? Swap it. Nothing is locked in.
+- Pre-commit hooks run typechecking, linting, and tests. The quality gate catches issues before they compound.
+- Best practices are baked into working examples you can follow and modify.
 
-No matter what your skill level or experience, GAIA will make your life and your code better.
+## How GAIA Compares
 
-Read the [GAIA Documentation](https://gaia-react.github.io/react-router/) for detailed information about working with GAIA.
-
-## Is this associated with the GAIA Flash Framework?
-
-**Yes!**
-
-The GAIA Flash Framework revolutionized Flash website development and became the most popular Flash framework in the world (second only to Adobe Flex, which was focused on enterprise applications). It was used to build over 100,000 Flash sites and relied upon by every major digital agency worldwide.
-
-GAIA React is its spiritual successor. It has been reborn as a React template. Like its predecessor, it's designed to be the most comprehensive and easy-to-use React template available, to build professional-grade frontend applications.
+| Feature | GAIA | Vite React | RR Template | Next.js |
+|---|:---:|:---:|:---:|:---:|
+| ESLint | 20+ plugins | basic | basic | basic |
+| Prettier + Stylelint | pre-configured | — | — | — |
+| Pre-commit hooks | typecheck + lint + test | — | — | — |
+| Unit + integration testing | Vitest + RTL | — | — | — |
+| E2E testing | Playwright | — | — | — |
+| Visual regression testing | Chromatic CI | — | — | — |
+| i18n | 2 languages, working examples | — | — | — |
+| Auth example | login + session + route guards | — | — | — |
+| Form validation | Conform + Zod + components | — | — | — |
+| Storybook | Router + i18n + dark mode + MSW | — | — | — |
+| Dark mode | end-to-end (context + session + CSS + Storybook) | — | — | — |
+| API mocking (MSW) | tests + Storybook | — | — | — |
+| Claude Code integration | commands, skills, rules | — | — | — |
+| Documentation site | VitePress + GH Pages deploy | — | — | — |
 
 ## Installation
 
@@ -88,7 +88,24 @@ Claude knows how to reference the documentation when necessary.
 
 ## Claude
 
-GAIA comes with [Claude](https://claude.ai/) support built-in.
+GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, rules, and a quality gate that work out of the box.
+
+### Commands
+
+| Command | What it does |
+|---|---|
+| `/gaia-init` | Remove example code, configure languages, set up a clean slate |
+| `/new-route` | Scaffold a route with page component, test, story, and i18n keys |
+| `/new-component` | Scaffold a component with optional test and story |
+| `/new-service` | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
+| `/new-hook` | Scaffold a custom hook with test file |
+| `/audit` | Run the full quality gate (typecheck, lint, test, E2E, build) |
+| `/migrate` | Upgrade a package to latest, apply breaking changes, run quality gate |
+| `/upgrade-react-router` | Check for and apply React Router updates |
+
+### Rules
+
+Claude automatically follows project rules for coding guidelines, component testing patterns, ESLint fixes, i18n conventions, accessibility, API services, route creation, and the quality gate. These rules are in `.claude/rules/` and activate based on file paths.
 
 Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
 
@@ -147,7 +164,7 @@ You'll need to set your `CHROMATIC_PROJECT_TOKEN` env variable on your CI.
 
 ### E2E
 
-[PlayWright](https://playwright.dev/docs/intro)
+[Playwright](https://playwright.dev/docs/intro)
 
 ```sh
 npx playwright test
@@ -185,3 +202,9 @@ Make sure to deploy the output of `npm run build`
 
 - `build/server`
 - `build/client`
+
+## History
+
+The GAIA Flash Framework revolutionized Flash website development and became the most popular Flash framework in the world (second only to Adobe Flex, which was focused on enterprise applications). It was used to build over 100,000 Flash sites and relied upon by every major digital agency worldwide.
+
+GAIA React is its spiritual successor, reborn as a React template. Like its predecessor, it's designed to be the most thorough and easy-to-use starting point available for building professional-grade frontend applications.
