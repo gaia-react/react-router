@@ -72,7 +72,7 @@ If not, duplicate the `.env.example` file and name it `.env`, and you can option
 
 ### Setup Fix on Save in your IDE
 
-Follow these [instructions](/react-router/tech-stack/code-quality/#setup-fix-on-save).
+Follow these [instructions](https://gaia-react.github.io/react-router/tech-stack/code-quality/#setup-fix-on-save).
 
 ## Documentation
 
