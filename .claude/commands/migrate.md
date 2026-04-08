@@ -6,6 +6,8 @@ Ask the user using AskUserQuestion:
 
 - Which package(s) to upgrade? (options: `react-router`, `tailwindcss`, `storybook`, `vitest`, `playwright`, `eslint`, or a comma-separated list)
 
+IMPORTANT!!! Eslint 10.x is incompatible with some of the installed eslint plugins. Stay on 9.x for now. Do not offer or attempt to upgrade `eslint` or `@eslint/js`. 
+
 ## Step 2: For each selected package
 
 ### 2a: Check current and latest versions
