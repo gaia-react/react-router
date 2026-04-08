@@ -14,42 +14,32 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
 
   const theme = getPreferredTheme();
 
-  try {
-    if (isRouteErrorResponse(error)) {
-      return (
-        <Document
-          lang="en"
-          noIndex={true}
-          theme={theme}
-          title={error.statusText}
-        >
-          <main className="absolute inset-0 flex items-center justify-center p-4">
-            <div className="flex flex-col items-center gap-5 text-center">
-              <h1 className="flex items-center gap-4 text-2xl tracking-wide">
-                <span className="text-2xl leading-none">{error.status}</span>
-                {error.statusText && (
-                  <>
-                    <span className="mt-0.75 h-8 w-px bg-gray-900" />
-                    <span className="mt-0.5 text-base leading-none font-light">
-                      {error.statusText}
-                    </span>
-                  </>
-                )}
-              </h1>
-              {process.env.NODE_ENV !== 'production' &&
-                error.status !== 404 && (
-                  <ErrorStack
-                    className="max-h-128 overflow-y-auto"
-                    stack={error.data as string}
-                  />
-                )}
-            </div>
-          </main>
-        </Document>
-      );
-    }
-  } catch {
-    // ignore
+  if (isRouteErrorResponse(error)) {
+    return (
+      <Document lang="en" noIndex={true} theme={theme} title={error.statusText}>
+        <main className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="flex flex-col items-center gap-5 text-center">
+            <h1 className="flex items-center gap-4 text-2xl tracking-wide">
+              <span className="text-2xl leading-none">{error.status}</span>
+              {error.statusText && (
+                <>
+                  <span className="mt-0.75 h-8 w-px bg-gray-900" />
+                  <span className="mt-0.5 text-base leading-none font-light">
+                    {error.statusText}
+                  </span>
+                </>
+              )}
+            </h1>
+            {process.env.NODE_ENV !== 'production' && error.status !== 404 && (
+              <ErrorStack
+                className="max-h-128 overflow-y-auto"
+                stack={error.data as string}
+              />
+            )}
+          </div>
+        </main>
+      </Document>
+    );
   }
 
   if (error instanceof Error) {

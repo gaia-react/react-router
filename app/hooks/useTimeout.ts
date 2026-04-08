@@ -1,24 +1,20 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useState} from 'react';
 
 export const useTimeout = (delay: number, trigger?: unknown): boolean => {
   const [complete, setComplete] = useState(false);
+  const [prev, setPrevious] = useState({delay, trigger});
 
-  const timeoutRef = useRef(0);
+  if (prev.delay !== delay || prev.trigger !== trigger) {
+    setPrevious({delay, trigger});
+    setComplete(false);
+  }
 
   useEffect(() => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-    setComplete(false);
-    timeoutRef.current = window.setTimeout(() => {
+    const id = window.setTimeout(() => {
       setComplete(true);
     }, delay);
 
-    return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
-    };
+    return () => clearTimeout(id);
   }, [delay, trigger]);
 
   return complete;

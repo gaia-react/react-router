@@ -19,13 +19,13 @@ const instances: KyInstance[] = [];
 export const create = <ApiResponseType>({
   arrayFormat = 'comma',
   hooks,
-  prefixUrl = getBaseUrl(),
+  prefix = getBaseUrl(),
   useSnakeCase = true,
   ...apiOptions
 }: CreateOptions = {}) => {
   const kyInstance = ky.create({
     hooks: getHooks(useSnakeCase, hooks),
-    prefixUrl,
+    prefix,
     ...apiOptions,
   });
 
@@ -47,7 +47,7 @@ export const setApiAuthorization = (token: string): void => {
     kyInstance.extend({
       hooks: {
         beforeRequest: [
-          async (request) => {
+          async ({request}) => {
             request.headers.set('Authorization', `Bearer ${token}`);
           },
         ],
@@ -65,7 +65,7 @@ export const setApiLanguage = (language: string): void => {
       kyInstance.extend({
         hooks: {
           beforeRequest: [
-            async (request) => {
+            async ({request}) => {
               request.headers.set('Accept-Language', language);
             },
           ],

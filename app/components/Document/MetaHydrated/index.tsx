@@ -7,7 +7,7 @@ const MetaHydrated: FC = () => {
   const [isHydrated, setIsHydrated] = useState(false);
 
   useEffect(() => {
-    setIsHydrated(true);
+    queueMicrotask(() => setIsHydrated(true));
   }, []);
 
   if (isHydrated) {

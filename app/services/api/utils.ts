@@ -1,10 +1,10 @@
-import type {Hooks, Options} from 'ky';
+import type {AfterResponseState, BeforeRequestState, Hooks} from 'ky';
 import type {StringifyOptions} from 'query-string';
 import queryString from 'query-string';
 import {tryCatch} from '~/utils/function';
 import {toCamelCase, toSnakeCase} from '~/utils/object';
 
-const requestToSnakeCase = async (request: Request, options: Options) => {
+const requestToSnakeCase = async ({options, request}: BeforeRequestState) => {
   if (options.body && !(options.body instanceof FormData)) {
     const body = JSON.stringify(
       toSnakeCase(JSON.parse(options.body as string))
@@ -15,20 +15,14 @@ const requestToSnakeCase = async (request: Request, options: Options) => {
   }
 };
 
-const responseToCamelCase = async (
-  _request: Request,
-  _options: Options,
-  response: Response
-) => {
+const responseToCamelCase = async ({response}: AfterResponseState) => {
   const [, result] = await tryCatch(async () => {
-    const original = (await response.json()) as unknown;
+    const original = await response.json();
 
     return Response.json(toCamelCase(original), response);
   });
 
-  if (result) {
-    return result;
-  }
+  return result ?? (response.ok ? Response.json(null) : undefined);
 };
 
 export const getHooks = (

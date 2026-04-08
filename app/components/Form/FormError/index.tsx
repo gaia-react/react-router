@@ -1,5 +1,5 @@
 import type {FC} from 'react';
-import {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {useActionData} from 'react-router';
 import {faClose} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
@@ -16,20 +16,18 @@ type FormResultProps = {
 
 const FormError: FC<FormResultProps> = ({className, hide}) => {
   const {error} = useActionData<FormActionData>() ?? {};
+  const [dismissed, setDismissed] = useState<string | undefined>();
 
-  const [result, setResult] = useState('');
+  const result =
+    !hide && error !== undefined && error !== dismissed ? error : '';
 
-  useEffect(() => {
-    setResult(hide ? '' : (error ?? ''));
-  }, [error, hide]);
+  const handleClick = () => {
+    setDismissed(error);
+  };
 
   if (!result) {
     return null;
   }
-
-  const handleClick = () => {
-    setResult('');
-  };
 
   return (
     <button
