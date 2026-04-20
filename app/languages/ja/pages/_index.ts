@@ -15,5 +15,4 @@ export default {
   runtimeValue: 'React Router 7',
   stack: 'スタック',
   stackValue: 'React + TypeScript',
-  title: 'Reactテンプレート',
 };

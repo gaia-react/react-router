@@ -15,7 +15,7 @@ export default meta;
 
 export const Default: StoryFn = () => <IndexPage />;
 
-export const LongProjectName: StoryFn = () => <IndexPage />;
-LongProjectName.parameters = {
-  chromatic: {viewports: [375, 1280]},
+export const Mobile: StoryFn = () => <IndexPage />;
+Mobile.parameters = {
+  chromatic: {viewports: [375]},
 };

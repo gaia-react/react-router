@@ -15,7 +15,7 @@ const IndexPage: FC = () => {
         style={{
           backgroundImage:
             'linear-gradient(to right, currentColor 1px, transparent 1px), linear-gradient(to bottom, currentColor 1px, transparent 1px)',
-          backgroundSize: '48px 48px',
+          backgroundSize: '3rem 3rem',
         }}
       />
 
@@ -32,7 +32,10 @@ const IndexPage: FC = () => {
       </header>
 
       {/* Hero */}
-      <section className="flex flex-1 flex-col justify-center px-8 py-16 sm:px-16 sm:py-24">
+      <section
+        aria-labelledby="hero-title"
+        className="flex flex-1 flex-col justify-center px-8 py-16 sm:px-16 sm:py-24"
+      >
         <div className="max-w-3xl">
           {/* Eyebrow */}
           <p className="mb-4 font-mono text-xs tracking-widest text-blue-500 uppercase sm:text-sm dark:text-blue-400">
@@ -40,7 +43,10 @@ const IndexPage: FC = () => {
           </p>
 
           {/* Title */}
-          <h1 className="text-body mb-6 text-4xl/tight font-light tracking-tight sm:text-6xl sm:leading-none">
+          <h1
+            className="text-body mb-6 text-4xl/tight font-light tracking-tight sm:text-6xl sm:leading-none"
+            id="hero-title"
+          >
             {t('heroTitle')}
           </h1>
 

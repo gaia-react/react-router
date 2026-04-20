@@ -12,6 +12,10 @@
 
 Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured *and* documented for Claude in a way that keeps per-request costs down and output quality up.
 
+## Who it's for
+
+Solo developers shipping Claude-heavy projects, product teams standardizing how Claude works across the org, and agencies that want a templated starting point for client work. If Claude writes most of your code, GAIA is the substrate that makes that trustworthy.
+
 ## Quick Start
 
 Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).

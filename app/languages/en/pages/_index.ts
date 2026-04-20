@@ -15,5 +15,4 @@ export default {
   runtimeValue: 'React Router 7',
   stack: 'Stack',
   stackValue: 'React + TypeScript',
-  title: 'React Template',
 };
