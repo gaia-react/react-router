@@ -29,4 +29,4 @@ Exit code semantics:
 
 ## Adding hooks
 
-Add the script to `.claude/hooks/`, register in `.claude/settings.json` under `hooks.PreToolUse`. See `update-config` skill for help editing settings.
+Ask Claude to add a hook — Claude will drop the script into `.claude/hooks/` and register it in `.claude/settings.json` under `hooks.PreToolUse` via the `update-config` skill.
