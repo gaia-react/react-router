@@ -15,6 +15,6 @@ tags: [dependency, testing, mocking]
 
 ## Companion packages
 
-`@mswjs/data` (in-memory DB), `msw-storybook-addon`, `public/mockServiceWorker.js` (worker via `msw.workerDirectory` in `package.json`).
+`@mswjs/data` (in-memory DB), `public/mockServiceWorker.js` (worker via `msw.workerDirectory` in `package.json`). `msw-storybook-addon` is installed but deliberately unused — stories seed from `@mswjs/data` directly. See `modules/Storybook.md` for rationale.
 
 See [[MSW|MSW module]] for handler structure.
