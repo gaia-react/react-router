@@ -23,6 +23,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Components]]
 - [[Form Components]] — the star feature
 - [[Services]]
+- [[things Service]] — example domain service (stripped by `/gaia-init`)
 - [[Sessions]]
 - [[State]]
 - [[Middleware]]
