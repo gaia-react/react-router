@@ -51,18 +51,7 @@ XProvider.displayName = 'XProvider';
 
 ## Initial State from the Loader
 
-Providers receive SSR-safe initial state from `root.tsx` loader data, preventing hydration mismatches:
-
-```tsx
-const AppWithState = () => {
-  const {theme} = useLoaderData<typeof loader>();
-  return (
-    <State theme={theme}>
-      <App />
-    </State>
-  );
-};
-```
+Providers receive SSR-safe initial state from `root.tsx` loader data, preventing hydration mismatches. See `app/root.tsx` for the live `AppWithState` implementation.
 
 ## Theme State
 
