@@ -19,19 +19,19 @@ tags: [module, components, forms]
 
 `app/components/Form/`:
 
-| Component | Use |
-|---|---|
-| `Field` | Label + input + error wrapper |
-| `FormActions` | Action button row (submit/cancel) |
-| `FormError` | Form-level error display |
-| `Chain` | Compose multiple inputs in a single field |
-| `InputText`, `InputEmail`, `InputPassword` | Text-style inputs |
-| `TextArea` | Multi-line text (uses `autosize`) |
-| `Select` | Native select |
-| `Checkbox`, `Checkboxes`, `CheckboxRadioGroup` | Checkbox primitives + groups |
-| `InputRadio`, `RadioButtons` | Radio primitives + groups |
-| `YearMonthDay` | Composite date input |
-| `types.ts` | Shared form types |
+| Component | Deep dive | Use |
+|---|---|---|
+| `Field` | [[Form Field]] | Label + input + error wrapper |
+| `FormActions` | [[Form Layout]] | Action button row (submit/cancel) |
+| `FormError` | [[Form Layout]] | Form-level error display (reads `useActionData`) |
+| `Chain` | [[Form Layout]] | Compose multiple inputs in a single field |
+| `InputText`, `InputEmail`, `InputPassword` | [[Form Text Inputs]] | Text-style inputs |
+| `TextArea` | [[Form Text Inputs]] | Multi-line text (uses `autosize`) |
+| `Select` | [[Form Select]] | Native select with icon, optgroup, placeholder |
+| `Checkbox`, `Checkboxes`, `CheckboxRadioGroup` | [[Form Choices]] | Checkbox primitives + groups |
+| `InputRadio`, `RadioButtons` | [[Form Choices]] | Radio primitives + groups |
+| `YearMonthDay` | [[Form YearMonthDay]] | Composite date input — Conform gotchas documented |
+| `types.ts` | — | Shared form types |
 
 ## Replace native inputs
 
