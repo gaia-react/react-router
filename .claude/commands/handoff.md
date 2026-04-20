@@ -29,7 +29,7 @@ Run in parallel:
 
 Path: `.claude/handoff/HANDOFF-{YYYY-MM-DD}-{slug}.md`
 
-Use the template below. **Omit any section with no real content** — don't leave empty headings. Keep entries factual and concrete (file paths, commit hashes, command invocations). Cross-reference files with `@path/to/file.swift:line` so the next session can jump straight in.
+Use the template below. **Omit any section with no real content** — don't leave empty headings. Keep entries factual and concrete (file paths, commit hashes, command invocations). Cross-reference files with `@path/to/file:line` so the next session can jump straight in.
 
 ```markdown
 # Session Handoff

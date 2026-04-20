@@ -21,6 +21,8 @@ Scaffolding commands generate files that follow GAIA's established conventions.
 | `/new-hook`             | Scaffold a custom hook with test file                                     |
 | `/audit-code`           | Run the full quality gate (typecheck, lint, test, E2E, build)             |
 | `/migrate`              | Upgrade a package to latest, apply breaking changes, run quality gate     |
+| `/handoff`              | Save a session handoff doc so the next session can resume cold            |
+| `/pickup`               | Resume from the latest handoff — reports state, drift, and next action    |
 
 ## Rules
 
