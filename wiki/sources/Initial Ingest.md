@@ -42,4 +42,4 @@ tags: [source, initial]
 
 ## Pages created
 
-See [[index]] for the full list. Includes: 1 overview, 13 modules, 6 flows, 2 entities, 16 dependencies, 6 decisions, 11 concepts, 1 source summary.
+Original ingest included: 1 overview, 13 modules, 4 flows (Auth Flow since removed), 2 entities, 19 dependencies (VitePress + remix-auth since removed), 6 decisions, 13 concepts, 1 source summary. See [[index]] for the current authoritative list.
