@@ -10,7 +10,7 @@ tags: [concept, services, api]
 
 Canonical reference for adding a domain service. Mirrored by the `api-service` rule (`.claude/rules/api-service.md`) and scaffolded by `/new-service`.
 
-Related: [[Services]], [[MSW]]
+Related: [[Services]], [[MSW Handlers]]
 
 ## Folder structure
 
@@ -60,6 +60,6 @@ Every service has a matching mock layer in `test/mocks/{domain}/`. The folder st
 
 Note: MSW mock data uses snake_case field names (matching the real API wire format). The Ky wrapper converts to camelCase before the Zod schemas see it, so `data.ts` schemas should reflect the raw server shape.
 
-Register handlers in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. See [[MSW]] for full setup details.
+Register handlers in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. See [[MSW Handlers]] for full setup details.
 
 `/new-service` scaffolds all of the above.

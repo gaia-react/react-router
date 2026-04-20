@@ -12,7 +12,7 @@ tags: [module, testing]
 
 # Testing
 
-GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking layer.
+GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]] mocking layer.
 
 | Layer             | Tool                               | Where                                           |
 | ----------------- | ---------------------------------- | ----------------------------------------------- |
@@ -32,7 +32,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking laye
 
 | File             | Purpose                                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------------- |
-| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW]] for full structure                     |
+| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW Handlers]] for full structure            |
 | `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                           |
 | `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`                         |
 | `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                                  |

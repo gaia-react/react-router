@@ -37,4 +37,4 @@ Ask Claude to add domain subfolders (`auth/`, `users/`, etc.) as needed — `/ne
 
 ## MSW mocks
 
-Every service has a matching mock layer in `test/mocks/{domain}/` — same folder structure, with `get.ts`, `post.ts`, `put.ts`, `delete.ts` handlers and `data.ts` seed data. See [[MSW]].
+Every service has a matching mock layer in `test/mocks/{domain}/` — same folder structure, with `get.ts`, `post.ts`, `put.ts`, `delete.ts` handlers and `data.ts` seed data. See [[MSW Handlers]].

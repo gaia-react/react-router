@@ -34,8 +34,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Styles]]
 - [[i18n]]
 - [[Testing]]
-- [[Storybook]]
-- [[MSW]]
+- [[Storybook Stories]]
+- [[MSW Handlers]]
 - [[Claude Integration]]
 
 ## Components (Form deep dives)
@@ -109,3 +109,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 ## Sources
 
 - [[Initial Ingest]] (2026-04-20)
+
+## Meta
+
+- [[lint-report-2026-04-21]]

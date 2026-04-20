@@ -33,7 +33,7 @@ tags: [source, initial]
   - Pre-configured but removable. No component library. ([[GAIA Philosophy]])
   - Thin routes, fat pages. ([[Thin Routes]])
   - Quality enforced by tooling, zero-warning gate. ([[Quality Gate]])
-  - One mocking layer (MSW) across Vitest, Storybook, Playwright. ([[MSW]])
+  - One mocking layer (MSW) across Vitest, Storybook, Playwright. ([[MSW Handlers]])
   - composeStory pattern shares Storybook + Vitest setup. ([[Component Testing]])
   - TypeScript language files instead of JSON. ([[TypeScript Language Files]])
   - Husky runs tests on commit, not just lint. ([[Pre-commit Hooks]])

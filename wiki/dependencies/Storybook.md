@@ -17,4 +17,4 @@ Component-Driven Development environment. v10 with `@storybook/react-vite`.
 
 `@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-links`, `eslint-plugin-storybook`, `@vueless/storybook-dark-mode`, `storybook-react-i18next`, `chromatic`. `msw-storybook-addon` is in `package.json` but deliberately unused (stories seed from `@mswjs/data`).
 
-See [[Storybook]] module page.
+See [[Storybook Stories]] module page.

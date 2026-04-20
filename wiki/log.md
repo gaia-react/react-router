@@ -11,6 +11,10 @@ tags: [meta, log]
 
 Append-only. New entries at the TOP.
 
+## [2026-04-21] update | disambiguate duplicate-name wiki pages
+
+Renamed `modules/MSW.md` → `modules/MSW Handlers.md` and `modules/Storybook.md` → `modules/Storybook Stories.md`. Obsidian's bare-filename wikilink resolution collapsed the two "MSW" and two "Storybook" pages onto one target each, leaving the other as a graph orphan. Updated all module-intent wikilinks (sources/Initial Ingest, dependencies/MSW, dependencies/Storybook, modules/Services, modules/Testing, concepts/API Service Pattern, flows/Theme Flow, index). Dependency-intent `[[MSW]]` / `[[Storybook]]` references still point to `dependencies/` pages. Added a `## Meta` section to `wiki/index.md` so `lint-report-2026-04-21` is no longer an orphan.
+
 ## [2026-04-20] update | docs reframe — manager/IC voice + surface wiki Q&A
 
 - README tagline extended with "grounded enough in the stack to answer how-do-I questions without re-reading the codebase" — surfaces the wiki Q&A use case alongside code-task capability.
