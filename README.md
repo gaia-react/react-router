@@ -68,7 +68,7 @@ npx create-react-router@latest --template gaia-react/react-router
 npm install
 ```
 
-If you're using [Claude Code](https://code.claude.com/docs/en/overview), you can run the `/gaia-init` command once you're ready (see below)
+If you're using [Claude Code](https://code.claude.com/docs/en/overview), you can run `/gaia-init` (or just `/init` — it's intercepted and redirected) once you're ready (see below).
 
 If not, duplicate the `.env.example` file and name it `.env`, and you can optionally delete the `.claude` folder.
 
@@ -111,9 +111,9 @@ GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, ru
 
 Claude automatically follows project rules for coding guidelines, component testing patterns, ESLint fixes, i18n conventions, accessibility, API services, route creation, and the quality gate. These rules are in `.claude/rules/` and activate based on file paths.
 
-Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
+Once you're familiar with the GAIA framework, open Claude and run `/gaia-init` — or just `/init`, which works the same way on a fresh GAIA checkout. This will remove the example code and give you a clean slate for your project.
 
-> **Note:** Don't run the built-in `/init` on a fresh GAIA checkout — it would overwrite the curated `CLAUDE.md`. A `UserPromptSubmit` hook (`.claude/hooks/intercept-init.sh`) intercepts `/init` and redirects to `/gaia-init`. Both the hook and its settings entry are removed automatically when `/gaia-init` finishes, so your project is free to use `/init` normally afterward.
+> **Why both commands work:** the built-in `/init` would normally overwrite the curated `CLAUDE.md`. A `UserPromptSubmit` hook (`.claude/hooks/intercept-init.sh`) intercepts it and auto-invokes `/gaia-init` instead. The hook and its settings entry are removed automatically when `/gaia-init` finishes, so `/init` returns to its default behavior afterward.
 
 ### Wiki
 
