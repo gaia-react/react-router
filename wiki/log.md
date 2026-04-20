@@ -8,6 +8,13 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] ingest | Claude commands handoff + pickup
+
+- Sources: `.claude/commands/handoff.md`, `.claude/commands/pickup.md`
+- Pages created: [[handoff command]], [[pickup command]]
+- Pages updated: [[Claude Integration]] (commands table), [[index]], [[hot]]
+- Key insight: Session continuity loop — `/handoff` writes a synthesized end-of-session doc to `.claude/handoff/`, `/pickup` reads the latest one at session start, archives it once work resumes. `wiki/hot.md` is the fallback.
+
 ## [2026-04-20] ingest | Initial Ingest of GAIA React Router
 
 - Source: project codebase + docs + .claude/
