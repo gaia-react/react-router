@@ -122,4 +122,3 @@ const AppWithState = () => {
 
 - [[state-pattern]] — prescriptive rule (naming, typing, colocation)
 - [[Theme Flow]] — full SSR→client theme lifecycle
-- [[Auth Flow]] — how user state is established
