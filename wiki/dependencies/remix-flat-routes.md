@@ -11,7 +11,7 @@ tags: [dependency, routing]
 
 # remix-flat-routes
 
-File-based routing adapter that translates folder names like `_public+/things+/$id.tsx` into React Router 7 routes. Used via `@react-router/remix-routes-option-adapter` in `app/routes.ts`.
+File-based routing adapter that translates folder names like `_public+/{resource}+/$id.tsx` into React Router 7 routes. Used via `@react-router/remix-routes-option-adapter` in `app/routes.ts`.
 
 ## Folder syntax
 
