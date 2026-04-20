@@ -29,14 +29,14 @@ const IndexPage: FC = () => {
       />
 
       {/* Top accent bar */}
-      <div className="absolute top-0 left-0 z-10 h-0.5 w-full bg-blue-500 dark:bg-blue-400" />
+      <div className="bg-claude-500 dark:bg-claude-400 absolute top-0 left-0 z-10 h-0.5 w-full" />
 
       <section
         aria-labelledby="hero-title"
         className="relative z-10 flex flex-1 flex-col justify-center p-8 sm:px-16 sm:py-12"
       >
         <div className="max-w-3xl">
-          <p className="mb-4 font-mono text-xs tracking-widest text-blue-500 uppercase sm:text-sm dark:text-blue-400">
+          <p className="text-claude-500 dark:text-claude-400 mb-4 font-mono text-xs tracking-widest uppercase sm:text-sm">
             {t('eyebrow')}
           </p>
 
@@ -47,7 +47,7 @@ const IndexPage: FC = () => {
             {t('heroTitle')}
           </h1>
 
-          <div className="mb-8 h-px w-16 bg-blue-500 dark:bg-blue-400" />
+          <div className="bg-claude-500 dark:bg-claude-400 mb-8 h-px w-16" />
 
           <p className="text-secondary mb-10 max-w-xl text-base/relaxed sm:text-lg">
             {t('heroTagline')}

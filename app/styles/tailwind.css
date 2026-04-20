@@ -13,6 +13,10 @@
   --font-mono:
     'Source Code Pro', ui-monospace, sfmono-regular, menlo, monaco, consolas,
     'Liberation Mono', 'Courier New', monospace;
+  --color-claude-300: #efa58e;
+  --color-claude-400: #e89275;
+  --color-claude-500: #d97757;
+  --color-claude-600: #c96b4b;
 }
 
 @layer base {
