@@ -16,7 +16,7 @@ Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and h
 
 - **4 scaffolding commands** — `/new-route`, `/new-component`, `/new-hook`, `/new-service` match your project conventions out of the box
 - **6 project commands** — `/audit-code` (quality gate), `/audit-knowledge` (prompt-debt sweep), `/migrate` (package upgrades), `/handoff` + `/pickup` (session continuity), `/gaia-init` (template init)
-- **10 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner; auto-loaded based on what Claude is editing
+- **11 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner, wiki maintenance; auto-loaded based on what Claude is editing
 - **4 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, advise on missing i18n strings, advise on missing Storybook stories
 - **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
 - **LLM knowledge base (wiki)** — architecture, modules, dependencies, decisions, flows. Claude reads a ~200-word cache at session start and fetches specific pages on demand. Replaces bloated `CLAUDE.md` sprawl and keeps per-request token costs down.
@@ -47,7 +47,7 @@ The traditional tooling Claude rides on top of:
 | **Claude Integration**        |                                                  |            |             |         |
 | Scaffolding Commands          |                        4                         |     ❌     |     ❌      |   ❌    |
 | Project Commands              |                        6                         |     ❌     |     ❌      |   ❌    |
-| Auto-Loaded Project Rules     |                        10                        |     ❌     |     ❌      |   ❌    |
+| Auto-Loaded Project Rules     |                        11                        |     ❌     |     ❌      |   ❌    |
 | Pre-Tool Enforcement Hooks    |                   4 (2 Block)                    |     ❌     |     ❌      |   ❌    |
 | Bundled Project Skills        |                        4                         |     ❌     |     ❌      |   ❌    |
 | Code-Review Agent (Pre-Merge) |                        ✅                        |     ❌     |     ❌      |   ❌    |
@@ -153,6 +153,7 @@ Claude follows project rules automatically based on file paths. Rules live in `.
 | `pr-merge-workflow`    | Run the code-review-audit agent before merging                            |
 | `quality-gate`         | Run `/audit-code` and fix all issues before every commit                  |
 | `test-runner`          | `npm run test -- --run` in CI; never bare `npm test`                      |
+| `wiki-maintenance`     | Before commit, update the wiki if the change introduces new knowledge     |
 
 ### Hooks
 
