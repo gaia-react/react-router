@@ -56,7 +56,7 @@ Rules activate automatically based on file paths — no need to invoke them.
 | [[Accessibility]]            | `app/components/**`, `app/pages/**`                     |
 | [[ESLint Fixes]]             | ESLint-related files                                    |
 | [[test-runner]]              | Test files                                              |
-| [[Quality Gate]]             | All code                                                |
+| [[Quality Gate]]             | Commits                                                 |
 | [[PR Merge Workflow]]        | PR merges                                               |
 
 ## Hooks (PreToolUse, bash)
