@@ -62,16 +62,4 @@ Note: MSW mock data uses snake_case field names (matching the real API wire form
 
 Register handlers in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. See [[MSW]] for full setup details.
 
-## Checklist for a new service
-
-1. Add URL constants to `urls.ts`
-2. Create `{domain}/parsers.ts` (Zod schemas)
-3. Create `{domain}/types.ts` (inferred types)
-4. Create `{domain}/requests.server.ts`
-5. Export from `index.server.ts`
-6. Add `{domain}/state.tsx` if route needs client-side context
-7. Add MSW handlers in `test/mocks/{domain}/`
-8. Register handlers in `test/mocks/index.ts`
-9. Add factory schema to `test/mocks/database.ts`
-
 `/new-service` scaffolds all of the above.
