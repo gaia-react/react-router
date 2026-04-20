@@ -6,9 +6,22 @@
   width="1048"
   xmlns="http://www.w3.org/2000/svg"
 >
+  <defs>
+    <linearGradient
+      id="gaia-logo-gradient"
+      spreadMethod="pad"
+      x1="0%"
+      x2="0%"
+      y1="0%"
+      y2="100%"
+    >
+      <stop offset="0%" stop-color="#4C4C4C" stop-opacity="1" />
+      <stop offset="100%" stop-color="#797979" stop-opacity="1" />
+    </linearGradient>
+  </defs>
   <g
-    fill="currentColor"
-    stroke="currentColor"
+    fill="url(#gaia-logo-gradient)"
+    stroke="#A5A5A5"
     stroke-linecap="round"
     stroke-width="36"
     transform="translate(0,386) scale(0.1,-0.1)"
