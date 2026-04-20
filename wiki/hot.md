@@ -19,14 +19,14 @@ updated: 2026-04-20T00:00:00
 
 ## Last Updated
 
-2026-04-20. Branch `chore/claude-optimizations`. Just finished deep ingest of `app/components/Form/*` and `app/services/gaia/things/*` before `/gaia-init` strips the example. Vault now at 76 pages.
+2026-04-20. Branch `feat/gaia-improvements`. Phase C complete — all non-auth example/teaching code deleted. Vault at 75 pages ([[things Service]] removed).
 
 ## Recent Changes
 
-- Created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], [[things Service]]
-- Updated: [[Form Components]] (deep-dive column), [[Services]], [[API Service Pattern]], [[index]], [[log]]
-- Key find: YearMonthDay's Conform integration has two gotchas — native stopPropagation on container div (React synthetic delegation routes through `document`) and hidden input DOM-value sync before `onChange`. Documented in [[Form YearMonthDay]].
+- Deleted: [[things Service]] (and source code)
+- Updated: [[Services]], [[Pages]], [[Components]], [[Testing]], [[i18n]], [[remix-flat-routes]], [[Storybook]], [[log]]
+- Phase C removes things service, ExampleConsumer, state/example.tsx, IndexPage sub-components (Examples/TechStack), and all associated i18n/mocks/routes.
 
 ## Active Threads
 
-- None open — Form + things deep ingest complete. Next suggestion: ingest flows directory (`wiki/flows/`) sources or add E2E test patterns page if [[Playwright]] tests grow.
+- Phase D next: remove auth/session example code (app/services/gaia/auth/, app/pages/Auth/, app/routes/_auth+/, etc.)
