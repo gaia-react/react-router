@@ -7,8 +7,8 @@ One `useTranslation()` per component. Use `{ns: 'other'}` for cross-namespace ac
 ```tsx
 // GOOD
 const {t} = useTranslation('pages');
-t('onboarding.step1.title');         // 'pages' namespace
-t('previous', {ns: 'common'});       // override to 'common'
+t('onboarding.step1.title'); // 'pages' namespace
+t('previous', {ns: 'common'}); // override to 'common'
 
 // BAD
 const {t} = useTranslation('pages');
@@ -24,7 +24,7 @@ Choose whichever namespace is used most frequently. If more calls override than 
 ```tsx
 // GOOD — keyPrefix alone, no namespace overrides needed
 const {t} = useTranslation('pages', {keyPrefix: 'onboarding.step1'});
-t('title');    // → pages:onboarding.step1.title
+t('title'); // → pages:onboarding.step1.title
 t('subtitle'); // → pages:onboarding.step1.subtitle
 
 // BAD — keyPrefix + namespace override: prefix is misapplied
@@ -83,7 +83,7 @@ import {Trans} from 'react-i18next';
   components={{accent: <span className="text-orange-500" />}}
   i18nKey="dashboard.previousWorkout"
   ns="pages"
-/>
+/>;
 ```
 
 ## String Deduplication
@@ -97,7 +97,7 @@ Before adding a new key:
 
 ### Where shared labels belong
 
-- **Enum display labels** → `common` namespace, snake_case keys matching DB values (enables `` t(`key.${dbValue}`, {ns: 'common'}) ``)
+- **Enum display labels** → `common` namespace, snake_case keys matching DB values (enables ``t(`key.${dbValue}`, {ns: 'common'})``)
 - **Generic UI actions** (Save, Cancel, Edit, etc.) → already in `common`
 - **Page-specific content** → page's namespace
 

@@ -11,14 +11,10 @@ Always use Tailwind units first. For custom values, always use `rem`, never `px`
 
 ```jsx
 // BAD - tailwind units available but custom rem used
-return (
-  <div className="p-[1.0625rem]"/>
-);
+return <div className="p-[1.0625rem]" />;
 
 // GOOD - uses tailwind units
-return (
-    <div className="p-4.25"/>
-);
+return <div className="p-4.25" />;
 ```
 
 ## tailwind-merge
@@ -34,19 +30,13 @@ Use tailwind-merge to concatenate class names in React components instead of tem
 import {twMerge, twJoin} from 'tailwind-merge';
 
 // BAD — template literals with potential conflicts
-return (
-  <span className={`bg-gray-500 ${isBlue ? 'bg-blue-500' : ''}`}/>
-);
+return <span className={`bg-gray-500 ${isBlue ? 'bg-blue-500' : ''}`} />;
 
 // GOOD - twJoin for conditional classes, but no override needed
-return (
-    <span className={twJoin('bg-gray-800', isBlue && 'text-blue-500')}/>
-);
+return <span className={twJoin('bg-gray-800', isBlue && 'text-blue-500')} />;
 
 // GOOD — twMerge for override, twJoin for conditional classes
-return (
-  <span className={twMerge('text-white', isBlue && 'text-blue-500')}/>
-);
+return <span className={twMerge('text-white', isBlue && 'text-blue-500')} />;
 ```
 
 The key distinction: use `twMerge` when a component accepts a `className` prop that should be able to override defaults — `twJoin` would leave both conflicting classes on the element, but `twMerge` resolves the conflict:
@@ -55,12 +45,14 @@ The key distinction: use `twMerge` when a component accepts a `className` prop t
 // twMerge enables callers to override component defaults
 function Button({className}: {className?: string}) {
   return (
-    <button className={twMerge('bg-blue-500 px-4 py-2 text-white', className)} />
+    <button
+      className={twMerge('bg-blue-500 px-4 py-2 text-white', className)}
+    />
   );
 }
 
 // bg-red-500 wins — twMerge removes the conflicting bg-blue-500
-<Button className="bg-red-500" />
+<Button className="bg-red-500" />;
 ```
 
 ## Custom Values

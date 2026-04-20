@@ -16,12 +16,15 @@ Create `app/hooks/{hookName}.ts` following the useBreakpoint/useTimeout patterns
 ```ts
 import {useEffect, useState} from 'react';
 
-export const {hookName} = ({params}): {returnType} => {
+export const {
+  hookName,
+} = ({params}): {returnType} => {
   // implementation based on description
 };
 ```
 
 Key conventions from the reference hooks:
+
 - Named export (not default)
 - Import only needed React hooks
 - Use `useRef` for mutable values that shouldn't trigger re-renders (timers, previous values)

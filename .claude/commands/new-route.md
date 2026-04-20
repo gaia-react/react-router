@@ -64,7 +64,9 @@ Create `app/pages/{Group}/{PageName}/index.tsx`:
 import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
 
-const {PageName}: FC = () => {
+const {
+  PageName,
+}: FC = () => {
   const {t} = useTranslation('pages', {keyPrefix: '{i18nKey}'});
 
   return (

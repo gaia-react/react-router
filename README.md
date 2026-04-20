@@ -33,22 +33,22 @@ GAIA is a **base template**, not a full-stack kit. It deliberately does not incl
 
 ## How GAIA Compares
 
-| Feature | GAIA | Vite React | RR Template | Next.js |
-|---|:---:|:---:|:---:|:---:|
-| ESLint | 20+ plugins | basic | basic | basic |
-| Prettier + Stylelint | pre-configured | — | — | — |
-| Pre-commit hooks | typecheck + lint + test | — | — | — |
-| Unit + integration testing | Vitest + RTL | — | — | — |
-| E2E testing | Playwright | — | — | — |
-| Visual regression testing | Chromatic CI | — | — | — |
-| i18n | 2 languages, working examples | — | — | — |
-| Auth example | login + session + route guards | — | — | — |
-| Form validation | Conform + Zod + components | — | — | — |
-| Storybook | Router + i18n + dark mode + MSW | — | — | — |
-| Dark mode | end-to-end (context + session + CSS + Storybook) | — | — | — |
-| API mocking (MSW) | tests + Storybook | — | — | — |
-| Claude Code integration | commands, skills, rules | — | — | — |
-| Documentation site | VitePress + GH Pages deploy | — | — | — |
+| Feature                    |                       GAIA                       | Vite React | RR Template | Next.js |
+| -------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
+| ESLint                     |                   20+ plugins                    |   basic    |    basic    |  basic  |
+| Prettier + Stylelint       |                  pre-configured                  |     —      |      —      |    —    |
+| Pre-commit hooks           |             typecheck + lint + test              |     —      |      —      |    —    |
+| Unit + integration testing |                   Vitest + RTL                   |     —      |      —      |    —    |
+| E2E testing                |                    Playwright                    |     —      |      —      |    —    |
+| Visual regression testing  |                   Chromatic CI                   |     —      |      —      |    —    |
+| i18n                       |          2 languages, working examples           |     —      |      —      |    —    |
+| Auth example               |          login + session + route guards          |     —      |      —      |    —    |
+| Form validation            |            Conform + Zod + components            |     —      |      —      |    —    |
+| Storybook                  |         Router + i18n + dark mode + MSW          |     —      |      —      |    —    |
+| Dark mode                  | end-to-end (context + session + CSS + Storybook) |     —      |      —      |    —    |
+| API mocking (MSW)          |                tests + Storybook                 |     —      |      —      |    —    |
+| Claude Code integration    |             commands, skills, rules              |     —      |      —      |    —    |
+| Documentation site         |           VitePress + GH Pages deploy            |     —      |      —      |    —    |
 
 ## Installation
 
@@ -92,16 +92,16 @@ GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, ru
 
 ### Commands
 
-| Command | What it does |
-|---|---|
-| `/gaia-init` | Remove example code, configure languages, set up a clean slate |
-| `/new-route` | Scaffold a route with page component, test, story, and i18n keys |
-| `/new-component` | Scaffold a component with optional test and story |
-| `/new-service` | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
-| `/new-hook` | Scaffold a custom hook with test file |
-| `/audit` | Run the full quality gate (typecheck, lint, test, E2E, build) |
-| `/migrate` | Upgrade a package to latest, apply breaking changes, run quality gate |
-| `/upgrade-react-router` | Check for and apply React Router updates |
+| Command                 | What it does                                                            |
+| ----------------------- | ----------------------------------------------------------------------- |
+| `/gaia-init`            | Remove example code, configure languages, set up a clean slate          |
+| `/new-route`            | Scaffold a route with page component, test, story, and i18n keys        |
+| `/new-component`        | Scaffold a component with optional test and story                       |
+| `/new-service`          | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
+| `/new-hook`             | Scaffold a custom hook with test file                                   |
+| `/audit`                | Run the full quality gate (typecheck, lint, test, E2E, build)           |
+| `/migrate`              | Upgrade a package to latest, apply breaking changes, run quality gate   |
+| `/upgrade-react-router` | Check for and apply React Router updates                                |
 
 ### Rules
 

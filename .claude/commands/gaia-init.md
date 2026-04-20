@@ -91,6 +91,10 @@ npm run typecheck && npm run test:ci && npm run lint && npm run build
 
 If any of the following fail during installation or require the user to do it, provide the user with step-by-step instructions to run those manually.
 
+### CLAUDE.md
+
+Update CLAUDE.md "GAIA React Template" to project title using Title Case (e.g. "hello-world" becomes "Hello World")
+
 ### Install Skills
 
 [React Doctor](https://github.com/millionco/react-doctor)
@@ -107,9 +111,16 @@ If any of the following fail during installation or require the user to do it, p
 
 ### Install Plugins
 
+Run these via the Bash tool. If any fail, print the command so the user can run it manually.
+
 typescript-lsp plugin
 
-- `/plugin install typescript-lsp@claude-plugins-official`
+- `claude plugin install typescript-lsp@claude-plugins-official`
+
+claude-obsidian plugin ([repo](https://github.com/AgriciDaniel/claude-obsidian))
+
+- `claude plugin marketplace add AgriciDaniel/claude-obsidian`
+- `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
 ### Update Code Review Audit Agent
 
@@ -118,7 +129,66 @@ Update .claude/agents/code-review-audit.md `{variables}` to match this project a
 - `{project_directory}` (example: `/Users/username/Documents/projects/my-gaia-app`)
 - The "Session transcript logs" path should be updated based on the OS and where the global .claude logs for this project are stored
 
-## Step 10: Complete
+## Step 10: Clean up Wiki
+
+The `wiki/` folder references example code that is now deleted. Apply these changes so the vault matches the post-init project state. Do this **after** the claude-obsidian plugin install in Step 9 but before Complete. The claude-obsidian skills won't be active until after restart — do these as direct file edits, not via wiki-lint/wiki-ingest.
+
+### 10a. Delete
+
+- `wiki/modules/things Service.md` — entire page describes the deleted example service.
+
+### 10b. Overwrite `wiki/hot.md`
+
+Replace the entire file with (keep the HTML comment header, update the `updated:` date and body):
+
+```md
+---
+type: meta
+title: Hot Cache
+updated: <TODAY_ISO>
+---
+
+# Recent Context
+
+## Last Updated
+
+<TODAY>. Project initialized via `/gaia-init`. Example scaffolding (things service, ExampleConsumer/Provider, IndexPage Examples + TechStack sections, GaiaLogo, Storybook BRAND) stripped. Clean slate.
+
+## Active Threads
+
+- None.
+```
+
+### 10c. Prepend to `wiki/log.md`
+
+Insert a new entry directly below the `# Log` heading (log is append-only, newest on top):
+
+```md
+## [<TODAY>] /gaia-init | template cleanup
+
+- Deleted page: [[things Service]]
+- Updated to remove example-code references: [[index]], [[Services]], [[API Service Pattern]], [[Pages]], [[Components]], [[State]], [[Storybook]], [[Testing]], [[MSW]], [[i18n]], [[Playwright]], [[remix-flat-routes]]
+- Rationale: `/gaia-init` removes the `things` service, `ExampleConsumer`, `ExampleProvider`, IndexPage `Examples`/`TechStack`, `gaia-logo.svg`, Storybook `BRAND`/`brandImage`, `StateDecoratorProps`, and associated i18n/MSW/Playwright fixtures.
+```
+
+### 10d. Per-file edits
+
+| File                                     | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wiki/index.md`                          | Delete the line `- [[things Service]] — example domain service (stripped by /gaia-init)` from the Modules list.                                                                                                                                                                                                                                                                                                                                                 |
+| `wiki/modules/Services.md`               | (a) Delete the sentence `See [[things Service]] for the canonical reference implementation (slated for removal by /gaia-init).` (b) Delete the `things/` block (folder + 4 inner files) from the folder-layout code fence. (c) In the `GAIA_URLS` example, keep only `login: 'login'`. (d) Replace the `getThingById` request-function code example with: `// See /new-service for the full pattern.`                                                           |
+| `wiki/modules/Pages.md`                  | In the `Public/` row of the Structure table, change `(e.g. IndexPage, Things)` to `(e.g. IndexPage)`.                                                                                                                                                                                                                                                                                                                                                           |
+| `wiki/modules/Components.md`             | Delete the `\| ExampleConsumer \| Example state-consumer (deleted by /gaia-init) \|` row from the Bundled components table.                                                                                                                                                                                                                                                                                                                                     |
+| `wiki/modules/State.md`                  | (a) In the JSX snippet, remove the `<ExampleProvider initialState={example}>...</ExampleProvider>` wrapper (keep `ThemeProvider > UserProvider`). (b) Delete the `ExampleProvider` row from the Bundled providers table.                                                                                                                                                                                                                                        |
+| `wiki/modules/Storybook.md`              | In the `static/` row of the Setup files table, change `Static assets (e.g. \`gaia-logo.png\` brand image)`to`Static assets`.                                                                                                                                                                                                                                                                                                                                    |
+| `wiki/modules/Testing.md`                | (a) In the `mocks/` row, change the list to `auth/, user/, ping.ts` (remove `things/`). (b) On the Playwright sample tests bullet, leave only `language-switch.spec.ts` (drop `things.spec.ts`).                                                                                                                                                                                                                                                                |
+| `wiki/modules/MSW.md`                    | (a) Delete the `├── things/             # same shape` line from the folder-layout code fence. (b) Change `database.things.getAll()` to `database.user.getAll()`.                                                                                                                                                                                                                                                                                                |
+| `wiki/modules/i18n.md`                   | Delete the `│       ├── things.ts` line from the folder-layout code fence.                                                                                                                                                                                                                                                                                                                                                                                      |
+| `wiki/concepts/API Service Pattern.md`   | (a) In the `GAIA_URLS` example, replace the `things`/`thingsId` keys with `resource: 'resource'` and `resourceId: 'resource/:id'`. (b) In the request-function example, rename `getThingById` → `getResourceById`, `Thing` → `Resource`, `thingSchema` → `resourceSchema`, `GAIA_URLS.thingsId` → `GAIA_URLS.resourceId`. (c) On the final Related line, remove `[[things Service]] for the canonical worked example,` so it reads `See [[Services]], [[MSW]].` |
+| `wiki/dependencies/remix-flat-routes.md` | Change the example path `_public+/things+/$id.tsx` to `_public+/{resource}+/$id.tsx`.                                                                                                                                                                                                                                                                                                                                                                           |
+| `wiki/dependencies/Playwright.md`        | Delete the `- \`things.spec.ts\` (deleted by /gaia-init)` bullet from the Sample tests list.                                                                                                                                                                                                                                                                                                                                                                    |
+
+## Step 11: Complete
 
 1. Remove the gaia-init command from the project to prevent accidental re-runs.
 

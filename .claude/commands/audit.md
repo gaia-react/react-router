@@ -62,14 +62,14 @@ Record pass/fail.
 
 Present a table:
 
-| Step              | Result |
-| ----------------- | ------ |
-| Localization      | ...    |
-| Type checking     | ...    |
-| Linting           | ...    |
-| Unit tests        | ...    |
-| E2E tests         | ...    |
-| Dev server        | ...    |
-| Build             | ...    |
+| Step          | Result |
+| ------------- | ------ |
+| Localization  | ...    |
+| Type checking | ...    |
+| Linting       | ...    |
+| Unit tests    | ...    |
+| E2E tests     | ...    |
+| Dev server    | ...    |
+| Build         | ...    |
 
 For any failures, include the relevant error output. Do NOT attempt to fix issues automatically — report findings and let the user decide next steps.
