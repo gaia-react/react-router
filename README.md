@@ -75,23 +75,23 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 
 ### Foundation
 
-|                          |         GAIA          |   Epic Stack   |     RedwoodJS     | create-t3-app |
-| ------------------------ | :-------------------: | :------------: | :---------------: | :-----------: |
-| TypeScript               |          ✅           |       ✅       |        ✅         |      ✅       |
-| Routing                  |    React Router 7     | React Router 7 | @redwoodjs/router |    Next.js    |
-| Tailwind                 |          ✅           |       ✅       |        ❌         |      ✅       |
-| Dark mode                |          ✅           |       ❌       |        ❌         |      ❌       |
-| i18n                     |          ✅           |       ❌       |        ❌         |      ❌       |
-| Unit / integration tests |        Vitest         |     Vitest     |       Jest        |      ❌       |
-| Component testing        | Storybook + Chromatic |       ❌       |     Storybook     |      ❌       |
-| E2E tests                |      Playwright       |   Playwright   |        ❌         |      ❌       |
-| Mock API                 |          MSW          |       ❌       |        ❌         |      ❌       |
-| Forms                    |     Conform + Zod     |       ❌       |        ❌         |      ❌       |
-| Accessibility guardrails |          ✅           |       ❌       |        ❌         |      ❌       |
+|                          |         GAIA          |   Epic Stack   | create-t3-app |     RedwoodJS     |
+| ------------------------ | :-------------------: | :------------: | :-----------: | :---------------: |
+| TypeScript               |          ✅           |       ✅       |      ✅       |        ✅         |
+| Routing                  |    React Router 7     | React Router 7 |    Next.js    | @redwoodjs/router |
+| Tailwind                 |          ✅           |       ✅       |      ✅       |        ❌         |
+| Dark mode                |          ✅           |       ❌       |      ❌       |        ❌         |
+| i18n                     |          ✅           |       ❌       |      ❌       |        ❌         |
+| Unit / integration tests |        Vitest         |     Vitest     |      ❌       |       Jest        |
+| Component testing        | Storybook + Chromatic |       ❌       |      ❌       |     Storybook     |
+| E2E tests                |      Playwright       |   Playwright   |      ❌       |        ❌         |
+| Mock API                 |          MSW          |       ❌       |      ❌       |        ❌         |
+| Forms                    |     Conform + Zod     |       ❌       |      ❌       |        ❌         |
+| Accessibility guardrails |          ✅           |       ❌       |      ❌       |        ❌         |
 
 ### Claude-native
 
-Epic Stack, RedwoodJS, and create-t3-app don't ship Claude tooling at all. GAIA adds 15 path-scoped rules, 7 enforcement hooks, 11 Claude Code commands, 6 bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
+Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA adds 15 path-scoped rules, 7 enforcement hooks, 11 Claude Code commands, 6 bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
 
 ## One-Command Initialization
 
