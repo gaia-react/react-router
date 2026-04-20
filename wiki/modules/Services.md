@@ -33,23 +33,21 @@ Every domain service creates its own `api` instance via `create()` — but they 
 ```
 gaia/
 ├── api.ts                   # created Ky instance for this domain
-├── auth/
-│   ├── parsers.ts           # Zod schemas for response validation
-│   ├── requests.server.ts   # request functions (.server.ts = server-only)
-│   └── types.ts             # types inferred from Zod
 ├── urls.ts                  # URL constants
 └── index.server.ts          # barrel export
 ```
+
+Add domain subfolders (`auth/`, `users/`, etc.) as needed — see [[API Service Pattern]].
 
 ## URL constants
 
 `app/services/gaia/urls.ts`:
 
 ```ts
-export const GAIA_URLS = {
-  login: 'login',
-};
+export const GAIA_URLS = {};
 ```
+
+Add your endpoint keys here as you build out services.
 
 ## Request function pattern
 
