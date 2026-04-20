@@ -82,7 +82,7 @@ Bash hooks wired through `.claude/settings.json`. Mixed event types.
 
 ### SessionStart / Stop (wiki coherence)
 
-Pair of hooks that compensates for a gap in the [[claude-obsidian]] plugin: its `PostToolUse` hook auto-commits `wiki/` changes, so by Stop time the plugin's own diff-check against HEAD is always empty and its `wiki/hot.md` refresh prompt never fires.
+Pair of hooks that compensates for a gap in the `claude-obsidian` plugin: its `PostToolUse` hook auto-commits `wiki/` changes, so by Stop time the plugin's own diff-check against HEAD is always empty and its `wiki/hot.md` refresh prompt never fires.
 
 | Hook                    | Event        | Behavior                                                                                                                                                            |
 | ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
