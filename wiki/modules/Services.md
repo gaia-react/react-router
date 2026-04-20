@@ -28,7 +28,7 @@ Every domain service creates its own `api` instance via `create()` — but they 
 
 ## `gaia/` — domain service
 
-`app/services/gaia/` is the GAIA template's domain layer. Replace it with your company name or 3rd-party API name.
+`app/services/gaia/` is the GAIA template's domain layer. Ask Claude to rename it to your company name or 3rd-party API name — Claude will update imports, barrels, and references across the app.
 
 ```
 gaia/
