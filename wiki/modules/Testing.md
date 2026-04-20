@@ -61,7 +61,7 @@ it('renders', () => {
 - Tests in `.playwright/e2e/*.spec.ts`
 - Config in `playwright.config.ts`
 - Use the bundled `hydration(page)` helper after `page.goto()` to wait for React Router hydration before interacting
-- Sample tests: `language-switch.spec.ts`, `things.spec.ts`
+- Sample tests: `language-switch.spec.ts`
 
 ## Chromatic
 
