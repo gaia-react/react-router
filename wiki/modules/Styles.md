@@ -25,7 +25,7 @@ GAIA ships:
 
 ## Conventions
 
-See [[tailwind]] skill:
+See the `tailwind` skill (`.claude/skills/tailwind/`) and the `tailwind` rule (`.claude/rules/tailwind.md`):
 
 - No `px` units in Tailwind classes — use spacing scale or `rem` for custom values
 - Prefer `twJoin` for static class lists, `twMerge` only when classes can conflict
