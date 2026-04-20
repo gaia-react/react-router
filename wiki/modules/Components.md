@@ -40,11 +40,11 @@ Not strict, but a strong default. Refactoring is easier when the folder hierarch
 
 | Component                    | Purpose                                           |
 | ---------------------------- | ------------------------------------------------- |
-| `AppVersion`                 | Display app version                               |
 | `Button`, `LinkButton`       | Primary action elements                           |
 | `Document`                   | HTML document root (used by `root.tsx`)           |
 | `Errors/`                    | `RootErrorBoundary` and friends                   |
 | `Footer`, `Header`, `Layout` | Page chrome                                       |
+| `GaiaLogo`                   | Inline SVG brand mark (replaced on `/gaia-init`)  |
 | `Form/`                      | The headline feature — see [[Form Components]]    |
 | `LanguageSelect`             | Language switcher tied to `actions+/set-language` |
 | `Loaders/`                   | Loading spinners and placeholders                 |
