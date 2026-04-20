@@ -68,4 +68,4 @@ Register in `test/mocks/index.ts` and add factory schema to `test/mocks/database
 
 `/new-service` does all of the above.
 
-See [[Services]], [[MSW]].
+See [[things Service]] for the canonical worked example, [[Services]], [[MSW]].
