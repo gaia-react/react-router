@@ -16,14 +16,14 @@ updated: 2026-04-20T00:00:00
 
 ## Last Updated
 
-2026-04-20. Branch `chore/claude-optimizations`. Just ingested `/handoff` + `/pickup` commands. Vault now has 69 pages.
+2026-04-20. Branch `chore/claude-optimizations`. Just finished deep ingest of `app/components/Form/*` and `app/services/gaia/things/*` before `/gaia-init` strips the example. Vault now at 76 pages.
 
 ## Recent Changes
 
-- Created: [[handoff command]], [[pickup command]] (concepts/)
-- Updated: [[Claude Integration]] commands table, [[index]], [[log]]
-- Project `CLAUDE.md` updated upstream — hot cache now enforced at ~200 words; fetch wiki pages on demand only; don't cross-load `wiki/app/` and `wiki/brand/` domains.
+- Created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], [[things Service]]
+- Updated: [[Form Components]] (deep-dive column), [[Services]], [[API Service Pattern]], [[index]], [[log]]
+- Key find: YearMonthDay's Conform integration has two gotchas — native stopPropagation on container div (React synthetic delegation routes through `document`) and hidden input DOM-value sync before `onChange`. Documented in [[Form YearMonthDay]].
 
 ## Active Threads
 
-- Open suggestion: deeper ingest of `app/components/Form/*` and the example `things/` service before `/gaia-init` strips it.
+- None open — Form + things deep ingest complete. Next suggestion: ingest flows directory (`wiki/flows/`) sources or add E2E test patterns page if [[Playwright]] tests grow.
