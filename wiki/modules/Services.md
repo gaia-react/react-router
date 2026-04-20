@@ -28,7 +28,7 @@ Every domain service creates its own `api` instance via `create()` — but they 
 
 ## `gaia/` — example domain service
 
-`app/services/gaia/` is the GAIA template's example domain. Replace it with your company name or 3rd-party API name.
+`app/services/gaia/` is the GAIA template's example domain. Replace it with your company name or 3rd-party API name. See [[things Service]] for the canonical reference implementation (slated for removal by `/gaia-init`).
 
 ```
 gaia/
