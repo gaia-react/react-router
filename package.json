@@ -1,7 +1,7 @@
 {
   "name": "gaia-react-template",
   "version": "1.0.0",
-  "description": "GAIA React Template",
+  "description": "Claude-native React Router 7 template with TypeScript, Tailwind v4, Vitest, Playwright, and Storybook pre-configured.",
   "author": "Steven Sacks <stevensacks@gmail.com>",
   "sideEffects": false,
   "type": "module",
