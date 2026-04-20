@@ -26,19 +26,7 @@ Chromatic ships an MCP (Model Context Protocol) server that lets Claude read com
 
 Run `/setup-chromatic-mcp` at any time — from `/gaia-init` or later. It's idempotent, handles both first-time install and re-registration, and prompts for scope + URL.
 
-Under the hood it runs:
-
-```bash
-npx storybook add @storybook/addon-mcp
-npx mcp-add --type http --url "http://localhost:6006/mcp" \
-  --client-id "cdf3737dff9d485485968e50b63fd8b4" \
-  --scope project
-```
-
-- `--scope project` writes to `.mcp.json` at repo root — shared across contributors
-- `--scope user` writes to `~/.claude/mcp.json` — local only
-- The client ID is Chromatic's public static OAuth app identifier for Claude Code / Cursor. Not a secret.
-- First connection prompts Chromatic sign-in in the browser
+The `/setup-chromatic-mcp` skill handles the full install (`@storybook/addon-mcp` + `mcp-add`). `--scope project` writes to `.mcp.json` (shared); `--scope user` writes to `~/.claude/mcp.json` (local). First connection prompts Chromatic sign-in in the browser.
 
 Once registered, Claude can:
 
