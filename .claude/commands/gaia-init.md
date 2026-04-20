@@ -91,6 +91,11 @@ npm run typecheck && npm run test:ci && npm run lint && npm run build
 
 If any of the following fail during installation or require the user to do it, provide the user with step-by-step instructions to run those manually.
 
+
+### CLAUDE.md
+
+Update CLAUDE.md "GAIA React Template" to project title using Title Case (e.g. "hello-world" becomes "Hello World")
+
 ### Install Skills
 
 [React Doctor](https://github.com/millionco/react-doctor)
