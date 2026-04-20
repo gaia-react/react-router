@@ -2,6 +2,11 @@
 
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
+[![Tests](https://img.shields.io/github/actions/workflow/status/gaia-react/react-router/tests.yml?branch=main&label=tests)](https://github.com/gaia-react/react-router/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/github/license/gaia-react/react-router)](./LICENSE)
+[![Node](https://img.shields.io/badge/node-%3E%3D22.19.0-brightgreen)](https://nodejs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+
 **Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
 Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured *and* documented for Claude in a way that keeps per-request costs down and output quality up.
