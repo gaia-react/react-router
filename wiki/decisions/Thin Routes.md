@@ -15,7 +15,7 @@ Route files (`app/routes/**`) contain only loader, action, meta, and a one-line 
 - Easy to scan a route file and see what data flows in/out
 - Page components are easy to test in isolation (composeStory + Storybook stories)
 - Sub-components can live next to the page that owns them — no cross-imports through routes
-- Route group folders (`_public+`, `_auth+`, `_session+`, `_legal+`) become the org chart
+- Route group folders (`_public+`, `_session+`, `_legal+`) become the org chart
 
 ## Enforcement
 
