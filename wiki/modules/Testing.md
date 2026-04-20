@@ -43,18 +43,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking laye
 
 ## Component test pattern
 
-Always use Storybook stories with `composeStory`. Never manually mock framework deps. See [[Component Testing]].
-
-```tsx
-import {composeStory} from '@storybook/react-vite';
-import Meta, {Default} from './index.stories';
-
-const MyComponent = composeStory(Default, Meta);
-
-it('renders', () => {
-  render(<MyComponent />);
-});
-```
+Always use Storybook stories with `composeStory`. Never manually mock framework deps. See [[Component Testing]] for the pattern.
 
 ## Playwright
 
