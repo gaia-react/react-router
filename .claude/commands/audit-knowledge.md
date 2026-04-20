@@ -1,7 +1,7 @@
 ---
 name: audit-knowledge
 description: Audit memory + wiki + auto-loaded files for duplication and load cost; wiki wins as source of truth
-argument-hint: "[--apply]"
+argument-hint: '[--apply]'
 allowed-tools: [Agent]
 ---
 
@@ -9,11 +9,24 @@ allowed-tools: [Agent]
 
 **Do not execute the playbook yourself in the current conversation.** Dispatch exactly one subagent via the `Agent` tool. The model depends on the mode. Each subagent runs in isolated context.
 
+### Path resolution (portable — no hardcoding)
+
+This command ships in a template and runs in many clones across many machines. Neither this file nor the subagent prompts may hardcode a project root or a user-scoped memory path. The subagent resolves both at the start of its run:
+
+```bash
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+MEMORY_DIR="$HOME/.claude/projects/$(echo "$PROJECT_ROOT" | sed 's|/|-|g')/memory"
+AGENT_MEMORY_DIR="$HOME/.claude/agent-memory"
+```
+
+Every path below referenced as `$PROJECT_ROOT/...`, `$MEMORY_DIR/...`, or `$AGENT_MEMORY_DIR/...` is resolved by the subagent, not by this file.
+
 ### Branch on `$ARGUMENTS`
 
 **If `$ARGUMENTS` does NOT contain `--apply` → research mode**
 
 Spawn one `Agent`:
+
 - `subagent_type`: `"general-purpose"`
 - `model`: `"opus"`
 - `description`: `"Knowledge audit (research)"`
@@ -23,13 +36,22 @@ Spawn one `Agent`:
   >
   > `You are Stage 1 of a two-stage knowledge audit. Your job is to PRODUCE A REPORT ONLY — do not mutate any files outside .claude/audit/. A separate Sonnet agent will execute the actions later.`
   >
-  > `Project root: /Users/stevensacks/Development/me/one-less-excuse`
+  > `Before doing anything else, resolve these variables and use them for every path in the playbook:`
   >
-  > `Read .claude/commands/audit-knowledge.md and execute the "Research procedure" section (Steps 1–6). Write the report to .claude/audit/KNOWLEDGE-{YYYY-MM-DD-HHMM}.md using the exact "Report template" schema. Every action you propose must be mechanical — include every detail a literal-minded executor needs: absolute paths, line ranges, expected current content (verbatim snippet), replacement content (verbatim), and drift-check signals. No handwaving like "merge these" or "consolidate that".`
+  > ```bash
+  > PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+  > MEMORY_DIR="$HOME/.claude/projects/$(echo "$PROJECT_ROOT" | sed 's|/|-|g')/memory"
+  > AGENT_MEMORY_DIR="$HOME/.claude/agent-memory"
+  > ```
+  >
+  > `Record the resolved values at the top of the report (both frontmatter and a visible line) so Stage 2 uses the same bindings.`
+  >
+  > `Read $PROJECT_ROOT/.claude/commands/audit-knowledge.md and execute the "Research procedure" section (Steps 1–6). Write the report to $PROJECT_ROOT/.claude/audit/KNOWLEDGE-{YYYY-MM-DD-HHMM}.md using the exact "Report template" schema. Every action you propose must be mechanical — include every detail a literal-minded executor needs: absolute paths, line ranges, expected current content (verbatim snippet), replacement content (verbatim), and drift-check signals. No handwaving like "merge these" or "consolidate that".`
 
 **If `$ARGUMENTS` contains `--apply` → apply mode**
 
 Spawn one `Agent`:
+
 - `subagent_type`: `"general-purpose"`
 - `model`: `"sonnet"`
 - `description`: `"Knowledge audit (apply)"`
@@ -37,9 +59,17 @@ Spawn one `Agent`:
 
   > `You are Stage 2 of a two-stage knowledge audit. Stage 1 (Opus) produced a report. Your job is to execute the unchecked actions MECHANICALLY — do not reason about whether an action is correct, do not expand scope, do not merge or split actions.`
   >
-  > `Project root: /Users/stevensacks/Development/me/one-less-excuse`
+  > `Before doing anything else, resolve these variables and use them for every path in the playbook:`
   >
-  > `Read .claude/commands/audit-knowledge.md and execute the "Apply procedure" section (Step 7). For every action: verify the expected-current-content drift signal matches; if it does, apply the change verbatim; if it does not, SKIP and note it in the final summary. Never improvise. Never invent replacements. If anything is ambiguous, skip.`
+  > ```bash
+  > PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+  > MEMORY_DIR="$HOME/.claude/projects/$(echo "$PROJECT_ROOT" | sed 's|/|-|g')/memory"
+  > AGENT_MEMORY_DIR="$HOME/.claude/agent-memory"
+  > ```
+  >
+  > `Compare these to the "project_root" / "memory_dir" fields recorded in the report's frontmatter. If they differ, STOP and print a clear error — do not improvise.`
+  >
+  > `Read $PROJECT_ROOT/.claude/commands/audit-knowledge.md and execute the "Apply procedure" section (Step 7). For every action: verify the expected-current-content drift signal matches; if it does, apply the change verbatim; if it does not, SKIP and note it in the final summary. Never improvise. Never invent replacements. If anything is ambiguous, skip.`
 
 ### After the subagent returns
 
@@ -55,28 +85,30 @@ The report you produce is a **contract** to a Sonnet-level executor. Assume it c
 
 ## Stores & load behavior
 
-| Store | Path | Auto-loaded? |
-|-------|------|--------------|
-| Machine-local project memory | `~/.claude/projects/-Users-stevensacks-Development-me-one-less-excuse/memory/` | `MEMORY.md` (first 200 lines), individual entries on demand |
-| Machine-local agent memory | `~/.claude/agent-memory/` | Per-agent, on demand |
-| Project agent memory | `.claude/agent-memory/` | Per-agent, on demand |
-| Project CLAUDE.md | root, `apps/web/`, `apps/ios/`, `wiki/` | Auto when cwd matches |
-| Project rules | `.claude/rules/*.md` | Auto by `paths:` frontmatter match |
-| Project commands | `.claude/commands/*.md` | On invocation only |
-| Wiki hot cache | `wiki/hot.md` | Auto at session start |
-| Wiki index | `wiki/index.md` | On demand |
-| Wiki domain pages | `wiki/app/`, `wiki/brand/`, etc. | On demand |
+| Store                                          | Path                                            | Auto-loaded?                                                |
+| ---------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------- |
+| Machine-local project memory                   | `$MEMORY_DIR/`                                  | `MEMORY.md` (first 200 lines), individual entries on demand |
+| Machine-local agent memory                     | `$AGENT_MEMORY_DIR/`                            | Per-agent, on demand                                        |
+| Project agent memory                           | `$PROJECT_ROOT/.claude/agent-memory/`           | Per-agent, on demand                                        |
+| Project CLAUDE.md (root)                       | `$PROJECT_ROOT/CLAUDE.md`                       | Auto at session start                                       |
+| Project CLAUDE.md (wiki)                       | `$PROJECT_ROOT/wiki/CLAUDE.md`                  | Auto when cwd matches `wiki/`                               |
+| Project rules                                  | `$PROJECT_ROOT/.claude/rules/*.md`              | Auto by `paths:` frontmatter match                          |
+| Project commands                               | `$PROJECT_ROOT/.claude/commands/*.md`           | On invocation only                                          |
+| Wiki hot cache                                 | `$PROJECT_ROOT/wiki/hot.md`                     | Auto at session start                                       |
+| Wiki index                                     | `$PROJECT_ROOT/wiki/index.md`                   | On demand                                                   |
+| Wiki domain pages                              | `$PROJECT_ROOT/wiki/<domain>/`                  | On demand                                                   |
+| Nested `CLAUDE.md` files (any monorepo layout) | any `$PROJECT_ROOT/**/CLAUDE.md` below the root | Auto when cwd matches                                       |
 
 ## Step 0 — Prune old reports
 
-Before writing the new report, self-maintain `.claude/audit/`:
+Before writing the new report, self-maintain `$PROJECT_ROOT/.claude/audit/`:
 
 - **Keep the newest 5 reports regardless of age** (floor — protects long gaps between runs).
 - Of anything beyond the newest 5, **delete reports older than 30 days**.
 
 ```bash
-if [ -d .claude/audit ]; then
-  ls -t .claude/audit/KNOWLEDGE-*.md 2>/dev/null | tail -n +6 | while IFS= read -r f; do
+if [ -d "$PROJECT_ROOT/.claude/audit" ]; then
+  ls -t "$PROJECT_ROOT"/.claude/audit/KNOWLEDGE-*.md 2>/dev/null | tail -n +6 | while IFS= read -r f; do
     if [ -n "$(find "$f" -mtime +30 -print 2>/dev/null)" ]; then
       rm -- "$f"
     fi
@@ -91,19 +123,22 @@ Report the count pruned in the summary line at the end of the run (e.g. `pruned 
 Run in parallel:
 
 ```bash
-# Machine-local memory
-find /Users/stevensacks/.claude/projects/-Users-stevensacks-Development-me-one-less-excuse/memory -type f -name "*.md"
-find /Users/stevensacks/.claude/agent-memory -type f -name "*.md" 2>/dev/null
+# Machine-local memory (resolved dynamically)
+find "$MEMORY_DIR" -type f -name "*.md" 2>/dev/null
+find "$AGENT_MEMORY_DIR" -type f -name "*.md" 2>/dev/null
 
 # Project-local
-find .claude/agent-memory -type f -name "*.md" 2>/dev/null
-find .claude/rules -type f -name "*.md"
+find "$PROJECT_ROOT/.claude/agent-memory" -type f -name "*.md" 2>/dev/null
+find "$PROJECT_ROOT/.claude/rules" -type f -name "*.md"
 
 # Wiki
-find wiki -type f -name "*.md"
+find "$PROJECT_ROOT/wiki" -type f -name "*.md"
+
+# Auto-loaded CLAUDE.md set (covers root, wiki, and any downstream app subdirs)
+find "$PROJECT_ROOT" -maxdepth 3 -name CLAUDE.md -not -path '*/node_modules/*'
 
 # Word counts for auto-loaded files
-wc -w CLAUDE.md apps/web/CLAUDE.md apps/ios/CLAUDE.md wiki/CLAUDE.md wiki/hot.md .claude/rules/*.md
+wc -w "$PROJECT_ROOT"/CLAUDE.md "$PROJECT_ROOT"/wiki/CLAUDE.md "$PROJECT_ROOT"/wiki/hot.md "$PROJECT_ROOT"/.claude/rules/*.md 2>/dev/null
 ```
 
 Record per file: path, word count, last-modified. Compute totals per store.
@@ -121,24 +156,23 @@ Rules-vs-wiki: a `.claude/rules/*.md` file is allowed to duplicate wiki content 
 
 ## Step 3 — Intra-wiki duplication
 
-Scan `wiki/` for pages covering the same topic. For each cluster:
+Scan `$PROJECT_ROOT/wiki/` for pages covering the same topic. For each cluster:
 
 - Pick the most-complete page as canonical
 - Propose merging the others into it (or converting them to redirects: a one-line page with `→ see [[Canonical]]`)
-- Flag pages in `sources/` that duplicate content already synthesized in a domain page — `sources/` is archival, domain pages are active
+- Flag pages in `wiki/sources/` that duplicate content already synthesized in a domain page — `sources/` is archival, domain pages are active
 
 ## Step 4 — Auto-load budget
 
 Targets (flag anything over):
 
-| File | Budget | Rationale |
-|------|--------|-----------|
-| `wiki/hot.md` | ≤200 words | Cache discipline per `wiki/hot.md` comment |
-| `CLAUDE.md` (root) | ≤400 words | Routing + principles only |
-| `apps/web/CLAUDE.md` | ≤400 words | Web-scoped routing |
-| `apps/ios/CLAUDE.md` | ≤400 words | iOS-scoped routing |
-| `wiki/CLAUDE.md` | ≤300 words | Wiki conventions only |
-| Any single `.claude/rules/*.md` | ≤200 lines | Focused rule |
+| File                                                                               | Budget     | Rationale                                  |
+| ---------------------------------------------------------------------------------- | ---------- | ------------------------------------------ |
+| `wiki/hot.md`                                                                      | ≤200 words | Cache discipline per `wiki/hot.md` comment |
+| `CLAUDE.md` (root)                                                                 | ≤400 words | Routing + principles only                  |
+| `wiki/CLAUDE.md`                                                                   | ≤300 words | Wiki conventions only                      |
+| Any nested `CLAUDE.md` discovered in Step 1 (monorepo package, subapp, docs, etc.) | ≤400 words | Scoped routing                             |
+| Any single `.claude/rules/*.md`                                                    | ≤200 lines | Focused rule                               |
 
 For each over-budget file, propose one of: inline facts → wiki, consolidate duplicated sections, or split into narrower files.
 
@@ -146,22 +180,24 @@ For each over-budget file, propose one of: inline facts → wiki, consolidate du
 
 In every auto-loaded file (CLAUDE.md hierarchy, `wiki/hot.md`, rules):
 
-- **Describes instead of points** — flag passages that restate content already in a wiki page (e.g. "palette is #0A0A0A / #…" instead of "see [[Visual Identity]]"). Propose replacing with wikilink.
+- **Describes instead of points** — flag passages that restate content already in a wiki page (e.g. inlining a facts table instead of linking to the canonical wiki page). Propose replacing with wikilink.
 - **Broken wikilinks** — `Grep` every `[[Name]]` against `wiki/index.md`. Flag misses.
 - **Dead paths** — verify every file path referenced in auto-loaded files still exists.
 - **Inlined source excerpts** — flag wiki pages that inline raw text from `wiki/sources/` instead of linking.
 
 ## Step 6 — Report
 
-Write `.claude/audit/KNOWLEDGE-{YYYY-MM-DD-HHMM}.md`. Create `.claude/audit/` if missing. Also snapshot `git status --short` into the report's frontmatter so Stage 2 can detect drift.
+Write `$PROJECT_ROOT/.claude/audit/KNOWLEDGE-{YYYY-MM-DD-HHMM}.md`. Create `$PROJECT_ROOT/.claude/audit/` if missing. Also snapshot `git status --short` into the report's frontmatter so Stage 2 can detect drift.
 
 ### Report template (strict schema — Stage 2 parses this)
 
-```markdown
+````markdown
 ---
 generated: {YYYY-MM-DD HH:MM}
 generator: audit-knowledge stage-1 opus-ultrathink
-project_root: /Users/stevensacks/Development/me/one-less-excuse
+project_root: {resolved PROJECT_ROOT}
+memory_dir: {resolved MEMORY_DIR}
+agent_memory_dir: {resolved AGENT_MEMORY_DIR}
 git_head: {commit hash}
 git_status_snapshot: |
   {verbatim output of `git status --short` at research time}
@@ -169,7 +205,14 @@ git_status_snapshot: |
 
 # Knowledge Audit — {YYYY-MM-DD HH:MM}
 
+Resolved paths (Stage 2 must match these):
+
+- project_root: {resolved PROJECT_ROOT}
+- memory_dir: {resolved MEMORY_DIR}
+- agent_memory_dir: {resolved AGENT_MEMORY_DIR}
+
 ## Summary
+
 - Stores scanned: {N files, M words total}
 - Cross-store duplicates: {X}
 - Intra-wiki duplicates: {Y}
@@ -180,7 +223,7 @@ git_status_snapshot: |
 
 ## Actions
 
-Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips the checkbox from `[ ]` to `[x]` on success, `[~]` on skip, `[!]` on failure. Every block MUST include `expect` (verbatim snippet of current target content) and where applicable `after` (verbatim replacement).
+Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips the checkbox from `[ ]` to `[x]` on success, `[~]` on skip, `[!]` on failure. Every block MUST include `expect` (verbatim snippet of current target content) and where applicable `after` (verbatim replacement). Paths MUST be absolute (already expanded — no `$PROJECT_ROOT` placeholders in action bodies).
 
 ### Delete
 
@@ -188,9 +231,11 @@ Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips 
   ```yaml
   type: delete
   path: {absolute path}
-  reason: {one line — cite canonical wiki page + line range where the same fact lives}
+  reason:
+    {one line — cite canonical wiki page + line range where the same fact lives}
   expect_sha256: {sha256 of the file's current content}
   ```
+````
 
 ### Delete-entry (remove a specific block from a multi-entry file, e.g. a heading section in MEMORY.md)
 
@@ -210,7 +255,7 @@ Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips 
   type: promote
   source_path: {absolute path}
   source_expect_sha256: {sha256 of source content}
-  target_page: {wiki path, e.g. wiki/app/dev-practices/Foo.md}
+  target_page: {absolute wiki path}
   target_action: {append_section | insert_after_heading | create_new}
   target_heading: {e.g. "## Bar" — only if insert_after_heading}
   target_expect: |
@@ -240,10 +285,10 @@ Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips 
 - [ ] `merge-{nnn}`
   ```yaml
   type: merge
-  canonical: {wiki path}
+  canonical: {absolute wiki path}
   canonical_expect_sha256: {sha256}
   sources:
-    - path: {wiki path}
+    - path: {absolute wiki path}
       expect_sha256: {sha256}
       append_as: |
         {verbatim content to add to canonical}
@@ -275,7 +320,9 @@ Each action is a fenced YAML block prefixed with a checkbox line. Stage 2 flips 
 Stage 2 must apply actions in this order: `fix-link` → `shrink` → `delete-entry` → `merge` → `promote` → `delete`. Rationale: shrinks never reference content that later gets merged; deletes come last so earlier pointers don't go stale.
 
 ## To apply
+
 Run `/audit-knowledge --apply` within 24h.
+
 ```
 
 End the research run by printing: report path, total actions per category, and the apply command.
@@ -286,9 +333,10 @@ You are executing, not reasoning. Follow this loop exactly.
 
 ### Pre-flight
 
-1. Find the newest `.claude/audit/KNOWLEDGE-*.md`. If none, or mtime >24h, stop and print `no fresh report — run /audit-knowledge first`.
-2. Parse the report's frontmatter. Run `git rev-parse HEAD` — if it differs from `git_head` in the report, print a warning but continue. Run `git status --short` — any file that is currently dirty AND appears as a target in the report is marked `SKIP (dirty)` before any action runs.
-3. Read the `## Ordering` section. Process actions in that order.
+1. Find the newest `$PROJECT_ROOT/.claude/audit/KNOWLEDGE-*.md`. If none, or mtime >24h, stop and print `no fresh report — run /audit-knowledge first`.
+2. Parse the report's frontmatter. Verify `project_root`, `memory_dir`, and `agent_memory_dir` match the values you resolved at startup. If any differ, stop and print a clear error — the report was generated on a different machine or in a different clone.
+3. Run `git rev-parse HEAD` — if it differs from `git_head` in the report, print a warning but continue. Run `git status --short` — any file that is currently dirty AND appears as a target in the report is marked `SKIP (dirty)` before any action runs.
+4. Read the `## Ordering` section. Process actions in that order.
 
 ### Per-action loop
 
@@ -310,10 +358,12 @@ For each unchecked action block:
 Print a final summary to stdout:
 
 ```
+
 audit apply: {done}/{total} applied · {skipped} skipped · {failed} failed
 diff footprint:
 {git status --short}
 next: review diff, commit if satisfied
+
 ```
 
 ## Guardrails
@@ -324,3 +374,4 @@ next: review diff, commit if satisfied
 - Never improvise: if drift-check fails, skip and report. Do not search for the "right" target.
 - Never merge two actions: each block is atomic.
 - If an action targets a path that doesn't exist, mark `[!]` with `target missing` and continue.
+```

@@ -18,10 +18,10 @@ Source: `.claude/commands/audit-knowledge.md`. Two-stage audit over every knowle
 
 ## Two-stage execution
 
-| Stage | Model  | Mode                         | Output                                                      |
-| ----- | ------ | ---------------------------- | ----------------------------------------------------------- |
-| 1     | Opus   | `/audit-knowledge`           | Research report at `.claude/audit/KNOWLEDGE-{timestamp}.md` |
-| 2     | Sonnet | `/audit-knowledge --apply`   | Applies unchecked actions mechanically                      |
+| Stage | Model  | Mode                       | Output                                                      |
+| ----- | ------ | -------------------------- | ----------------------------------------------------------- |
+| 1     | Opus   | `/audit-knowledge`         | Research report at `.claude/audit/KNOWLEDGE-{timestamp}.md` |
+| 2     | Sonnet | `/audit-knowledge --apply` | Applies unchecked actions mechanically                      |
 
 Stage 1 proposes actions — `delete`, `delete-entry`, `promote`, `shrink`, `merge`, `fix-link` — each with verbatim `expect` snippets and sha256 drift signals. Stage 2 reads the report, verifies drift signals still match, and applies changes verbatim; on mismatch it skips and reports rather than improvising.
 

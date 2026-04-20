@@ -94,17 +94,18 @@ GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, ru
 
 ### Commands
 
-| Command          | What it does                                                            |
-| ---------------- | ----------------------------------------------------------------------- |
-| `/gaia-init`     | Remove example code, configure languages, set up a clean slate          |
-| `/new-route`     | Scaffold a route with page component, test, story, and i18n keys        |
-| `/new-component` | Scaffold a component with optional test and story                       |
-| `/new-service`   | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
-| `/new-hook`      | Scaffold a custom hook with test file                                   |
-| `/audit-code`    | Run the full quality gate (typecheck, lint, test, E2E, build)           |
-| `/migrate`       | Upgrade a package to latest, apply breaking changes, run quality gate   |
-| `/handoff`       | Save a session handoff doc so the next session can resume cold          |
-| `/pickup`        | Resume from the latest handoff — reports state, drift, and next action  |
+| Command            | What it does                                                            |
+| ------------------ | ----------------------------------------------------------------------- |
+| `/gaia-init`       | Remove example code, configure languages, set up a clean slate          |
+| `/new-route`       | Scaffold a route with page component, test, story, and i18n keys        |
+| `/new-component`   | Scaffold a component with optional test and story                       |
+| `/new-service`     | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
+| `/new-hook`        | Scaffold a custom hook with test file                                   |
+| `/audit-code`      | Run the full quality gate (typecheck, lint, test, E2E, build)           |
+| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat     |
+| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate   |
+| `/handoff`         | Save a session handoff doc so the next session can resume cold          |
+| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action  |
 
 ### Rules
 
