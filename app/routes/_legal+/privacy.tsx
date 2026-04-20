@@ -16,9 +16,8 @@ export const loader = async ({context}: Route.LoaderArgs) => {
 const PrivacyRoute = () => {
   const {description, title} = useLoaderData<typeof loader>();
   const {t} = useTranslation('pages', {keyPrefix: 'legal.privacy'});
-  const paragraphs = t('paragraphs', {
-    returnObjects: true,
-  }) as readonly string[];
+  const raw = t('paragraphs', {returnObjects: true});
+  const paragraphs = Array.isArray(raw) ? (raw as readonly string[]) : [];
 
   return (
     <Layout>

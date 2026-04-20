@@ -15,5 +15,6 @@ done
 [ "$n" -ge 2 ] || exit 0
 
 git reset --soft "HEAD~$n" >/dev/null 2>&1 || exit 0
+# --no-verify: wiki-only squash, no source files changed — pre-commit gate is irrelevant here
 git commit -m "wiki: auto-commit $(date '+%Y-%m-%d %H:%M')" --no-verify >/dev/null 2>&1 || true
 exit 0

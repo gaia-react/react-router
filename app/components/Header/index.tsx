@@ -19,7 +19,7 @@ const Header: FC<HeaderProps> = ({className}) => {
     >
       <div className="flex w-full items-center justify-between">
         <Link aria-label={t('meta.siteName')} className="text-body" to="/">
-          <GaiaLogo className="h-6 sm:h-7" role="img" />
+          <GaiaLogo className="h-6 sm:h-7" />
         </Link>
         <div className="flex items-center gap-6">
           <LanguageSelect />
