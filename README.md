@@ -40,31 +40,31 @@ The traditional tooling Claude rides on top of:
 
 ## How GAIA Compares
 
-| Feature                         |                       GAIA                       | Vite React | RR Template | Next.js |
-| ------------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
-| **Claude integration**          |                                                  |            |             |         |
-| Claude scaffolding commands     |                        10                        |     —      |      —      |    —    |
-| Auto-loaded project rules       |                        10                        |     —      |      —      |    —    |
-| Pre-tool enforcement hooks      |                   5 (3 block)                    |     —      |      —      |    —    |
-| Bundled project skills          |                        4                         |     —      |      —      |    —    |
-| Code-review agent (pre-merge)   |                       yes                        |     —      |      —      |    —    |
-| Committed LLM knowledge base    |                   72-page wiki                   |     —      |      —      |    —    |
-| Obsidian vault integration      |                       yes                        |     —      |      —      |    —    |
-| `/init` hijacked for template   |                       yes                        |     —      |      —      |    —    |
-| **Traditional tooling**         |                                                  |            |             |         |
-| ESLint                          |                   20+ plugins                    |   basic    |    basic    |  basic  |
-| Prettier + Stylelint            |                  pre-configured                  |     —      |      —      |    —    |
-| Pre-commit hooks                |             typecheck + lint + test              |     —      |      —      |    —    |
-| Unit + integration testing      |                   Vitest + RTL                   |     —      |      —      |    —    |
-| E2E testing                     |                    Playwright                    |     —      |      —      |    —    |
-| Visual regression testing       |                   Chromatic CI                   |     —      |      —      |    —    |
-| i18n                            |          2 languages, working examples           |     —      |      —      |    —    |
-| Auth example                    |          login + session + route guards          |     —      |      —      |    —    |
-| Form validation                 |            Conform + Zod + components            |     —      |      —      |    —    |
-| Storybook                       |         Router + i18n + dark mode + MSW          |     —      |      —      |    —    |
-| Dark mode                       | end-to-end (context + session + CSS + Storybook) |     —      |      —      |    —    |
-| API mocking (MSW)               |                tests + Storybook                 |     —      |      —      |    —    |
-| Documentation site              |           VitePress + GH Pages deploy            |     —      |      —      |    —    |
+| Feature                       |                       GAIA                       | Vite React | RR Template | Next.js |
+| ----------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
+| **Claude integration**        |                                                  |            |             |         |
+| Claude scaffolding commands   |                        10                        |     ❌     |     ❌      |   ❌    |
+| Auto-loaded project rules     |                        10                        |     ❌     |     ❌      |   ❌    |
+| Pre-tool enforcement hooks    |                   5 (3 block)                    |     ❌     |     ❌      |   ❌    |
+| Bundled project skills        |                        4                         |     ❌     |     ❌      |   ❌    |
+| Code-review agent (pre-merge) |                        ✅                        |     ❌     |     ❌      |   ❌    |
+| Committed LLM knowledge base  |                   72-page wiki                   |     ❌     |     ❌      |   ❌    |
+| Obsidian vault integration    |                        ✅                        |     ❌     |     ❌      |   ❌    |
+| `/init` hijacked for template |                        ✅                        |     ❌     |     ❌      |   ❌    |
+| **Traditional tooling**       |                                                  |            |             |         |
+| ESLint                        |                   20+ plugins                    |   basic    |    basic    |  basic  |
+| Prettier + Stylelint          |                  pre-configured                  |     ❌     |     ❌      |   ❌    |
+| Pre-commit hooks              |             typecheck + lint + test              |     ❌     |     ❌      |   ❌    |
+| Unit + integration testing    |                   Vitest + RTL                   |     ❌     |     ❌      |   ❌    |
+| E2E testing                   |                    Playwright                    |     ❌     |     ❌      |   ❌    |
+| Visual regression testing     |                   Chromatic CI                   |     ❌     |     ❌      |   ❌    |
+| i18n                          |          2 languages, working examples           |     ❌     |     ❌      |   ❌    |
+| Auth example                  |          login + session + route guards          |     ❌     |     ❌      |   ❌    |
+| Form validation               |            Conform + Zod + components            |     ❌     |     ❌      |   ❌    |
+| Storybook                     |         Router + i18n + dark mode + MSW          |     ❌     |     ❌      |   ❌    |
+| Dark mode                     | end-to-end (context + session + CSS + Storybook) |     ❌     |     ❌      |   ❌    |
+| API mocking (MSW)             |                tests + Storybook                 |     ❌     |     ❌      |   ❌    |
+| Documentation site            |           VitePress + GH Pages deploy            |     ❌     |     ❌      |   ❌    |
 
 ## Philosophy
 
