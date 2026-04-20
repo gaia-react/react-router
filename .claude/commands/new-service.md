@@ -26,7 +26,6 @@ Edit `app/services/gaia/urls.ts` — add new URL keys to `GAIA_URLS`, maintainin
 
 ```ts
 export const GAIA_URLS = {
-  login: 'login',
   projects: 'projects', // new
   projectsId: 'projects/:id', // new
 };
@@ -34,7 +33,7 @@ export const GAIA_URLS = {
 
 ## Step 4: Create schema parsers
 
-Create `app/services/gaia/{serviceName}/parsers.ts` following the things pattern:
+Create `app/services/gaia/{serviceName}/parsers.ts` per [[API Service Pattern]]:
 
 ```ts
 import {z} from 'zod';
@@ -62,7 +61,7 @@ export type {ListTypeName} = z.infer<typeof {listSchemaName}>;
 
 ## Step 6: Create request functions
 
-Create `app/services/gaia/{serviceName}/requests.server.ts` following the things pattern:
+Create `app/services/gaia/{serviceName}/requests.server.ts` per [[API Service Pattern]]:
 
 ```ts
 import {api} from '../api';
@@ -91,7 +90,7 @@ import * as {serviceName} from './{serviceName}/requests.server';
 
 ### 8a: Create mock data
 
-Create `test/mocks/{serviceName}/data.ts` following the things mock data pattern:
+Create `test/mocks/{serviceName}/data.ts` per [[MSW]]:
 
 ```ts
 import {nullable, primaryKey} from '@mswjs/data';
