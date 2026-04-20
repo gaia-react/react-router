@@ -25,25 +25,12 @@ The layout shell every other Form component wraps. Renders label, children, and 
 
 Other props: `className`, `classNameDescription`, `classNameLabel`, `description`, `disabled`, `error`, `extra`, `hideMaxLength`, `id`, `label`, `length`, `required`.
 
-## FieldLabel
+## Sub-components
 
-`Field/FieldLabel/index.tsx` renders the top row:
-
-- Switches between `<label htmlFor>` and `<div>` based on whether a name/id is provided
-- Supports `<legend>` mode (`isLegend`) — used by [[Form YearMonthDay\|YearMonthDay]] because the control is a `<fieldset>`
-- Right-aligns optional `required` marker and `extra` slot (e.g. "Forgot password?")
-- Delegates `span`/`legend` rendering to `SpanOrLegend`
-- Required marker goes through `FieldRequiredText`, which changes color when the form is in an error state
-
-## FieldStatus
-
-`Field/FieldStatus/index.tsx` renders the bottom row:
-
-- `role="status"` live region
-- Shows `FieldDescription` (and/or `FieldError`) on the left
-- Shows `MaxLength` counter on the right when `maxLength` is set
-- `hideMaxLength` suppresses the counter while still respecting `maxLength` on the input
-- If description is absent but counter present, spacer `<span>` preserves right-alignment
+| Sub-component | Row | Key behaviour |
+| --- | --- | --- |
+| `FieldLabel` | top | `<label htmlFor>` or `<div>` depending on name/id; `isLegend` switches to `<legend>` (used by YearMonthDay's fieldset). Right-aligns `required` marker and `extra` slot. `FieldRequiredText` changes color on error state. |
+| `FieldStatus` | bottom | `role="status"` live region. Left: description + error. Right: `MaxLength` counter (suppressed by `hideMaxLength`; spacer preserves alignment when counter present but description absent). |
 
 ## Why components reach for Field directly
 
