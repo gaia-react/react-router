@@ -16,15 +16,7 @@ tags: [module, services, api]
 
 ## `api/` — the Ky wrapper
 
-`app/services/api/index.ts` wraps [[Ky]] with:
-
-- A `create()` factory that returns a typed request function
-- Path-param + search-param interpolation via `query-string`
-- Optional snake_case ↔ camelCase conversion (`useSnakeCase: true` by default)
-- `setApiAuthorization(token)` — sets Bearer header on **all** instances
-- `setApiLanguage(language)` — sets `Accept-Language` on all instances
-
-Every domain service creates its own `api` instance via `create()` — but they share auth + language hooks.
+`app/services/api/index.ts` wraps [[Ky]] with a `create()` factory, path/search-param interpolation, snake_case ↔ camelCase conversion, and shared `setApiAuthorization` / `setApiLanguage` hooks. See [[Ky]] for full details.
 
 ## `gaia/` — domain service
 
