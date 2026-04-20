@@ -60,10 +60,7 @@ const App: FC = () => {
   const {ENV, language, noIndex, toast} = loaderData;
 
   useEffect(() => {
-    i18n
-      .changeLanguage(language)
-      .then(() => {})
-      .catch(() => {});
+    void i18n.changeLanguage(language);
   }, [i18n, language]);
 
   useEffect(() => {
@@ -93,7 +90,7 @@ const App: FC = () => {
   );
 };
 
-const AppWithState = () => {
+const AppWithState: FC = () => {
   const {theme} = useLoaderData<typeof loader>();
 
   return (

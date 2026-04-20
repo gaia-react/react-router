@@ -62,7 +62,7 @@ If a `.env` file does not exist, rename `.env.example` to `.env`. If `.env` alre
 Run sequentially, stopping at the first failure:
 
 ```bash
-npm run typecheck && npm run test:ci && npm run lint && npm run build
+npm run typecheck && npm run lint && npm run test:ci && npm run build
 ```
 
 Fix any issues before moving on.
