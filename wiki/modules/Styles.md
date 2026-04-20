@@ -44,4 +44,4 @@ Dark mode is wired end-to-end through:
 - Tailwind's `dark:` variant
 - Storybook's `@vueless/storybook-dark-mode` addon
 
-See [[Dark Mode Flow]].
+See [[Theme Flow]].
