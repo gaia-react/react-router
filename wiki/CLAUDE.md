@@ -1,3 +1,11 @@
+---
+type: meta
+status: active
+created: 2026-04-20
+updated: 2026-04-21
+tags: [meta, schema]
+---
+
 # GAIA React Router: LLM Wiki
 
 Mode: B (Codebase) + sprinkles of E (Decisions/ADRs)
