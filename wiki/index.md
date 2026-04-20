@@ -59,7 +59,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 - [[React Router 7]]
 - [[remix-flat-routes]]
-- [[remix-auth]]
 - [[remix-i18next]]
 - [[remix-toast]]
 - [[Conform]]
