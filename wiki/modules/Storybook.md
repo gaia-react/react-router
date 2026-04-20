@@ -56,16 +56,7 @@ Chromatic chain: `WrapDecorator → ChromaticDecorator → ToastDecorator`. Inte
 
 ## Stubs
 
-`test/stubs/` provides story-level decorators for framework contexts:
-
-| Stub                    | What it provides                                      |
-| ----------------------- | ----------------------------------------------------- |
-| `stubs.reactRouter()`   | React Router context via `createRoutesStub`           |
-| `stubs.state()`         | Global `~/state` context                              |
-
-Apply in order `[stubs.state(), stubs.reactRouter()]` when both are needed. The router stub
-accepts `action`, `loader`, `path`, and `routes` options that can navigate to other stories on
-form submit or route transition — see `.claude/rules/storybook.md` for the API.
+`test/stubs/` provides story-level decorators. Apply as `[stubs.state(), stubs.reactRouter()]` when both are needed. See `.claude/rules/storybook.md` for full stub options (`action`, `loader`, `path`, `routes`).
 
 ## Dark-mode handling
 
