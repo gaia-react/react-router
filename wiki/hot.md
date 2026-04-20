@@ -26,5 +26,4 @@ updated: 2026-04-20T00:00:00
 
 ## Active Threads
 
-- Wiki currently codebase-only (Mode B). No `wiki/brand/` or `wiki/business/` content yet — create on demand.
 - Open suggestion: deeper ingest of `app/components/Form/*` and the example `things/` service before `/gaia-init` strips it.
