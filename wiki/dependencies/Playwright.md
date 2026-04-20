@@ -33,36 +33,11 @@ await hydration(page);  // must come before any interaction
 
 ## Selectors
 
-Prefer ARIA roles and accessible names. Fall back to `page.locator()` with text/attribute filters when role queries are insufficient. Never use CSS class selectors or XPath.
-
-```ts
-// preferred
-page.getByRole('button', {name: 'Save'})
-page.getByRole('textbox', {name: 'Name'})
-
-// acceptable fallback
-page.locator('select', {hasText: 'English'})
-```
+Prefer ARIA roles and accessible names; fall back to `page.locator()` with text/attribute filters. Never use CSS class selectors or XPath. See `.claude/rules/playwright.md` for examples.
 
 ## Locale and language tests
 
-Set per-describe-block, not globally:
-
-```ts
-test.describe('English to Japanese', () => {
-  test.use({locale: 'en'});
-
-  test('…', async ({page}) => {
-    await page.setExtraHTTPHeaders({'Accept-Language': 'en'});
-    await page.context().clearCookies();
-    await page.goto('/');
-    await hydration(page);
-    // web-first assertions from here
-  });
-});
-```
-
-See `language-switch.spec.ts` for the canonical locale-switching pattern.
+Set locale and `Accept-Language` per `test.describe` block, not globally. See `.claude/rules/playwright.md` and `language-switch.spec.ts` for the canonical pattern.
 
 ## Auth / session setup
 
