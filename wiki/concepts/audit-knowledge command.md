@@ -27,7 +27,7 @@ Stage 1 proposes actions — `delete`, `delete-entry`, `promote`, `shrink`, `mer
 
 ## What it catches
 
-- **Cross-store duplication** — fact lives in both memory and wiki → memory wins the deletion
+- **Cross-store duplication** — fact lives in both memory and wiki → wiki wins; the memory entry is deleted
 - **Promotable memory** — durable knowledge stuck in machine-local memory → moves to a specific wiki page
 - **Intra-wiki duplication** — merges overlapping pages into a canonical + redirects
 - **Auto-load bloat** — flags `wiki/hot.md`, `CLAUDE.md`, and rules over budget
