@@ -36,20 +36,4 @@ See [[Components]] for the same convention applied to shared UI.
 
 ## Standard page shape
 
-```tsx
-import type {FC} from 'react';
-import {useTranslation} from 'react-i18next';
-
-const IndexPage: FC = () => {
-  const {t} = useTranslation('pages', {keyPrefix: 'index'});
-  return (
-    <section className="flex h-full items-center justify-center p-4">
-      <h1>{t('title')}</h1>
-    </section>
-  );
-};
-
-export default IndexPage;
-```
-
-See [[i18n]] for translation conventions.
+Pages are `FC` components with a default export, using `useTranslation` for all user-facing strings. `/new-route` emits this shape. See [[i18n]] for translation conventions.
