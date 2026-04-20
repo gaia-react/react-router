@@ -14,17 +14,7 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 
 ## Layout
 
-```
-.claude/
-├── settings.json          # PreToolUse hooks, env, enabled plugins
-├── settings.local.json    # personal overrides (gitignored)
-├── agents/                # subagent definitions (code-review-audit)
-├── agent-memory/          # persistent agent memory (versioned)
-├── commands/              # slash commands
-├── hooks/                 # bash hooks for PreToolUse events
-├── rules/                 # auto-applied coding rules
-└── skills/                # invocable skills
-```
+`.claude/` contains `settings.json` (hooks, env, plugins), `settings.local.json` (gitignored personal overrides), `agents/`, `agent-memory/` (versioned persistent memory), `commands/`, `hooks/`, `rules/`, and `skills/`.
 
 ## Commands (slash)
 
