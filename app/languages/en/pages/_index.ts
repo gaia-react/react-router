@@ -5,7 +5,7 @@ export default {
   designValue: 'Tailwind v4',
   eyebrow: 'GAIA React Template',
   heroTagline:
-    'A production-ready React Router 7 starter with i18n, auth scaffolding, and a full component system. Swap in your project name and ship.',
+    'A production-ready React Router 7 starter with i18n, Conform + Zod forms, dark mode, and a full component system. Swap in your project name and ship.',
   heroTitle: 'Start with something solid.',
   meta: {
     description: 'Description of the index page',

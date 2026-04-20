@@ -20,7 +20,7 @@ const IndexPage: FC = () => {
       />
 
       {/* Top accent bar */}
-      <div className="h-0.5 w-full bg-blue-500" />
+      <div className="h-0.5 w-full bg-blue-500 dark:bg-blue-400" />
 
       {/* Header wordmark */}
       <header className="px-8 pt-8 sm:px-16 sm:pt-12">
@@ -35,7 +35,7 @@ const IndexPage: FC = () => {
       <section className="flex flex-1 flex-col justify-center px-8 py-16 sm:px-16 sm:py-24">
         <div className="max-w-3xl">
           {/* Eyebrow */}
-          <p className="mb-4 font-mono text-xs tracking-widest text-blue-500 uppercase sm:text-sm">
+          <p className="mb-4 font-mono text-xs tracking-widest text-blue-500 uppercase sm:text-sm dark:text-blue-400">
             {t('eyebrow')}
           </p>
 
@@ -45,7 +45,7 @@ const IndexPage: FC = () => {
           </h1>
 
           {/* Divider */}
-          <div className="mb-8 h-px w-16 bg-blue-500" />
+          <div className="mb-8 h-px w-16 bg-blue-500 dark:bg-blue-400" />
 
           {/* Tagline */}
           <p className="text-secondary mb-12 max-w-lg text-base/relaxed sm:text-lg">
