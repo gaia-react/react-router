@@ -172,106 +172,20 @@ To use MSW in Playwright, start `npm run dev` with `MSW_ENABLED=true` and point 
 
 ## 5. Writing a new mock
 
-**Step 1 — Define the data schema and seed records** (`test/mocks/{resource}/data.ts`):
+**Ask Claude to scaffold it via `/new-service`.** The command creates the full mock layer alongside the service so the two stay in sync — the service request functions and their matching handlers drop in together, URLs share `GAIA_URLS` constants, and the database factory registers the new resource.
 
-```ts
-import {primaryKey, nullable} from '@mswjs/data';
+`/new-service` produces:
 
-export const resourceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  created_at: z.iso.datetime(),
-});
+| File | Contents |
+|---|---|
+| `test/mocks/{resource}/data.ts` | `@mswjs/data` schema + seed records in the raw server (snake_case) shape |
+| `test/mocks/{resource}/get.ts` + `post.ts` / `put.ts` / `delete.ts` | HTTP handlers using `url(GAIA_URLS.key)` — never a hardcoded string |
+| `test/mocks/{resource}/index.ts` | Barrel combining handlers into an array |
+| `test/mocks/index.ts` | Registry updated to include the new barrel |
+| `test/mocks/database.ts` | Factory schema added + `resetTestData()` updated to reseed the new table |
+| `app/services/gaia/urls.ts` | URL constants added (and shared with the service) |
 
-export type ServerResource = z.infer<typeof resourceSchema>;
-
-const schema = {
-  id: primaryKey(String),
-  name: String,
-  created_at: String,
-};
-
-const data: ServerResource[] = [
-  {id: '1', name: 'Example', created_at: new Date().toISOString()},
-];
-
-export default {data, schema};
-```
-
-**Step 2 — Write handlers** (`test/mocks/{resource}/get.ts`, etc.):
-
-```ts
-import {http} from 'msw';
-import {GAIA_URLS} from '~/services/gaia/urls';
-import database from '../database';
-import {url} from '../url';
-
-const all = http.get(url(GAIA_URLS.resources), () =>
-  Response.json({data: database.resources.getAll()})
-);
-
-const one = http.get(url(GAIA_URLS.resourcesId), ({params}) => {
-  const data = database.resources.findFirst({
-    where: {id: {equals: String(params.id)}},
-  });
-  if (!data) return Response.json({error: 'Not found'}, {status: 404});
-  return Response.json({data});
-});
-
-export default [one, all];
-```
-
-**Step 3 — Barrel the handlers** (`test/mocks/{resource}/index.ts`):
-
-```ts
-import del from './delete';
-import get from './get';
-import post from './post';
-import put from './put';
-
-export default [...get, post, put, del];
-```
-
-**Step 4 — Register in the global handler registry** (`test/mocks/index.ts`):
-
-```ts
-import resources from './resources';
-
-const handlers = [...existingHandlers, ...resources];
-export default handlers;
-```
-
-**Step 5 — Add factory schema to the database** (`test/mocks/database.ts`):
-
-```ts
-import {factory} from '@mswjs/data';
-import resources from './resources/data';
-
-const database = factory({
-  resources: resources.schema,
-  // ...existing models
-});
-
-export const resetTestData = () => {
-  database.resources.deleteMany({where: {id: {notIn: ['0']}}});
-  resources.data.forEach(database.resources.create);
-  // ...reset other models
-};
-
-resetTestData();
-export default database;
-```
-
-**Step 6 — Add URL constants** (`app/services/gaia/urls.ts`):
-
-```ts
-export const GAIA_URLS = {
-  resources: 'resources',
-  resourcesId: 'resources/:id',
-};
-```
-
-The `/new-service` command scaffolds steps 1–6 automatically. Run it instead of doing this by hand.
+If you're editing an existing mock by hand instead of scaffolding, the invariants you must preserve are covered in [Section 3 — Service-layer contract](#3-service-layer-contract) (handlers use `url(GAIA_URLS.key)`, data stays snake_case, factory + `resetTestData()` stay in sync). See the `api-service` rule (`.claude/rules/api-service.md`) for the full contract and [[API Service Pattern]] for the service side.
 
 ---
 
