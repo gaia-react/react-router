@@ -29,7 +29,7 @@ tags: [component, forms, inputs]
 `app/components/Form/InputEmail/index.tsx`. Thin wrapper:
 
 - Defaults `autoComplete='email'`
-- Defaults `label` and `placeholder` from the `auth` i18n namespace (`t('email')`, `t('emailPlaceholder')`)
+- Defaults `label` and `placeholder` from the `common` i18n namespace (`t('email')`, `t('emailPlaceholder')`)
 - Delegates everything else to [[Form Text Inputs#InputText\|InputText]]
 
 ## InputPassword
