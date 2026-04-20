@@ -131,7 +131,7 @@ the in-memory database:
 import database from 'test/mocks/database';
 import {toCamelCase} from '~/utils/object';
 
-const things = database.things.getAll().map(toCamelCase) as Things;
+const resources = database.resources.getAll().map(toCamelCase) as Resources;
 ```
 
 ## Why Storybook is also the test driver
