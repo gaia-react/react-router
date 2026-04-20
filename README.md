@@ -15,7 +15,7 @@ Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and h
 ## What Claude Gets
 
 - **4 scaffolding commands** — `/new-route`, `/new-component`, `/new-hook`, `/new-service` match your project conventions out of the box
-- **6 project commands** — `/audit-code` (quality gate), `/audit-knowledge` (prompt-debt sweep), `/migrate` (package upgrades), `/handoff` + `/pickup` (session continuity), `/gaia-init` (template init)
+- **7 project commands** — `/audit-code` (quality gate), `/audit-knowledge` (prompt-debt sweep), `/migrate` (package upgrades), `/handoff` + `/pickup` (session continuity), `/gaia-init` (template init), `/setup-chromatic-mcp` (visual regression + component docs for Claude)
 - **11 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner, wiki maintenance; auto-loaded based on what Claude is editing
 - **4 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, advise on missing i18n strings, advise on missing Storybook stories
 - **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
@@ -45,7 +45,7 @@ The traditional tooling Claude rides on top of:
 | ----------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
 | **Claude Integration**        |                                                  |            |             |         |
 | Scaffolding Commands          |                        4                         |     ❌     |     ❌      |   ❌    |
-| Project Commands              |                        6                         |     ❌     |     ❌      |   ❌    |
+| Project Commands              |                        7                         |     ❌     |     ❌      |   ❌    |
 | Auto-Loaded Project Rules     |                        11                        |     ❌     |     ❌      |   ❌    |
 | Pre-Tool Enforcement Hooks    |                   4 (2 Block)                    |     ❌     |     ❌      |   ❌    |
 | Bundled Project Skills        |                        4                         |     ❌     |     ❌      |   ❌    |

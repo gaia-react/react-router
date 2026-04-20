@@ -83,18 +83,13 @@ If any install step fails, print the command so the user can run it manually.
 - `claude plugin marketplace add AgriciDaniel/claude-obsidian`
 - `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
-### Install Chromatic MCP (optional but recommended)
+### Chromatic MCP (optional but recommended)
 
-Lets Claude query Storybook components, props, and visual-regression diffs directly. Requires a Chromatic account — skip if the user opted out of Chromatic.
+Lets Claude query Storybook components, props, and visual-regression diffs directly.
 
-```bash
-npx storybook add @storybook/addon-mcp
-npx mcp-add --type http --url "http://localhost:6006/mcp" \
-  --client-id "cdf3737dff9d485485968e50b63fd8b4" \
-  --scope project
-```
+Ask the user: "Set up Chromatic MCP now?" — if **yes**, invoke the `/setup-chromatic-mcp` command. If **no**, tell them they can run `/setup-chromatic-mcp` any time later; it's idempotent and handles both first-time install and re-registration.
 
-First connection prompts Chromatic sign-in. See `wiki/dependencies/Chromatic.md` for details.
+The setup flow prompts the user for scope (project vs user) and URL, installs the Storybook addon, and registers the MCP. Requires a Chromatic account (free for open source): https://www.chromatic.com/start.
 
 ### Update Code Review Audit agent
 
