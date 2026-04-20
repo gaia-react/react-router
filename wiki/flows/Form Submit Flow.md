@@ -1,0 +1,34 @@
+---
+type: flow
+status: active
+created: 2026-04-20
+updated: 2026-04-20
+tags: [flow, forms, conform, zod]
+---
+
+# Form Submit Flow
+
+The end-to-end path of a form submission in GAIA.
+
+1. User fills out a form built from [[Form Components]].
+2. Conform's `useForm({ onValidate })` runs `parseWithZod(formData, {schema})` client-side for instant feedback.
+3. On submit, the form `POST`s to the route's `action`.
+4. The route action runs the **same** `parseWithZod` server-side (source of truth):
+   ```ts
+   const submission = parseWithZod(formData, {schema});
+   if (submission.status !== 'success') return submission.reply();
+   ```
+5. On success, action does the work (call API via `app/services/`), then either:
+   - Returns `redirect(...)` for a navigation
+   - Returns `dataWithToast(...)` from `remix-toast` for an inline toast
+6. Conform binds errors back to fields automatically.
+
+## Stateful custom inputs
+
+If the form contains a stateful custom input (e.g. `YearMonthDay`), wire it via `useInputControl` so it stays in sync with Conform's validation state. See [[Form Components]].
+
+## Toasts
+
+`remix-toast` cookie + `Sonner` UI render success/error toasts on redirect. The root loader reads the toast via `getToast(request)` and passes it to `<Toast />` which calls `notify[toast.type](toast)`.
+
+See [[Routing]], [[Form Components]], [[i18n]].
