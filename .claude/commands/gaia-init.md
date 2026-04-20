@@ -1,6 +1,18 @@
 Initialize a new project from the GAIA React template. The template already ships clean (no example code, no docs site, no auth). This command renames, strips GAIA-specific branding, configures i18n, installs Claude skills/plugins, and hands you a ready-to-build project.
 
-## Step 1: Gather user input
+## Step 1: Install dependencies
+
+The project was just created from the template — `node_modules/` does not exist yet. Install before doing anything else so later steps (typecheck, tests, build) can run.
+
+Tell the user: "Installing dependencies — this may take a minute…" then run:
+
+```bash
+npm install
+```
+
+If install fails, stop and report the error. Do not continue.
+
+## Step 2: Gather user input
 
 Ask the user using AskUserQuestion (multiSelect where appropriate):
 
@@ -8,7 +20,7 @@ Ask the user using AskUserQuestion (multiSelect where appropriate):
 - Their GitHub username for CODEOWNERS (suggest `@username` format)
 - The title of their project (default: "GAIA React App")
 
-## Step 2: Strip GAIA-specific branding
+## Step 3: Strip GAIA-specific branding
 
 Run in one shell:
 
@@ -22,11 +34,11 @@ Then edit `.storybook/preview.ts`:
 - Remove the `BRAND` constant (if any)
 - Remove any `...BRAND` spreads from `darkMode.dark` and `darkMode.light`
 
-## Step 3: Update CODEOWNERS
+## Step 4: Update CODEOWNERS
 
 Replace `.github/CODEOWNERS` contents with just the user's GitHub username (the whole file becomes a single line like `* @username`).
 
-## Step 4: Configure languages
+## Step 5: Configure languages
 
 Note: by default only `en` and `ja` folders exist in `app/languages/`.
 
@@ -43,9 +55,9 @@ Note: by default only `en` and `ja` folders exist in `app/languages/`.
 5. **Update `.storybook/preview.ts`**: `initialGlobals.locales` to include only selected languages.
 6. **Update `.playwright/e2e/language-switch.spec.ts`**: with the selected languages.
 
-## Step 5: Rename the project
+## Step 6: Rename the project
 
-Use the project title from Step 1.
+Use the project title from Step 2.
 
 - `package.json` `"name"` field → kebab-case of project title (e.g. `"hello-world"`)
 - `CLAUDE.md` — replace the `# GAIA React Template` heading with `# <Project Title>` (Title Case, e.g. `# Hello World`)
@@ -53,11 +65,11 @@ Use the project title from Step 1.
 - `app/languages/en/common.ts` — update `meta.siteName` to the project title
 - Do the same for every other `app/languages/<lang>/pages/_index.ts` and `common.ts` file (translate the title if appropriate, otherwise use the English project title)
 
-## Step 6: Check `.env`
+## Step 7: Check `.env`
 
 If a `.env` file does not exist, rename `.env.example` to `.env`. If `.env` already exists, leave it.
 
-## Step 7: Verify the build
+## Step 8: Verify the build
 
 Run sequentially, stopping at the first failure:
 
@@ -67,7 +79,7 @@ npm run typecheck && npm run lint && npm run test:ci && npm run build
 
 Fix any issues before moving on.
 
-## Step 8: Claude configuration
+## Step 9: Claude configuration
 
 If any install step fails, print the command so the user can run it manually.
 
@@ -101,7 +113,7 @@ Edit `.claude/agents/code-review-audit.md` — replace `{variables}` with paths 
 - `{project_directory}` (example: `/Users/username/Documents/projects/my-gaia-app`)
 - "Session transcript logs" path (OS-specific; typically `~/.claude/logs/` on macOS/Linux)
 
-## Step 9: Refresh the wiki
+## Step 10: Refresh the wiki
 
 The template ships with a wiki shaped for the upstream GAIA project. Refresh the two files that encode "where we are right now" so the new project starts with a clean context:
 
@@ -140,7 +152,7 @@ Insert directly below the `# Log` heading (log is append-only, newest on top):
 - Installed: React Doctor, TDD, Playwright CLI skills; typescript-lsp, claude-obsidian plugins
 ```
 
-## Step 10: Complete
+## Step 11: Complete
 
 1. Remove the `/init` interceptor — it protects the template's curated `CLAUDE.md` and is no longer needed once a project has been initialized:
    - Delete `.claude/hooks/intercept-init.sh`
