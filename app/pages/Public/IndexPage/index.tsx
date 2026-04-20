@@ -67,7 +67,7 @@ const IndexPage: FC = () => {
       </section>
 
       <div className="relative z-10 px-8 py-6 sm:px-16">
-        <dl className="flex flex-wrap gap-x-10 gap-y-4">
+        <dl className="grid grid-cols-2 gap-x-6 gap-y-4 sm:flex sm:flex-wrap sm:gap-x-10">
           {CHIPS.map((key) => (
             <div key={key} className="flex flex-col gap-0.5">
               <dt className="text-secondary font-mono text-xs tracking-widest uppercase">
