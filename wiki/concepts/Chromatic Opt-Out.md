@@ -8,18 +8,18 @@ tags: [concept, testing]
 
 # Chromatic Opt-Out
 
-If you don't want visual regression via [[Chromatic]]:
+Ask Claude to remove visual regression via [[Chromatic]]. Claude will run through the steps below; they're documented here so the opt-out is traceable and reviewable.
 
 ```sh
 npm un -D chromatic && npm un -D @chromatic-com/storybook
 ```
 
-Delete:
+Files to delete:
 
 - `.github/workflows/chromatic.yml`
 - `.storybook/chromatic`
 
-Edit `.storybook/preview.ts`:
+Edits to `.storybook/preview.ts`:
 
 ```ts
 import {decorators} from './chromatic'; // delete
@@ -29,4 +29,4 @@ decorators: [WrapDecorator];
 // remove the chromatic viewport block
 ```
 
-Remove `chromatic: {disableSnapshot: true}` from any stories that have it.
+Strip `chromatic: {disableSnapshot: true}` from any stories that have it.
