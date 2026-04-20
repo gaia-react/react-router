@@ -45,7 +45,7 @@ app/
 ├── pages/            page-specific UI (Auth, Public, Session)
 ├── routes/           thin route files (loader/action only)
 ├── services/         api wrapper (Ky) + gaia/* domain services
-├── sessions.server/  cookie sessions (auth, language, theme)
+├── sessions.server/  cookie sessions (language, theme)
 ├── state/            React Context providers
 ├── styles/           tailwind.css
 ├── types/            global TS types
