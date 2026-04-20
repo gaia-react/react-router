@@ -47,7 +47,7 @@ Ask Claude to add domain subfolders (`auth/`, `users/`, etc.) as needed — `/ne
 export const GAIA_URLS = {};
 ```
 
-Add your endpoint keys here as you build out services.
+Populated by the `/new-service` command — ask Claude to scaffold a service and it adds the endpoint key here.
 
 ## Request function pattern
 
