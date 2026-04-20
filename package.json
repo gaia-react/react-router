@@ -140,7 +140,8 @@
     "remix-i18next": {
       "i18next": "$i18next",
       "react-i18next": "$react-i18next"
-    }
+    },
+    "vite-node": "^6.0.0"
   },
   "msw": {
     "workerDirectory": "public"
