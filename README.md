@@ -157,15 +157,17 @@ Claude follows project rules automatically based on file paths. Rules live in `.
 
 ### Hooks
 
-Claude Code hooks let the template catch mistakes before they reach disk. GAIA ships five:
+Claude Code hooks let the template catch mistakes before they reach disk. GAIA ships seven:
 
-| Hook                                 | Event            | What it does                                             |
-| ------------------------------------ | ---------------- | -------------------------------------------------------- |
-| `intercept-init.sh`                  | UserPromptSubmit | Blocks built-in `/init`, auto-invokes `/gaia-init`       |
-| `block-eslint-config-edit.sh`        | PreToolUse       | Blocks edits to `eslint.config.mjs`                      |
-| `block-vitest-globals-tsconfig.sh`   | PreToolUse       | Blocks adding `vitest/globals` to `tsconfig.json`        |
-| `check-i18n-strings.sh`              | PreToolUse       | Advisory: ensure user-facing strings use `t()`           |
-| `check-story-exists.sh`              | PreToolUse       | Advisory: remind to add a Storybook story for components |
+| Hook                                 | Event            | What it does                                                            |
+| ------------------------------------ | ---------------- | ----------------------------------------------------------------------- |
+| `intercept-init.sh`                  | UserPromptSubmit | Blocks built-in `/init`, auto-invokes `/gaia-init`                      |
+| `block-eslint-config-edit.sh`        | PreToolUse       | Blocks edits to `eslint.config.mjs`                                     |
+| `block-vitest-globals-tsconfig.sh`   | PreToolUse       | Blocks adding `vitest/globals` to `tsconfig.json`                       |
+| `check-i18n-strings.sh`              | PreToolUse       | Advisory: ensure user-facing strings use `t()`                          |
+| `check-story-exists.sh`              | PreToolUse       | Advisory: remind to add a Storybook story for components                |
+| `wiki-session-start.sh`              | SessionStart     | Records session-start HEAD so wiki commits can be detected at Stop time |
+| `wiki-session-stop.sh`               | Stop             | Prompts a `wiki/hot.md` refresh when wiki commits happened this session |
 
 ### Code review before merge
 
