@@ -35,8 +35,9 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | `/new-component` | Scaffold a component with optional test + story                                                    |
 | `/new-service`   | Scaffold an API service + Zod + URL constants + MSW mocks                                          |
 | `/new-hook`      | Scaffold a custom hook + test                                                                      |
-| `/audit-code`    | Run the full [[Quality Gate]]                                                                      |
-| `/migrate`       | Upgrade a package to latest, apply breaking changes, run audit                                     |
+| `/audit-code`      | Run the full [[Quality Gate]]                                                                      |
+| `/audit-knowledge` | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[audit-knowledge command]]) |
+| `/migrate`         | Upgrade a package to latest, apply breaking changes, run audit                                     |
 | `/handoff`       | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[handoff command]]) |
 | `/pickup`        | Resume from the latest handoff; falls back to `wiki/hot.md` ([[pickup command]])                   |
 
