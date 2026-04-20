@@ -37,7 +37,7 @@ gaia/
 └── index.server.ts          # barrel export
 ```
 
-Add domain subfolders (`auth/`, `users/`, etc.) as needed — see [[API Service Pattern]].
+Ask Claude to add domain subfolders (`auth/`, `users/`, etc.) as needed — `/new-service` scaffolds the full pattern. See [[API Service Pattern]].
 
 ## URL constants
 
