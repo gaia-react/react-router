@@ -2,11 +2,28 @@
 
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
-Starting a new React project means days of setup before writing a single feature. Linting, testing, i18n, auth, CI, pre-commit hooks, dark mode, Storybook. All of it needs to be configured, integrated, and wired together correctly.
+**The Claude-native React Router template.** Scaffolding commands, auto-loaded rules, enforcement hooks, a code-review agent, and a committed LLM knowledge base — your AI collaborator is a first-class citizen of the codebase, not a tool glued on top of it.
 
-GAIA React is the most thoroughly configured React Router 7 template available. Every tool is set up, every integration tested, every convention documented. You start writing features on day one.
+The full traditional stack — 20+ ESLint plugins, Prettier, Vitest, Playwright, Chromatic, Storybook, i18n, auth, Conform + Zod forms, dark mode, MSW, React Router 7 — is the foundation it's built on. You get both, and they're designed together.
 
-## What You Get
+## Why Claude-native?
+
+Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and hope the model figures out the rest. GAIA is different. Every convention the template enforces is also a rule Claude auto-loads. Every scaffolding script is also a slash command. Every code review runs a dedicated agent. Every piece of project knowledge lives in a committed wiki that Claude fetches on demand instead of hauling a giant `CLAUDE.md` into every request. The result: Claude writes code that matches your patterns on day one, and it stops writing the wrong thing before you have to review it.
+
+## What Claude Gets
+
+- **10 scaffolding commands** — `/new-route`, `/new-component`, `/new-hook`, `/new-service`, `/audit-code`, `/migrate`, `/handoff`, `/pickup`, `/audit-knowledge`, `/gaia-init`
+- **10 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner; auto-loaded based on what Claude is editing
+- **5 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, intercept `/init` → `/gaia-init`, advise on missing i18n strings, advise on missing Storybook stories
+- **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
+- **72-page committed wiki** — architecture, modules, dependencies, decisions, flows; Claude reads `wiki/hot.md` (~200-word cache) at session start and fetches specific pages on demand
+- **Obsidian integration** — the [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin adds skills for ingesting sources, querying, linting, auto-research loops, and saving conversations directly into the vault
+- **4 bundled project skills** — `react-code`, `typescript`, `tailwind`, `skeleton-loaders`
+- **Hijacked `/init`** — runs `/gaia-init` instead of overwriting the curated `CLAUDE.md`
+
+## What You Get (Foundation)
+
+The traditional tooling Claude rides on top of:
 
 - **20+ ESLint plugins** pre-configured with [Prettier](https://prettier.io/) and [Stylelint](https://stylelint.io/) for consistent code from the first commit
 - **Pre-commit hooks** ([Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)) that typecheck, lint, and test before code reaches CI
@@ -18,45 +35,51 @@ GAIA React is the most thoroughly configured React Router 7 template available. 
 - **[Storybook](https://storybook.js.org/) with React Router support**, including i18n, dark mode, and [MSW](https://mswjs.io/) integration
 - **API mocking** with [Mock Service Worker](https://mswjs.io/) and [msw/data](https://github.com/mswjs/data), with working handlers for tests and Storybook
 - **Toast notifications** with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
-- **Claude Code integration** with scaffolding commands, quality rules, and code review (see [Claude](#claude) section)
 - **Documentation site** via [VitePress](https://vitepress.dev/) with GitHub Pages deployment
-- **Knowledge base for LLMs**: a [committed `wiki/`](#wiki) of architecture, modules, decisions, and dependencies that Claude reads on demand — no token bloat, no stale CLAUDE.md sprawl
 - Built on [React Router 7](https://reactrouter.com/), [TailwindCSS](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
-
-## Philosophy
-
-GAIA is a **base template**, not a full-stack kit. It deliberately does not include a component library. You choose what fits your project.
-
-- Configuring 20+ linting rules, four layers of testing, i18n, auth, and CI correctly takes days. GAIA solves that once.
-- **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer a different icon set? Swap it. Nothing is locked in.
-- Pre-commit hooks run typechecking, linting, and tests. The quality gate catches issues before they compound.
-- Best practices are baked into working examples you can follow and modify.
 
 ## How GAIA Compares
 
-| Feature                    |                       GAIA                       | Vite React | RR Template | Next.js |
-| -------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
-| ESLint                     |                   20+ plugins                    |   basic    |    basic    |  basic  |
-| Prettier + Stylelint       |                  pre-configured                  |     —      |      —      |    —    |
-| Pre-commit hooks           |             typecheck + lint + test              |     —      |      —      |    —    |
-| Unit + integration testing |                   Vitest + RTL                   |     —      |      —      |    —    |
-| E2E testing                |                    Playwright                    |     —      |      —      |    —    |
-| Visual regression testing  |                   Chromatic CI                   |     —      |      —      |    —    |
-| i18n                       |          2 languages, working examples           |     —      |      —      |    —    |
-| Auth example               |          login + session + route guards          |     —      |      —      |    —    |
-| Form validation            |            Conform + Zod + components            |     —      |      —      |    —    |
-| Storybook                  |         Router + i18n + dark mode + MSW          |     —      |      —      |    —    |
-| Dark mode                  | end-to-end (context + session + CSS + Storybook) |     —      |      —      |    —    |
-| API mocking (MSW)          |                tests + Storybook                 |     —      |      —      |    —    |
-| Claude Code integration    |             commands, skills, rules              |     —      |      —      |    —    |
-| LLM knowledge base         |            committed wiki + Obsidian             |     —      |      —      |    —    |
-| Documentation site         |           VitePress + GH Pages deploy            |     —      |      —      |    —    |
+| Feature                         |                       GAIA                       | Vite React | RR Template | Next.js |
+| ------------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
+| **Claude integration**          |                                                  |            |             |         |
+| Claude scaffolding commands     |                        10                        |     —      |      —      |    —    |
+| Auto-loaded project rules       |                        10                        |     —      |      —      |    —    |
+| Pre-tool enforcement hooks      |                   5 (3 block)                    |     —      |      —      |    —    |
+| Bundled project skills          |                        4                         |     —      |      —      |    —    |
+| Code-review agent (pre-merge)   |                       yes                        |     —      |      —      |    —    |
+| Committed LLM knowledge base    |                   72-page wiki                   |     —      |      —      |    —    |
+| Obsidian vault integration      |                       yes                        |     —      |      —      |    —    |
+| `/init` hijacked for template   |                       yes                        |     —      |      —      |    —    |
+| **Traditional tooling**         |                                                  |            |             |         |
+| ESLint                          |                   20+ plugins                    |   basic    |    basic    |  basic  |
+| Prettier + Stylelint            |                  pre-configured                  |     —      |      —      |    —    |
+| Pre-commit hooks                |             typecheck + lint + test              |     —      |      —      |    —    |
+| Unit + integration testing      |                   Vitest + RTL                   |     —      |      —      |    —    |
+| E2E testing                     |                    Playwright                    |     —      |      —      |    —    |
+| Visual regression testing       |                   Chromatic CI                   |     —      |      —      |    —    |
+| i18n                            |          2 languages, working examples           |     —      |      —      |    —    |
+| Auth example                    |          login + session + route guards          |     —      |      —      |    —    |
+| Form validation                 |            Conform + Zod + components            |     —      |      —      |    —    |
+| Storybook                       |         Router + i18n + dark mode + MSW          |     —      |      —      |    —    |
+| Dark mode                       | end-to-end (context + session + CSS + Storybook) |     —      |      —      |    —    |
+| API mocking (MSW)               |                tests + Storybook                 |     —      |      —      |    —    |
+| Documentation site              |           VitePress + GH Pages deploy            |     —      |      —      |    —    |
+
+## Philosophy
+
+GAIA is a **Claude-native base template**, not a full-stack kit or a component library. It sets up everything Claude needs to write your app correctly and leaves the product-layer choices to you.
+
+- Configuring 20+ linting rules, four layers of testing, i18n, auth, CI — **and** the full Claude toolchain (commands, rules, hooks, agents, wiki, plugins) — correctly takes days. GAIA solves that once.
+- **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer a different icon set? Swap it. Nothing is locked in — including the Claude layer.
+- Pre-commit hooks run typechecking, linting, and tests. Pre-tool hooks catch Claude mistakes before they reach disk. The quality gate catches issues before they compound.
+- Best practices are baked into working examples you can follow and modify — and into rules Claude loads automatically.
 
 ## Installation
 
 Make sure you have [Node.js](https://nodejs.org/en/) >=22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
 
-All you need to do is run this installation command and get to work.
+All you need to do is run this installation command and get to work:
 
 ```sh
 npx create-react-router@latest --template gaia-react/react-router
@@ -68,35 +91,41 @@ npx create-react-router@latest --template gaia-react/react-router
 npm install
 ```
 
-If you're using [Claude Code](https://code.claude.com/docs/en/overview), you can run `/gaia-init` (or just `/init` — it's intercepted and redirected) once you're ready (see below).
-
-If not, duplicate the `.env.example` file and name it `.env`, and you can optionally delete the `.claude` folder.
-
 ### Setup Fix on Save in your IDE
 
 Follow these [instructions](https://gaia-react.github.io/react-router/tech-stack/code-quality/#setup-fix-on-save).
 
-## Documentation
+### Initialize the template
 
-GAIA comes with the documentation included. Run it locally with:
+If you're using [Claude Code](https://code.claude.com/docs/en/overview), run `/gaia-init` (or just `/init` — it's intercepted and redirected). See [`/gaia-init`](#gaia-init--one-command-initialization) below for the full scope.
 
-```sh
-npm run docs
-```
+If you're not using Claude, duplicate `.env.example` to `.env`, then delete `.claude/`, `wiki/`, and any other Claude-specific artifacts you won't need.
 
-It is recommended that you keep these docs up to date as you build your project. There is also a GitHub action to deploy the docs to your repository's GitHub Pages.
+## `/gaia-init` — one-command initialization
 
-Claude knows how to reference the documentation when necessary.
+Running `/gaia-init` (or `/init` — they're interchangeable) initializes the template end-to-end in one command:
 
-## Claude
+- **Strips example code** — `things` service, `ExampleConsumer`/`ExampleProvider`, IndexPage examples + TechStack, GAIA branding assets
+- **Configures i18n** — prompts for your language set (English, Japanese, French, Spanish, German, or a custom list), scaffolds matching language files, updates `LanguageSelect` and Storybook globals
+- **Sets project metadata** — `package.json` name, `CLAUDE.md` title, `CODEOWNERS`, VitePress `base`
+- **Installs Claude skills** — [React Doctor](https://github.com/millionco/react-doctor), [Matt Pocock's TDD](https://www.aihero.dev/skill-test-driven-development-claude-code), [Playwright CLI](https://github.com/microsoft/playwright-cli)
+- **Installs Claude plugins** — `typescript-lsp` (from the official Claude Plugins marketplace) and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
+- **Syncs the wiki** to the new project state (removes references to deleted example code)
+- **Verifies** via the quality gate: `typecheck && test:ci && lint && build`
 
-GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, rules, and a quality gate that work out of the box.
+After `/gaia-init` finishes, you have a clean app shell **and** a fully-configured Claude workflow ready to use.
+
+> **Why both `/init` and `/gaia-init` work:** the built-in `/init` would normally overwrite the curated `CLAUDE.md`. A `UserPromptSubmit` hook (`.claude/hooks/intercept-init.sh`) intercepts it and auto-invokes `/gaia-init` instead. The hook and its settings entry are removed automatically when `/gaia-init` finishes, so `/init` returns to its default behavior afterward.
+
+## Claude Workflow
+
+GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in `.claude/` and visible in the repo.
 
 ### Commands
 
 | Command            | What it does                                                            |
 | ------------------ | ----------------------------------------------------------------------- |
-| `/gaia-init`       | Remove example code, configure languages, set up a clean slate          |
+| `/gaia-init`       | Full template initialization (see above)                                |
 | `/new-route`       | Scaffold a route with page component, test, story, and i18n keys        |
 | `/new-component`   | Scaffold a component with optional test and story                       |
 | `/new-service`     | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
@@ -109,21 +138,56 @@ GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, ru
 
 ### Rules
 
-Claude automatically follows project rules for coding guidelines, component testing patterns, ESLint fixes, i18n conventions, accessibility, API services, route creation, and the quality gate. These rules are in `.claude/rules/` and activate based on file paths.
+Claude follows project rules automatically based on file paths. Rules live in `.claude/rules/` and activate when Claude edits matching files.
 
-Once you're familiar with the GAIA framework, open Claude and run `/gaia-init` — or just `/init`, which works the same way on a fresh GAIA checkout. This will remove the example code and give you a clean slate for your project.
+| Rule                   | Enforces                                                                  |
+| ---------------------- | ------------------------------------------------------------------------- |
+| `accessibility`        | Keyboard nav, alt text, ARIA, focus management (scope: `app/components/`) |
+| `api-service`          | Request / schema / mock patterns (scope: `app/services/`)                 |
+| `coding-guidelines`    | Simplicity, surgical edits, TDD (scope: `app/`)                           |
+| `component-testing`    | `composeStory` pattern for component tests                                |
+| `eslint-fixes`         | Fix ESLint errors in source, not in the ESLint config                     |
+| `i18n`                 | `t()` from `useTranslation()` for all user-facing strings                 |
+| `new-route`            | Thin routes, page component conventions, route groups                     |
+| `pr-merge-workflow`    | Run the code-review-audit agent before merging                            |
+| `quality-gate`         | Run `/audit-code` and fix all issues before every commit                  |
+| `test-runner`          | `npm run test -- --run` in CI; never bare `npm test`                      |
 
-> **Why both commands work:** the built-in `/init` would normally overwrite the curated `CLAUDE.md`. A `UserPromptSubmit` hook (`.claude/hooks/intercept-init.sh`) intercepts it and auto-invokes `/gaia-init` instead. The hook and its settings entry are removed automatically when `/gaia-init` finishes, so `/init` returns to its default behavior afterward.
+### Hooks
+
+Claude Code hooks let the template catch mistakes before they reach disk. GAIA ships five:
+
+| Hook                                 | Event            | What it does                                             |
+| ------------------------------------ | ---------------- | -------------------------------------------------------- |
+| `intercept-init.sh`                  | UserPromptSubmit | Blocks built-in `/init`, auto-invokes `/gaia-init`       |
+| `block-eslint-config-edit.sh`        | PreToolUse       | Blocks edits to `eslint.config.mjs`                      |
+| `block-vitest-globals-tsconfig.sh`   | PreToolUse       | Blocks adding `vitest/globals` to `tsconfig.json`        |
+| `check-i18n-strings.sh`              | PreToolUse       | Advisory: ensure user-facing strings use `t()`           |
+| `check-story-exists.sh`              | PreToolUse       | Advisory: remind to add a Storybook story for components |
+
+### Code review before merge
+
+The `pr-merge-workflow` rule makes the `code-review-audit` agent a required step before `gh pr merge`. The agent reviews the branch diff for security vulnerabilities, performance issues, code smells, and anti-patterns — and the workflow blocks the merge until reported issues are fixed and committed.
 
 ### Wiki
 
-GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies, decisions, flows, and concepts — committed to git and shared across the team. It is structured for LLM consumption: small focused pages, wikilinks, frontmatter, and a `wiki/index.md` catalog so Claude fetches only what it needs.
+GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies, decisions, flows, concepts, components — committed to git and shared across the team. It's structured for LLM consumption: small focused pages, wikilinks, frontmatter, and a `wiki/index.md` catalog so Claude fetches only what it needs.
 
 - **No token bloat.** Claude reads `wiki/hot.md` (~200-word recent context) at session start and pulls specific pages on demand instead of preloading the whole codebase.
 - **Survives across sessions and developers.** Unlike machine-local memory, the wiki is in git — every contributor gets the same context.
 - **Editable in Obsidian.** Pages are standard markdown with wikilinks; open `wiki/` as an [Obsidian](https://obsidian.md) vault for graph view, backlinks, and search.
 
-The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin is installed automatically by `/gaia-init` and adds Claude skills for ingesting sources, querying, linting, and saving conversations into the vault.
+The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin is installed automatically by `/gaia-init` and adds Claude skills for ingesting sources (`/wiki-ingest`), querying (`/wiki-query`), linting (`/wiki-lint`), auto-research loops (`/autoresearch`), and saving conversations into the vault (`/save`).
+
+## Documentation
+
+GAIA comes with a VitePress documentation site included. Run it locally with:
+
+```sh
+npm run docs
+```
+
+It is recommended that you keep these docs up to date as you build your project. There is also a GitHub action to deploy the docs to your repository's GitHub Pages.
 
 ## Development
 
