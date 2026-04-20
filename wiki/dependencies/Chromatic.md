@@ -44,9 +44,8 @@ Publish the MCP to Chromatic for team access:
 
 ### Typical Claude workflows
 
-- **Before writing a component**: Claude queries Chromatic MCP for existing analogous components so new work matches established patterns
-- **During review**: Chromatic flags visual diffs on a PR; Claude reads the diff, inspects the story, proposes a fix if the regression is unintentional
-- **Refactor safety**: Claude compares pre/post snapshots on an in-flight branch before committing
+- **Before writing a component**: query MCP for existing analogous components to match established patterns
+- **During review**: read visual diffs, inspect the story, propose a fix for unintentional regressions
 
 ## Opt-out
 
