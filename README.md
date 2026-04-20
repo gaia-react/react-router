@@ -6,7 +6,7 @@
 [![Tests](https://img.shields.io/github/actions/workflow/status/gaia-react/react-router/tests.yml?branch=main&label=tests)](https://github.com/gaia-react/react-router/actions/workflows/tests.yml)
 [![License: MIT](https://img.shields.io/github/license/gaia-react/react-router)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.19.0-brightgreen)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
 **Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
