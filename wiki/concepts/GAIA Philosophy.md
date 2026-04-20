@@ -31,7 +31,3 @@ Decades of greenfield projects, learning the hard way what works, what breaks at
 - Heavy state management (no Redux, Zustand) — Context+Provider is enough
 - Backend assumptions (no Prisma, Drizzle, etc.) — your services layer talks to your API
 
-## Long form
-
-- [react-japan.dev: ESLint fix-on-save](https://react-japan.dev/en/blog/eslint-fix-on-save) — the philosophy behind the linting setup
-- README.md and `docs/general/about.md`
