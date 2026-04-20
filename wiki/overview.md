@@ -26,8 +26,7 @@ See [[GAIA Philosophy]] for the long version.
 - **Forms**: [[Conform]] + [[Zod]] — the star of the template, see [[Form Components]]
 - **Styling**: [[Tailwind]] v4 with `tailwind-merge`, plus [[FontAwesome]] icons
 - **i18n**: [[remix-i18next]] with TypeScript language files (not JSON)
-- **Auth**: [[remix-auth]] with cookie sessions, see [[Auth Flow]]
-- **State**: Plain React Context+Provider (Theme, User, Example)
+- **State**: Plain React Context+Provider (Theme)
 - **Testing**: [[Vitest]] + [[React Testing Library]] + [[Playwright]] + [[Chromatic]] — all sharing one MSW mocking layer
 - **Mocking**: [[MSW]] + `@mswjs/data` for tests, Storybook, and dev
 - **Storybook** v10 with React Router, i18n, dark mode, MSW addons
