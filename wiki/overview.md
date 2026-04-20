@@ -73,6 +73,10 @@ See [[Routing]] and [[Auth Flow]].
 
 Every change passes through [[Quality Gate]]: typecheck → lint → unit test → E2E → dev smoke → build. Pre-commit hooks enforce a subset on every commit; the `/audit-code` command runs the full pipeline. **Zero tolerance for warnings.**
 
+## Knowledge Hygiene
+
+`/audit-knowledge` runs a two-stage audit (Opus researches → Sonnet applies) over memory, wiki, auto-loaded `CLAUDE.md` files, and `.claude/rules/`. Flags duplication, stale entries, broken wikilinks, and auto-load bloat — with wiki as the source of truth. See [[audit-knowledge command]].
+
 ## What's Different vs. Other Templates
 
 | Feature            |           GAIA            | Vite React | RR Template | Next.js |
