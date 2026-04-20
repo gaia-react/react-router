@@ -37,7 +37,6 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | `/new-hook`             | Scaffold a custom hook + test                                                                      |
 | `/audit`                | Run the full [[Quality Gate]]                                                                      |
 | `/migrate`              | Upgrade a package to latest, apply breaking changes, run audit                                     |
-| `/upgrade-react-router` | Check for + apply React Router updates                                                             |
 | `/handoff`              | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[handoff command]]) |
 | `/pickup`               | Resume from the latest handoff; falls back to `wiki/hot.md` ([[pickup command]])                   |
 
