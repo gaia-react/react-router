@@ -23,7 +23,7 @@ Inside `app/`:
 | `pages/`           | Page-specific UI, organized by route group     | [[Pages]]      |
 | `routes/`          | Thin route files (loader/action only)          | [[Routing]]    |
 | `services/`        | API wrapper + domain services                  | [[Services]]   |
-| `sessions.server/` | Cookie session storage (auth, language, theme) | [[Sessions]]   |
+| `sessions.server/` | Cookie session storage (language, theme)       | [[Sessions]]   |
 | `state/`           | Context+Provider state                         | [[State]]      |
 | `styles/`          | `tailwind.css`                                 | [[Styles]]     |
 | `types/`           | Global TS types                                | [[Types]]      |
