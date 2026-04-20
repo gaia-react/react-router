@@ -1,6 +1,6 @@
 {
   "name": "gaia-template-react-router",
-  "version": "1.0.0-beta",
+  "version": "1.0.0",
   "description": "Gaia Template for React Router",
   "author": "Steven Sacks <stevensacks@gmail.com>",
   "sideEffects": false,
@@ -75,7 +75,7 @@
     "@storybook/react-vite": "10.3.5",
     "@tailwindcss/forms": "0.5.11",
     "@tailwindcss/typography": "0.5.19",
-    "@tailwindcss/vite": "4.2.2",
+    "@tailwindcss/vite": "4.2.3",
     "@testing-library/dom": "10.4.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "16.3.2",
@@ -131,7 +131,7 @@
     "stylelint-config-standard": "40.0.0",
     "stylelint-config-tailwindcss": "1.0.1",
     "stylelint-order": "8.1.1",
-    "tailwindcss": "4.2.2",
+    "tailwindcss": "4.2.3",
     "typescript": "^6.0.3",
     "vite": "8.0.9",
     "vitest": "^4.1.4"
