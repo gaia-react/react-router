@@ -8,6 +8,16 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] update | Phase A — rules + wiki pattern synthesis (pre-deletion gap-fill)
+
+Prepared the template to delete example code and VitePress docs without losing the lessons they teach. 6 parallel Sonnet agents synthesized patterns from existing code into durable rules + self-contained wiki pages.
+
+- New rules: `state-pattern.md`, `tailwind.md`, `storybook.md`, `playwright.md` — all auto-apply via path globs
+- Updated rule: `api-service.md` — generalized `things`→`resources`, dropped `auth` from barrel example, added optional `state.tsx` to checklist (inconsistency flagged by agent vs real code)
+- Wiki rewrites (fully self-contained, no example-code refs): [[API Service Pattern]], [[MSW]], [[State]], [[Storybook]], [[Playwright]]
+- Service↔MSW contract explicitly documented — `url()` helper, snake_case-on-wire vs camelCase-after-ky-hooks, dev/test/CI init paths
+- `/new-service` command — replaced "following the things pattern" strings with `[[API Service Pattern]]` / `[[MSW]]` wikilinks; removed `login` from URL example
+
 ## [2026-04-20] update | wiki-coherence hooks + /init interceptor
 
 - Added `intercept-init.sh` (UserPromptSubmit) — blocks built-in `/init`, auto-invokes `/gaia-init`. Self-removes on `/gaia-init` completion.
