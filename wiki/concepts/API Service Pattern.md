@@ -159,10 +159,10 @@ if (error) {
 Register each domain in `app/services/gaia/index.server.ts`:
 
 ```ts
-import * as auth from './auth/requests.server';
 import * as resources from './resources/requests.server';
+import * as users from './users/requests.server';
 
-export default {auth, resources};
+export default {resources, users};
 ```
 
 Routes import as:
