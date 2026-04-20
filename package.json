@@ -1,7 +1,7 @@
 {
-  "name": "gaia-template-react-router",
+  "name": "gaia-react-template",
   "version": "1.0.0",
-  "description": "Gaia Template for React Router",
+  "description": "GAIA React Template",
   "author": "Steven Sacks <stevensacks@gmail.com>",
   "sideEffects": false,
   "type": "module",
