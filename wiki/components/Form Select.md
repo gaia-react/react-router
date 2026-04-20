@@ -37,13 +37,7 @@ When `unselected` is passed, renders a disabled (when `required`) `<option value
 
 ## Controlled/uncontrolled duality
 
-```tsx
-const [currentValue, setCurrentValue] = useState(
-  () => value ?? defaultValue ?? ''
-);
-```
-
-Tracks `currentValue` locally only to drive placeholder coloring. The actual value is whatever React gives the `<select>` — Select stays controllable via `value` **or** `defaultValue`. Consumer `onChange` still fires.
+Tracks `currentValue` locally (initialized from `value ?? defaultValue ?? ''`) only to drive placeholder coloring. The actual value is whatever React gives the `<select>` — Select stays controllable via `value` or `defaultValue`. Consumer `onChange` still fires.
 
 > [!warning] Don't use raw Select inside custom stateful components without Conform
 > If you bundle Select into a parent that manages state (like [[Form YearMonthDay\|YearMonthDay]]) and submit via Conform, you need `useInputControl`. The local state here is cosmetic; it is not the submission source of truth.
