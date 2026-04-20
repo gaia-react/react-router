@@ -18,52 +18,16 @@ Checkboxes and radios share a layout primitive and a sizing table.
 
 `xs | sm | base | lg | xl`. Each component maps `size` to a `size-{n}` class (box) and a `text-{size}` class (label). Consistent across [[Form Choices#Checkbox|Checkbox]] and [[Form Choices#InputRadio|InputRadio]].
 
-## CheckboxRadioGroup
+## Components
 
-`CheckboxRadioGroup/index.tsx` — the shared flex container:
-
-- `role="group"`
-- `isHorizontal=false` → `flex-col gap-2`
-- `isHorizontal=true` → `gap-6` (or `gap-2` when `isButton`)
-- Adds a `styles.group` CSS-module class for base styles
-
-Used by [[Form Choices#Checkboxes|Checkboxes]] and `BaseRadioButtons`.
-
-## Checkbox
-
-`Checkbox/index.tsx`:
-
-- Renders `<input type="checkbox">` wrapped in a `<label>` when `label` is provided, else bare input
-- `required={required && !!error}` — only marks HTML-required once validation has surfaced an error (prevents native browser validation from stealing focus on the first submit)
-- `readOnly` implies `disabled` for styling
-- When description or error exists, wraps both in a `FieldStatus` (see [[Form Field]])
-- Returns three shapes: bare input, input+label, or input+label+status div
-
-## Checkboxes
-
-`Checkboxes/index.tsx` — grouped Checkbox list:
-
-- Takes `options: CheckboxOption[]` where each option has its own `name`
-- `isDisabled = disabled ?? options.every(d)` — group disables when every option disables
-- `isRequired = options.every(r)` — all options must be required for the group to mark required
-- Each inner Checkbox shows the required-marker red only when `option.required && error && option.error` (per-option error)
-
-## InputRadio
-
-`InputRadio/index.tsx` — one `<input type="radio">` + `<label>`:
-
-- Takes a single `option: RadioOption` (value + label + optional disabled/error)
-- `id={name}-{value}` — synthesized to keep labels correctly associated
-- Same `required && (error ?? option.error)` gate as Checkbox
-
-## RadioButtons + BaseRadioButtons
-
-Two-layer design:
-
-- `RadioButtons/index.tsx` wraps with [[Form Field]] (gets label/description/error row)
-- `BaseRadioButtons/index.tsx` is the bare group (no field chrome) — usable outside of a Field if a caller wants to render radios in a custom layout
-
-`BaseRadioButtons` keys each option by `md5(option)` (from `~/utils/object`) — handles options with duplicate values or programmatically generated labels without key collisions.
+| Component | Renders | Disabled when | Notes |
+| --- | --- | --- | --- |
+| `CheckboxRadioGroup` | `role="group"` flex container | — | `isHorizontal` toggles `flex-col` vs row; used by `Checkboxes` and `BaseRadioButtons` |
+| `Checkbox` | `<input type="checkbox">` + optional `<label>` | `readOnly` implies disabled | `required` only set once an error surfaces (prevents native browser stealing focus); wraps in `FieldStatus` when description/error present |
+| `Checkboxes` | Grouped `Checkbox` list | `disabled ?? options.every(disabled)` | Keyed by each option's own `name`; `isRequired` only when every option is required |
+| `InputRadio` | `<input type="radio">` + `<label>` | per-option `disabled` | `id={name}-{value}` synthesized; same `required && error` gate as Checkbox |
+| `RadioButtons` | `InputRadio` group wrapped in [[Form Field]] | — | Use this for the standard field-chrome layout |
+| `BaseRadioButtons` | Bare radio group, no field chrome | — | Keyed by `md5(option)` (`~/utils/object`) to handle duplicate values; use when rendering outside a Field |
 
 ## Which one to reach for
 
