@@ -30,4 +30,4 @@ Global custom hooks live in `app/hooks/`. Component-specific hooks live in `app/
 
 Use `/new-hook` to scaffold a new hook + test in this pattern.
 
-See [[react-code]] skill for `useEffect`, `useCallback`, `useState` rules.
+See the `react-code` skill (`.claude/skills/react-code/`) for `useEffect`, `useCallback`, `useState` rules.
