@@ -8,6 +8,26 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] update | docs reframe — manager/IC voice + surface wiki Q&A
+
+- README tagline extended with "grounded enough in the stack to answer how-do-I questions without re-reading the codebase" — surfaces the wiki Q&A use case alongside code-task capability.
+- Expanded wiki bullet with concrete ask-Claude examples ("how do I add a new route?", "how does dark mode wire through?", "what's the testing layer setup?").
+- Swept DIY-user framings across README + wiki: [[GAIA Philosophy]] "remove it / swap them" → "ask Claude to rip it out / swap them in"; [[Chromatic Opt-Out]] leads with "ask Claude", keeps steps as a review reference; [[Claude Hooks]] "Adding hooks" section, [[Middleware]], [[Pages]], [[Services]] all reframed to "ask Claude" (flags `/new-route`, `/new-service` where applicable). README FontAwesome "you're free to change" → "ask Claude to swap it for Heroicons, Lucide…".
+- Commit: `86bf0e4`
+
+## [2026-04-20] refactor | code-review-audit agent rewrite + quality gate scoping
+
+- `.claude/agents/code-review-audit.md`: split labor between main agent (cross-cutting security / architecture / performance / a11y / edge cases) and subagents (line-level rule compliance) to stop duplicating work. Dispatch 3 subagents + `react-doctor` in a single parallel tool call. Gate each subagent on file scope (no `.tsx` → skip Subagent 1, etc.). Added accessibility as a review dimension. Stripped Supabase heritage (RLS, service keys, `_auth+/`, PKCE, `useDebounce`) left over from the template's prior project. Relabeled subagent rule sources to point at current skills (react-code, typescript, tailwind) + rules (new-route, i18n, accessibility, tailwind). Tightened mission preamble (dropped elite-persona framing); made "What's Done Well" optional to avoid filler.
+- `.claude/rules/quality-gate.md`: skip the gate entirely when no staged file is source (`*.ts|tsx|js|jsx|mjs|cjs|css`) or a gate-affecting config (`package.json`, `tsconfig*`, `vite.config.*`, `vitest.config.*`, `playwright.config.*`, `eslint.config.*`). Markdown-only, `.claude/**`, `wiki/**`, or image-only commits now skip straight to commit.
+- Commit: `f85b2f2`
+
+## [2026-04-20] feat | integrate tdd + playwright-cli + React Doctor into trust stack
+
+- README reframe: tagline "Claude as your lead engineer"; two pillars "How GAIA makes Claude trustworthy" + "How GAIA keeps Claude token-efficient". Rules count 11→15. `/gaia-init` Step 8 split into "Install tools" (`@playwright/cli` binary + React Doctor curl) and "Install plugins" (typescript-lsp, claude-obsidian). Bundled skills 4→6 in comparison table.
+- TDD skill tailored for GAIA: `SKILL.md` gained a "GAIA testing layers" table (hook/component/service/E2E); `tests.md` rewritten with `composeStory`, `renderHook`, MSW-backed service examples; `mocking.md` rewritten around MSW-first boundaries (`database` factory + `resetTestData()`). Generic design files (`interface-design.md` / `deep-modules.md` / `refactoring.md`) left untouched. Matt Pocock credit in README only — `SKILL.md` stays lean since it auto-loads.
+- `code-review-audit.md`: React Doctor invocation now uses `--verbose --diff` (scans only modified files) so the pre-merge pass stays cheap.
+- Commit: `d20f46a`
+
 ## [2026-04-20] delete | Phase D — remove entire auth stack
 
 Deleted all auth code: `app/routes/_auth+/`, `app/routes/_session+/profile+/`, `app/routes/actions+/logout.ts`, `app/services/gaia/auth/`, `app/services/gaia/user/`, `app/sessions.server/auth.ts`, `app/pages/Auth/`, `app/pages/Session/`, `app/state/user.tsx`, `app/languages/{en,ja}/auth.ts`, `app/languages/{en,ja}/pages/profile/`, `test/mocks/auth/`, `test/mocks/user/`, `wiki/flows/Auth Flow.md`, `wiki/dependencies/remix-auth.md`. Dropped deps: `remix-auth`, `remix-auth-form`, `spark-md5` (+ `@types/spark-md5`). `app/routes/_session+/_layout.tsx` rewritten as minimal stub preserving the folder as a hook point for consumer auth guards. `app/state/index.tsx` trimmed to `ThemeProvider` only; `UserProvider` and `User` type removed. Form components `InputEmail`/`InputPassword` migrated default label namespace from `auth` → `common`; `email`, `emailPlaceholder`, `password` keys added to both `en/common.ts` and `ja/common.ts`. `database.user` factory and `resetTestData` deleted from `test/mocks/database.ts` (orphaned after auth removal). `SESSION_SECRET` retained in env — still used by `remix-toast`, theme cookie, and language cookie. Wiki updated: [[Sessions]] rewritten for theme/language only, [[Routing]] documents `_session+/` hook point, [[State]]/[[Services]]/[[Pages]]/[[overview]]/[[GAIA Philosophy]]/[[Folder Structure]]/[[React Router 7]] surgically cleaned.
