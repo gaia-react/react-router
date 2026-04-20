@@ -13,7 +13,7 @@ tags: [concept, philosophy]
 
 ## Core tenets
 
-1. **Pre-configured but removable.** Don't need i18n? Remove it. Prefer different icons? Swap them. Nothing is locked in.
+1. **Pre-configured but removable — ask Claude to swap.** Don't need i18n? Tell Claude to rip it out. Prefer different icons? Ask Claude to swap them in. Because Claude understands how the pieces are wired, removals and substitutions stay coherent. Nothing is locked in.
 2. **Quality enforced by tooling, not vigilance.** 20+ ESLint plugins + pre-commit hooks + the [[Quality Gate]] catch issues before they compound. Let the tooling enforce consistency so the team can focus on features.
 3. **Working examples, not just installs.** Every tool ships with a real, working example: i18n in 2 languages, MSW handlers for tests and Storybook, Conform-validated forms.
 4. **Co-location with discipline.** Tests, stories, assets, hooks, state live next to the component — but in their own subfolders so the component folder stays scannable.
