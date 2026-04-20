@@ -60,12 +60,11 @@ See [[Folder Structure]] for the full breakdown.
 ## Route Groups (remix-flat-routes)
 
 - `_public+` — unauthenticated pages
-- `_auth+` — login (redirects authenticated users away)
-- `_session+` — authenticated pages (redirects unauthenticated users)
+- `_session+` — hook point for auth-guarded pages (empty stub; add your own auth guard)
 - `_legal+` — terms, privacy, etc.
-- `actions+` — root-level form actions (logout, set-language, set-theme)
+- `actions+` — root-level form actions (set-language, set-theme)
 
-See [[Routing]] and [[Auth Flow]].
+See [[Routing]].
 
 ## Quality Gate
 
