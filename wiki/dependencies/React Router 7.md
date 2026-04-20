@@ -32,4 +32,4 @@ The `/migrate` command upgrades all of these together when react-router is selec
 
 ## Related
 
-- [[remix-flat-routes]], [[remix-i18next]], [[remix-toast]], [[remix-utils]]
+- [[remix-flat-routes]], [[remix-i18next]], [[remix-toast]]
