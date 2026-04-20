@@ -99,9 +99,9 @@ Providers receive SSR-safe initial state from `root.tsx` loader data, preventing
 
 ```tsx
 const AppWithState = () => {
-  const {theme, user} = useLoaderData<typeof loader>();
+  const {theme} = useLoaderData<typeof loader>();
   return (
-    <State theme={theme} user={user}>
+    <State theme={theme}>
       <App />
     </State>
   );
