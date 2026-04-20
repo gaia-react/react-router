@@ -32,60 +32,22 @@ GAIA ships these `actions+` endpoints out of the box:
 
 ## `_session+/` hook point
 
-`app/routes/_session+/_layout.tsx` is an intentionally empty stub. To add an auth guard, add a loader that throws `redirect('/login')` if the user is not authenticated:
-
-```tsx
-import {redirect} from 'react-router';
-import {Outlet} from 'react-router';
-
-export const loader = async ({request}: Route.LoaderArgs) => {
-  // Example: check your session/cookie/JWT here
-  const user = await getSessionUser(request);
-  if (!user) throw redirect('/login');
-  return null;
-};
-
-const SessionLayout = () => <Outlet />;
-export default SessionLayout;
-```
-
-All routes nested under `_session+/` inherit this guard. Choose any auth provider: Supabase, Clerk, Auth0, custom sessions, etc.
+`app/routes/_session+/_layout.tsx` is an intentionally empty stub. Add a loader that throws `redirect('/login')` if the user is not authenticated. All routes nested under `_session+/` inherit the guard. Choose any auth provider: Supabase, Clerk, Auth0, custom sessions, etc.
 
 ## Thin Routes Convention
 
 > [!key-insight] Routes are thin
 > Route files in `app/routes/` handle only **loader, action, meta, and rendering the page component**. All UI lives in `app/pages/`. This keeps routes easy to scan and pages easy to test in isolation. See [[Thin Routes]].
 
-### Standard route shape
+`/new-route` scaffolds routes in this shape. The scaffold output includes:
 
-```tsx
-// app/routes/_public+/_index.tsx
-import type {RouterContextProvider} from 'react-router';
-import {useLoaderData} from 'react-router';
-import {getInstance} from '~/middleware/i18next';
-import IndexPage from '~/pages/Public/IndexPage';
-import type {Route} from './+types/_index';
-
-export const loader = async ({context}: Route.LoaderArgs) => {
-  const i18next = getInstance(context as RouterContextProvider);
-  const title = i18next.t('index.meta.title', {ns: 'pages'});
-  const description = i18next.t('index.meta.description', {ns: 'pages'});
-  return {description, title};
-};
-
-const IndexRoute = () => {
-  const {description, title} = useLoaderData<typeof loader>();
-  return (
-    <>
-      <title>{title}</title>
-      <meta content={description} name="description" />
-      <IndexPage />
-    </>
-  );
-};
-
-export default IndexRoute;
-```
+| File | Contents |
+|---|---|
+| `app/routes/{group}/{name}.tsx` | Loader (with server-side i18n for meta), route component, `useLoaderData` |
+| `app/pages/{Group}/{Name}/index.tsx` | Page component with `useTranslation` |
+| `app/pages/{Group}/{Name}/tests/index.test.tsx` | Vitest test via `composeStory` |
+| `app/pages/{Group}/{Name}/tests/index.stories.tsx` | Storybook story |
+| `app/languages/en/pages/{name}.ts` + other locales | i18n keys |
 
 ## Server-side i18n in loaders
 
