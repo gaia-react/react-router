@@ -30,8 +30,6 @@ export default defineConfig({
       'nanoid',
       'query-string',
       'react-i18next',
-      'remix-auth',
-      'remix-auth-form',
       'remix-i18next/client',
       'remix-i18next/middleware',
       'remix-toast',

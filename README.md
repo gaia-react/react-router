@@ -31,7 +31,6 @@ The traditional tooling Claude rides on top of:
 - **Pre-commit hooks** ([Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)) that typecheck, lint, and test before code reaches CI
 - **Unit, integration, E2E, and visual regression testing** with [Vitest](https://vitest.dev), [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/), [Playwright](https://playwright.dev/docs/intro), and [Chromatic](https://chromatic.com/), all sharing a common mocking layer
 - **i18n in 2 languages** via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with working examples, not just the package installed
-- **Auth flow** with login, session management, and route guards via [remix-auth](https://remix.run/resources/remix-auth)
 - **Form components with validation** using [Conform](https://conform.guide/) + [Zod](https://zod.dev/)
 - **Dark mode end-to-end**: context, session, CSS, and Storybook all in sync
 - **[Storybook](https://storybook.js.org/) with React Router support**, including i18n, dark mode, and [MSW](https://mswjs.io/) integration
@@ -59,7 +58,6 @@ The traditional tooling Claude rides on top of:
 | E2E Testing                   |                    Playwright                    |     ❌     |     ❌      |   ❌    |
 | Visual Regression Testing     |                   Chromatic CI                   |     ❌     |     ❌      |   ❌    |
 | i18n                          |          2 Languages, Working Examples           |     ❌     |     ❌      |   ❌    |
-| Auth Example                  |          Login + Session + Route Guards          |     ❌     |     ❌      |   ❌    |
 | Form Validation               |            Conform + Zod + Components            |     ❌     |     ❌      |   ❌    |
 | Storybook                     |         Router + i18n + Dark Mode + MSW          |     ❌     |     ❌      |   ❌    |
 | Dark Mode                     | End-to-End (Context + Session + CSS + Storybook) |     ❌     |     ❌      |   ❌    |
@@ -69,7 +67,7 @@ The traditional tooling Claude rides on top of:
 
 GAIA is a **Claude-native base template**, not a full-stack kit or a component library. It sets up everything Claude needs to write your app correctly and leaves the product-layer choices to you.
 
-- Configuring 20+ linting rules, four layers of testing, i18n, auth, CI — **and** the full Claude toolchain (commands, rules, hooks, agents, wiki, plugins) — correctly takes days. GAIA solves that once.
+- Configuring 20+ linting rules, four layers of testing, i18n, CI — **and** the full Claude toolchain (commands, rules, hooks, agents, wiki, plugins) — correctly takes days. GAIA solves that once.
 - **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer a different icon set? Swap it. Nothing is locked in — including the Claude layer.
 - Pre-commit hooks run typechecking, linting, and tests. Pre-tool hooks catch Claude mistakes before they reach disk. The quality gate catches issues before they compound.
 - Best practices are baked into working examples you can follow and modify — and into rules Claude loads automatically.

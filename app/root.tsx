@@ -10,7 +10,6 @@ import RootErrorBoundary from '~/components/Errors/RootErrorBoundary';
 import Toast, {notify} from '~/components/Toast';
 import {getLanguage, i18nextMiddleware} from '~/middleware/i18next';
 import {setApiLanguage} from '~/services/api';
-import {getAuthenticatedUser} from '~/sessions.server/auth';
 import {languageCookie} from '~/sessions.server/language';
 import {getThemeSession} from '~/sessions.server/theme';
 import State from '~/state';
@@ -26,8 +25,6 @@ export const middleware = [i18nextMiddleware];
 
 export const loader = async ({context, request}: Route.LoaderArgs) => {
   const isProduction = isProductionHost(request);
-
-  const user = await getAuthenticatedUser(request);
 
   const language = getLanguage(context as RouterContextProvider);
 
@@ -50,7 +47,6 @@ export const loader = async ({context, request}: Route.LoaderArgs) => {
       noIndex: !isProduction,
       theme: themeSession.getTheme(),
       toast,
-      user,
     },
     {headers}
   );
@@ -98,10 +94,10 @@ const App: FC = () => {
 };
 
 const AppWithState = () => {
-  const {theme, user} = useLoaderData<typeof loader>();
+  const {theme} = useLoaderData<typeof loader>();
 
   return (
-    <State theme={theme} user={user}>
+    <State theme={theme}>
       <App />
     </State>
   );

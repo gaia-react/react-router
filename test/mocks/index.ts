@@ -1,5 +1,3 @@
-import auth from './auth';
-
-const handlers = [...auth];
+const handlers: never[] = [];
 
 export default handlers;

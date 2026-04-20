@@ -12,6 +12,8 @@ export default {
     year: 'Year',
   },
   description: 'Description',
+  email: 'Email',
+  emailPlaceholder: 'user@domain.com',
   form: {
     allFieldsAreRequired: 'All fields are required',
     cancel: 'Cancel',
@@ -33,6 +35,7 @@ export default {
   },
   name: 'Name',
   next: 'Next',
+  password: 'Password',
   previous: 'Previous',
   theme: {
     dark: 'Dark mode',

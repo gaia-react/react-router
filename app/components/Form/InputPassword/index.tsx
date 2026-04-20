@@ -9,7 +9,7 @@ const InputPassword: FC<InputProps> = ({
   ref,
   ...props
 }) => {
-  const {t} = useTranslation('auth');
+  const {t} = useTranslation('common');
 
   return (
     <InputText

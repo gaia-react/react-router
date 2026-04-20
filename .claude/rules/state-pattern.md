@@ -4,7 +4,7 @@ Applies to `app/state/**` and any file creating a React Context.
 
 ## When to Use Context
 
-- **Context**: cross-tree global state (theme, auth user, async data from loader)
+- **Context**: cross-tree global state (theme, async data from loader)
 - **`useState`**: component-local or lifted state that doesn't need tree-wide access
 - **URL state** (`useSearchParams`): filter/sort/pagination — shareable, bookmarkable
 
@@ -18,7 +18,7 @@ Each state slice lives in `app/state/{name}.tsx`. The barrel `app/state/index.ts
 |---|---|---|
 | Provider component | `XProvider` | `ThingsProvider` |
 | Required read hook | `useX()` — throws if outside Provider | `useThings()` |
-| Optional read hook | `useMaybeX()` — returns `Maybe<T>` | `useMaybeUser()` |
+| Optional read hook | `useMaybeX()` — returns `Maybe<T>` | `useMaybeThings()` |
 | Context variable | `XContext` (unexported) | `ThingsContext` |
 | Context type | `XContextValue` | `ThingsContextValue` |
 | Provider props type | `XProviderProps` | `ThingsProviderProps` |

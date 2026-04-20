@@ -1,22 +1,9 @@
 import {factory} from '@mswjs/data';
-import user from './user';
 
-const database = factory({
-  user: user.schema,
-});
+const database = factory({});
 
-export const resetTestData = () => {
-  database.user.delete({
-    where: {
-      id: {
-        equals: '1',
-      },
-    },
-  });
-
-  database.user.create(user.data);
-};
-
-resetTestData();
+// No-op while the template has no factories. When a service scaffolds a
+// factory (e.g. via /new-service), re-seed it here so tests start clean.
+export const resetTestData = () => {};
 
 export default database;

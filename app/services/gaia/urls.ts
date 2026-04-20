@@ -1,3 +1,1 @@
-export const GAIA_URLS = {
-  login: 'login',
-};
+export const GAIA_URLS = {};
