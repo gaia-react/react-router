@@ -8,15 +8,18 @@ The full traditional stack — 20+ ESLint plugins, Prettier, Vitest, Playwright,
 
 ## Why Claude-native?
 
-Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and hope the model figures out the rest. GAIA is different. Every convention the template enforces is also a rule Claude auto-loads. Every scaffolding script is also a slash command. Every code review runs a dedicated agent. Every piece of project knowledge lives in a committed wiki that Claude fetches on demand instead of hauling a giant `CLAUDE.md` into every request. The result: Claude writes code that matches your patterns on day one, and it stops writing the wrong thing before you have to review it.
+Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and hope the model figures out the rest. GAIA is different. Every convention the template enforces is also a rule Claude auto-loads. Every scaffolding script is also a slash command. Every code review runs a dedicated agent. Every piece of project knowledge lives in a committed wiki that Claude fetches on demand instead of hauling a giant `CLAUDE.md` into every request.
+
+**GAIA prevents technical debt in your code — and in your Claude prompts.** The wiki and `/audit-knowledge` keep context lean, so Claude's effective attention isn't burned on stale memory and bloated auto-loaders. You spend fewer tokens per request and get sharper answers. Claude writes code that matches your patterns on day one, and stops writing the wrong thing before you have to review it.
 
 ## What Claude Gets
 
-- **10 project commands** — scaffolding (`/new-route`, `/new-component`, `/new-hook`, `/new-service`), quality (`/audit-code`, `/audit-knowledge`), workflow (`/handoff`, `/pickup`), migration (`/migrate`), and template init (`/gaia-init`)
+- **4 scaffolding commands** — `/new-route`, `/new-component`, `/new-hook`, `/new-service` match your project conventions out of the box
+- **6 project commands** — `/audit-code` (quality gate), `/audit-knowledge` (prompt-debt sweep), `/migrate` (package upgrades), `/handoff` + `/pickup` (session continuity), `/gaia-init` (template init)
 - **10 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner; auto-loaded based on what Claude is editing
 - **4 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, advise on missing i18n strings, advise on missing Storybook stories
 - **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
-- **72-page committed wiki** — architecture, modules, dependencies, decisions, flows; Claude reads `wiki/hot.md` (~200-word cache) at session start and fetches specific pages on demand
+- **LLM knowledge base (wiki)** — architecture, modules, dependencies, decisions, flows. Claude reads a ~200-word cache at session start and fetches specific pages on demand. Replaces bloated `CLAUDE.md` sprawl and keeps per-request token costs down.
 - **Obsidian integration** — the [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin adds skills for ingesting sources, querying, linting, auto-research loops, and saving conversations directly into the vault
 - **4 bundled project skills** — `react-code`, `typescript`, `tailwind`, `skeleton-loaders`
 
@@ -41,28 +44,28 @@ The traditional tooling Claude rides on top of:
 
 | Feature                       |                       GAIA                       | Vite React | RR Template | Next.js |
 | ----------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
-| **Claude integration**        |                                                  |            |             |         |
-| Claude project commands       |                        10                        |     ❌     |     ❌      |   ❌    |
-| Auto-loaded project rules     |                        10                        |     ❌     |     ❌      |   ❌    |
-| Pre-tool enforcement hooks    |                   4 (2 block)                    |     ❌     |     ❌      |   ❌    |
-| Bundled project skills        |                        4                         |     ❌     |     ❌      |   ❌    |
-| Code-review agent (pre-merge) |                        ✅                        |     ❌     |     ❌      |   ❌    |
-| Committed LLM knowledge base  |                   72-page wiki                   |     ❌     |     ❌      |   ❌    |
-| Obsidian vault integration    |                        ✅                        |     ❌     |     ❌      |   ❌    |
-| **Traditional tooling**       |                                                  |            |             |         |
-| ESLint                        |                   20+ plugins                    |   basic    |    basic    |  basic  |
-| Prettier + Stylelint          |                  pre-configured                  |     ❌     |     ❌      |   ❌    |
-| Pre-commit hooks              |             typecheck + lint + test              |     ❌     |     ❌      |   ❌    |
-| Unit + integration testing    |                   Vitest + RTL                   |     ❌     |     ❌      |   ❌    |
-| E2E testing                   |                    Playwright                    |     ❌     |     ❌      |   ❌    |
-| Visual regression testing     |                   Chromatic CI                   |     ❌     |     ❌      |   ❌    |
-| i18n                          |          2 languages, working examples           |     ❌     |     ❌      |   ❌    |
-| Auth example                  |          login + session + route guards          |     ❌     |     ❌      |   ❌    |
-| Form validation               |            Conform + Zod + components            |     ❌     |     ❌      |   ❌    |
-| Storybook                     |         Router + i18n + dark mode + MSW          |     ❌     |     ❌      |   ❌    |
-| Dark mode                     | end-to-end (context + session + CSS + Storybook) |     ❌     |     ❌      |   ❌    |
-| API mocking (MSW)             |                tests + Storybook                 |     ❌     |     ❌      |   ❌    |
-| Documentation site            |           VitePress + GH Pages deploy            |     ❌     |     ❌      |   ❌    |
+| **Claude Integration**        |                                                  |            |             |         |
+| Scaffolding Commands          |                        4                         |     ❌     |     ❌      |   ❌    |
+| Project Commands              |                        6                         |     ❌     |     ❌      |   ❌    |
+| Auto-Loaded Project Rules     |                        10                        |     ❌     |     ❌      |   ❌    |
+| Pre-Tool Enforcement Hooks    |                   4 (2 Block)                    |     ❌     |     ❌      |   ❌    |
+| Bundled Project Skills        |                        4                         |     ❌     |     ❌      |   ❌    |
+| Code-Review Agent (Pre-Merge) |                        ✅                        |     ❌     |     ❌      |   ❌    |
+| Obsidian Vault Integration    |                        ✅                        |     ❌     |     ❌      |   ❌    |
+| **Traditional Tooling**       |                                                  |            |             |         |
+| ESLint                        |                   20+ Plugins                    |   Basic    |    Basic    |  Basic  |
+| Prettier + Stylelint          |                  Pre-Configured                  |     ❌     |     ❌      |   ❌    |
+| Pre-Commit Hooks              |             Typecheck + Lint + Test              |     ❌     |     ❌      |   ❌    |
+| Unit + Integration Testing    |                   Vitest + RTL                   |     ❌     |     ❌      |   ❌    |
+| E2E Testing                   |                    Playwright                    |     ❌     |     ❌      |   ❌    |
+| Visual Regression Testing     |                   Chromatic CI                   |     ❌     |     ❌      |   ❌    |
+| i18n                          |          2 Languages, Working Examples           |     ❌     |     ❌      |   ❌    |
+| Auth Example                  |          Login + Session + Route Guards          |     ❌     |     ❌      |   ❌    |
+| Form Validation               |            Conform + Zod + Components            |     ❌     |     ❌      |   ❌    |
+| Storybook                     |         Router + i18n + Dark Mode + MSW          |     ❌     |     ❌      |   ❌    |
+| Dark Mode                     | End-to-End (Context + Session + CSS + Storybook) |     ❌     |     ❌      |   ❌    |
+| API Mocking (MSW)             |                Tests + Storybook                 |     ❌     |     ❌      |   ❌    |
+| Documentation Site            |           VitePress + GH Pages Deploy            |     ❌     |     ❌      |   ❌    |
 
 ## Philosophy
 
