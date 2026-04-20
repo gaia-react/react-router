@@ -13,9 +13,7 @@ tags: [dependency, ui]
 
 Cookie-backed flash messages for redirect-based UX, rendered with [Sonner](https://sonner.emilkowal.ski/).
 
-- `getToast(request)` in `root.tsx` extracts the toast cookie
-- `setToastCookieOptions({secrets: [env.SESSION_SECRET]})` signs it
-- `<Toast />` component subscribes; `notify[type](toast)` triggers render
-- `dataWithToast(...)` (from `remix-toast`) returns toast-bearing responses from actions
+- `getToast(request)` extracts the cookie; `setToastCookieOptions` signs it; `dataWithToast(...)` returns toast-bearing action responses
+- `<Toast />` subscribes; `notify[type](toast)` triggers render
 
 See [[Form Submit Flow]].

@@ -12,7 +12,7 @@ tags: [module, testing]
 
 # Testing
 
-GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking layer.
+GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]] mocking layer.
 
 | Layer             | Tool                               | Where                                           |
 | ----------------- | ---------------------------------- | ----------------------------------------------- |
@@ -32,7 +32,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking laye
 
 | File             | Purpose                                                                                     |
 | ---------------- | ------------------------------------------------------------------------------------------- |
-| `mocks/`         | MSW handlers + `@mswjs/data` factories per service (`auth/`, `things/`, `user/`, `ping.ts`) |
+| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW Handlers]] for full structure            |
 | `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                           |
 | `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`                         |
 | `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                                  |
@@ -43,25 +43,14 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking laye
 
 ## Component test pattern
 
-Always use Storybook stories with `composeStory`. Never manually mock framework deps. See [[Component Testing]].
-
-```tsx
-import {composeStory} from '@storybook/react-vite';
-import Meta, {Default} from './index.stories';
-
-const MyComponent = composeStory(Default, Meta);
-
-it('renders', () => {
-  render(<MyComponent />);
-});
-```
+Always use Storybook stories with `composeStory`. Never manually mock framework deps. See [[Component Testing]] for the pattern.
 
 ## Playwright
 
 - Tests in `.playwright/e2e/*.spec.ts`
 - Config in `playwright.config.ts`
 - Use the bundled `hydration(page)` helper after `page.goto()` to wait for React Router hydration before interacting
-- Sample tests: `language-switch.spec.ts`, `things.spec.ts`
+- Sample tests: `language-switch.spec.ts`
 
 ## Chromatic
 

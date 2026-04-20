@@ -2,31 +2,12 @@
 type: concept
 status: active
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-21
 tags: [concept, testing]
 ---
 
 # Chromatic Opt-Out
 
-If you don't want visual regression via [[Chromatic]]:
+Ask Claude via `/setup-chromatic-mcp` to remove visual regression, or ask it to run through the opt-out steps. The procedure involves uninstalling `chromatic` and `@chromatic-com/storybook`, deleting the GitHub workflow and `.storybook/chromatic/` folder, and updating `.storybook/preview.ts` to use `WrapDecorator` directly.
 
-```sh
-npm un -D chromatic && npm un -D @chromatic-com/storybook
-```
-
-Delete:
-
-- `.github/workflows/chromatic.yml`
-- `.storybook/chromatic`
-
-Edit `.storybook/preview.ts`:
-
-```ts
-import {decorators} from './chromatic'; // delete
-import WrapDecorator from './decorators/WrapDecorator'; // add
-
-decorators: [WrapDecorator];
-// remove the chromatic viewport block
-```
-
-Remove `chromatic: {disableSnapshot: true}` from any stories that have it.
+See [[Chromatic]] for the full removal flow.

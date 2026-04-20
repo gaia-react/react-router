@@ -9,7 +9,7 @@ tags: [overview, gaia]
 
 # GAIA React Router
 
-GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, auth, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
+GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
 
 It is the spiritual successor to the **GAIA Flash Framework**, the most popular Flash framework in the world (used to build 100K+ Flash sites). GAIA React has been refined over 4+ years across multiple production teams.
 
@@ -26,13 +26,11 @@ See [[GAIA Philosophy]] for the long version.
 - **Forms**: [[Conform]] + [[Zod]] — the star of the template, see [[Form Components]]
 - **Styling**: [[Tailwind]] v4 with `tailwind-merge`, plus [[FontAwesome]] icons
 - **i18n**: [[remix-i18next]] with TypeScript language files (not JSON)
-- **Auth**: [[remix-auth]] with cookie sessions, see [[Auth Flow]]
-- **State**: Plain React Context+Provider (Theme, User, Example)
+- **State**: Plain React Context+Provider (Theme)
 - **Testing**: [[Vitest]] + [[React Testing Library]] + [[Playwright]] + [[Chromatic]] — all sharing one MSW mocking layer
 - **Mocking**: [[MSW]] + `@mswjs/data` for tests, Storybook, and dev
 - **Storybook** v10 with React Router, i18n, dark mode, MSW addons
 - **Quality**: 20+ ESLint plugins, Prettier, Stylelint, [[Husky]] pre-commit hooks
-- **Docs**: [[VitePress]] with GitHub Pages deploy
 - **Claude Code**: [[Claude Integration]] with commands, rules, hooks, agents
 
 ## Top-Level Architecture
@@ -47,7 +45,7 @@ app/
 ├── pages/            page-specific UI (Auth, Public, Session)
 ├── routes/           thin route files (loader/action only)
 ├── services/         api wrapper (Ky) + gaia/* domain services
-├── sessions.server/  cookie sessions (auth, language, theme)
+├── sessions.server/  cookie sessions (language, theme)
 ├── state/            React Context providers
 ├── styles/           tailwind.css
 ├── types/            global TS types
@@ -62,12 +60,11 @@ See [[Folder Structure]] for the full breakdown.
 ## Route Groups (remix-flat-routes)
 
 - `_public+` — unauthenticated pages
-- `_auth+` — login (redirects authenticated users away)
-- `_session+` — authenticated pages (redirects unauthenticated users)
+- `_session+` — hook point for auth-guarded pages (empty stub; add your own auth guard)
 - `_legal+` — terms, privacy, etc.
-- `actions+` — root-level form actions (logout, set-language, set-theme)
+- `actions+` — root-level form actions (set-language, set-theme)
 
-See [[Routing]] and [[Auth Flow]].
+See [[Routing]].
 
 ## Quality Gate
 
@@ -87,12 +84,10 @@ Every change passes through [[Quality Gate]]: typecheck → lint → unit test �
 | E2E                |        Playwright         |     —      |      —      |    —    |
 | Visual regression  |       Chromatic CI        |     —      |      —      |    —    |
 | i18n examples      |          2 langs          |     —      |      —      |    —    |
-| Auth example       | login + session + guards  |     —      |      —      |    —    |
 | Form validation    |       Conform + Zod       |     —      |      —      |    —    |
 | Dark mode          |        end-to-end         |     —      |      —      |    —    |
 | API mocking        |      MSW everywhere       |     —      |      —      |    —    |
 | Claude Code        | commands + rules + agents |     —      |      —      |    —    |
-| Docs site          |   VitePress + GH Pages    |     —      |      —      |    —    |
 
 ## Where to Go Next
 

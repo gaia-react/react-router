@@ -8,64 +8,58 @@ tags: [concept, services, api]
 
 # API Service Pattern
 
-Source: `.claude/rules/api-service.md` (mirrored by `/new-service`).
+Canonical reference for adding a domain service. Mirrored by the `api-service` rule (`.claude/rules/api-service.md`) and scaffolded by `/new-service`.
 
-## Structure per domain
+Related: [[Services]], [[MSW Handlers]]
 
-`app/services/gaia/{domain}/`:
+## Folder structure
 
-| File                 | Role                                       |
-| -------------------- | ------------------------------------------ |
-| `requests.server.ts` | API functions (`.server.ts` = server-only) |
-| `parsers.ts`         | Zod schemas for response validation        |
-| `types.ts`           | TypeScript types (inferred from Zod)       |
-| `state.tsx`          | Client-side state if needed                |
+Each domain lives under `app/services/gaia/{domain}/`:
 
-## URL constants
+| File                 | Role                                                         |
+| -------------------- | ------------------------------------------------------------ |
+| `requests.server.ts` | API functions — `.server.ts` suffix enforces server-only     |
+| `parsers.ts`         | Zod schemas for response validation                          |
+| `types.ts`           | TypeScript types derived from Zod                            |
+| `state.tsx`          | Read-only React Context + hook (optional, add when a route needs to pass fetched data to deeply nested components) |
+| `index.ts`           | Barrel for non-server exports (parsers, types, state)        |
 
-`app/services/gaia/urls.ts`:
+Register server-side exports in `app/services/gaia/index.server.ts`.
+
+## Scaffold output
+
+`/new-service` emits all files for a domain. Live examples in `app/services/gaia/`:
+
+| File                 | Key rules                                                                                  |
+| -------------------- | ------------------------------------------------------------------------------------------ |
+| `urls.ts`            | All endpoints in one `GAIA_URLS` constant; colon-prefixed segments interpolated from `pathParams` |
+| `api.ts`             | `create<ServerResponse>()` from `../api`; wraps Ky with snake↔camel, base URL, auth headers |
+| `parsers.ts`         | `z.iso.datetime()` not `z.string().datetime()`; `.nullish()` for optional fields; always `.parse()` not `.safeParse()` |
+| `types.ts`           | `z.infer<typeof schema>` only — never hand-maintain types alongside schemas               |
+| `requests.server.ts` | `.server.ts` suffix enforces server-only; `body: FormData` for mutations; `attempt()` for graceful error handling |
+| `index.server.ts`    | Barrel: `import * as resources from './resources/requests.server'; export default {resources}` |
+
+A typical request function:
 
 ```ts
-export const GAIA_URLS = {
-  things: 'things',
-  thingsId: 'things/:id',
+export const getResourceById = async (id: string): Promise<Resource> => {
+  const result = await api(GAIA_URLS.resourcesId, {pathParams: {id}});
+  return resourceSchema.parse(result.data);
 };
 ```
 
-## Request function
+`attempt` (from `~/services/api/helpers`) wraps a request into `[ApiError, undefined] | [undefined, T]` — use in loaders/actions when you need to handle errors without throwing.
 
-```ts
-export const getThingById = async (id: string): Promise<Thing> => {
-  const result = await api(GAIA_URLS.thingsId, {pathParams: {id}});
-  return thingSchema.parse(result.data);
-};
-```
+## `state.tsx` — read-only context (optional)
 
-## Barrel export
+Add `state.tsx` when a route loader fetches data that deeply nested client components need. Read-only context only — no setters; mutations go through actions. See the `state-pattern` rule (`.claude/rules/state-pattern.md`) and [[State]].
 
-Register in `app/services/gaia/index.server.ts`.
+## Mocking with MSW
 
-## MSW mocks
+Every service has a matching mock layer in `test/mocks/{domain}/`. The folder structure mirrors the service: `get.ts`, `post.ts`, `put.ts`, `delete.ts` (one file per HTTP method), `data.ts` (seed data + `@mswjs/data` factory schema), and `index.ts` (barrel combining all handlers).
 
-Mirror the structure in `test/mocks/{domain}/`:
+Note: MSW mock data uses snake_case field names (matching the real API wire format). The Ky wrapper converts to camelCase before the Zod schemas see it, so `data.ts` schemas should reflect the raw server shape.
 
-- `get.ts`, `post.ts`, `put.ts`, `delete.ts`
-- `data.ts` (seed data + @mswjs/data schema)
-- `index.ts` (barrel)
+Register handlers in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. See [[MSW Handlers]] for full setup details.
 
-Register in `test/mocks/index.ts` and add factory schema to `test/mocks/database.ts`.
-
-## Checklist for a new service
-
-1. Add URL constants to `urls.ts`
-2. Create `parsers.ts` (Zod schemas)
-3. Create `types.ts`
-4. Create `requests.server.ts`
-5. Export from `index.server.ts`
-6. Add MSW handlers in `test/mocks/{domain}/`
-7. Register handlers in `test/mocks/index.ts`
-8. Add factory schema to `test/mocks/database.ts`
-
-`/new-service` does all of the above.
-
-See [[things Service]] for the canonical worked example, [[Services]], [[MSW]].
+`/new-service` scaffolds all of the above.

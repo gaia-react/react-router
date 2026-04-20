@@ -17,13 +17,11 @@ This is **different** from `app/components/`, which holds shared UI used across 
 
 ## Structure
 
-| Folder     | Routes it serves                               |
-| ---------- | ---------------------------------------------- |
-| `Auth/`    | `_auth+` routes (e.g. `LoginPage`)             |
-| `Public/`  | `_public+` routes (e.g. `IndexPage`, `Things`) |
-| `Session/` | `_session+` routes (e.g. `Profile`)            |
+| Folder    | Routes it serves                     |
+| --------- | ------------------------------------ |
+| `Public/` | `_public+` routes (e.g. `IndexPage`) |
 
-Legal pages (terms, privacy, company) typically live as static JSX directly in the route file — no `pages/Legal/` folder by convention.
+When you add auth-guarded pages behind `_session+/`, ask Claude to scaffold a `Session/` folder — `/new-route` handles the wiring. Legal pages typically live as static JSX directly in the route file — no `pages/Legal/` folder by convention.
 
 ## Folder pattern
 
@@ -38,20 +36,4 @@ See [[Components]] for the same convention applied to shared UI.
 
 ## Standard page shape
 
-```tsx
-import type {FC} from 'react';
-import {useTranslation} from 'react-i18next';
-
-const IndexPage: FC = () => {
-  const {t} = useTranslation('pages', {keyPrefix: 'index'});
-  return (
-    <section className="flex h-full items-center justify-center p-4">
-      <h1>{t('title')}</h1>
-    </section>
-  );
-};
-
-export default IndexPage;
-```
-
-See [[i18n]] for translation conventions.
+Pages are `FC` components with a default export, using `useTranslation` for all user-facing strings. `/new-route` emits this shape. See [[i18n]] for translation conventions.

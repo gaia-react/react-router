@@ -23,11 +23,6 @@ Global custom hooks live in `app/hooks/`. Component-specific hooks live in `app/
 
 ## Conventions
 
-- Named export (no default)
-- `use` prefix
-- One hook per file, kebab-case filename inside `hooks/`
-- Tests live in `app/hooks/tests/{name}.test.ts`
+Named export, `use` prefix, one hook per file, kebab-case filename, tests in `app/hooks/tests/{name}.test.ts`. Use `/new-hook` to scaffold. See [[Coding Guidelines]] for file-naming rules.
 
-Use `/new-hook` to scaffold a new hook + test in this pattern.
-
-See [[react-code]] skill for `useEffect`, `useCallback`, `useState` rules.
+See the `react-code` skill (`.claude/skills/react-code/`) for `useEffect`, `useCallback`, `useState` rules.

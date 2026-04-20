@@ -1,12 +1,64 @@
 ---
 type: meta
 title: Log
-updated: 2026-04-20
+status: active
+created: 2026-04-20
+updated: 2026-04-21
+tags: [meta, log]
 ---
 
 # Log
 
 Append-only. New entries at the TOP.
+
+## [2026-04-21] update | disambiguate duplicate-name wiki pages
+
+Renamed `modules/MSW.md` → `modules/MSW Handlers.md` and `modules/Storybook.md` → `modules/Storybook Stories.md`. Obsidian's bare-filename wikilink resolution collapsed the two "MSW" and two "Storybook" pages onto one target each, leaving the other as a graph orphan. Updated all module-intent wikilinks (sources/Initial Ingest, dependencies/MSW, dependencies/Storybook, modules/Services, modules/Testing, concepts/API Service Pattern, flows/Theme Flow, index). Dependency-intent `[[MSW]]` / `[[Storybook]]` references still point to `dependencies/` pages. Added a `## Meta` section to `wiki/index.md` so `lint-report-2026-04-21` is no longer an orphan.
+
+## [2026-04-20] update | docs reframe — manager/IC voice + surface wiki Q&A
+
+- README tagline extended with "grounded enough in the stack to answer how-do-I questions without re-reading the codebase" — surfaces the wiki Q&A use case alongside code-task capability.
+- Expanded wiki bullet with concrete ask-Claude examples ("how do I add a new route?", "how does dark mode wire through?", "what's the testing layer setup?").
+- Swept DIY-user framings across README + wiki: [[GAIA Philosophy]] "remove it / swap them" → "ask Claude to rip it out / swap them in"; [[Chromatic Opt-Out]] leads with "ask Claude", keeps steps as a review reference; [[Claude Hooks]] "Adding hooks" section, [[Middleware]], [[Pages]], [[Services]] all reframed to "ask Claude" (flags `/new-route`, `/new-service` where applicable). README FontAwesome "you're free to change" → "ask Claude to swap it for Heroicons, Lucide…".
+- Commit: `86bf0e4`
+
+## [2026-04-20] refactor | code-review-audit agent rewrite + quality gate scoping
+
+- `.claude/agents/code-review-audit.md`: split labor between main agent (cross-cutting security / architecture / performance / a11y / edge cases) and subagents (line-level rule compliance) to stop duplicating work. Dispatch 3 subagents + `react-doctor` in a single parallel tool call. Gate each subagent on file scope (no `.tsx` → skip Subagent 1, etc.). Added accessibility as a review dimension. Stripped Supabase heritage (RLS, service keys, `_auth+/`, PKCE, `useDebounce`) left over from the template's prior project. Relabeled subagent rule sources to point at current skills (react-code, typescript, tailwind) + rules (new-route, i18n, accessibility, tailwind). Tightened mission preamble (dropped elite-persona framing); made "What's Done Well" optional to avoid filler.
+- `.claude/rules/quality-gate.md`: skip the gate entirely when no staged file is source (`*.ts|tsx|js|jsx|mjs|cjs|css`) or a gate-affecting config (`package.json`, `tsconfig*`, `vite.config.*`, `vitest.config.*`, `playwright.config.*`, `eslint.config.*`). Markdown-only, `.claude/**`, `wiki/**`, or image-only commits now skip straight to commit.
+- Commit: `f85b2f2`
+
+## [2026-04-20] feat | integrate tdd + playwright-cli + React Doctor into trust stack
+
+- README reframe: tagline "Claude as your lead engineer"; two pillars "How GAIA makes Claude trustworthy" + "How GAIA keeps Claude token-efficient". Rules count 11→15. `/gaia-init` Step 8 split into "Install tools" (`@playwright/cli` binary + React Doctor curl) and "Install plugins" (typescript-lsp, claude-obsidian). Bundled skills 4→6 in comparison table.
+- TDD skill tailored for GAIA: `SKILL.md` gained a "GAIA testing layers" table (hook/component/service/E2E); `tests.md` rewritten with `composeStory`, `renderHook`, MSW-backed service examples; `mocking.md` rewritten around MSW-first boundaries (`database` factory + `resetTestData()`). Generic design files (`interface-design.md` / `deep-modules.md` / `refactoring.md`) left untouched. Matt Pocock credit in README only — `SKILL.md` stays lean since it auto-loads.
+- `code-review-audit.md`: React Doctor invocation now uses `--verbose --diff` (scans only modified files) so the pre-merge pass stays cheap.
+- Commit: `d20f46a`
+
+## [2026-04-20] delete | Phase D — remove entire auth stack
+
+Deleted all auth code: `app/routes/_auth+/`, `app/routes/_session+/profile+/`, `app/routes/actions+/logout.ts`, `app/services/gaia/auth/`, `app/services/gaia/user/`, `app/sessions.server/auth.ts`, `app/pages/Auth/`, `app/pages/Session/`, `app/state/user.tsx`, `app/languages/{en,ja}/auth.ts`, `app/languages/{en,ja}/pages/profile/`, `test/mocks/auth/`, `test/mocks/user/`, `wiki/flows/Auth Flow.md`, `wiki/dependencies/remix-auth.md`. Dropped deps: `remix-auth`, `remix-auth-form`, `spark-md5` (+ `@types/spark-md5`). `app/routes/_session+/_layout.tsx` rewritten as minimal stub preserving the folder as a hook point for consumer auth guards. `app/state/index.tsx` trimmed to `ThemeProvider` only; `UserProvider` and `User` type removed. Form components `InputEmail`/`InputPassword` migrated default label namespace from `auth` → `common`; `email`, `emailPlaceholder`, `password` keys added to both `en/common.ts` and `ja/common.ts`. `database.user` factory and `resetTestData` deleted from `test/mocks/database.ts` (orphaned after auth removal). `SESSION_SECRET` retained in env — still used by `remix-toast`, theme cookie, and language cookie. Wiki updated: [[Sessions]] rewritten for theme/language only, [[Routing]] documents `_session+/` hook point, [[State]]/[[Services]]/[[Pages]]/[[overview]]/[[GAIA Philosophy]]/[[Folder Structure]]/[[React Router 7]] surgically cleaned.
+
+## [2026-04-20] delete | Phase C — remove all non-auth example/teaching code
+
+Deleted the `things` service and all associated example code: `app/services/gaia/things/`, `app/components/ExampleConsumer/`, `app/state/example.tsx`, `app/pages/Public/Things/`, `app/pages/Public/IndexPage/Examples/`, `app/pages/Public/IndexPage/TechStack/`, `app/routes/_public+/things+/`, `app/languages/{en,ja}/pages/things.ts`, `test/mocks/things/`, `.playwright/e2e/things.spec.ts`, `.react-router/`. Rewired all dependents: `app/state/index.tsx` (ExampleProvider removed), `app/services/gaia/index.server.ts` (things export removed), `app/services/gaia/urls.ts` (things/thingsId removed), `app/languages/{en,ja}/pages/index.ts` (things removed), `app/languages/{en,ja}/pages/_index.ts` (serviceExample + techStack keys removed), `test/mocks/index.ts` + `database.ts` (things handlers/factory removed), `test/stubs/state-stub.tsx` (simplified to `() => (Story) => <State><Story /></State>`), `app/pages/Session/Profile/ProfilePage/UserCard/index.tsx` (ExampleConsumer import+usage removed), `app/pages/Public/IndexPage/index.tsx` (reduced to minimal `<section><h1>{t('title')}</h1></section>` placeholder). Wiki updated: [[Services]], [[Pages]], [[Components]], [[Testing]], [[i18n]], [[remix-flat-routes]].
+
+## [2026-04-20] update | Phase A — rules + wiki pattern synthesis (pre-deletion gap-fill)
+
+Prepared the template to delete example code and VitePress docs without losing the lessons they teach. 6 parallel Sonnet agents synthesized patterns from existing code into durable rules + self-contained wiki pages.
+
+- New rules: `state-pattern.md`, `tailwind.md`, `storybook.md`, `playwright.md` — all auto-apply via path globs
+- Updated rule: `api-service.md` — generalized `things`→`resources`, dropped `auth` from barrel example, added optional `state.tsx` to checklist (inconsistency flagged by agent vs real code)
+- Wiki rewrites (fully self-contained, no example-code refs): [[API Service Pattern]], [[MSW]], [[State]], [[Storybook]], [[Playwright]]
+- Service↔MSW contract explicitly documented — `url()` helper, snake_case-on-wire vs camelCase-after-ky-hooks, dev/test/CI init paths
+- `/new-service` command — replaced "following the things pattern" strings with `[[API Service Pattern]]` / `[[MSW]]` wikilinks; removed `login` from URL example
+
+## [2026-04-20] update | wiki-coherence hooks + /init interceptor
+
+- Added `intercept-init.sh` (UserPromptSubmit) — blocks built-in `/init`, auto-invokes `/gaia-init`. Self-removes on `/gaia-init` completion.
+- Added `wiki-session-start.sh` + `wiki-session-stop.sh` — compensate for a claude-obsidian plugin gap where `PostToolUse` auto-commits wiki changes, leaving the plugin's own Stop diff-check empty and its `wiki/hot.md` refresh prompt never firing. Our Stop hook checks commits between a session-start SHA marker and HEAD, covering the auto-commit case. Plugin's Stop still catches working-tree (uncommitted) changes — the two complement each other.
+- Added `wiki-maintenance.md` rule — judgment-based wiki update check that fires pre-commit alongside `quality-gate`.
+- Pages updated: [[Claude Integration]] (Hooks section restructured by event type, 3 new hooks documented)
 
 ## [2026-04-20] update | /audit-knowledge command added
 
@@ -18,7 +70,7 @@ Append-only. New entries at the TOP.
 ## [2026-04-20] ingest | Form components deep dive + things service
 
 - Sources: `app/components/Form/*` (all 15 components + Field subparts + YearMonthDay utils), `app/services/gaia/things/*`
-- Pages created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], [[things Service]]
+- Pages created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], `things Service` (deleted Phase C)
 - Pages updated: [[Form Components]] (deep-dive column), [[Services]] (things cross-link), [[API Service Pattern]] (things cross-link), [[index]], [[hot]]
 - Key insight: YearMonthDay's Conform integration requires two non-obvious workarounds — native `input` event stop-propagation at the container div (React's synthetic delegation routes through `document`, same node as Conform's listener, so React-level `stopPropagation` is a no-op) and DOM-level hidden input value sync before `onChange` fires so Conform's FormData read returns the new value.
 
@@ -36,9 +88,9 @@ Append-only. New entries at the TOP.
 - Pages created:
   - Top-level: [[overview]], [[index]], [[hot]], [[CLAUDE]]
   - Modules: [[Folder Structure]], [[Routing]], [[Pages]], [[Components]], [[Form Components]], [[Services]], [[Sessions]], [[State]], [[Middleware]], [[Hooks]], [[Utils]], [[Styles]], [[i18n]], [[Testing]], [[Storybook]], [[MSW]], [[Claude Integration]]
-  - Flows: [[Auth Flow]], [[Theme Flow]], [[Language Flow]], [[Form Submit Flow]]
+  - Flows: `Auth Flow` (deleted Phase D), [[Theme Flow]], [[Language Flow]], [[Form Submit Flow]]
   - Entities: [[GAIA]], [[Steven Sacks]]
-  - Dependencies: [[React Router 7]], [[remix-flat-routes]], [[remix-auth]], [[remix-i18next]], [[remix-toast]], [[Conform]], [[Zod]], [[Ky]], [[i18next]], [[Tailwind]], [[FontAwesome]], [[Vitest]], [[React Testing Library]], [[Playwright]], [[Chromatic]], [[Storybook]], [[MSW]], [[Husky]], [[VitePress]]
+  - Dependencies: [[React Router 7]], [[remix-flat-routes]], `remix-auth` (deleted Phase D), [[remix-i18next]], [[remix-toast]], [[Conform]], [[Zod]], [[Ky]], [[i18next]], [[Tailwind]], [[FontAwesome]], [[Vitest]], [[React Testing Library]], [[Playwright]], [[Chromatic]], [[Storybook]], [[MSW]], [[Husky]], `VitePress` (deleted Phase D)
   - Decisions: [[No Component Library]], [[TypeScript Language Files]], [[Thin Routes]], [[Co-located Tests Folder]], [[composeStory Pattern]], [[Quality Gate]]
   - Concepts: [[GAIA Philosophy]], [[Coding Guidelines]], [[Component Testing]], [[API Service Pattern]], [[Accessibility]], [[ESLint Fixes]], [[test-runner]], [[Pre-commit Hooks]], [[PR Merge Workflow]], [[Code Review Audit Agent]], [[Claude Hooks]], [[Claude Skills]], [[Chromatic Opt-Out]]
 - Pages updated: n/a (vault was empty)

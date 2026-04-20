@@ -19,12 +19,6 @@ Form validation library used by [[Form Components]]. Pairs with [[Zod]] for the 
 > [!warning] Use the `/v4` subpath
 > Per [[Coding Guidelines]], import from `@conform-to/zod/v4` (Zod v4 compatibility), not the root.
 
-## Why GAIA uses it
-
-- Progressive enhancement — forms work without JS
-- One schema for client and server validation
-- Plays well with React Router 7 actions
-
 ## Alternatives
 
 [remix-forms](https://remix-forms.seasoned.cc/), [RVF](https://www.rvf-js.io/)

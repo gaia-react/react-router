@@ -12,6 +12,8 @@ export default {
     year: '年',
   },
   description: '説明',
+  email: 'メール',
+  emailPlaceholder: 'user@domain.jp',
   form: {
     allFieldsAreRequired: '全項目必須',
     cancel: 'キャンセル',
@@ -32,6 +34,7 @@ export default {
   },
   name: '名前',
   next: '次へ',
+  password: 'パスワード',
   previous: '前へ',
   theme: {
     dark: 'ダークモード',

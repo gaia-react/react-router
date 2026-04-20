@@ -10,41 +10,11 @@ tags: [concept, lint]
 
 Source: `.claude/rules/eslint-fixes.md`. Patterns for resolving specific ESLint errors. Always fix in source, never in config (a hook blocks edits to `eslint.config.mjs`).
 
-## `no-void`
-
-Don't use `void` in event handlers. Make the handler `async` and `await`.
-
-```tsx
-// BAD
-const handleClick = () => {
-  void navigate('/path');
-};
-
-// GOOD
-const handleClick = async () => {
-  await navigate('/path');
-};
-```
-
-## `canonical/export-specifier-newline` vs Prettier conflict
-
-Use inline `export const` instead of grouped `export {}`.
-
-```tsx
-// BAD
-export {DAYS, DURATIONS};
-
-// GOOD
-export const DAYS = ['mon'] as const;
-export const DURATIONS = [15, 30] as const;
-```
-
-## `no-shadow` trailing underscores
-
-ESLint autofixes shadowing by appending `_`. Once shadowing is gone, remove the trailing `_`.
-
-## `sonarjs/deprecation`
-
-Never `eslint-disable`. Always fix the deprecation. Common case: `z.string().email()` → `z.email()` (Zod v4).
+| Rule                                      | Fix                                                              |
+| ----------------------------------------- | ---------------------------------------------------------------- |
+| `no-void`                                 | Make handler `async` and `await` the call instead of `void`      |
+| `canonical/export-specifier-newline`      | Use inline `export const X = …` instead of grouped `export {X}` |
+| `no-shadow` trailing `_`                  | Remove autofix `_` suffix once shadowing is resolved             |
+| `sonarjs/deprecation`                     | Fix the deprecation — never `eslint-disable`. E.g. `z.email()` not `z.string().email()` |
 
 See [[Zod]].

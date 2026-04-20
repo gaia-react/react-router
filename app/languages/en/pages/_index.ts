@@ -1,15 +1,23 @@
 export default {
-  authExample: 'Auth Example',
+  componentsLabel: 'Component Testing',
+  componentsValue: 'Storybook + Chromatic',
+  cta: 'View on GitHub',
+  eyebrow: 'GAIA React Template',
+  formsLabel: 'Forms',
+  formsValue: 'Conform + Zod',
+  frameworkLabel: 'Framework',
+  frameworkValue: 'React Router 7',
+  heroTagline:
+    'The React Router template where Claude can actually own features. Trustworthy, token-efficient, and grounded in the stack.',
+  heroTitle: 'Start with something solid.',
+  languageLabel: 'Language',
+  languageValue: 'TypeScript',
   meta: {
     description: 'Description of the index page',
     title: 'Index Page',
   },
-  serviceExample: 'Service Example',
-  techStack: {
-    codeQuality: 'Code Quality',
-    foundation: 'Foundation',
-    testSuite: 'Test Suite',
-    title: 'Tech Stack',
-  },
-  title: 'React Template',
+  stylingLabel: 'Styling',
+  stylingValue: 'Tailwind v4',
+  testingLabel: 'Testing',
+  testingValue: 'Vitest + Playwright',
 };

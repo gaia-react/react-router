@@ -15,7 +15,7 @@ Inside `app/`:
 
 | Folder             | Purpose                                        | Wiki page      |
 | ------------------ | ---------------------------------------------- | -------------- |
-| `assets/`          | Global images / svgs                           | [[Assets]]     |
+| `assets/`          | Global images / svgs                           | —              |
 | `components/`      | Shared UI components                           | [[Components]] |
 | `hooks/`           | Global custom hooks                            | [[Hooks]]      |
 | `languages/`       | TypeScript-based i18n strings                  | [[i18n]]       |
@@ -23,10 +23,10 @@ Inside `app/`:
 | `pages/`           | Page-specific UI, organized by route group     | [[Pages]]      |
 | `routes/`          | Thin route files (loader/action only)          | [[Routing]]    |
 | `services/`        | API wrapper + domain services                  | [[Services]]   |
-| `sessions.server/` | Cookie session storage (auth, language, theme) | [[Sessions]]   |
+| `sessions.server/` | Cookie session storage (language, theme)       | [[Sessions]]   |
 | `state/`           | Context+Provider state                         | [[State]]      |
 | `styles/`          | `tailwind.css`                                 | [[Styles]]     |
-| `types/`           | Global TS types                                | [[Types]]      |
+| `types/`           | Global TS types                                | —              |
 | `utils/`           | Pure helpers                                   | [[Utils]]      |
 
 ## Root files

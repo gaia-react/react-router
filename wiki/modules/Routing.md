@@ -12,74 +12,42 @@ tags: [module, routing]
 
 # Routing
 
-GAIA uses [[remix-flat-routes]] on top of [[React Router 7]] for file-based routing. The adapter lives in `app/routes.ts`:
-
-```ts
-import {remixRoutesOptionAdapter} from '@react-router/remix-routes-option-adapter';
-import {flatRoutes} from 'remix-flat-routes';
-
-export default remixRoutesOptionAdapter((defineRoutes) =>
-  flatRoutes('routes', defineRoutes)
-);
-```
-
-You can switch to standard React Router 7 routing if you prefer.
+GAIA uses [[remix-flat-routes]] on top of [[React Router 7]] for file-based routing. The adapter lives in `app/routes.ts` (see that file for the verbatim implementation). You can switch to standard React Router 7 routing if you prefer.
 
 ## Route Groups
 
 Routes are organized using flat-routes folder syntax — `_` prefix + `+` suffix marks a folder as a layout/route group.
 
-| Folder      | Purpose                         | Auth requirement                            |
-| ----------- | ------------------------------- | ------------------------------------------- |
-| `_public+`  | Home, marketing, public content | none                                        |
-| `_auth+`    | Login, register, password reset | redirects authenticated users away          |
-| `_session+` | Authenticated app               | redirects unauthenticated users to `_auth+` |
-| `_legal+`   | Terms, privacy, company         | none                                        |
-| `actions+`  | Root-level form actions (no UI) | varies by action                            |
+| Folder      | Purpose                         | Auth requirement                                |
+| ----------- | ------------------------------- | ----------------------------------------------- |
+| `_public+`  | Home, marketing, public content | none                                            |
+| `_session+` | Hook point for auth-guarded app | stub — add your own guard loader here           |
+| `_legal+`   | Terms of service, privacy       | none                                            |
+| `actions+`  | Root-level form actions (no UI) | varies by action                                |
 
 GAIA ships these `actions+` endpoints out of the box:
 
-- `logout.ts`
 - `set-language.ts`
 - `set-theme.ts`
 
-See [[Auth Flow]] for redirect semantics.
+## `_session+/` hook point
+
+`app/routes/_session+/_layout.tsx` is an intentionally empty stub. Add a loader that throws `redirect('/login')` if the user is not authenticated. All routes nested under `_session+/` inherit the guard. Choose any auth provider: Supabase, Clerk, Auth0, custom sessions, etc.
 
 ## Thin Routes Convention
 
 > [!key-insight] Routes are thin
 > Route files in `app/routes/` handle only **loader, action, meta, and rendering the page component**. All UI lives in `app/pages/`. This keeps routes easy to scan and pages easy to test in isolation. See [[Thin Routes]].
 
-### Standard route shape
+`/new-route` scaffolds routes in this shape. The scaffold output includes:
 
-```tsx
-// app/routes/_public+/_index.tsx
-import type {RouterContextProvider} from 'react-router';
-import {useLoaderData} from 'react-router';
-import {getInstance} from '~/middleware/i18next';
-import IndexPage from '~/pages/Public/IndexPage';
-import type {Route} from './+types/_index';
-
-export const loader = async ({context}: Route.LoaderArgs) => {
-  const i18next = getInstance(context as RouterContextProvider);
-  const title = i18next.t('index.meta.title', {ns: 'pages'});
-  const description = i18next.t('index.meta.description', {ns: 'pages'});
-  return {description, title};
-};
-
-const IndexRoute = () => {
-  const {description, title} = useLoaderData<typeof loader>();
-  return (
-    <>
-      <title>{title}</title>
-      <meta content={description} name="description" />
-      <IndexPage />
-    </>
-  );
-};
-
-export default IndexRoute;
-```
+| File | Contents |
+|---|---|
+| `app/routes/{group}/{name}.tsx` | Loader (with server-side i18n for meta), route component, `useLoaderData` |
+| `app/pages/{Group}/{Name}/index.tsx` | Page component with `useTranslation` |
+| `app/pages/{Group}/{Name}/tests/index.test.tsx` | Vitest test via `composeStory` |
+| `app/pages/{Group}/{Name}/tests/index.stories.tsx` | Storybook story |
+| `app/languages/en/pages/{name}.ts` + other locales | i18n keys |
 
 ## Server-side i18n in loaders
 

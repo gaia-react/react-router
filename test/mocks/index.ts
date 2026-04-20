@@ -1,6 +1,5 @@
-import auth from './auth';
-import things from './things';
+import type {RequestHandler} from 'msw';
 
-const handlers = [...auth, ...things];
+const handlers: RequestHandler[] = [];
 
 export default handlers;

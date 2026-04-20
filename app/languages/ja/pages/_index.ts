@@ -1,15 +1,23 @@
 export default {
-  authExample: '認証例',
+  componentsLabel: 'コンポーネントテスト',
+  componentsValue: 'Storybook + Chromatic',
+  cta: 'GitHubで見る',
+  eyebrow: 'GAIA Reactテンプレート',
+  formsLabel: 'フォーム',
+  formsValue: 'Conform + Zod',
+  frameworkLabel: 'フレームワーク',
+  frameworkValue: 'React Router 7',
+  heroTagline:
+    'Claudeが実際に機能を任せられるReact Routerテンプレートです。信頼性が高く、トークン効率が良く、スタックに精通しています。',
+  heroTitle: '確かな基盤からはじめる。',
+  languageLabel: '言語',
+  languageValue: 'TypeScript',
   meta: {
     description: 'インデックスページの説明',
     title: 'インデックスページ',
   },
-  serviceExample: 'サービス例',
-  techStack: {
-    codeQuality: 'コード品質',
-    foundation: '基盤',
-    testSuite: 'テストスイート',
-    title: 'テックスタック',
-  },
-  title: 'Reactテンプレート',
+  stylingLabel: 'スタイリング',
+  stylingValue: 'Tailwind v4',
+  testingLabel: 'テスト',
+  testingValue: 'Vitest + Playwright',
 };

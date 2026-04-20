@@ -11,12 +11,7 @@ tags: [dependency, validation]
 
 # Zod
 
-Schema validation. Used for:
-
-- Form validation (with [[Conform]])
-- API response parsing in `app/services/gaia/{domain}/parsers.ts`
-- Env var validation in `app/env.server.ts`
-- TypeScript type inference (`z.infer<typeof schema>`)
+Schema validation. Used for form validation ([[Conform]]), API response parsing (`parsers.ts`), env var validation (`app/env.server.ts`), and TypeScript type inference. See [[API Service Pattern]] and [[Form Components]].
 
 ## v4 conventions
 

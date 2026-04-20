@@ -34,17 +34,7 @@ Stage 1 proposes actions — `delete`, `delete-entry`, `promote`, `shrink`, `mer
 - **Broken wikilinks** and **dead file paths**
 - **Stale entries** referencing removed code, branches, or features
 
-## Portability
-
-Project root and machine-local memory paths resolve at runtime — the subagent computes them from `$CLAUDE_PROJECT_DIR` (with `pwd` fallback) and derives the memory directory via path-to-dash substitution. Nothing is hardcoded, so the command works unchanged across every clone of the template and every developer's machine.
-
-## Guardrails
-
-- Stage 2 never deletes a memory entry unless Stage 1 cited the canonical wiki target
-- Only edit to `wiki/log.md` allowed is prepending a new line at the top
-- Never runs `git add` or `git commit` — human reviews the diff and commits
-- Reports are gitignored (`.claude/audit/`)
-- Oldest reports auto-pruned (keep newest 5, delete anything beyond that older than 30 days)
+Guardrails and portability details are in `.claude/commands/audit-knowledge.md`. Key invariants: Stage 2 never deletes unless Stage 1 named the wiki target; never runs `git add`/`git commit`; reports gitignored under `.claude/audit/`.
 
 ## Pairs with
 

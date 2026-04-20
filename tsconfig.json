@@ -29,7 +29,6 @@
     "**/.client/**/*.tsx",
     ".react-router/types/**/*",
     ".storybook/**/*",
-    ".playwright/**/*",
-    "docs/.vitepress/**/*"
+    ".playwright/**/*"
   ]
 }

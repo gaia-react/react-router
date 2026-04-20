@@ -8,25 +8,35 @@ CACHE DISCIPLINE — enforced on every rewrite (Stop hook):
 -->
 
 ---
-
 type: meta
 title: Hot Cache
-updated: 2026-04-20T00:00:00
-
+status: active
+created: 2026-04-20
+updated: 2026-04-21
+tags: [meta]
 ---
 
 # Recent Context
 
 ## Last Updated
 
-2026-04-20. Branch `chore/claude-optimizations`. Just finished deep ingest of `app/components/Form/*` and `app/services/gaia/things/*` before `/gaia-init` strips the example. Vault now at 76 pages.
+2026-04-20. Branch `feat/gaia-improvements`. Phases A–H complete; PR opening next.
+
+## Key Facts
+
+- Template ships clean: no `things`, `ExampleConsumer/Provider`, IndexPage TechStack/Examples, VitePress `docs/`, auth stack.
+- Auth deliberately non-prescriptive; `_session+/` kept as empty hook point with `README.md`.
+- New rules: `state-pattern`, `tailwind`, `storybook`, `playwright`. Generalized `api-service` (no `things`/`auth`).
+- Wiki rewritten self-contained: [[API Service Pattern]], [[MSW]], [[State]], [[Storybook]], [[Playwright]].
+- IndexPage redesigned (editorial layout, i18n-keyed project title).
+- `/gaia-init` trimmed 194→113 lines; Chromatic MCP added to Step 8.
 
 ## Recent Changes
 
-- Created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], [[things Service]]
-- Updated: [[Form Components]] (deep-dive column), [[Services]], [[API Service Pattern]], [[index]], [[log]]
-- Key find: YearMonthDay's Conform integration has two gotchas — native stopPropagation on container div (React synthetic delegation routes through `document`) and hidden input DOM-value sync before `onChange`. Documented in [[Form YearMonthDay]].
+- Deleted: auth stack, things service, ExampleConsumer/Provider, VitePress, IndexPage TechStack/Examples
+- Deps removed: `vitepress`, `remix-auth`, `remix-auth-form`
+- Deps kept (non-auth): `spark-md5`, `SESSION_SECRET` (theme/language/remix-toast cookies)
 
 ## Active Threads
 
-- None open — Form + things deep ingest complete. Next suggestion: ingest flows directory (`wiki/flows/`) sources or add E2E test patterns page if [[Playwright]] tests grow.
+- None. PR `feat/gaia-improvements` → `main` pending merge.

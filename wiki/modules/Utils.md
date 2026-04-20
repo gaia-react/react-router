@@ -11,18 +11,7 @@ tags: [module, utils]
 
 # Utils
 
-`app/utils/` holds pure helpers. Each should be well-named, self-explanatory, and unit-tested.
-
-| File                         | Purpose                                                  |
-| ---------------------------- | -------------------------------------------------------- |
-| `array.ts`                   | Array helpers                                            |
-| `date.ts`                    | Date helpers (often wrapping `date-fns`)                 |
-| `dom.ts`                     | DOM helpers                                              |
-| `environment.ts`             | Env helpers                                              |
-| `function.ts`                | Function helpers (debounce, throttle, etc.)              |
-| `http.ts` / `http.server.ts` | HTTP helpers (split client/server with `.server` suffix) |
-| `object.ts`                  | Object helpers                                           |
-| `string.ts`                  | String helpers                                           |
+`app/utils/` holds pure helpers — array, date, dom, environment, function, http (split `http.ts` / `http.server.ts`), object, string. Each should be well-named, self-explanatory, and unit-tested.
 
 ## Tests
 

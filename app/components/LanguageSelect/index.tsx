@@ -46,7 +46,7 @@ const LanguageSelect: FC<LanguageSelectProps> = ({className, onChange}) => {
         name="language"
       >
         {OPTIONS.map(({label, value}) => (
-          <option key={value} value={value}>
+          <option key={value} className="text-sm" value={value}>
             {label}
           </option>
         ))}

@@ -24,5 +24,3 @@ Sets up the i18next instance per request and exposes:
 - `getInstance(context)` — returns the i18next instance for server-side `t()` calls in loaders
 
 Used by every route loader that needs to translate meta tags. See [[i18n]].
-
-Add other middleware (auth checks, request logging, feature flags, …) as your app needs them.

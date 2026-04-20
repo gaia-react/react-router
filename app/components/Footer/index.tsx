@@ -10,21 +10,27 @@ const Footer: FC<FooterProps> = ({className}) => {
   const {t} = useTranslation('common');
 
   return (
-    <footer className={twMerge('bg-secondary w-full px-4 py-2', className)}>
-      <div className="flex w-full flex-col items-center justify-between sm:flex-row">
-        <small>&copy;2026 GAIA Framework</small>
-        <small>
-          <a
-            href="https://github.com/gaia-react/remix?tab=MIT-1-ov-file#readme"
-            rel="noreferrer"
-            target="_blank"
-          >
-            {t('license')}
-          </a>
-        </small>
+    <footer
+      className={twMerge(
+        'text-secondary relative z-10 w-full px-8 py-6 text-xs sm:px-16',
+        className
+      )}
+    >
+      <div className="flex w-full flex-col items-center justify-between gap-1 sm:flex-row">
+        <span>&copy;2026 GAIA Framework</span>
+        <a
+          className="hover:text-body transition-colors"
+          href="https://github.com/gaia-react/react-router?tab=MIT-1-ov-file#readme"
+          rel="noreferrer"
+          target="_blank"
+        >
+          {t('license')}
+        </a>
       </div>
     </footer>
   );
 };
+
+Footer.displayName = 'Footer';
 
 export default Footer;

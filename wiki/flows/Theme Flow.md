@@ -19,4 +19,4 @@ Dark mode is wired through every layer so SSR, CSR, Storybook, and the cookie al
 
 The `isSsrTheme` flag passed to `<Document>` distinguishes server-rendered theme from client-only flips.
 
-See [[State]], [[Sessions]], [[Storybook]], [[Styles]].
+See [[State]], [[Sessions]], [[Storybook Stories]], [[Styles]].

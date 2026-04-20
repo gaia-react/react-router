@@ -12,43 +12,14 @@ tags: [component, forms, inputs]
 
 # Form Text Inputs
 
-## InputText
+## Components
 
-`app/components/Form/InputText/index.tsx`. The canonical text input. All the email/password variants defer to it.
-
-- Tracks value length locally (`useState(0)`) only when `maxLength` is set — populates [[Form Field]]'s `length` prop
-- Icon support via FontAwesome — `icon` + `iconPosition='left'|'right'`
-- Sets `classNameInput: 'input-invalid'` when `error` is truthy (global CSS class)
-- `readOnly` implies `disabled` for Field's styling, and flips `tabIndex={-1}` so readonly inputs are skipped in tab order
-- Derives `aria-label` cascade: explicit `aria-label` → string `label` → `name`
-
-`InputProps` (from `types.ts`) extends `ComponentProps<'input'>` with `classNameIcon`, `classNameInput`, `icon`, `iconPosition`, and the shared label/description/error/extra props.
-
-## InputEmail
-
-`app/components/Form/InputEmail/index.tsx`. Thin wrapper:
-
-- Defaults `autoComplete='email'`
-- Defaults `label` and `placeholder` from the `auth` i18n namespace (`t('email')`, `t('emailPlaceholder')`)
-- Delegates everything else to [[Form Text Inputs#InputText\|InputText]]
-
-## InputPassword
-
-`app/components/Form/InputPassword/index.tsx`:
-
-- Defaults `autoComplete='password'`, `type='password'`, placeholder `'••••••••'`
-- Default `label` from `auth.password`
-- Note: the `type='password'` override comes after `{...props}` spread — callers cannot change the type via props
-
-## TextArea
-
-`app/components/Form/TextArea/index.tsx`:
-
-- Uses `autosize` library for `resize='auto'` (default) — attaches on mount via `useEffect`, fires `onAutoSize` callback on `autosize:resized` event
-- `useImperativeHandle` mirrors the internal ref to the forwarded `ref`, so parents get the actual `<textarea>` node (needed by Conform)
-- `resize='y'` opts out of autosize and uses CSS `resize-y` instead
-- Same maxLength length-tracking pattern as InputText
-- Passes `type='textarea'` to [[Form Field]]
+| Component | Controlled by | Key behaviours |
+| --- | --- | --- |
+| `InputText` | `value` / `defaultValue` | Canonical base — all others delegate to it. Tracks length locally only when `maxLength` set. `readOnly` → `disabled` styling + `tabIndex={-1}`. `aria-label` cascade: explicit → string `label` → `name`. `InputProps` extends `ComponentProps<'input'>` with icon/className extras. |
+| `InputEmail` | delegates to InputText | Defaults `autoComplete='email'`, `label`/`placeholder` from `common` i18n namespace. |
+| `InputPassword` | delegates to InputText | `type='password'` override comes after `{...props}` spread — callers cannot change it. Defaults `autoComplete='password'`, label from `common.password`. |
+| `TextArea` | `value` / `defaultValue` | `autosize` library for `resize='auto'` (default); `resize='y'` falls back to CSS `resize-y`. `useImperativeHandle` exposes textarea node to Conform. |
 
 ## Shared conventions
 

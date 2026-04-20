@@ -1,7 +1,10 @@
 ---
 type: meta
 title: Index
-updated: 2026-04-20
+status: active
+created: 2026-04-20
+updated: 2026-04-21
+tags: [meta]
 ---
 
 # Index
@@ -23,7 +26,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Components]]
 - [[Form Components]] — the star feature
 - [[Services]]
-- [[things Service]] — example domain service (stripped by `/gaia-init`)
 - [[Sessions]]
 - [[State]]
 - [[Middleware]]
@@ -32,8 +34,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Styles]]
 - [[i18n]]
 - [[Testing]]
-- [[Storybook]]
-- [[MSW]]
+- [[Storybook Stories]]
+- [[MSW Handlers]]
 - [[Claude Integration]]
 
 ## Components (Form deep dives)
@@ -47,7 +49,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 ## Flows
 
-- [[Auth Flow]]
 - [[Theme Flow]]
 - [[Language Flow]]
 - [[Form Submit Flow]]
@@ -61,7 +62,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 - [[React Router 7]]
 - [[remix-flat-routes]]
-- [[remix-auth]]
 - [[remix-i18next]]
 - [[remix-toast]]
 - [[Conform]]
@@ -77,7 +77,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Storybook]]
 - [[MSW]]
 - [[Husky]]
-- [[VitePress]]
 
 ## Decisions (ADRs)
 
@@ -110,3 +109,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 ## Sources
 
 - [[Initial Ingest]] (2026-04-20)
+
+## Meta
+
+- [[lint-report-2026-04-21]]

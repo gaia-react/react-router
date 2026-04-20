@@ -5,7 +5,7 @@ status: active
 purpose: Claude Code integration — commands, rules, hooks, agents, skills
 created: 2026-04-20
 updated: 2026-04-20
-tags: [module, claude]
+tags: [module, claude, hooks]
 ---
 
 # Claude Integration
@@ -14,32 +14,23 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 
 ## Layout
 
-```
-.claude/
-├── settings.json          # PreToolUse hooks, env, enabled plugins
-├── settings.local.json    # personal overrides (gitignored)
-├── agents/                # subagent definitions (code-review-audit)
-├── agent-memory/          # persistent agent memory (versioned)
-├── commands/              # slash commands
-├── hooks/                 # bash hooks for PreToolUse events
-├── rules/                 # auto-applied coding rules
-└── skills/                # invocable skills
-```
+`.claude/` contains `settings.json` (hooks, env, plugins), `settings.local.json` (gitignored personal overrides), `agents/`, `agent-memory/` (versioned persistent memory), `commands/`, `hooks/`, `rules/`, and `skills/`.
 
 ## Commands (slash)
 
 | Command            | What it does                                                                                              |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
-| `/gaia-init`       | Remove example code, configure languages, clean slate (run once)                                          |
-| `/new-route`       | Scaffold a route + page + tests + i18n                                                                    |
-| `/new-component`   | Scaffold a component with optional test + story                                                           |
-| `/new-service`     | Scaffold an API service + Zod + URL constants + MSW mocks                                                 |
-| `/new-hook`        | Scaffold a custom hook + test                                                                             |
-| `/audit-code`      | Run the full [[Quality Gate]]                                                                             |
-| `/audit-knowledge` | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[audit-knowledge command]]) |
-| `/migrate`         | Upgrade a package to latest, apply breaking changes, run audit                                            |
-| `/handoff`         | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[handoff command]])        |
-| `/pickup`          | Resume from the latest handoff; falls back to `wiki/hot.md` ([[pickup command]])                          |
+| `/gaia-init`            | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                  |
+| `/new-route`            | Scaffold a route + page + tests + i18n                                                                    |
+| `/new-component`        | Scaffold a component with optional test + story                                                           |
+| `/new-service`          | Scaffold an API service + Zod + URL constants + MSW mocks                                                 |
+| `/new-hook`             | Scaffold a custom hook + test                                                                             |
+| `/audit-code`           | Run the full [[Quality Gate]]                                                                             |
+| `/audit-knowledge`      | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[audit-knowledge command]]) |
+| `/migrate`              | Upgrade a package to latest, apply breaking changes, run audit                                            |
+| `/handoff`              | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[handoff command]])        |
+| `/pickup`               | Resume from the latest handoff; falls back to `wiki/hot.md` ([[pickup command]])                          |
+| `/setup-chromatic-mcp`  | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs              |
 
 See individual rules for the patterns each command produces.
 
@@ -60,9 +51,11 @@ Rules activate automatically based on file paths — no need to invoke them.
 | [[Quality Gate]]             | Commits                                                 |
 | [[PR Merge Workflow]]        | PR merges                                               |
 
-## Hooks (PreToolUse, bash)
+## Hooks
 
-Run on every Edit/Write tool call:
+Bash hooks wired through `.claude/settings.json`. Mixed event types.
+
+### PreToolUse (Edit/Write)
 
 | Hook                               | Type         | Behavior                                                                                   |
 | ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
@@ -70,6 +63,21 @@ Run on every Edit/Write tool call:
 | `block-vitest-globals-tsconfig.sh` | **Blocking** | Prevents adding `vitest/globals` to `tsconfig.json`. Use explicit imports.                 |
 | `check-i18n-strings.sh`            | Advisory     | Reminds to use `t()` for user-facing strings in pages/components                           |
 | `check-story-exists.sh`            | Advisory     | Reminds to add a Storybook story for new components                                        |
+
+### UserPromptSubmit
+
+| Hook                | Behavior                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `intercept-init.sh` | Blocks the built-in `/init` and auto-invokes the `/gaia-init` skill instead. Protects the curated `CLAUDE.md` from overwrite. Removes itself (hook + settings entry) when `/gaia-init` completes. |
+
+### SessionStart / Stop (wiki coherence)
+
+Pair of hooks that compensates for a gap in the `claude-obsidian` plugin: its `PostToolUse` hook auto-commits `wiki/` changes, so by Stop time the plugin's own diff-check against HEAD is always empty and its `wiki/hot.md` refresh prompt never fires.
+
+| Hook                    | Event        | Behavior                                                                                                                                                            |
+| ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wiki-session-start.sh` | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
+| `wiki-session-stop.sh`  | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
 
 ## Agents
 

@@ -28,9 +28,8 @@ The `/migrate` command upgrades all of these together when react-router is selec
 
 - [[Routing]] (with [[remix-flat-routes]] adapter)
 - [[Middleware]]
-- [[Sessions]]
-- [[Auth Flow]] (`createCookieSessionStorage`, `redirect`)
+- [[Sessions]] (`createCookieSessionStorage`, `redirect`)
 
 ## Related
 
-- [[remix-auth]], [[remix-flat-routes]], [[remix-i18next]], [[remix-toast]], [[remix-utils]]
+- [[remix-flat-routes]], [[remix-i18next]], [[remix-toast]]
