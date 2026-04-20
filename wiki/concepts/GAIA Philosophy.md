@@ -15,7 +15,7 @@ tags: [concept, philosophy]
 
 1. **Pre-configured but removable.** Don't need i18n? Remove it. Prefer different icons? Swap them. Nothing is locked in.
 2. **Quality enforced by tooling, not vigilance.** 20+ ESLint plugins + pre-commit hooks + the [[Quality Gate]] catch issues before they compound. Let the tooling enforce consistency so the team can focus on features.
-3. **Working examples, not just installs.** Every tool ships with a real, working example: i18n in 2 languages, auth with login/session/guards, MSW handlers for tests and Storybook, Conform-validated forms.
+3. **Working examples, not just installs.** Every tool ships with a real, working example: i18n in 2 languages, MSW handlers for tests and Storybook, Conform-validated forms.
 4. **Co-location with discipline.** Tests, stories, assets, hooks, state live next to the component — but in their own subfolders so the component folder stays scannable.
 5. **Thin routes, fat pages.** Routes do data; pages do UI. See [[Thin Routes]].
 6. **Best practices baked in.** Patterns over docs. The way to learn GAIA is to clone the example, follow the patterns, modify.
