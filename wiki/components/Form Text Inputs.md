@@ -37,7 +37,7 @@ tags: [component, forms, inputs]
 `app/components/Form/InputPassword/index.tsx`:
 
 - Defaults `autoComplete='password'`, `type='password'`, placeholder `'••••••••'`
-- Default `label` from `auth.password`
+- Default `label` from `common.password`
 - Note: the `type='password'` override comes after `{...props}` spread — callers cannot change the type via props
 
 ## TextArea
