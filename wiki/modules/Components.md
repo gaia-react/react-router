@@ -44,7 +44,6 @@ Not strict, but a strong default. Refactoring is easier when the folder hierarch
 | `Button`, `LinkButton`       | Primary action elements                           |
 | `Document`                   | HTML document root (used by `root.tsx`)           |
 | `Errors/`                    | `RootErrorBoundary` and friends                   |
-| `ExampleConsumer`            | Example state-consumer (deleted by `/gaia-init`)  |
 | `Footer`, `Header`, `Layout` | Page chrome                                       |
 | `Form/`                      | The headline feature — see [[Form Components]]    |
 | `LanguageSelect`             | Language switcher tied to `actions+/set-language` |
