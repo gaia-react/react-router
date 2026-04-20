@@ -42,54 +42,17 @@ Storybook v10 with the `@storybook/react-vite` framework. Configured to discover
 
 ## Global parameters
 
-```ts
-// preview.ts defaults
-parameters: {
-  chromatic: {viewports: [1280]},
-  controls: {expanded: false, hideNoControlsWarning: true},
-  layout: 'fullscreen',   // full-page render by default
-}
-```
-
-`initialGlobals` seeds the locale switcher with `en` and `ja`.
+`preview.ts` defaults: `layout: 'fullscreen'`, `chromatic: {viewports: [1280]}`, `controls: {hideNoControlsWarning: true}`. `initialGlobals` seeds the locale switcher with `en` and `ja`. See `.claude/rules/storybook.md` for full conventions.
 
 ## Decorator stack
 
-In Chromatic snapshot runs the full decorator chain (outer → inner) is:
+| Decorator | When active | What it does |
+|---|---|---|
+| `WrapDecorator` | Always (outermost) | Reads `parameters.wrap` class and wraps story — use `parameters: {wrap: 'p-4'}` for padding instead of hardcoding divs |
+| `ChromaticDecorator` | Chromatic snapshots only | Renders story twice: light + dark (`50vh` each); `excludeDark: true` suppresses dark render |
+| `ToastDecorator` | Always (innermost) | Appends `<Toast />` after every story |
 
-```
-WrapDecorator → ChromaticDecorator → ToastDecorator
-```
-
-In interactive Storybook (`isChromaticSnapshot === false`):
-
-```
-WrapDecorator → ToastDecorator
-```
-
-`ChromaticDecorator` is injected only during Chromatic runs; the dark-mode toggle drives dark
-appearance in interactive use via a channel listener that adds/removes the `dark` class on
-`document.documentElement`.
-
-### WrapDecorator
-
-Reads `parameters.wrap` and wraps the story in a `<div className={wrap}>`. Storybook layout is
-`fullscreen`, so use this parameter to add padding rather than hardcoding divs in story JSX:
-
-```ts
-parameters: {wrap: 'p-4'}
-```
-
-### ToastDecorator
-
-Appends the `<Toast />` component after every story so toast notifications render correctly.
-
-### ChromaticDecorator
-
-Renders the story twice: once in a light container (`bg-white text-gray-900`) and once in a dark
-container (`dark bg-gray-900 text-white`), each `50vh`. Clears `sessionStorage` before each
-snapshot for consistency. Use `parameters.chromatic.excludeDark: true` to suppress the dark
-render and restore the container to `100vh`.
+Chromatic chain: `WrapDecorator → ChromaticDecorator → ToastDecorator`. Interactive: `WrapDecorator → ToastDecorator`.
 
 ## Stubs
 
