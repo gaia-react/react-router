@@ -20,9 +20,9 @@ Defined in `Select/types.ts`:
 
 ```ts
 type SelectOption = (
-  { options: Option[]; value?: never } |
-  { options?: never; value: string }
-) & { disabled?: boolean; label: string };
+  | {options: Option[]; value?: never}
+  | {options?: never; value: string}
+) & {disabled?: boolean; label: string};
 ```
 
 A single option gives `{value, label}`. A group gives `{label, options: Option[]}` and renders as `<optgroup>`. No nested groups.
@@ -38,7 +38,9 @@ When `unselected` is passed, renders a disabled (when `required`) `<option value
 ## Controlled/uncontrolled duality
 
 ```tsx
-const [currentValue, setCurrentValue] = useState(() => value ?? defaultValue ?? '');
+const [currentValue, setCurrentValue] = useState(
+  () => value ?? defaultValue ?? ''
+);
 ```
 
 Tracks `currentValue` locally only to drive placeholder coloring. The actual value is whatever React gives the `<select>` — Select stays controllable via `value` **or** `defaultValue`. Consumer `onChange` still fires.

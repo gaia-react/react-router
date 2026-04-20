@@ -14,12 +14,12 @@ Source: `.claude/rules/api-service.md` (mirrored by `/new-service`).
 
 `app/services/gaia/{domain}/`:
 
-| File | Role |
-|---|---|
+| File                 | Role                                       |
+| -------------------- | ------------------------------------------ |
 | `requests.server.ts` | API functions (`.server.ts` = server-only) |
-| `parsers.ts` | Zod schemas for response validation |
-| `types.ts` | TypeScript types (inferred from Zod) |
-| `state.tsx` | Client-side state if needed |
+| `parsers.ts`         | Zod schemas for response validation        |
+| `types.ts`           | TypeScript types (inferred from Zod)       |
+| `state.tsx`          | Client-side state if needed                |
 
 ## URL constants
 

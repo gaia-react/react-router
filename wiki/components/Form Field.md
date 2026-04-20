@@ -16,12 +16,12 @@ The layout shell every other Form component wraps. Renders label, children, and 
 
 ## Props — discriminated on `type`
 
-| `type` | Has name | Has maxLength | Use |
-|---|---|---|---|
-| `input`, `password`, `textarea` | yes | yes | Text-like inputs |
-| `select` | yes | no | [[Form Select\|Select]] |
-| `button`, `checkbox`, `radio` | no | no | Group/action wrappers |
-| `value` | no | no | Display-only fields |
+| `type`                          | Has name | Has maxLength | Use                     |
+| ------------------------------- | -------- | ------------- | ----------------------- |
+| `input`, `password`, `textarea` | yes      | yes           | Text-like inputs        |
+| `select`                        | yes      | no            | [[Form Select\|Select]] |
+| `button`, `checkbox`, `radio`   | no       | no            | Group/action wrappers   |
+| `value`                         | no       | no            | Display-only fields     |
 
 Other props: `className`, `classNameDescription`, `classNameLabel`, `description`, `disabled`, `error`, `extra`, `hideMaxLength`, `id`, `label`, `length`, `required`.
 

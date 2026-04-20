@@ -42,12 +42,12 @@ Each handler file maps 1:1 to a request function in `app/services/gaia/{domain}/
 
 ## Where it runs
 
-| Surface | Entry |
-|---|---|
-| Vitest | `test/test.server.ts` (server) → wired in `test/setup.ts` |
-| Storybook | `msw-storybook-addon` in `.storybook/preview.ts` |
-| Dev server (optional) | `entry.server.tsx` checks `MSW_ENABLED=true` |
-| Browser worker | `public/mockServiceWorker.js` (auto-installed via `msw.workerDirectory` in package.json) |
+| Surface               | Entry                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| Vitest                | `test/test.server.ts` (server) → wired in `test/setup.ts`                                |
+| Storybook             | `msw-storybook-addon` in `.storybook/preview.ts`                                         |
+| Dev server (optional) | `entry.server.tsx` checks `MSW_ENABLED=true`                                             |
+| Browser worker        | `public/mockServiceWorker.js` (auto-installed via `msw.workerDirectory` in package.json) |
 
 ## Stubs vs mocks
 

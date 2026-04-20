@@ -27,17 +27,17 @@ Source: `.claude/rules/coding-guidelines.md` — automatically applied by Claude
 
 ## Related rules
 
-| Rule | Applies to |
-|---|---|
-| `coding-guidelines.md` | All code |
-| `component-testing.md` | `app/**/tests/**`, `test/**` |
-| `new-route.md` | `app/routes/**`, `app/pages/**` |
-| `api-service.md` | `app/services/**`, `test/mocks/**` |
-| `i18n.md` | `app/pages/**`, `app/components/**`, `app/languages/**` |
-| `accessibility.md` | `app/components/**`, `app/pages/**` |
-| `eslint-fixes.md` | ESLint-related files |
-| `test-runner.md` | Test files |
-| `quality-gate.md` | All code |
-| `pr-merge-workflow.md` | PR merges |
+| Rule                   | Applies to                                              |
+| ---------------------- | ------------------------------------------------------- |
+| `coding-guidelines.md` | All code                                                |
+| `component-testing.md` | `app/**/tests/**`, `test/**`                            |
+| `new-route.md`         | `app/routes/**`, `app/pages/**`                         |
+| `api-service.md`       | `app/services/**`, `test/mocks/**`                      |
+| `i18n.md`              | `app/pages/**`, `app/components/**`, `app/languages/**` |
+| `accessibility.md`     | `app/components/**`, `app/pages/**`                     |
+| `eslint-fixes.md`      | ESLint-related files                                    |
+| `test-runner.md`       | Test files                                              |
+| `quality-gate.md`      | All code                                                |
+| `pr-merge-workflow.md` | PR merges                                               |
 
 See [[Claude Integration]] for how rules are applied.

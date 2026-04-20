@@ -13,21 +13,21 @@ tags: [module, structure]
 
 Inside `app/`:
 
-| Folder | Purpose | Wiki page |
-|---|---|---|
-| `assets/` | Global images / svgs | [[Assets]] |
-| `components/` | Shared UI components | [[Components]] |
-| `hooks/` | Global custom hooks | [[Hooks]] |
-| `languages/` | TypeScript-based i18n strings | [[i18n]] |
-| `middleware/` | React Router 7 middleware (i18next) | [[Middleware]] |
-| `pages/` | Page-specific UI, organized by route group | [[Pages]] |
-| `routes/` | Thin route files (loader/action only) | [[Routing]] |
-| `services/` | API wrapper + domain services | [[Services]] |
-| `sessions.server/` | Cookie session storage (auth, language, theme) | [[Sessions]] |
-| `state/` | Context+Provider state | [[State]] |
-| `styles/` | `tailwind.css` | [[Styles]] |
-| `types/` | Global TS types | [[Types]] |
-| `utils/` | Pure helpers | [[Utils]] |
+| Folder             | Purpose                                        | Wiki page      |
+| ------------------ | ---------------------------------------------- | -------------- |
+| `assets/`          | Global images / svgs                           | [[Assets]]     |
+| `components/`      | Shared UI components                           | [[Components]] |
+| `hooks/`           | Global custom hooks                            | [[Hooks]]      |
+| `languages/`       | TypeScript-based i18n strings                  | [[i18n]]       |
+| `middleware/`      | React Router 7 middleware (i18next)            | [[Middleware]] |
+| `pages/`           | Page-specific UI, organized by route group     | [[Pages]]      |
+| `routes/`          | Thin route files (loader/action only)          | [[Routing]]    |
+| `services/`        | API wrapper + domain services                  | [[Services]]   |
+| `sessions.server/` | Cookie session storage (auth, language, theme) | [[Sessions]]   |
+| `state/`           | Context+Provider state                         | [[State]]      |
+| `styles/`          | `tailwind.css`                                 | [[Styles]]     |
+| `types/`           | Global TS types                                | [[Types]]      |
+| `utils/`           | Pure helpers                                   | [[Utils]]      |
 
 ## Root files
 

@@ -21,6 +21,7 @@ Schema validation. Used for:
 ## v4 conventions
 
 > [!key-insight] Zod v4 changes to enforce
+>
 > - Use `z.email()` not `z.string().email()` (deprecated)
 > - Use `z.literal()` not `z.enum()` per project rules
 > - Import Conform integration from `@conform-to/zod/v4`

@@ -15,11 +15,11 @@ Global custom hooks live in `app/hooks/`. Component-specific hooks live in `app/
 
 ## Bundled
 
-| Hook | Purpose |
-|---|---|
-| `useBreakpoint` | Returns the active Tailwind breakpoint |
-| `useComponentRect` | Tracks a component's `DOMRect` |
-| `useTimeout` | Declarative `setTimeout` |
+| Hook               | Purpose                                |
+| ------------------ | -------------------------------------- |
+| `useBreakpoint`    | Returns the active Tailwind breakpoint |
+| `useComponentRect` | Tracks a component's `DOMRect`         |
+| `useTimeout`       | Declarative `setTimeout`               |
 
 ## Conventions
 

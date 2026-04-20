@@ -13,6 +13,7 @@ Route files in `app/routes/` handle only: loader, action, meta (via loader), and
 ## Route Groups
 
 Uses remix-flat-routes conventions with `+` suffix folders:
+
 - `_public+` — unauthenticated pages
 - `_auth+` — login, register, forgot password
 - `_session+` — authenticated pages
@@ -22,6 +23,7 @@ Uses remix-flat-routes conventions with `+` suffix folders:
 ## Page Components
 
 Place in `app/pages/{Group}/{PascalName}Page/index.tsx`:
+
 - `app/pages/Public/IndexPage/`
 - `app/pages/Auth/LoginPage/`
 - `app/pages/Session/Profile/ProfilePage/`

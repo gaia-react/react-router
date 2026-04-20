@@ -1,7 +1,7 @@
 ---
 type: dependency
 status: active
-package: "@testing-library/react"
+package: '@testing-library/react'
 version: 16.3.2
 role: integration-testing
 created: 2026-04-20

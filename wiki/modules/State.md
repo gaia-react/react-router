@@ -16,20 +16,18 @@ GAIA uses plain React Context+Provider for global state — no Redux, Zustand, e
 ```tsx
 <ThemeProvider initialState={theme}>
   <UserProvider initialState={user}>
-    <ExampleProvider initialState={example}>
-      {children}
-    </ExampleProvider>
+    <ExampleProvider initialState={example}>{children}</ExampleProvider>
   </UserProvider>
 </ThemeProvider>
 ```
 
 ## Bundled providers
 
-| Provider | Initial state from | Purpose |
-|---|---|---|
-| `ThemeProvider` | `getThemeSession(request)` | Light/dark theme |
-| `UserProvider` | `getAuthenticatedUser(request)` | Authenticated user (or undefined) |
-| `ExampleProvider` | numeric example | Demonstration of the pattern (deleted by `/gaia-init`) |
+| Provider          | Initial state from              | Purpose                                                |
+| ----------------- | ------------------------------- | ------------------------------------------------------ |
+| `ThemeProvider`   | `getThemeSession(request)`      | Light/dark theme                                       |
+| `UserProvider`    | `getAuthenticatedUser(request)` | Authenticated user (or undefined)                      |
+| `ExampleProvider` | numeric example                 | Demonstration of the pattern (deleted by `/gaia-init`) |
 
 Each provider exports a `useX()` hook (e.g. `useTheme`, `useUser`). The `[value, setValue]` shape mirrors `useState`.
 

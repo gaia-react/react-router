@@ -11,12 +11,14 @@ Rebuild "where did we leave off" at session start and suggest the next action.
 ### 1. Locate
 
 Find the most recent handoff:
+
 - `ls -t .claude/handoff/HANDOFF-*.md | head -1`
 - If none exists, fall back to `wiki/hot.md` (already loaded) and report "No handoff found — resuming from hot cache."
 
 ### 2. Read
 
 Read the handoff file in full. Also run in parallel:
+
 - `git rev-parse --abbrev-ref HEAD` + `git status --short` + `git log -1 --oneline`
 
 Compare the handoff's stated branch/commit against current git state. Flag drift (new commits, different branch, dirty files) — the handoff may be stale.

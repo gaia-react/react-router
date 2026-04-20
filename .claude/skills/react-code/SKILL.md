@@ -25,6 +25,7 @@ Most hook bugs come from misidentifying the type of problem being solved. Before
 **Before writing `useCallback`:**
 
 Only use when the function is:
+
 1. Passed as a prop to a `memo`-wrapped component
 2. A dependency of `useEffect`, `useMemo`, or another `useCallback`
 3. Passed to a child that uses it in a hook dependency array
@@ -37,18 +38,18 @@ If none apply, skip `useCallback` — it adds indirection without benefit.
 
 **Before writing `<input>`, `<select>`, `<textarea>`, or `<input type="checkbox">`:**
 
-| Native element | Use instead |
-|---|---|
-| `<input type="text">` | `InputText` (`~/components/Form/InputText`) |
-| `<input type="email">` | `InputEmail` (`~/components/Form/InputEmail`) |
-| `<input type="password">` | `InputPassword` (`~/components/Form/InputPassword`) |
-| `<input type="checkbox">` (single) | `Checkbox` (`~/components/Form/Checkbox`) |
-| `<input type="checkbox">` (group) | `Checkboxes` (`~/components/Form/Checkboxes`) — needs `options: Option[]` |
-| `<input type="radio">` / radio group | `RadioButtons` (`~/components/Form/RadioButtons`) — needs `options: Option[]` |
-| `<select>` | `Select` (`~/components/Form/Select`) — needs `name` + `options: SelectOption[]` |
-| `<textarea>` | `TextArea` (`~/components/Form/TextArea`) — needs `name`; auto-resizes |
-| Date (year/month/day) | `YearMonthDay` (`~/components/Form/YearMonthDay`) |
-| Field with label + error + description | `Field` (`~/components/Form/Field`) |
+| Native element                         | Use instead                                                                      |
+| -------------------------------------- | -------------------------------------------------------------------------------- |
+| `<input type="text">`                  | `InputText` (`~/components/Form/InputText`)                                      |
+| `<input type="email">`                 | `InputEmail` (`~/components/Form/InputEmail`)                                    |
+| `<input type="password">`              | `InputPassword` (`~/components/Form/InputPassword`)                              |
+| `<input type="checkbox">` (single)     | `Checkbox` (`~/components/Form/Checkbox`)                                        |
+| `<input type="checkbox">` (group)      | `Checkboxes` (`~/components/Form/Checkboxes`) — needs `options: Option[]`        |
+| `<input type="radio">` / radio group   | `RadioButtons` (`~/components/Form/RadioButtons`) — needs `options: Option[]`    |
+| `<select>`                             | `Select` (`~/components/Form/Select`) — needs `name` + `options: SelectOption[]` |
+| `<textarea>`                           | `TextArea` (`~/components/Form/TextArea`) — needs `name`; auto-resizes           |
+| Date (year/month/day)                  | `YearMonthDay` (`~/components/Form/YearMonthDay`)                                |
+| Field with label + error + description | `Field` (`~/components/Form/Field`)                                              |
 
 **Exceptions (native OK):** `<input type="hidden">`, `<input type="file">`, `<input type="range">`.
 
@@ -93,6 +94,7 @@ See `references/translation-patterns.md` for edge cases (keyPrefix, Trans compon
 ### Component Extraction
 
 Extract when a section meets **all** criteria:
+
 1. Self-contained (own state/fetcher, or pure display with no shared state)
 2. Clear boundary (visible UI section with small props interface)
 3. ~60+ lines of JSX/logic
@@ -106,6 +108,7 @@ How: Create `ParentComponent/NewSection/index.tsx`, move exclusive types/state/h
 ### Route files (`app/routes/`)
 
 Thin shell only:
+
 - `loader` / `action` functions
 - `meta` export
 - Zod schemas for the action

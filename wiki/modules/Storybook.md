@@ -16,18 +16,18 @@ Storybook v10 with the `@storybook/react-vite` framework. Configured to find `*.
 
 ## Setup files
 
-| File | Purpose |
-|---|---|
-| `main.ts` | Stories glob, addons, viteFinal env injection |
-| `preview.ts` | Decorators (Wrap, Chromatic), darkMode config, initialGlobals |
-| `preview-head.html` | Google Fonts preload |
-| `i18next.ts` | Imports project i18n setup for `storybook-react-i18next` |
-| `env.ts` | Applies env vars to `window.process.env` |
-| `viewport.ts` | Viewport presets |
-| `decorators/` | Custom decorators (Wrap, etc.) |
-| `chromatic/` | Chromatic-specific decorators (e.g. viewport pinning) |
-| `vite.config.ts` | Storybook-specific Vite overrides |
-| `static/` | Static assets (e.g. `gaia-logo.png` brand image) |
+| File                | Purpose                                                       |
+| ------------------- | ------------------------------------------------------------- |
+| `main.ts`           | Stories glob, addons, viteFinal env injection                 |
+| `preview.ts`        | Decorators (Wrap, Chromatic), darkMode config, initialGlobals |
+| `preview-head.html` | Google Fonts preload                                          |
+| `i18next.ts`        | Imports project i18n setup for `storybook-react-i18next`      |
+| `env.ts`            | Applies env vars to `window.process.env`                      |
+| `viewport.ts`       | Viewport presets                                              |
+| `decorators/`       | Custom decorators (Wrap, etc.)                                |
+| `chromatic/`        | Chromatic-specific decorators (e.g. viewport pinning)         |
+| `vite.config.ts`    | Storybook-specific Vite overrides                             |
+| `static/`           | Static assets (e.g. `gaia-logo.png` brand image)              |
 
 ## Addons
 
@@ -41,7 +41,9 @@ Storybook v10 with the `@storybook/react-vite` framework. Configured to find `*.
 > Storybook layout is set to `fullscreen` so full-page components render correctly. The bundled `Wrap` decorator looks at `parameters.wrap` and wraps the story in a div with those Tailwind classes:
 >
 > ```ts
-> parameters: { wrap: 'p-4' }
+> parameters: {
+>   wrap: 'p-4';
+> }
 > ```
 >
 > Most common: `wrap: 'p-4'` (1rem padding).

@@ -1,7 +1,7 @@
 ---
 type: dependency
 status: active
-package: "@fortawesome/*"
+package: '@fortawesome/*'
 version: 7.2.0
 role: icons
 created: 2026-04-20

@@ -16,10 +16,14 @@ Don't use `void` in event handlers. Make the handler `async` and `await`.
 
 ```tsx
 // BAD
-const handleClick = () => { void navigate('/path'); };
+const handleClick = () => {
+  void navigate('/path');
+};
 
 // GOOD
-const handleClick = async () => { await navigate('/path'); };
+const handleClick = async () => {
+  await navigate('/path');
+};
 ```
 
 ## `canonical/export-specifier-newline` vs Prettier conflict

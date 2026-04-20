@@ -1,8 +1,8 @@
 ---
 type: dependency
 status: active
-package: "remix-auth, remix-auth-form"
-version: "4.2.0, 3.0.0"
+package: 'remix-auth, remix-auth-form'
+version: '4.2.0, 3.0.0'
 role: auth
 created: 2026-04-20
 updated: 2026-04-20

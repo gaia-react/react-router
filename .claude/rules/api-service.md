@@ -9,6 +9,7 @@ paths:
 ## Structure
 
 Each service domain lives under `app/services/gaia/{domain}/`:
+
 - `requests.server.ts` — API functions (`.server.ts` suffix = server-only)
 - `parsers.ts` — Zod schemas for response validation
 - `types.ts` — TypeScript types (inferred from Zod or manual)
@@ -52,6 +53,7 @@ export default {auth, things};
 ## MSW Mocks
 
 Mirror the service structure in `test/mocks/{domain}/`:
+
 - `get.ts`, `post.ts`, `put.ts`, `delete.ts` — handler files by method
 - `index.ts` — barrel combining all handlers
 - `data.ts` — seed data for `@mswjs/data` factory

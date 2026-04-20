@@ -14,12 +14,12 @@ tags: [module, testing]
 
 GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking layer.
 
-| Layer | Tool | Where |
-|---|---|---|
-| Unit | [[Vitest]] | `app/utils/tests/`, `app/hooks/tests/` |
-| Integration | Vitest + [[React Testing Library]] | `app/components/*/tests/`, `app/pages/*/tests/` |
-| E2E | [[Playwright]] | `.playwright/e2e/*.spec.ts` |
-| Visual regression | [[Chromatic]] (CI only) | Storybook stories |
+| Layer             | Tool                               | Where                                           |
+| ----------------- | ---------------------------------- | ----------------------------------------------- |
+| Unit              | [[Vitest]]                         | `app/utils/tests/`, `app/hooks/tests/`          |
+| Integration       | Vitest + [[React Testing Library]] | `app/components/*/tests/`, `app/pages/*/tests/` |
+| E2E               | [[Playwright]]                     | `.playwright/e2e/*.spec.ts`                     |
+| Visual regression | [[Chromatic]] (CI only)            | Storybook stories                               |
 
 ## Vitest config
 
@@ -30,16 +30,16 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW]] mocking laye
 
 ## test/ folder
 
-| File | Purpose |
-|---|---|
-| `mocks/` | MSW handlers + `@mswjs/data` factories per service (`auth/`, `things/`, `user/`, `ping.ts`) |
-| `stubs/` | Storybook decorators (`reactRouter()`, `state()`) |
-| `msw.server.ts` | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true` |
-| `rtl.tsx` | RTL setup with i18n strings + auto-cleanup |
-| `setup.ts` | Vitest setup file |
-| `test.server.ts` | MSW server for Vitest |
-| `utils.ts` | Test helpers (delay, date generators) |
-| `worker.ts` | MSW browser worker handlers |
+| File             | Purpose                                                                                     |
+| ---------------- | ------------------------------------------------------------------------------------------- |
+| `mocks/`         | MSW handlers + `@mswjs/data` factories per service (`auth/`, `things/`, `user/`, `ping.ts`) |
+| `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                           |
+| `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`                         |
+| `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                                  |
+| `setup.ts`       | Vitest setup file                                                                           |
+| `test.server.ts` | MSW server for Vitest                                                                       |
+| `utils.ts`       | Test helpers (delay, date generators)                                                       |
+| `worker.ts`      | MSW browser worker handlers                                                                 |
 
 ## Component test pattern
 

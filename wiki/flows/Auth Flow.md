@@ -34,10 +34,10 @@ export const loader = async ({request}: Route.LoaderArgs) => {
 };
 ```
 
-| Helper | Behavior |
-|---|---|
+| Helper                              | Behavior                                            |
+| ----------------------------------- | --------------------------------------------------- |
 | `requireAuthenticatedUser(request)` | Throws `redirect('/login')` if no `user` in session |
-| `requireNotAuthenticated(request)` | Throws `redirect('/profile')` if a `user` exists |
+| `requireNotAuthenticated(request)`  | Throws `redirect('/profile')` if a `user` exists    |
 
 The route group folders (`_session+` vs `_auth+`) are GAIA's convention; the actual enforcement lives in the loaders that call these helpers.
 

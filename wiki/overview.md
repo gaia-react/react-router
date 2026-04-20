@@ -75,20 +75,20 @@ Every change passes through [[Quality Gate]]: typecheck → lint → unit test �
 
 ## What's Different vs. Other Templates
 
-| Feature | GAIA | Vite React | RR Template | Next.js |
-|---|:---:|:---:|:---:|:---:|
-| ESLint | 20+ plugins | basic | basic | basic |
-| Pre-commit hooks | typecheck + lint + test | — | — | — |
-| Unit + integration | Vitest + RTL | — | — | — |
-| E2E | Playwright | — | — | — |
-| Visual regression | Chromatic CI | — | — | — |
-| i18n examples | 2 langs | — | — | — |
-| Auth example | login + session + guards | — | — | — |
-| Form validation | Conform + Zod | — | — | — |
-| Dark mode | end-to-end | — | — | — |
-| API mocking | MSW everywhere | — | — | — |
-| Claude Code | commands + rules + agents | — | — | — |
-| Docs site | VitePress + GH Pages | — | — | — |
+| Feature            |           GAIA            | Vite React | RR Template | Next.js |
+| ------------------ | :-----------------------: | :--------: | :---------: | :-----: |
+| ESLint             |        20+ plugins        |   basic    |    basic    |  basic  |
+| Pre-commit hooks   |  typecheck + lint + test  |     —      |      —      |    —    |
+| Unit + integration |       Vitest + RTL        |     —      |      —      |    —    |
+| E2E                |        Playwright         |     —      |      —      |    —    |
+| Visual regression  |       Chromatic CI        |     —      |      —      |    —    |
+| i18n examples      |          2 langs          |     —      |      —      |    —    |
+| Auth example       | login + session + guards  |     —      |      —      |    —    |
+| Form validation    |       Conform + Zod       |     —      |      —      |    —    |
+| Dark mode          |        end-to-end         |     —      |      —      |    —    |
+| API mocking        |      MSW everywhere       |     —      |      —      |    —    |
+| Claude Code        | commands + rules + agents |     —      |      —      |    —    |
+| Docs site          |   VitePress + GH Pages    |     —      |      —      |    —    |
 
 ## Where to Go Next
 

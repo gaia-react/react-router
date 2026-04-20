@@ -17,12 +17,12 @@ tags: [module, services, example, api]
 
 ## Files (`app/services/gaia/things/`)
 
-| File | Contents |
-|---|---|
-| `parsers.ts` | `thingSchema`, `thingsSchema` — Zod object + array |
-| `types.ts` | `Thing`, `Things` — `z.infer<typeof ...>` of the schemas |
-| `requests.server.ts` | Five server-only request functions |
-| `state.tsx` | `ThingsProvider` + `useThings()` — read-only React Context |
+| File                 | Contents                                                   |
+| -------------------- | ---------------------------------------------------------- |
+| `parsers.ts`         | `thingSchema`, `thingsSchema` — Zod object + array         |
+| `types.ts`           | `Thing`, `Things` — `z.infer<typeof ...>` of the schemas   |
+| `requests.server.ts` | Five server-only request functions                         |
+| `state.tsx`          | `ThingsProvider` + `useThings()` — read-only React Context |
 
 ## parsers.ts
 
@@ -98,7 +98,8 @@ const ThingsContext = createContext<ThingsContextValue>(undefined);
 
 export const useThings = (): Things => {
   const context = useContext(ThingsContext);
-  if (!context) throw new Error('useThing must be used within a ThingsProvider');
+  if (!context)
+    throw new Error('useThing must be used within a ThingsProvider');
   return context;
 };
 ```

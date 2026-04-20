@@ -38,19 +38,19 @@ Not strict, but a strong default. Refactoring is easier when the folder hierarch
 
 ## Bundled components
 
-| Component | Purpose |
-|---|---|
-| `AppVersion` | Display app version |
-| `Button`, `LinkButton` | Primary action elements |
-| `Document` | HTML document root (used by `root.tsx`) |
-| `Errors/` | `RootErrorBoundary` and friends |
-| `ExampleConsumer` | Example state-consumer (deleted by `/gaia-init`) |
-| `Footer`, `Header`, `Layout` | Page chrome |
-| `Form/` | The headline feature — see [[Form Components]] |
-| `LanguageSelect` | Language switcher tied to `actions+/set-language` |
-| `Loaders/` | Loading spinners and placeholders |
-| `ThemeSwitcher` | Light/dark switcher tied to `actions+/set-theme` |
-| `Toast` | Wrapper around `sonner` + `remix-toast` |
+| Component                    | Purpose                                           |
+| ---------------------------- | ------------------------------------------------- |
+| `AppVersion`                 | Display app version                               |
+| `Button`, `LinkButton`       | Primary action elements                           |
+| `Document`                   | HTML document root (used by `root.tsx`)           |
+| `Errors/`                    | `RootErrorBoundary` and friends                   |
+| `ExampleConsumer`            | Example state-consumer (deleted by `/gaia-init`)  |
+| `Footer`, `Header`, `Layout` | Page chrome                                       |
+| `Form/`                      | The headline feature — see [[Form Components]]    |
+| `LanguageSelect`             | Language switcher tied to `actions+/set-language` |
+| `Loaders/`                   | Loading spinners and placeholders                 |
+| `ThemeSwitcher`              | Light/dark switcher tied to `actions+/set-theme`  |
+| `Toast`                      | Wrapper around `sonner` + `remix-toast`           |
 
 ## Naming conventions
 

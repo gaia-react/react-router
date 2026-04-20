@@ -29,13 +29,13 @@ You can switch to standard React Router 7 routing if you prefer.
 
 Routes are organized using flat-routes folder syntax — `_` prefix + `+` suffix marks a folder as a layout/route group.
 
-| Folder | Purpose | Auth requirement |
-|---|---|---|
-| `_public+` | Home, marketing, public content | none |
-| `_auth+` | Login, register, password reset | redirects authenticated users away |
-| `_session+` | Authenticated app | redirects unauthenticated users to `_auth+` |
-| `_legal+` | Terms, privacy, company | none |
-| `actions+` | Root-level form actions (no UI) | varies by action |
+| Folder      | Purpose                         | Auth requirement                            |
+| ----------- | ------------------------------- | ------------------------------------------- |
+| `_public+`  | Home, marketing, public content | none                                        |
+| `_auth+`    | Login, register, password reset | redirects authenticated users away          |
+| `_session+` | Authenticated app               | redirects unauthenticated users to `_auth+` |
+| `_legal+`   | Terms, privacy, company         | none                                        |
+| `actions+`  | Root-level form actions (no UI) | varies by action                            |
 
 GAIA ships these `actions+` endpoints out of the box:
 

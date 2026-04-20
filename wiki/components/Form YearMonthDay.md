@@ -18,8 +18,8 @@ Three [[Form Select]]s (year, month, day) feeding one hidden `<input type="hidde
 
 ```ts
 type YearMonthDayProps = {
-  name?: string;          // default 'dob'
-  value: string;          // ISO 8601 date (yyyy-MM-dd)
+  name?: string; // default 'dob'
+  value: string; // ISO 8601 date (yyyy-MM-dd)
   onChange: (value: string) => void;
   onBlur?: () => void;
   error?: ReactNode;

@@ -1,6 +1,7 @@
 # Hook Patterns — Extended Examples
 
 ## Contents
+
 - [useEffect Anti-Patterns](#useeffect-anti-patterns)
 - [When Effects ARE Correct](#when-effects-are-correct)
 - [Strict Mode & Cleanup](#strict-mode--cleanup)
@@ -63,7 +64,7 @@ useEffect(() => {
 
 // GOOD — in the event handler
 function handleAddToPlan() {
-  dispatch({ type: 'add', product });
+  dispatch({type: 'add', product});
   showToast(`${product.name} added to your plan`);
 }
 ```
@@ -73,8 +74,12 @@ function handleAddToPlan() {
 ```tsx
 // BAD — multiple Effects cascading state updates; each setState triggers its own render,
 // so n chained effects = n+1 render cycles
-useEffect(() => { setCard(deck[index]); }, [index]);
-useEffect(() => { setGoldCount(card.isGold ? count + 1 : count); }, [card]);
+useEffect(() => {
+  setCard(deck[index]);
+}, [index]);
+useEffect(() => {
+  setGoldCount(card.isGold ? count + 1 : count);
+}, [card]);
 
 // GOOD — derive everything from the event
 function pickCard(index: number) {
@@ -92,7 +97,9 @@ function pickCard(index: number) {
 ```tsx
 // BAD — fires after every render where isOn changed, including the initial mount;
 // easy source of infinite loops if parent updates props that feed back into this child
-useEffect(() => { onChange(isOn); }, [isOn]);
+useEffect(() => {
+  onChange(isOn);
+}, [isOn]);
 
 // GOOD
 function handleToggle() {
@@ -112,7 +119,7 @@ useEffect(() => {
 }, [userId]);
 
 // GOOD — key forces unmount/remount, all state resets before the first paint
-<WorkoutNotes key={userId} userId={userId} />
+<WorkoutNotes key={userId} userId={userId} />;
 ```
 
 ---
@@ -128,7 +135,7 @@ useEffect(() => {
   let ignore = false;
 
   async function fetchExercises() {
-    const { data } = await supabase
+    const {data} = await supabase
       .from('exercises')
       .select('*')
       .eq('gym_id', gymId);
@@ -136,7 +143,9 @@ useEffect(() => {
   }
 
   fetchExercises();
-  return () => { ignore = true; };
+  return () => {
+    ignore = true;
+  };
 }, [gymId]);
 ```
 
@@ -182,10 +191,14 @@ const fetchData = useCallback(async () => {
   setData(result);
 }, [endpoint]);
 
-useEffect(() => { fetchData(); }, [fetchData]);
+useEffect(() => {
+  fetchData();
+}, [fetchData]);
 
 // ❌ Not passed to a memo child, not in any hook deps — skip useCallback
-const handleClick = () => { setCount(count + 1); };
+const handleClick = () => {
+  setCount(count + 1);
+};
 ```
 
 ### Anti-pattern: wrapping every handler "just in case"
@@ -211,6 +224,7 @@ The default should be a plain function. Reach for `useCallback` only when you ha
 ## useMemo — When to Use
 
 Use `useMemo` for computations that are:
+
 - Genuinely expensive (sorting/filtering large arrays, building derived structures)
 - Passed as props to `memo`-wrapped children where reference stability matters
 - Used in `useEffect` dependency arrays to maintain a stable reference

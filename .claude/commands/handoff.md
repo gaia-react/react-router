@@ -1,7 +1,7 @@
 ---
 name: handoff
 description: Generate comprehensive session handoff document
-argument-hint: "[context notes]"
+argument-hint: '[context notes]'
 allowed-tools: [Read, Write, Bash, Glob]
 ---
 
@@ -20,6 +20,7 @@ Write a self-contained handoff doc so the next session can pick up cold without 
 ### 1. Gather
 
 Run in parallel:
+
 - `git rev-parse --abbrev-ref HEAD` + `git log -1 --oneline` + `git status --short`
 - Extract from conversation: files edited, commands run, decisions ("let's…", "go with…"), gaps ("missing", "TODO"), unresolved questions.
 - Derive a kebab-case slug for the filename from the session's main thread (e.g. `watch-voice-cues`, `coach-voice-s04`).
@@ -45,13 +46,14 @@ Use the template below. **Omit any section with no real content** — don't leav
 
 ## Decisions
 
-| Decision | Rationale | Impact |
-|----------|-----------|--------|
-| {what was chosen} | {why} | {effect on the codebase/product} |
+| Decision          | Rationale | Impact                           |
+| ----------------- | --------- | -------------------------------- |
+| {what was chosen} | {why}     | {effect on the codebase/product} |
 
 ## Gaps & Open Questions
 
 ### {Gap or question title}
+
 **Status:** FIXED / PARTIAL / UNKNOWN / DEFERRED / INTENTIONAL
 **Notes:** {what's known, what's uncertain, what's the likely culprit}
 **Next check:** {concrete diagnostic or test to run}
@@ -65,10 +67,11 @@ Use the template below. **Omit any section with no real content** — don't leav
 - **Test user / data:** {relevant fixtures}
 
 ## Reference Files
-
 ```
+
 @path/one
 @path/two
+
 ```
 
 ## Next Actions

@@ -14,11 +14,11 @@ tags: [module, sessions, cookies, auth]
 
 `app/sessions.server/` contains cookie management code. The `.server` suffix excludes these from the client bundle.
 
-| File | Cookie | Purpose |
-|---|---|---|
-| `auth.ts` | `__session` | Auth session via [[remix-auth]] (`Authenticator<User>`) |
-| `language.ts` | `language` | i18n preference (`languageCookie`) |
-| `theme.ts` | theme cookie | Light/dark preference, also exposes `getThemeSession` |
+| File          | Cookie       | Purpose                                                 |
+| ------------- | ------------ | ------------------------------------------------------- |
+| `auth.ts`     | `__session`  | Auth session via [[remix-auth]] (`Authenticator<User>`) |
+| `language.ts` | `language`   | i18n preference (`languageCookie`)                      |
+| `theme.ts`    | theme cookie | Light/dark preference, also exposes `getThemeSession`   |
 
 ## Auth session
 

@@ -49,7 +49,11 @@ Keep as empty divs with the shimmer class — no text needed:
 Use the real element type with `tabIndex={-1}` to prevent focus:
 
 ```tsx
-<button className={twJoin('w-full py-2 text-xs font-medium', shimmer)} tabIndex={-1} type="button">
+<button
+  className={twJoin('w-full py-2 text-xs font-medium', shimmer)}
+  tabIndex={-1}
+  type="button"
+>
   Click me
 </button>
 ```
@@ -92,7 +96,9 @@ const ExampleSkeleton = () => (
     <div className="flex items-center gap-3 p-3">
       <div className={twJoin('size-14 shrink-0', shimmer)} />
       <div className="min-w-0 flex-1">
-        <p className={twJoin('truncate text-sm font-semibold', shimmer)}>Name</p>
+        <p className={twJoin('truncate text-sm font-semibold', shimmer)}>
+          Name
+        </p>
         <p className={twJoin('truncate text-xs', shimmer)}>Example value</p>
       </div>
     </div>

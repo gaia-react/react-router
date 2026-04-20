@@ -1,7 +1,7 @@
 ---
 type: dependency
 status: active
-package: "@conform-to/react, @conform-to/zod"
+package: '@conform-to/react, @conform-to/zod'
 version: ^1.19.0
 role: form-validation
 created: 2026-04-20

@@ -17,11 +17,11 @@ This is **different** from `app/components/`, which holds shared UI used across 
 
 ## Structure
 
-| Folder | Routes it serves |
-|---|---|
-| `Auth/` | `_auth+` routes (e.g. `LoginPage`) |
-| `Public/` | `_public+` routes (e.g. `IndexPage`, `Things`) |
-| `Session/` | `_session+` routes (e.g. `Profile`) |
+| Folder     | Routes it serves                               |
+| ---------- | ---------------------------------------------- |
+| `Auth/`    | `_auth+` routes (e.g. `LoginPage`)             |
+| `Public/`  | `_public+` routes (e.g. `IndexPage`, `Things`) |
+| `Session/` | `_session+` routes (e.g. `Profile`)            |
 
 Legal pages (terms, privacy, company) typically live as static JSX directly in the route file — no `pages/Legal/` folder by convention.
 

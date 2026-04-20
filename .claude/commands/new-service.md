@@ -27,8 +27,8 @@ Edit `app/services/gaia/urls.ts` — add new URL keys to `GAIA_URLS`, maintainin
 ```ts
 export const GAIA_URLS = {
   login: 'login',
-  projects: 'projects',        // new
-  projectsId: 'projects/:id',  // new
+  projects: 'projects', // new
+  projectsId: 'projects/:id', // new
 };
 ```
 
@@ -72,6 +72,7 @@ import type {{TypeName}, {ListTypeName}} from './types';
 ```
 
 Generate one function per endpoint:
+
 - **GET (list)**: `getAll{PluralName}` — uses `listSchemaName.parse(result.data)`
 - **GET (single)**: `get{SingularName}ById` — uses `schemaName.parse(result.data)`, accepts `id: string`
 - **POST**: `create{SingularName}` — accepts `body: FormData`, uses `schemaName.parse(result.data)`
@@ -143,6 +144,7 @@ Only include the methods that match the user's requested endpoints.
 ### 8d: Update mock database
 
 Edit `test/mocks/database.ts`:
+
 - Add import for the new mock data
 - Add schema to the factory
 - Add cleanup to `resetTestData` (deleteMany + forEach create)
@@ -150,6 +152,7 @@ Edit `test/mocks/database.ts`:
 ### 8e: Update mock barrel
 
 Edit `test/mocks/index.ts`:
+
 - Add import for the new mock handlers
 - Spread into the handlers array
 

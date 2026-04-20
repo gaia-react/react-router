@@ -91,20 +91,20 @@ const MyPage: FC = () => {
 
 ## Form Component Mapping
 
-| Native element | Form component | Notes |
-|---|---|---|
-| `<input type="text">` | `InputText` (`~/components/Form/InputText`) | |
-| `<input type="email">` | `InputEmail` (`~/components/Form/InputEmail`) | |
-| `<input type="password">` | `InputPassword` (`~/components/Form/InputPassword`) | |
-| `<input type="checkbox">` (single) | `Checkbox` (`~/components/Form/Checkbox`) | |
-| `<input type="checkbox">` (group) | `Checkboxes` (`~/components/Form/Checkboxes`) | Needs `options: Option[]` |
-| `<input type="radio">` / radio group | `RadioButtons` (`~/components/Form/RadioButtons`) | Needs `options: Option[]` |
-| `<select>` | `Select` (`~/components/Form/Select`) | Needs `name` + `options: SelectOption[]` |
-| `<textarea>` | `TextArea` (`~/components/Form/TextArea`) | Needs `name`; auto-resizes |
-| Date (year/month/day) | `YearMonthDay` (`~/components/Form/YearMonthDay`) | |
-| Field with label + error + description | `Field` (`~/components/Form/Field`) | |
-| `<input type="hidden">` | Native `<input>` | Always use native |
-| `<input type="file">` | Native `<input>` | Custom upload flows |
+| Native element                         | Form component                                      | Notes                                    |
+| -------------------------------------- | --------------------------------------------------- | ---------------------------------------- |
+| `<input type="text">`                  | `InputText` (`~/components/Form/InputText`)         |                                          |
+| `<input type="email">`                 | `InputEmail` (`~/components/Form/InputEmail`)       |                                          |
+| `<input type="password">`              | `InputPassword` (`~/components/Form/InputPassword`) |                                          |
+| `<input type="checkbox">` (single)     | `Checkbox` (`~/components/Form/Checkbox`)           |                                          |
+| `<input type="checkbox">` (group)      | `Checkboxes` (`~/components/Form/Checkboxes`)       | Needs `options: Option[]`                |
+| `<input type="radio">` / radio group   | `RadioButtons` (`~/components/Form/RadioButtons`)   | Needs `options: Option[]`                |
+| `<select>`                             | `Select` (`~/components/Form/Select`)               | Needs `name` + `options: SelectOption[]` |
+| `<textarea>`                           | `TextArea` (`~/components/Form/TextArea`)           | Needs `name`; auto-resizes               |
+| Date (year/month/day)                  | `YearMonthDay` (`~/components/Form/YearMonthDay`)   |                                          |
+| Field with label + error + description | `Field` (`~/components/Form/Field`)                 |                                          |
+| `<input type="hidden">`                | Native `<input>`                                    | Always use native                        |
+| `<input type="file">`                  | Native `<input>`                                    | Custom upload flows                      |
 
 ## Compound Component Gotcha
 

@@ -35,7 +35,7 @@ type ChainProps = {
 
 ```tsx
 type FormActionsProps = {
-  align?: 'left' | 'right';   // default 'right'
+  align?: 'left' | 'right'; // default 'right'
   children: ReactNode;
   className?: string;
 };
@@ -50,7 +50,7 @@ type FormActionsProps = {
 `FormError/index.tsx`. Form-level error banner backed by React Router's `useActionData`.
 
 ```ts
-type FormActionData = { error?: string };
+type FormActionData = {error?: string};
 ```
 
 - Reads `error` from `useActionData<FormActionData>()` — so any action returning `{error: 'message'}` flashes a banner automatically
@@ -70,7 +70,9 @@ type FormActionData = { error?: string };
     <InputText name="phone" />
   </Chain>
   <FormActions>
-    <Button type="button" variant="secondary">Cancel</Button>
+    <Button type="button" variant="secondary">
+      Cancel
+    </Button>
     <Button type="submit">Save</Button>
   </FormActions>
 </Form>

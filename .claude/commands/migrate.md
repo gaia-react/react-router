@@ -6,7 +6,7 @@ Ask the user using AskUserQuestion:
 
 - Which package(s) to upgrade? (options: `react-router`, `tailwindcss`, `storybook`, `vitest`, `playwright`, `eslint`, or a comma-separated list)
 
-IMPORTANT!!! Eslint 10.x is incompatible with some of the installed eslint plugins. Stay on 9.x for now. Do not offer or attempt to upgrade `eslint` or `@eslint/js`. 
+IMPORTANT!!! Eslint 10.x is incompatible with some of the installed eslint plugins. Stay on 9.x for now. Do not offer or attempt to upgrade `eslint` or `@eslint/js`.
 
 ## Step 2: For each selected package
 
@@ -24,14 +24,14 @@ Compare major versions. If major bump detected, fetch the changelog/migration gu
 
 Use the following sources per package:
 
-| Package        | Migration guide source                                                     |
-| -------------- | -------------------------------------------------------------------------- |
-| react-router   | `https://reactrouter.com/upgrading/v7` or relevant version path            |
-| tailwindcss    | `https://tailwindcss.com/docs/upgrade-guide`                               |
-| storybook      | `https://storybook.js.org/docs/migration-guide`                            |
-| vitest         | `https://vitest.dev/guide/migration`                                       |
-| playwright     | `https://playwright.dev/docs/release-notes`                                |
-| eslint         | `https://eslint.org/docs/latest/use/migrate-to-X` (replace X with major)  |
+| Package      | Migration guide source                                                   |
+| ------------ | ------------------------------------------------------------------------ |
+| react-router | `https://reactrouter.com/upgrading/v7` or relevant version path          |
+| tailwindcss  | `https://tailwindcss.com/docs/upgrade-guide`                             |
+| storybook    | `https://storybook.js.org/docs/migration-guide`                          |
+| vitest       | `https://vitest.dev/guide/migration`                                     |
+| playwright   | `https://playwright.dev/docs/release-notes`                              |
+| eslint       | `https://eslint.org/docs/latest/use/migrate-to-X` (replace X with major) |
 
 Fetch the migration guide using `WebFetch` if available, or summarize known breaking changes from your training data.
 
@@ -80,6 +80,7 @@ npm run build
 ```
 
 If any step fails, analyze the error and attempt to fix it. Common post-upgrade fixes:
+
 - Updated import paths
 - Renamed/removed APIs
 - Changed configuration format
@@ -91,9 +92,9 @@ After fixing, re-run the failing step. Repeat until all pass or the issue requir
 
 Present results per package:
 
-| Package        | From    | To      | Breaking changes | Quality gate |
-| -------------- | ------- | ------- | ---------------- | ------------ |
-| react-router   | 7.1.0   | 7.2.0   | None             | PASS         |
-| storybook      | 8.5.0   | 9.0.0   | 3 applied        | PASS         |
+| Package      | From  | To    | Breaking changes | Quality gate |
+| ------------ | ----- | ----- | ---------------- | ------------ |
+| react-router | 7.1.0 | 7.2.0 | None             | PASS         |
+| storybook    | 8.5.0 | 9.0.0 | 3 applied        | PASS         |
 
 List any breaking changes that were applied and any issues that need manual attention.

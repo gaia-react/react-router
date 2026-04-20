@@ -16,6 +16,7 @@ Patterns and conventions for all TypeScript code.
 All identifiers use camelCase: Zod fields, form `name`/`id`/`htmlFor`, props, state, params.
 
 **Exceptions (snake_case OK):**
+
 - `types/database.ts` — mirrors DB column names
 - Dynamic template literal names where variable part is already lowercase
 - Environment variable names (`SUPABASE_URL`)
@@ -43,6 +44,7 @@ Read `references/naming-conventions.md` for extended BAD/GOOD examples of each n
 All exported functions must have explicit return types.
 
 **Exceptions:**
+
 - Route loaders/actions (complex generics)
 - React components typed with `FC<Props>` (return type provided by generic)
 
@@ -73,8 +75,8 @@ export const formatDate = (date: Date): string => format(date, 'yyyy-MM-dd');
 
 ```tsx
 // BAD
-z.enum(['metric', 'imperial'])
+z.enum(['metric', 'imperial']);
 
 // GOOD
-z.literal(['imperial', 'metric'])
+z.literal(['imperial', 'metric']);
 ```

@@ -6,10 +6,13 @@ CACHE DISCIPLINE — enforced on every rewrite (Stop hook):
   - If a fact appears here twice across sessions, move it to the right wiki page and delete it from this cache
   - It is a cache, not a journal. Overwrite completely each update.
 -->
+
 ---
+
 type: meta
 title: Hot Cache
 updated: 2026-04-20T00:00:00
+
 ---
 
 # Recent Context

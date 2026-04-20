@@ -67,10 +67,10 @@ Two-layer design:
 
 ## Which one to reach for
 
-| Need | Use |
-|---|---|
-| Single checkbox (e.g. "I agree to terms") | [[Form Choices#Checkbox\|Checkbox]] |
-| Group of independent checkboxes | [[Form Choices#Checkboxes\|Checkboxes]] |
-| Single radio (rare — usually inside a group) | [[Form Choices#InputRadio\|InputRadio]] |
-| Group of mutually exclusive radios | [[Form Choices#RadioButtons + BaseRadioButtons\|RadioButtons]] |
-| Radios rendered outside any Field chrome | `BaseRadioButtons` |
+| Need                                         | Use                                                            |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| Single checkbox (e.g. "I agree to terms")    | [[Form Choices#Checkbox\|Checkbox]]                            |
+| Group of independent checkboxes              | [[Form Choices#Checkboxes\|Checkboxes]]                        |
+| Single radio (rare — usually inside a group) | [[Form Choices#InputRadio\|InputRadio]]                        |
+| Group of mutually exclusive radios           | [[Form Choices#RadioButtons + BaseRadioButtons\|RadioButtons]] |
+| Radios rendered outside any Field chrome     | `BaseRadioButtons`                                             |
