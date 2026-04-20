@@ -26,7 +26,7 @@ Inside `app/`:
 | `sessions.server/` | Cookie session storage (language, theme)       | [[Sessions]]   |
 | `state/`           | Context+Provider state                         | [[State]]      |
 | `styles/`          | `tailwind.css`                                 | [[Styles]]     |
-| `types/`           | Global TS types                                | [[Types]]      |
+| `types/`           | Global TS types                                | —              |
 | `utils/`           | Pure helpers                                   | [[Utils]]      |
 
 ## Root files
