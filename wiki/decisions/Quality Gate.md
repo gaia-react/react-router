@@ -8,7 +8,7 @@ tags: [decision, ci, quality]
 
 # Decision: Mandatory Quality Gate
 
-Every change must pass the Quality Gate. Pre-commit hooks enforce a subset; the `/audit` command runs the full pipeline.
+Every change must pass the Quality Gate. Pre-commit hooks enforce a subset; the `/audit-code` command runs the full pipeline.
 
 ## Steps
 
