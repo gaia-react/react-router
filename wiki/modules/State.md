@@ -112,10 +112,6 @@ const AppWithState = () => {
 
 `ThemeProvider` is more complex than the standard pattern: it syncs with `localStorage`, responds to `prefers-color-scheme` media query changes, and persists the selection via a `useFetcher` POST to `actions/set-theme`. It also exports `ThemeHead` (injects a synchronous `<script>` to avoid flash-of-wrong-theme) and `getPreferredTheme()` / `isSupportedTheme()` utilities.
 
-## User State
-
-`UserProvider` exposes both `useUser()` (throws if unauthenticated — safe in protected routes) and `useMaybeUser()` (returns `Maybe<User>` — safe anywhere). The context default is `null`, not `undefined`.
-
 ## When Not to Use Context
 
 - **Component-local state** → `useState`
