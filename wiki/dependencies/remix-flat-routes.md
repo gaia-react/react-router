@@ -13,13 +13,7 @@ tags: [dependency, routing]
 
 File-based routing adapter that translates folder names like `_public+/{resource}+/$id.tsx` into React Router 7 routes. Used via `@react-router/remix-routes-option-adapter` in `app/routes.ts`.
 
-## Folder syntax
-
-- `_name+` — group/layout folder (segment is pathless, layout applies)
-- `$param` — dynamic route segment
-- `_index` — index route for the folder
-
-See [[Routing]] for GAIA's standard route groups.
+See [[Routing]] for folder syntax and GAIA's standard route groups.
 
 ## Alternative
 
