@@ -71,7 +71,7 @@ See [[Routing]] and [[Auth Flow]].
 
 ## Quality Gate
 
-Every change passes through [[Quality Gate]]: typecheck → lint → unit test → E2E → dev smoke → build. Pre-commit hooks enforce a subset on every commit; the `/audit` command runs the full pipeline. **Zero tolerance for warnings.**
+Every change passes through [[Quality Gate]]: typecheck → lint → unit test → E2E → dev smoke → build. Pre-commit hooks enforce a subset on every commit; the `/audit-code` command runs the full pipeline. **Zero tolerance for warnings.**
 
 ## What's Different vs. Other Templates
 
