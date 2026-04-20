@@ -16,19 +16,7 @@ Three [[Form Select]]s (year, month, day) feeding one hidden `<input type="hidde
 
 ## Props
 
-```ts
-type YearMonthDayProps = {
-  name?: string; // default 'dob'
-  value: string; // ISO 8601 date (yyyy-MM-dd)
-  onChange: (value: string) => void;
-  onBlur?: () => void;
-  error?: ReactNode;
-  label?: string;
-  required?: boolean;
-  className?: string;
-  classNameSelect?: string;
-};
-```
+`name` (default `'dob'`), `value` (ISO 8601 `yyyy-MM-dd`), `onChange`, `onBlur?`, `error?`, `label?`, `required?`, `className?`, `classNameSelect?`. See `app/components/Form/YearMonthDay/index.tsx:27-37`.
 
 ## Year / Month / Day option generation
 
