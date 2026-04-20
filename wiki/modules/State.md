@@ -15,10 +15,9 @@ GAIA uses plain React Context+Provider for global state — no Redux, Zustand, e
 
 ## Bundled Providers
 
-| Provider        | Initial state from              | Purpose                           |
-| --------------- | ------------------------------- | --------------------------------- |
-| `ThemeProvider` | `getThemeSession(request)`      | Light/dark theme                  |
-| `UserProvider`  | `getAuthenticatedUser(request)` | Authenticated user (or undefined) |
+| Provider        | Initial state from         | Purpose          |
+| --------------- | -------------------------- | ---------------- |
+| `ThemeProvider` | `getThemeSession(request)` | Light/dark theme |
 
 Each provider is registered in `app/state/index.tsx` and receives its initial value as a prop from the `root.tsx` loader.
 
