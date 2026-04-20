@@ -8,6 +8,10 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] delete | Phase C — remove all non-auth example/teaching code
+
+Deleted the `things` service and all associated example code: `app/services/gaia/things/`, `app/components/ExampleConsumer/`, `app/state/example.tsx`, `app/pages/Public/Things/`, `app/pages/Public/IndexPage/Examples/`, `app/pages/Public/IndexPage/TechStack/`, `app/routes/_public+/things+/`, `app/languages/{en,ja}/pages/things.ts`, `test/mocks/things/`, `.playwright/e2e/things.spec.ts`, `.react-router/`. Rewired all dependents: `app/state/index.tsx` (ExampleProvider removed), `app/services/gaia/index.server.ts` (things export removed), `app/services/gaia/urls.ts` (things/thingsId removed), `app/languages/{en,ja}/pages/index.ts` (things removed), `app/languages/{en,ja}/pages/_index.ts` (serviceExample + techStack keys removed), `test/mocks/index.ts` + `database.ts` (things handlers/factory removed), `test/stubs/state-stub.tsx` (simplified to `() => (Story) => <State><Story /></State>`), `app/pages/Session/Profile/ProfilePage/UserCard/index.tsx` (ExampleConsumer import+usage removed), `app/pages/Public/IndexPage/index.tsx` (reduced to minimal `<section><h1>{t('title')}</h1></section>` placeholder). Wiki updated: [[Services]], [[Pages]], [[Components]], [[Testing]], [[i18n]], [[remix-flat-routes]].
+
 ## [2026-04-20] update | Phase A — rules + wiki pattern synthesis (pre-deletion gap-fill)
 
 Prepared the template to delete example code and VitePress docs without losing the lessons they teach. 6 parallel Sonnet agents synthesized patterns from existing code into durable rules + self-contained wiki pages.
