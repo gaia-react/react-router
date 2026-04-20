@@ -92,6 +92,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Code Review Audit Agent]]
 - [[Claude Hooks]]
 - [[Claude Skills]]
+- [[handoff command]]
+- [[pickup command]]
 - [[Chromatic Opt-Out]]
 
 ## Sources
