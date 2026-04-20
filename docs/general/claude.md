@@ -19,9 +19,8 @@ Scaffolding commands generate files that follow GAIA's established conventions.
 | `/new-component`        | Scaffold a component with optional test and story                         |
 | `/new-service`          | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks   |
 | `/new-hook`             | Scaffold a custom hook with test file                                     |
-| `/audit`                | Run the full quality gate (typecheck, lint, test, E2E, build)             |
+| `/audit-code`           | Run the full quality gate (typecheck, lint, test, E2E, build)             |
 | `/migrate`              | Upgrade a package to latest, apply breaking changes, run quality gate     |
-| `/upgrade-react-router` | Check for and apply React Router updates                                  |
 
 ## Rules
 
@@ -37,7 +36,7 @@ Rules activate automatically based on the file paths you're editing. You don't n
 | Accessibility     | `app/components/**`, `app/pages/**`                     | Keyboard nav, alt text, ARIA, focus management            |
 | ESLint Fixes      | ESLint-related files                                    | Fix in source code, not config                            |
 | Test Runner       | Test files                                              | Use `npm run test -- --run` for CI, never bare `npm test` |
-| Quality Gate      | All code                                                | Full verification checklist                               |
+| Quality Gate      | Commits                                                 | Run `/audit-code` and fix all issues before `git commit`  |
 | PR Merge Workflow | PR merges                                               | Code review audit before every merge                      |
 
 ## Agents
@@ -56,3 +55,41 @@ Hooks run automatically on file edits:
 ## Skills
 
 GAIA includes custom skills for writing React code, TypeScript code, Tailwind CSS, and pixel-perfect skeleton loaders. These activate automatically based on context.
+
+## Wiki & Knowledge Base
+
+GAIA includes a `wiki/` directory — a committed, Obsidian-compatible knowledge base structured for LLM consumption.
+
+### What it contains
+
+| Folder          | Purpose                                                         |
+| --------------- | --------------------------------------------------------------- |
+| `modules/`      | Major architectural areas (Routing, Services, i18n, Testing, …) |
+| `components/`   | Reusable UI components                                          |
+| `dependencies/` | External packages with their role and version                   |
+| `decisions/`    | ADRs — why GAIA chose X over Y                                  |
+| `concepts/`     | Patterns and ideas (Quality Gate, Thin Routes, Co-location, …)  |
+| `flows/`        | Data flows (auth, theme, language, form submit)                 |
+| `entities/`     | Project, contributors, ecosystem actors                         |
+| `sources/`      | One summary page per ingested source                            |
+
+`wiki/index.md` is the master catalog. `wiki/hot.md` is a ~200-word recent-context cache that Claude auto-loads. `wiki/log.md` is an append-only ingest log.
+
+### Why it's there
+
+- **No token bloat.** Claude pulls specific pages on demand instead of preloading every doc.
+- **Shared across the team.** Committed to git — unlike machine-local Claude memory, every developer sees the same wiki.
+- **Outlives the chat.** Architectural decisions, dependency rationale, and flow diagrams persist beyond any single Claude session.
+- **Standard markdown.** Open `wiki/` in [Obsidian](https://obsidian.md) for graph view, backlinks, and full-text search.
+
+### claude-obsidian plugin
+
+The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) Claude Code plugin is installed automatically by `/gaia-init`. It adds skills that let Claude operate on the vault:
+
+- **Ingest** — drop a source in `.raw/` and say "ingest [filename]"
+- **Query** — ask any question; Claude reads `hot.md` → `index.md` → drills into specific pages
+- **Lint** — say "lint the wiki" for a health check (orphans, dead links, stale claims)
+- **Save** — `/save` files the current chat as a structured note
+- **Canvas** — visual layer over the vault (images, text cards, PDFs)
+
+If you don't use the wiki, you can ignore the folder — nothing in the build or runtime depends on it.

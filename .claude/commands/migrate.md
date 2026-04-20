@@ -45,7 +45,7 @@ For packages with companion packages (e.g. `@storybook/*`, `@playwright/test`, `
 
 Known companion packages:
 
-- **react-router**: also check `@react-router/dev`, `@react-router/node`, `@react-router/serve`
+- **react-router**: also check `react-router-dom`, `@react-router/dev`, `@react-router/node`, `@react-router/serve`, `@react-router/fs-routes`, `@react-router/remix-routes-option-adapter`
 - **storybook**: run `npx storybook@latest upgrade` instead of manual npm install
 - **vitest**: also update `@vitest/coverage-v8`, `@vitest/ui` if present
 - **playwright**: also update `@playwright/test`

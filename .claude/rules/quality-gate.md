@@ -1,17 +1,11 @@
----
-paths:
-  - 'app/**/*'
-  - 'test/**/*'
----
-
 # Quality Gate Process
 
-1. All user-facing strings must be localized - no hardcoded strings or keys without values
-2. Run `npm run typecheck` — must pass with no errors
-3. Run `npm run lint` — must pass with 0 errors, 0 warnings
-4. Run `npm run test -- --run` — all tests must pass, **zero console warnings** (fix missing keys, HydrateFallback, etc.)
-5. Run `npm run pw` — all Playwright E2E tests must pass
-6. **Start dev server and curl a route** — verify no runtime errors (e.g. missing exports, SSR failures)
-7. Run `npm run build` — confirm the application builds successfully
-8. **Fix all warnings/issues before presenting to user** — never ask user to review with known warnings
-9. **STOP and report results to the user** — do NOT proceed until the user reviews and approves
+Before executing `git commit` (or any commit command), run the steps defined in `.claude/commands/audit-code.md`.
+
+Differences from `/audit-code`:
+
+- **Fix issues as you encounter them** rather than just reporting them.
+- All warnings/issues (typecheck errors, lint errors/warnings, test console warnings like missing i18n keys or HydrateFallback, runtime errors) must be resolved before the commit — never commit with known warnings.
+- After fixing, **STOP and report results to the user** — do not commit until the user reviews and approves.
+
+Localization: all user-facing strings must be localized — no hardcoded strings in JSX, no keys without values.

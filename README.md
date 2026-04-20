@@ -20,6 +20,7 @@ GAIA React is the most thoroughly configured React Router 7 template available. 
 - **Toast notifications** with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
 - **Claude Code integration** with scaffolding commands, quality rules, and code review (see [Claude](#claude) section)
 - **Documentation site** via [VitePress](https://vitepress.dev/) with GitHub Pages deployment
+- **Knowledge base for LLMs**: a [committed `wiki/`](#wiki) of architecture, modules, decisions, and dependencies that Claude reads on demand — no token bloat, no stale CLAUDE.md sprawl
 - Built on [React Router 7](https://reactrouter.com/), [TailwindCSS](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
 
 ## Philosophy
@@ -48,6 +49,7 @@ GAIA is a **base template**, not a full-stack kit. It deliberately does not incl
 | Dark mode                  | end-to-end (context + session + CSS + Storybook) |     —      |      —      |    —    |
 | API mocking (MSW)          |                tests + Storybook                 |     —      |      —      |    —    |
 | Claude Code integration    |             commands, skills, rules              |     —      |      —      |    —    |
+| LLM knowledge base         |            committed wiki + Obsidian             |     —      |      —      |    —    |
 | Documentation site         |           VitePress + GH Pages deploy            |     —      |      —      |    —    |
 
 ## Installation
@@ -99,15 +101,24 @@ GAIA comes with [Claude Code](https://claude.ai/) support built-in: commands, ru
 | `/new-component`        | Scaffold a component with optional test and story                       |
 | `/new-service`          | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
 | `/new-hook`             | Scaffold a custom hook with test file                                   |
-| `/audit`                | Run the full quality gate (typecheck, lint, test, E2E, build)           |
+| `/audit-code`           | Run the full quality gate (typecheck, lint, test, E2E, build)           |
 | `/migrate`              | Upgrade a package to latest, apply breaking changes, run quality gate   |
-| `/upgrade-react-router` | Check for and apply React Router updates                                |
 
 ### Rules
 
 Claude automatically follows project rules for coding guidelines, component testing patterns, ESLint fixes, i18n conventions, accessibility, API services, route creation, and the quality gate. These rules are in `.claude/rules/` and activate based on file paths.
 
 Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
+
+### Wiki
+
+GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies, decisions, flows, and concepts — committed to git and shared across the team. It is structured for LLM consumption: small focused pages, wikilinks, frontmatter, and a `wiki/index.md` catalog so Claude fetches only what it needs.
+
+- **No token bloat.** Claude reads `wiki/hot.md` (~200-word recent context) at session start and pulls specific pages on demand instead of preloading the whole codebase.
+- **Survives across sessions and developers.** Unlike machine-local memory, the wiki is in git — every contributor gets the same context.
+- **Editable in Obsidian.** Pages are standard markdown with wikilinks; open `wiki/` as an [Obsidian](https://obsidian.md) vault for graph view, backlinks, and search.
+
+The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin is installed automatically by `/gaia-init` and adds Claude skills for ingesting sources, querying, linting, and saving conversations into the vault.
 
 ## Development
 
