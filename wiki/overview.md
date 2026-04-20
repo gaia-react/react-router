@@ -9,7 +9,7 @@ tags: [overview, gaia]
 
 # GAIA React Router
 
-GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, auth, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
+GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
 
 It is the spiritual successor to the **GAIA Flash Framework**, the most popular Flash framework in the world (used to build 100K+ Flash sites). GAIA React has been refined over 4+ years across multiple production teams.
 
