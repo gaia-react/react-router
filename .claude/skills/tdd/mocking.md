@@ -1,59 +1,68 @@
-# When to Mock
+# When to Mock (GAIA)
 
-Mock at **system boundaries** only:
+Mock at **system boundaries** only. In GAIA, the boundaries are narrow and well-known:
 
-- External APIs (payment, email, etc.)
-- Databases (sometimes - prefer test DB)
-- Time/randomness
-- File system (sometimes)
+| Boundary | Mock via | Example |
+| --- | --- | --- |
+| HTTP / external APIs | MSW handlers in `test/mocks/` | REST calls made by `app/services/` |
+| Database read/write | `@mswjs/data` factory seeded via `database` | `database.things.create(...)` in a test |
+| Time | `vi.useFakeTimers()` | Debounced handlers, TTL expiry |
+| Randomness | Inject or stub via `vi.spyOn` at boundary | IDs, crypto |
+| Navigation (in unit scope) | `stubs.reactRouter({routes})` | Buttons that push to `/done` |
 
-Don't mock:
+## Don't mock
 
-- Your own classes/modules
-- Internal collaborators
-- Anything you control
+- **Your own services, hooks, components, utilities.** If a component consumes `useThings()`, test it against the real hook reading from real MSW. Mocking `useThings` means you're testing a fiction.
+- **`react-router` or `react-i18next`.** Use `stubs.reactRouter()` / `stubs.state()` from `test/stubs`. Global i18n is wired in `test/setup.ts`.
+- **Zod schemas.** If a service fails to parse a response, that's a real bug the test should surface.
 
-## Designing for Mockability
+## MSW-first pattern
 
-At system boundaries, design interfaces that are easy to mock:
+Every service in `app/services/gaia/` has a mirror in `test/mocks/{domain}/` (see `.claude/rules/api-service.md`). Handlers run in Vitest, Storybook, AND Playwright — one mock layer, three testing scopes.
 
-**1. Use dependency injection**
+**Mutating data in a test**: call the `database` factory directly; reset in `afterEach`:
 
-Pass external dependencies in rather than creating them internally:
+```ts
+import {afterEach, describe, test} from 'vitest';
+import database, {resetTestData} from 'test/mocks/database';
 
-```typescript
-// Easy to mock
-function processPayment(order, paymentClient) {
-  return paymentClient.charge(order.total);
-}
+describe('createThing', () => {
+  afterEach(() => resetTestData());
 
-// Hard to mock
-function processPayment(order) {
-  const client = new StripeClient(process.env.STRIPE_KEY);
-  return client.charge(order.total);
-}
+  test('new thing is retrievable', async () => {
+    const created = await createThing({name: 'Alice'});
+    const found = await getThingById(created.id);
+    expect(found.name).toBe('Alice');
+  });
+});
 ```
 
-**2. Prefer SDK-style interfaces over generic fetchers**
+The read-then-verify shape tests the interface end-to-end. It survives switching ORMs, URL changes, or schema renames as long as the public service contract holds.
 
-Create specific functions for each external operation instead of one generic function with conditional logic:
+## Designing for mockability at boundaries
 
-```typescript
-// GOOD: Each function is independently mockable
-const api = {
-  getUser: (id) => fetch(`/users/${id}`),
-  getOrders: (userId) => fetch(`/users/${userId}/orders`),
-  createOrder: (data) => fetch('/orders', { method: 'POST', body: data }),
-};
+**1. One function per endpoint**
 
-// BAD: Mocking requires conditional logic inside the mock
-const api = {
-  fetch: (endpoint, options) => fetch(endpoint, options),
-};
+```ts
+// GOOD: each request is independently exercisable
+export const getThingById = (id: string): Promise<Thing> => { ... };
+export const createThing = (data: NewThing): Promise<Thing> => { ... };
+
+// BAD: conditional mocking required
+export const thingsApi = (op: 'get' | 'create', data?: unknown) => { ... };
 ```
 
-The SDK approach means:
-- Each mock returns one specific shape
-- No conditional logic in test setup
-- Easier to see which endpoints a test exercises
-- Type safety per endpoint
+**2. Accept dependencies you don't own**
+
+External clients (analytics, third-party SDKs) belong as function params or injected context, not module-level singletons. In GAIA this is rare — most "dependencies" for feature code are either MSW-covered (HTTP) or explicit (Zod schemas).
+
+**3. Return values, avoid side effects**
+
+Pure transforms over mutation. A service that returns the created record is trivially testable; one that only "saves somewhere" forces the test to go find it.
+
+## Red flags
+
+- `vi.mock('~/services/...')` — you've mocked something MSW already handles.
+- `vi.mock('~/hooks/...')` or `vi.mock('~/components/...')` — internal collaborator mocking.
+- Test setup that reimplements application logic to seed data (write to `database` instead).
+- A fixture file larger than the code it tests.

@@ -1,32 +1,47 @@
 ---
 name: tdd
-description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
+description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development. Tailored for GAIA — Vitest, React Testing Library, Storybook composeStory, MSW.
 ---
 
-# Test-Driven Development
+# Test-Driven Development (GAIA)
 
 ## Philosophy
 
-**Core principle**: Tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+**Core principle**: tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
 
-**Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification - "user can checkout with valid cart" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
+**Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification — "user submits a valid form and sees a success toast" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
 
-**Bad tests** are coupled to implementation. They mock internal collaborators, test private methods, or verify through external means (like querying a database directly instead of using the interface). The warning sign: your test breaks when you refactor, but behavior hasn't changed. If you rename an internal function and tests fail, those tests were testing implementation, not behavior.
+**Bad tests** are coupled to implementation. They mock internal collaborators, assert on `t()` call signatures, spy on `useState` setters, or query MSW handler internals. The warning sign: your test breaks when you refactor, but behavior hasn't changed.
 
-See [tests.md](tests.md) for examples and [mocking.md](mocking.md) for mocking guidelines.
+See [tests.md](tests.md) for GAIA-native examples and [mocking.md](mocking.md) for mocking guidelines.
+
+## GAIA testing layers
+
+Four layers share one mocking foundation (`msw` + `msw/data`). Each has a natural TDD rhythm:
+
+| Layer | Tool | Runner | File location | What to assert |
+| --- | --- | --- | --- | --- |
+| Unit / hook | RTL `renderHook` | Vitest | `app/hooks/<name>/tests/` | hook return values, state transitions, callbacks |
+| Component | RTL + Storybook `composeStory` | Vitest | `app/components/<Name>/tests/` | rendered DOM, user interactions, props behavior |
+| Service | MSW handlers + Zod | Vitest | `app/services/<name>/tests/` | parsed response shape, request payload, error cases |
+| E2E | Playwright + MSW browser | Playwright | `.playwright/e2e/*.spec.ts` | full user flow across routes |
+
+Write the test at the **lowest layer that can verify the behavior.** A button's disabled state is a component test, not an E2E. A route's redirect is E2E; a loader's parsing is a service test.
+
+See `.claude/rules/component-testing.md` for the `composeStory` contract and `.claude/rules/api-service.md` for service-test conventions.
 
 ## Anti-Pattern: Horizontal Slices
 
-**DO NOT write all tests first, then all implementation.** This is "horizontal slicing" - treating RED as "write all tests" and GREEN as "write all code."
+**DO NOT write all tests first, then all implementation.** This is "horizontal slicing" — treating RED as "write all tests" and GREEN as "write all code."
 
 This produces **crap tests**:
 
 - Tests written in bulk test _imagined_ behavior, not _actual_ behavior
-- You end up testing the _shape_ of things (data structures, function signatures) rather than user-facing behavior
-- Tests become insensitive to real changes - they pass when behavior breaks, fail when behavior is fine
+- You end up testing the _shape_ of things (prop types, handler signatures) rather than user-facing behavior
+- Tests become insensitive to real changes — they pass when behavior breaks, fail when behavior is fine
 - You outrun your headlights, committing to test structure before understanding the implementation
 
-**Correct approach**: Vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle. Because you just wrote the code, you know exactly what behavior matters and how to verify it.
+**Correct approach**: vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle.
 
 ```
 WRONG (horizontal):
@@ -46,27 +61,27 @@ RIGHT (vertical):
 
 Before writing any code:
 
-- [ ] Confirm with user what interface changes are needed
-- [ ] Confirm with user which behaviors to test (prioritize)
-- [ ] Identify opportunities for [deep modules](deep-modules.md) (small interface, deep implementation)
+- [ ] Confirm with user which layer owns this test (hook, component, service, e2e)
+- [ ] Confirm which behaviors to test (prioritize)
+- [ ] Identify opportunities for [deep modules](deep-modules.md) — small interface, deep implementation
 - [ ] Design interfaces for [testability](interface-design.md)
 - [ ] List the behaviors to test (not implementation steps)
 - [ ] Get user approval on the plan
 
 Ask: "What should the public interface look like? Which behaviors are most important to test?"
 
-**You can't test everything.** Confirm with the user exactly which behaviors matter most. Focus testing effort on critical paths and complex logic, not every possible edge case.
+**You can't test everything.** Focus testing effort on critical paths and complex logic, not every possible edge case.
 
 ### 2. Tracer Bullet
 
-Write ONE test that confirms ONE thing about the system:
+Write ONE test that confirms ONE thing about the system end-to-end for this layer:
 
 ```
 RED:   Write test for first behavior → test fails
 GREEN: Write minimal code to pass → test passes
 ```
 
-This is your tracer bullet - proves the path works end-to-end.
+For components, the tracer bullet is almost always: `composeStory(Default)` renders without throwing. For services, it's: the happy-path request returns a Zod-parsed result.
 
 ### 3. Incremental Loop
 
@@ -100,8 +115,9 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 
 ```
 [ ] Test describes behavior, not implementation
-[ ] Test uses public interface only
-[ ] Test would survive internal refactor
+[ ] Test uses public interface only (no spying on internals, no asserting on t() args)
+[ ] Test would survive an internal refactor
 [ ] Code is minimal for this test
 [ ] No speculative features added
+[ ] Mock only at system boundaries (APIs via MSW, time, navigation)
 ```

@@ -71,11 +71,14 @@ Fix any issues before moving on.
 
 If any install step fails, print the command so the user can run it manually.
 
-### Install skills
+### Install tools
+
+GAIA bundles `tdd` and `playwright-cli` skills at `.claude/skills/` — they ship with the clone. Two external tools still need per-machine setup:
 
 - [React Doctor](https://github.com/millionco/react-doctor): `curl -fsSL https://react.doctor/install-skill.sh | bash`
-- [Matt Pocock's TDD Skill](https://www.aihero.dev/skill-test-driven-development-claude-code): `npx skills add mattpocock/skills/tdd`
-- [Playwright CLI](https://github.com/microsoft/playwright-cli): `playwright-cli install --skills`
+  Installs the `react-doctor` skill to `~/.claude/skills/`. Scans the project for React-specific issues (47+ rules: security, performance, correctness, architecture). Auto-runs after code edits in a `CLAUDECODE` environment and is invoked by the `code-review-audit` agent pre-merge.
+- [Playwright CLI](https://github.com/microsoft/playwright-cli) binary: `npm install -g @playwright/cli@latest`
+  Installs the global `playwright-cli` binary the bundled skill shells out to. Without it the skill's `allowed-tools: Bash(playwright-cli:*)` directive resolves to nothing. Used for E2E debugging and authoring Playwright specs with minimal token cost — each interaction is one shell call instead of a round-trip through an MCP session.
 
 ### Install plugins
 

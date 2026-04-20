@@ -72,13 +72,10 @@ For each file or module you review, analyze across ALL of the following dimensio
 
 Beyond general best practices, verify adherence to these project-specific patterns:
 
-- Supabase server client must use `createSupabaseServerClient(request)` pattern with proper header merging
-- Google API calls must use `cachified` with appropriate TTLs and the `fetcherRef` pattern on the client
 - Client components driving server fetches must use the `useDebounce` hook (minimum 300ms)
 - No `eslint-disable react-hooks/exhaustive-deps` to hide missing fetcher deps
 - No `.catch(() => {})` — use `void` for fire-and-forget
 - No direct Google API calls from client code
-- Authorization checks must account for superadmin having all moderator privileges
 - `_auth+/` routes are pathless — verify redirects don't include `/auth/` segment
 - PKCE code exchange must go through `/callback` route
 
@@ -119,7 +116,7 @@ Explicitly call out good patterns, clean code, and smart decisions. This reinfor
 5. **Be specific** — never say "this could be improved" without saying exactly how and why
 6. **Be proportionate** — don't nitpick formatting when there are security holes; focus energy on what matters most
 7. **Respect existing patterns** — if the codebase has an established way of doing something, don't suggest alternatives unless there's a concrete benefit
-8. **Run react-doctor** — after completing your manual review, run `npx -y react-doctor@latest . --verbose` to catch React-specific issues (unnecessary re-renders, component complexity, dangerous patterns, dead code). Include any new findings that weren't already covered in your manual review. Note: many barrel-import and multiple-useState warnings are false positives in this codebase — cross-reference against project conventions before reporting them.
+8. **Run react-doctor** — after completing your manual review, run `npx -y react-doctor@latest . --verbose --diff` to catch React-specific issues (unnecessary re-renders, component complexity, dangerous patterns, dead code) in the files changed on this branch. The `--diff` flag scans only modified files, keeping the scan fast enough to run every review. Include any new findings that weren't already covered in your manual review. Note: many barrel-import and multiple-useState warnings are false positives in this codebase — cross-reference against project conventions before reporting them.
 
 ## Rules-Based Audit (Specialist Subagents)
 
