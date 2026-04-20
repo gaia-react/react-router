@@ -37,7 +37,6 @@ The traditional tooling Claude rides on top of:
 - **[Storybook](https://storybook.js.org/) with React Router support**, including i18n, dark mode, and [MSW](https://mswjs.io/) integration
 - **API mocking** with [Mock Service Worker](https://mswjs.io/) and [msw/data](https://github.com/mswjs/data), with working handlers for tests and Storybook
 - **Toast notifications** with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
-- **Documentation site** via [VitePress](https://vitepress.dev/) with GitHub Pages deployment
 - Built on [React Router 7](https://reactrouter.com/), [TailwindCSS](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
 
 ## How GAIA Compares
@@ -65,7 +64,6 @@ The traditional tooling Claude rides on top of:
 | Storybook                     |         Router + i18n + Dark Mode + MSW          |     ❌     |     ❌      |   ❌    |
 | Dark Mode                     | End-to-End (Context + Session + CSS + Storybook) |     ❌     |     ❌      |   ❌    |
 | API Mocking (MSW)             |                Tests + Storybook                 |     ❌     |     ❌      |   ❌    |
-| Documentation Site            |           VitePress + GH Pages Deploy            |     ❌     |     ❌      |   ❌    |
 
 ## Philosophy
 
@@ -108,7 +106,7 @@ Running `/gaia-init` (or `/init` — they're interchangeable) initializes the te
 
 - **Strips example code** — `things` service, `ExampleConsumer`/`ExampleProvider`, IndexPage examples + TechStack, GAIA branding assets
 - **Configures i18n** — prompts for your language set (English, Japanese, French, Spanish, German, or a custom list), scaffolds matching language files, updates `LanguageSelect` and Storybook globals
-- **Sets project metadata** — `package.json` name, `CLAUDE.md` title, `CODEOWNERS`, VitePress `base`
+- **Sets project metadata** — `package.json` name, `CLAUDE.md` title, `CODEOWNERS`
 - **Installs Claude skills** — [React Doctor](https://github.com/millionco/react-doctor), [Matt Pocock's TDD](https://www.aihero.dev/skill-test-driven-development-claude-code), [Playwright CLI](https://github.com/microsoft/playwright-cli)
 - **Installs Claude plugins** — `typescript-lsp` (from the official Claude Plugins marketplace) and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
 - **Syncs the wiki** to the new project state (removes references to deleted example code)
@@ -182,16 +180,6 @@ GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies
 - **Editable in Obsidian.** Pages are standard markdown with wikilinks; open `wiki/` as an [Obsidian](https://obsidian.md) vault for graph view, backlinks, and search.
 
 The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin is installed automatically by `/gaia-init` and adds Claude skills for ingesting sources (`/wiki-ingest`), querying (`/wiki-query`), linting (`/wiki-lint`), auto-research loops (`/autoresearch`), and saving conversations into the vault (`/save`).
-
-## Documentation
-
-GAIA comes with a VitePress documentation site included. Run it locally with:
-
-```sh
-npm run docs
-```
-
-It is recommended that you keep these docs up to date as you build your project. There is also a GitHub action to deploy the docs to your repository's GitHub Pages.
 
 ## Development
 

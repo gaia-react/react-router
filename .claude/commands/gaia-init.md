@@ -75,10 +75,6 @@ If the `.env` file does not exist, rename `.env.example` to `.env`.
 
 Update `package.json` "name" field to match the project title from step 1 in kebab-case.
 
-Update `docs/.vitepress/config.ts` as follows:
-
-- Update `base` to match the project title in kebab-case, i.e. `/project-name/`
-
 ## Step 8: Verify
 
 Run these commands sequentially, stopping if any fails:
