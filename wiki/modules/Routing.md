@@ -12,18 +12,7 @@ tags: [module, routing]
 
 # Routing
 
-GAIA uses [[remix-flat-routes]] on top of [[React Router 7]] for file-based routing. The adapter lives in `app/routes.ts`:
-
-```ts
-import {remixRoutesOptionAdapter} from '@react-router/remix-routes-option-adapter';
-import {flatRoutes} from 'remix-flat-routes';
-
-export default remixRoutesOptionAdapter((defineRoutes) =>
-  flatRoutes('routes', defineRoutes)
-);
-```
-
-You can switch to standard React Router 7 routing if you prefer.
+GAIA uses [[remix-flat-routes]] on top of [[React Router 7]] for file-based routing. The adapter lives in `app/routes.ts` (see that file for the verbatim implementation). You can switch to standard React Router 7 routing if you prefer.
 
 ## Route Groups
 
