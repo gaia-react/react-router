@@ -3,62 +3,57 @@ type: module
 path: app/sessions.server/
 status: active
 language: typescript
-purpose: Cookie session storage for auth, language, and theme
-depends_on: [[remix-auth]]
+purpose: Cookie session storage for theme and language preferences
 created: 2026-04-20
 updated: 2026-04-20
-tags: [module, sessions, cookies, auth]
+tags: [module, sessions, cookies]
 ---
 
 # Sessions
 
 `app/sessions.server/` contains cookie management code. The `.server` suffix excludes these from the client bundle.
 
-| File          | Cookie       | Purpose                                                 |
-| ------------- | ------------ | ------------------------------------------------------- |
-| `auth.ts`     | `__session`  | Auth session via [[remix-auth]] (`Authenticator<User>`) |
-| `language.ts` | `language`   | i18n preference (`languageCookie`)                      |
-| `theme.ts`    | theme cookie | Light/dark preference, also exposes `getThemeSession`   |
+| File          | Cookie     | Purpose                                                    |
+| ------------- | ---------- | ---------------------------------------------------------- |
+| `language.ts` | `language` | i18n preference (`languageCookie`)                         |
+| `theme.ts`    | theme      | Light/dark preference; also exposes `getThemeSession`      |
 
-## Auth session
+Both use React Router 7's `createCookieSessionStorage`. Secrets come from `env.SESSION_SECRET` (Zod-validated).
+
+## Language cookie
+
+`languageCookie` is a simple signed cookie. The root loader reads the detected language from i18next middleware and serializes it on every response so the preference persists across navigations.
 
 ```ts
-import {Authenticator} from 'remix-auth';
-import {FormStrategy} from 'remix-auth-form';
+import {createCookie} from 'react-router';
+import {env} from '~/env.server';
 
-export const authenticator = new Authenticator<User>();
-
-authenticator.use(
-  new FormStrategy(async ({form}) => {
-    const password = SparkMD5.hash(form.get('password') as string);
-    const user = await api.gaia.auth.login(formData);
-    setApiAuthorization(user.token);
-    return user;
-  }),
-  'form'
-);
+export const languageCookie = createCookie('language', {
+  httpOnly: true,
+  sameSite: 'lax',
+  secrets: [env.SESSION_SECRET],
+  secure: process.env.NODE_ENV === 'production',
+});
 ```
 
-Session cookie:
+## Theme cookie
 
-- `httpOnly: true` — JS can't read it
-- `sameSite: 'lax'` — CSRF mitigation
-- `secure: env.NODE_ENV === 'production'` — HTTPS-only in prod (Safari compat)
-- `maxAge: 60 * 60` — 1 hour
-- Secret from `env.SESSION_SECRET` (Zod-validated)
+`getThemeSession(request)` returns a session object with a `getTheme()` getter. The root loader uses it to pass the SSR-safe initial theme to `<ThemeProvider>`, preventing flash-of-wrong-theme on first paint.
 
-> [!warning] Password hashing uses MD5 (SparkMD5)
-> The example `FormStrategy` uses `SparkMD5.hash(password)` before sending to the API. This is presumably to match a backend that already expects MD5-hashed passwords; in any new project, **replace this with bcrypt/argon2 on the server** and remove client-side hashing.
+```ts
+const themeSession = await getThemeSession(request);
+// returns 'light' | 'dark' | undefined
+const theme = themeSession.getTheme();
+```
 
-## Route guards
+The `actions+/set-theme.ts` route mutates the theme cookie when the user toggles.
 
-`auth.ts` exports two helpers used in route loaders:
+## Adding auth sessions
 
-- `requireAuthenticatedUser(request)` — throws `redirect('/login')` if no user
-- `requireNotAuthenticated(request)` — throws `redirect('/profile')` if a user exists
+`_session+/_layout.tsx` is the designated hook point for consumer auth. Add your own `createCookieSessionStorage` (or use Clerk, Supabase, Auth0 SDKs) in `app/sessions.server/` and wire a loader into that layout file. See [[Routing]] for the route group overview.
 
-These power the `_session+` and `_auth+` route group semantics. See [[Auth Flow]].
+## See Also
 
-## Theme + language cookies
-
-`theme.ts` and `language.ts` export simple cookie helpers used by `root.tsx` and the matching `actions+/set-theme.ts` and `actions+/set-language.ts` routes.
+- [[Theme Flow]] — full SSR→client theme lifecycle
+- [[Language Flow]] — language detection + persistence
+- [[Routing]] — `_session+/` hook point
