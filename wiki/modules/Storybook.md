@@ -76,17 +76,7 @@ handled inside the story function by reading `i18n.language`.
 
 ## Test data / MSW
 
-The project uses `@mswjs/data` factories in `test/mocks/database` as the source of seed data for
-stories. There is no `msw-storybook-addon` wired into Storybook — API-level mocking at the
-`fetch` layer is not used in stories. Instead, stories receive pre-built data objects pulled from
-the in-memory database:
-
-```ts
-import database from 'test/mocks/database';
-import {toCamelCase} from '~/utils/object';
-
-const resources = database.resources.getAll().map(toCamelCase) as Resources;
-```
+No `msw-storybook-addon` — API-level mocking is not used in stories. Pull seed data from `@mswjs/data` factories in `test/mocks/database` instead. See `.claude/rules/storybook.md` for the usage pattern.
 
 ## Why Storybook is also the test driver
 
