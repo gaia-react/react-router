@@ -12,14 +12,13 @@ Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and h
 
 ## What Claude Gets
 
-- **10 scaffolding commands** — `/new-route`, `/new-component`, `/new-hook`, `/new-service`, `/audit-code`, `/migrate`, `/handoff`, `/pickup`, `/audit-knowledge`, `/gaia-init`
+- **10 project commands** — scaffolding (`/new-route`, `/new-component`, `/new-hook`, `/new-service`), quality (`/audit-code`, `/audit-knowledge`), workflow (`/handoff`, `/pickup`), migration (`/migrate`), and template init (`/gaia-init`)
 - **10 path-scoped rules** — accessibility, API services, coding guidelines, component testing, ESLint fixes, i18n, route creation, PR merge workflow, quality gate, test runner; auto-loaded based on what Claude is editing
-- **5 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, intercept `/init` → `/gaia-init`, advise on missing i18n strings, advise on missing Storybook stories
+- **4 pre-tool hooks** — block ESLint config edits, block vitest globals in `tsconfig.json`, advise on missing i18n strings, advise on missing Storybook stories
 - **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
 - **72-page committed wiki** — architecture, modules, dependencies, decisions, flows; Claude reads `wiki/hot.md` (~200-word cache) at session start and fetches specific pages on demand
 - **Obsidian integration** — the [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin adds skills for ingesting sources, querying, linting, auto-research loops, and saving conversations directly into the vault
 - **4 bundled project skills** — `react-code`, `typescript`, `tailwind`, `skeleton-loaders`
-- **Hijacked `/init`** — runs `/gaia-init` instead of overwriting the curated `CLAUDE.md`
 
 ## What You Get (Foundation)
 
@@ -43,14 +42,13 @@ The traditional tooling Claude rides on top of:
 | Feature                       |                       GAIA                       | Vite React | RR Template | Next.js |
 | ----------------------------- | :----------------------------------------------: | :--------: | :---------: | :-----: |
 | **Claude integration**        |                                                  |            |             |         |
-| Claude scaffolding commands   |                        10                        |     ❌     |     ❌      |   ❌    |
+| Claude project commands       |                        10                        |     ❌     |     ❌      |   ❌    |
 | Auto-loaded project rules     |                        10                        |     ❌     |     ❌      |   ❌    |
-| Pre-tool enforcement hooks    |                   5 (3 block)                    |     ❌     |     ❌      |   ❌    |
+| Pre-tool enforcement hooks    |                   4 (2 block)                    |     ❌     |     ❌      |   ❌    |
 | Bundled project skills        |                        4                         |     ❌     |     ❌      |   ❌    |
 | Code-review agent (pre-merge) |                        ✅                        |     ❌     |     ❌      |   ❌    |
 | Committed LLM knowledge base  |                   72-page wiki                   |     ❌     |     ❌      |   ❌    |
 | Obsidian vault integration    |                        ✅                        |     ❌     |     ❌      |   ❌    |
-| `/init` hijacked for template |                        ✅                        |     ❌     |     ❌      |   ❌    |
 | **Traditional tooling**       |                                                  |            |             |         |
 | ESLint                        |                   20+ plugins                    |   basic    |    basic    |  basic  |
 | Prettier + Stylelint          |                  pre-configured                  |     ❌     |     ❌      |   ❌    |
