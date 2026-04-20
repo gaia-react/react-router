@@ -4,7 +4,7 @@ path: test/mocks/, test/worker.ts, test/test.server.ts, test/msw.server.ts
 status: active
 language: typescript
 purpose: API mocking layer shared across Vitest, Storybook, and dev
-depends_on: [[MSW]], [[mswjs-data]]
+depends_on: [[MSW]]
 created: 2026-04-20
 updated: 2026-04-20
 tags: [module, msw, testing, mocking]
