@@ -60,9 +60,11 @@ Rules activate automatically based on file paths — no need to invoke them.
 | [[Quality Gate]]             | Commits                                                 |
 | [[PR Merge Workflow]]        | PR merges                                               |
 
-## Hooks (PreToolUse, bash)
+## Hooks
 
-Run on every Edit/Write tool call:
+Bash hooks wired through `.claude/settings.json`. Mixed event types.
+
+### PreToolUse (Edit/Write)
 
 | Hook                               | Type         | Behavior                                                                                   |
 | ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
@@ -70,6 +72,21 @@ Run on every Edit/Write tool call:
 | `block-vitest-globals-tsconfig.sh` | **Blocking** | Prevents adding `vitest/globals` to `tsconfig.json`. Use explicit imports.                 |
 | `check-i18n-strings.sh`            | Advisory     | Reminds to use `t()` for user-facing strings in pages/components                           |
 | `check-story-exists.sh`            | Advisory     | Reminds to add a Storybook story for new components                                        |
+
+### UserPromptSubmit
+
+| Hook                | Behavior                                                                                                                                                                                          |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `intercept-init.sh` | Blocks the built-in `/init` and auto-invokes the `/gaia-init` skill instead. Protects the curated `CLAUDE.md` from overwrite. Removes itself (hook + settings entry) when `/gaia-init` completes. |
+
+### SessionStart / Stop (wiki coherence)
+
+Pair of hooks that compensates for a gap in the [[claude-obsidian]] plugin: its `PostToolUse` hook auto-commits `wiki/` changes, so by Stop time the plugin's own diff-check against HEAD is always empty and its `wiki/hot.md` refresh prompt never fires.
+
+| Hook                    | Event        | Behavior                                                                                                                                                            |
+| ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wiki-session-start.sh` | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
+| `wiki-session-stop.sh`  | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
 
 ## Agents
 
