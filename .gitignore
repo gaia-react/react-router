@@ -47,3 +47,4 @@ coverage
 .claude/audit/
 .claude/worktrees/
 .claude/handoff/
+.claude/scheduled_tasks.lock
