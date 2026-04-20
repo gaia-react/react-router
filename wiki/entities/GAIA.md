@@ -20,8 +20,6 @@ GAIA React is a thoroughly-configured React Router 7 starter template. The curre
 ## Repos & resources
 
 - npm template: `npx create-react-router@latest --template gaia-react/react-router`
-- Docs (local): `npm run docs` → VitePress
-- Docs (deployed): GitHub Pages via the project's GitHub Actions workflow
 - Background article on the philosophy: [react-japan.dev: ESLint fix-on-save](https://react-japan.dev/en/blog/eslint-fix-on-save)
 
 ## History
