@@ -31,30 +31,9 @@ gaia/
 
 Ask Claude to add domain subfolders (`auth/`, `users/`, etc.) as needed — `/new-service` scaffolds the full pattern. See [[API Service Pattern]].
 
-## URL constants
+## URL constants & request functions
 
-`app/services/gaia/urls.ts`:
-
-```ts
-export const GAIA_URLS = {};
-```
-
-Populated by the `/new-service` command — ask Claude to scaffold a service and it adds the endpoint key here.
-
-## Request function pattern
-
-```ts
-import {api} from '../api';
-import {GAIA_URLS} from '../urls';
-import {resourceSchema} from './parsers';
-
-export const getResourceById = async (id: string): Promise<Resource> => {
-  const result = await api(GAIA_URLS.resourcesId, {pathParams: {id}});
-  return resourceSchema.parse(result.data);
-};
-```
-
-See [[API Service Pattern]] for the full new-service checklist (mirrored by `/new-service`).
+`app/services/gaia/urls.ts` holds `GAIA_URLS` constants; `/new-service` populates them alongside matching request functions. See [[API Service Pattern]] for the full pattern.
 
 ## MSW mocks
 
