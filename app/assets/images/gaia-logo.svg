@@ -15,13 +15,13 @@
       y1="0%"
       y2="100%"
     >
-      <stop offset="0%" stop-color="#3B82F6" stop-opacity="1" />
-      <stop offset="100%" stop-color="#60A5FA" stop-opacity="1" />
+      <stop offset="0%" stop-color="#D97757" stop-opacity="1" />
+      <stop offset="100%" stop-color="#E89275" stop-opacity="1" />
     </linearGradient>
   </defs>
   <g
     fill="url(#gaia-logo-gradient)"
-    stroke="#93C5FD"
+    stroke="#EFA58E"
     stroke-linecap="round"
     stroke-width="36"
     transform="translate(0,386) scale(0.1,-0.1)"
