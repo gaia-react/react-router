@@ -8,9 +8,9 @@ tags: [concept, services, api]
 
 # API Service Pattern
 
-Canonical reference for adding a domain service. Mirrored by the `[[api-service]]` rule and scaffolded by `/new-service`.
+Canonical reference for adding a domain service. Mirrored by the `api-service` rule (`.claude/rules/api-service.md`) and scaffolded by `/new-service`.
 
-Related: [[Services]], [[MSW]], [[api-service]]
+Related: [[Services]], [[MSW]]
 
 ## Folder structure
 
