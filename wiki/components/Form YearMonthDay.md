@@ -43,19 +43,7 @@ A native `addEventListener` on the container div stops child Select `input` even
 
 ## Caller pattern — `useInputControl`
 
-```tsx
-const dobControl = useInputControl(fields.dob);
-
-<YearMonthDay
-  error={fields.dob.errors}
-  name={fields.dob.name}
-  onBlur={dobControl.blur}
-  onChange={dobControl.change}
-  value={dobControl.value ?? DEFAULT_VALUE}
-/>;
-```
-
-Without `useInputControl`, local `useState` in the caller will desync from Conform once validation fails. See [[Component Testing]] for the canonical test for this component.
+Always wire via `useInputControl` — local `useState` desyncs from Conform once validation fails. See `app/components/Form/YearMonthDay/tests/index.stories.tsx:22-39` for the canonical usage and [[Component Testing]] for the test.
 
 ## Related
 
