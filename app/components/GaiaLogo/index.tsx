@@ -8,9 +8,15 @@ const GaiaLogo: FC<SVGProps<SVGSVGElement>> = (props) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
+    <defs>
+      <linearGradient id="gaia-logo-gradient" x1="0%" x2="0%" y1="0%" y2="100%">
+        <stop offset="0%" stopColor="#3B82F6" />
+        <stop offset="100%" stopColor="#60A5FA" />
+      </linearGradient>
+    </defs>
     <g
-      fill="currentColor"
-      stroke="currentColor"
+      fill="url(#gaia-logo-gradient)"
+      stroke="#93C5FD"
       strokeLinecap="round"
       strokeWidth={36}
       transform="translate(0,386) scale(0.1,-0.1)"
