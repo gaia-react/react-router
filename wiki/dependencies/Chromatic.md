@@ -20,19 +20,16 @@ Visual regression service that consumes Storybook stories. Runs in CI via `.gith
 
 ## Chromatic MCP (Claude integration)
 
-Chromatic ships an MCP (Model Context Protocol) server that lets Claude read component documentation straight from Storybook, inspect visual snapshots, and reason about regressions. Storybook 10.3+ and Chromatic account required — both are already satisfied in this template.
+Chromatic ships an MCP (Model Context Protocol) server that lets Claude read component documentation straight from Storybook, inspect visual snapshots, and reason about regressions. Storybook 10.3+ and a Chromatic account required — Storybook version is already satisfied in this template.
 
-### Install the Storybook addon
+### Setup
+
+Run `/setup-chromatic-mcp` at any time — from `/gaia-init` or later. It's idempotent, handles both first-time install and re-registration, and prompts for scope + URL.
+
+Under the hood it runs:
 
 ```bash
 npx storybook add @storybook/addon-mcp
-```
-
-This adds `@storybook/addon-mcp` to `devDependencies` and registers it in `.storybook/main.ts`. Your local dev server (port 6006) then exposes an MCP endpoint at `http://localhost:6006/mcp`.
-
-### Register the MCP with Claude Code
-
-```bash
 npx mcp-add --type http --url "http://localhost:6006/mcp" \
   --client-id "cdf3737dff9d485485968e50b63fd8b4" \
   --scope project
@@ -40,7 +37,8 @@ npx mcp-add --type http --url "http://localhost:6006/mcp" \
 
 - `--scope project` writes to `.mcp.json` at repo root — shared across contributors
 - `--scope user` writes to `~/.claude/mcp.json` — local only
-- First connection prompts Chromatic sign-in
+- The client ID is Chromatic's public static OAuth app identifier for Claude Code / Cursor. Not a secret.
+- First connection prompts Chromatic sign-in in the browser
 
 Once registered, Claude can:
 
