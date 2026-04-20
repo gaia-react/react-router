@@ -3,7 +3,6 @@ import {useTranslation} from 'react-i18next';
 import {faUser} from '@fortawesome/free-solid-svg-icons';
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
 import {twMerge} from 'tailwind-merge';
-import ExampleConsumer from '~/components/ExampleConsumer';
 import type {User} from '~/services/gaia/auth/types';
 
 type UserCardProps = {
@@ -32,7 +31,6 @@ const UserCard: FC<UserCardProps> = ({className, user}) => {
           <div className="text-gray-500 dark:text-gray-400">{email}</div>
         </div>
       </div>
-      <ExampleConsumer />
     </div>
   );
 };
