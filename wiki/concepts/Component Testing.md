@@ -12,42 +12,17 @@ Source: `.claude/rules/component-testing.md`.
 
 ## Pattern
 
-Always use Storybook stories with `composeStory`. Never manually mock framework deps like `react-router` or `react-i18next`.
+Always use Storybook stories with `composeStory`. Never manually mock framework deps like `react-router` or `react-i18next`. `/new-component` scaffolds both files.
 
-### Story file
-
-```tsx
-// app/components/MyComponent/tests/index.stories.tsx
-import type {Meta, StoryFn} from '@storybook/react-vite';
-import stubs from 'test/stubs';
-import MyComponent from '..';
-
-const meta: Meta = {
-  component: MyComponent,
-  decorators: [stubs.reactRouter()],
-};
-
-export default meta;
-
-export const Default: StoryFn = () => <MyComponent />;
-```
-
-### Test file
+| File                        | What it contains                                              |
+| --------------------------- | ------------------------------------------------------------- |
+| `tests/index.stories.tsx`   | `Meta` + named `StoryFn` exports; stubs as decorators         |
+| `tests/index.test.tsx`      | `composeStory(Story, Meta)` → render → assertions             |
 
 ```tsx
-import {composeStory} from '@storybook/react-vite';
-import {describe, expect, it} from 'vitest';
-import {render, screen} from 'test/rtl';
-import Meta, {Default} from './index.stories';
-
 const MyComponent = composeStory(Default, Meta);
-
-describe('MyComponent', () => {
-  it('renders correctly', () => {
-    render(<MyComponent />);
-    expect(screen.getByText('Hello')).toBeInTheDocument();
-  });
-});
+render(<MyComponent />);
+expect(screen.getByText('Hello')).toBeInTheDocument();
 ```
 
 ## Stubs
