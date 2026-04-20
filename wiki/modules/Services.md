@@ -26,22 +26,17 @@ tags: [module, services, api]
 
 Every domain service creates its own `api` instance via `create()` — but they share auth + language hooks.
 
-## `gaia/` — example domain service
+## `gaia/` — domain service
 
-`app/services/gaia/` is the GAIA template's example domain. Replace it with your company name or 3rd-party API name. See [[things Service]] for the canonical reference implementation (slated for removal by `/gaia-init`).
+`app/services/gaia/` is the GAIA template's domain layer. Replace it with your company name or 3rd-party API name.
 
 ```
 gaia/
-├── api.ts                   # createed Ky instance for this domain
+├── api.ts                   # created Ky instance for this domain
 ├── auth/
 │   ├── parsers.ts           # Zod schemas for response validation
 │   ├── requests.server.ts   # request functions (.server.ts = server-only)
 │   └── types.ts             # types inferred from Zod
-├── things/                  # the example resource (deleted by /gaia-init)
-│   ├── parsers.ts
-│   ├── requests.server.ts
-│   ├── state.tsx            # client-side state if needed
-│   └── types.ts
 ├── urls.ts                  # URL constants
 └── index.server.ts          # barrel export
 ```
@@ -53,8 +48,6 @@ gaia/
 ```ts
 export const GAIA_URLS = {
   login: 'login',
-  things: 'things',
-  thingsId: 'things/:id',
 };
 ```
 
