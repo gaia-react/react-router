@@ -8,6 +8,13 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] update | wiki-coherence hooks + /init interceptor
+
+- Added `intercept-init.sh` (UserPromptSubmit) — blocks built-in `/init`, auto-invokes `/gaia-init`. Self-removes on `/gaia-init` completion.
+- Added `wiki-session-start.sh` + `wiki-session-stop.sh` — compensate for a claude-obsidian plugin gap where `PostToolUse` auto-commits wiki changes, leaving the plugin's own Stop diff-check empty and its `wiki/hot.md` refresh prompt never firing. Our Stop hook checks commits between a session-start SHA marker and HEAD, covering the auto-commit case. Plugin's Stop still catches working-tree (uncommitted) changes — the two complement each other.
+- Added `wiki-maintenance.md` rule — judgment-based wiki update check that fires pre-commit alongside `quality-gate`.
+- Pages updated: [[Claude Integration]] (Hooks section restructured by event type, 3 new hooks documented)
+
 ## [2026-04-20] update | /audit-knowledge command added
 
 - Adapted `.claude/commands/audit-knowledge.md` from another project; portable path resolution (no hardcoded user paths); `.claude/audit/` gitignored
