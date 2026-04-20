@@ -21,7 +21,7 @@ This is **different** from `app/components/`, which holds shared UI used across 
 | --------- | ------------------------------------ |
 | `Public/` | `_public+` routes (e.g. `IndexPage`) |
 
-Add `Session/` when you add auth-guarded pages behind `_session+/`. Legal pages typically live as static JSX directly in the route file — no `pages/Legal/` folder by convention.
+When you add auth-guarded pages behind `_session+/`, ask Claude to scaffold a `Session/` folder — `/new-route` handles the wiring. Legal pages typically live as static JSX directly in the route file — no `pages/Legal/` folder by convention.
 
 ## Folder pattern
 
