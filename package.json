@@ -138,7 +138,7 @@
     "stylelint-order": "8.1.1",
     "tailwindcss": "4.2.2",
     "typescript": "^6.0.3",
-    "vite": "^8.0.8",
+    "vite": "8.0.9",
     "vitepress": "1.6.4",
     "vitest": "^4.1.4"
   },
