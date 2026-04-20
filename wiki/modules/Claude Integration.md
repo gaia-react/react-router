@@ -5,7 +5,7 @@ status: active
 purpose: Claude Code integration — commands, rules, hooks, agents, skills
 created: 2026-04-20
 updated: 2026-04-20
-tags: [module, claude]
+tags: [module, claude, hooks]
 ---
 
 # Claude Integration
