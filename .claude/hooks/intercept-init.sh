@@ -6,11 +6,9 @@ prompt=$(jq -r '.prompt // ""' < /dev/stdin)
 
 if [[ "$prompt" =~ ^/init([[:space:]]|$) ]]; then
   cat >&2 <<'MSG'
-This project is already configured for Claude Code (CLAUDE.md, .claude/commands, .claude/rules, .claude/hooks all present).
+The user's /init has been intercepted by a project hook. This is a GAIA React template — the built-in /init would overwrite the curated CLAUDE.md.
 
-Do NOT run the built-in /init — it would overwrite the curated CLAUDE.md.
-
-Instead, invoke the /gaia-init skill to strip the example scaffolding and give the user a clean slate.
+REQUIRED NEXT ACTION: Immediately call the Skill tool with skill="gaia-init" to run the template's initialization. Do not ask for confirmation. Do not tell the user to run it themselves. Do not explain what you are about to do beyond one short sentence. Just call the Skill tool now.
 MSG
   exit 2
 fi
