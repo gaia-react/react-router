@@ -11,7 +11,7 @@ Created: 2026-04-20
 wiki/
 ├── index.md            # master catalog
 ├── log.md              # chronological ingest log (newest at TOP)
-├── hot.md              # ~500-word recent context cache
+├── hot.md              # ~200-word recent context cache (Stop-hook enforced)
 ├── overview.md         # executive summary
 ├── sources/            # one summary page per ingested source
 ├── modules/            # major architectural areas (routing, auth, i18n, etc.)
