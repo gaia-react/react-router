@@ -153,7 +153,7 @@ Ask Claude to run, add, or debug tests — Vitest, Storybook + Chromatic, and Pl
 
 ## Deployment
 
-GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for the target you want — Vercel, Fly, AWS, a bare Node host, a Docker container, anywhere React Router 7 can run. Claude will wire up the build, environment variables, and any CI/CD you need.
+GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for the target you want — Vercel, Cloudflare, Fly, AWS, a bare Node host, a Docker container, anywhere React Router 7 can run. Claude will wire up the build, environment variables, and any CI/CD you need.
 
 ## History
 
