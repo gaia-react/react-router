@@ -22,31 +22,11 @@ Both use React Router 7's `createCookieSessionStorage`. Secrets come from `env.S
 
 ## Language cookie
 
-`languageCookie` is a simple signed cookie. The root loader reads the detected language from i18next middleware and serializes it on every response so the preference persists across navigations.
-
-```ts
-import {createCookie} from 'react-router';
-import {env} from '~/env.server';
-
-export const languageCookie = createCookie('language', {
-  httpOnly: true,
-  sameSite: 'lax',
-  secrets: [env.SESSION_SECRET],
-  secure: process.env.NODE_ENV === 'production',
-});
-```
+`languageCookie` (`app/sessions.server/language.ts`) is a signed `httpOnly` / `sameSite: lax` cookie. The root loader reads the i18next-detected language and serializes it on every response so the preference persists.
 
 ## Theme cookie
 
-`getThemeSession(request)` returns a session object with a `getTheme()` getter. The root loader uses it to pass the SSR-safe initial theme to `<ThemeProvider>`, preventing flash-of-wrong-theme on first paint.
-
-```ts
-const themeSession = await getThemeSession(request);
-// returns 'light' | 'dark' | undefined
-const theme = themeSession.getTheme();
-```
-
-The `actions+/set-theme.ts` route mutates the theme cookie when the user toggles.
+`app/sessions.server/theme.ts` exposes `getThemeSession(request)` which returns a session with a `getTheme()` getter (`'light' | 'dark' | undefined`). The root loader passes this to `<ThemeProvider>` for SSR-safe hydration. The `actions+/set-theme.ts` route mutates it on toggle.
 
 ## Adding auth sessions
 
