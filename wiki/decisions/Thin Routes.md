@@ -3,6 +3,8 @@ type: decision
 status: active
 priority: 1
 date: 2026-04-20
+created: 2026-04-20
+updated: 2026-04-20
 tags: [decision, routing, architecture]
 ---
 
