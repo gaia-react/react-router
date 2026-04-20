@@ -1,6 +1,6 @@
 ---
 type: module
-path: test/mocks/, public/mockServiceWorker.js
+path: test/mocks/, test/worker.ts, test/test.server.ts, test/msw.server.ts
 status: active
 language: typescript
 purpose: API mocking layer shared across Vitest, Storybook, and dev
@@ -12,46 +12,299 @@ tags: [module, msw, testing, mocking]
 
 # MSW (Mock Service Worker)
 
-GAIA uses [[MSW]] + `@mswjs/data` as the **single mocking layer** for tests, Storybook, and optional dev mode.
+GAIA uses [[MSW]] + `@mswjs/data` as the **single mocking layer** for unit tests, Playwright E2E, Storybook stories, and optional dev mode.
 
-> [!key-insight] One mocking layer across all test layers
-> Same handlers, same data, same factory. Vitest tests, Playwright runs (when `MSW_ENABLED=true`), Storybook stories, and your dev server all see the same fake API.
+> [!key-insight] One mock set, three environments
+> The same handlers and in-memory database serve Vitest (CI/local), the dev server (MSW_ENABLED=true), and Playwright runs. You define a mock once; every surface sees the same fake API.
 
-## Folder layout
+See also: [[API Service Pattern]], [[Services]], [[Testing]], [[test-runner]].
+
+---
+
+## 1. Purpose
+
+MSW intercepts HTTP requests at the network layer — no monkey-patching, no import mocking. Because the service layer uses `ky` with `API_URL` as the prefix, every outbound request goes through a real fetch. MSW catches it before it leaves the process (Node) or browser (Service Worker).
+
+This means tests exercise the full request path: route loader → service function → ky → MSW handler → fake DB → response parsing.
+
+---
+
+## 2. Folder structure
 
 ```
 test/mocks/
-├── auth/
-│   ├── data.ts         # @mswjs/data schema + seed
-│   ├── get.ts          # GET handlers
-│   ├── post.ts
-│   └── index.ts        # barrel
-├── things/             # same shape
-├── user/
-├── ping.ts
-├── faker.ts            # faker.js wrapper for randomized seeds
-├── database.ts         # @mswjs/data factory composition + resetTestData
-└── index.ts            # combines all handlers
+├── {resource}/
+│   ├── data.ts         # @mswjs/data schema + seed records
+│   ├── get.ts          # GET handlers (list + single)
+│   ├── post.ts         # POST handler
+│   ├── put.ts          # PUT handler
+│   ├── delete.ts       # DELETE handler
+│   └── index.ts        # barrel — re-exports all handlers as an array
+├── database.ts         # factory composition + resetTestData()
+├── faker.ts            # seeded faker instance (consistent test data)
+├── ping.ts             # passthrough for Remix dev ping
+├── url.ts              # URL helper — mirrors ky prefix-join logic
+└── index.ts            # registry — combines all resource handlers
 ```
 
-`@mswjs/data` provides an in-memory database — primary keys, queries, mutations — so handlers like `database.things.getAll()` work as if they were a real backend.
+Support files:
 
-## Service-mock parity
+- `test/worker.ts` — browser Service Worker setup (dev mode)
+- `test/test.server.ts` — Node server setup (Vitest)
+- `test/msw.server.ts` — Node server setup for dev server (`MSW_ENABLED`)
+- `test/utils.ts` — shared `DELAY`, `date()` helpers
 
-Each handler file maps 1:1 to a request function in `app/services/gaia/{domain}/requests.server.ts`. The `/new-service` command scaffolds both halves at the same time. See [[API Service Pattern]].
+---
 
-## Where it runs
+## 3. Service-layer contract
 
-| Surface               | Entry                                                                                    |
-| --------------------- | ---------------------------------------------------------------------------------------- |
-| Vitest                | `test/test.server.ts` (server) → wired in `test/setup.ts`                                |
-| Storybook             | `msw-storybook-addon` in `.storybook/preview.ts`                                         |
-| Dev server (optional) | `entry.server.tsx` checks `MSW_ENABLED=true`                                             |
-| Browser worker        | `public/mockServiceWorker.js` (auto-installed via `msw.workerDirectory` in package.json) |
+**This is the most important invariant.** MSW handler URLs must exactly match the URLs that the service layer constructs at runtime.
 
-## Stubs vs mocks
+### How a request URL is built
 
-- **Stubs** (`test/stubs/`) wrap framework providers (React Router, State) for stories
-- **Mocks** (`test/mocks/`) intercept HTTP requests via MSW
+1. `API_URL` env var provides the prefix (e.g. `http://localhost:3001/api/`).
+2. `app/services/api/utils.ts → getBaseUrl()` reads it; `ky` prepends it to every path.
+3. `GAIA_URLS` in `app/services/gaia/urls.ts` provides the path token (e.g. `'resources'` or `'resources/:id'`).
+4. The service function calls `api(GAIA_URLS.resources)` — ky joins prefix + path → `http://localhost:3001/api/resources`.
 
-See [[Testing]].
+### How a handler URL must be built
+
+MSW handlers must use `url()` from `test/mocks/url.ts` — **never** a bare string:
+
+```ts
+import {http} from 'msw';
+import {GAIA_URLS} from '~/services/gaia/urls';
+import {url} from '../url';
+
+http.get(url(GAIA_URLS.resources), () => { ... });
+```
+
+`url()` strips trailing slashes from `API_URL` and leading slashes from the path, then joins them with exactly one `/` — mirroring ky's own prefix-join. Without it, a handler built as `` `${API_URL}resources` `` will **not** match a request to `${API_URL}/resources` when `API_URL` has no trailing slash.
+
+> [!warning] URL drift = escaped requests
+> If a handler URL doesn't match the ky-constructed URL, MSW passes the request through (`onUnhandledRequest: 'bypass'`). The request goes to the real network, fails silently in tests, and appears as a flaky fetch error rather than a mock miss.
+
+### URL constants are the contract
+
+```ts
+// app/services/gaia/urls.ts
+export const GAIA_URLS = {
+  resources: 'resources',
+  resourcesId: 'resources/:id',
+};
+```
+
+The service function and the MSW handler both import `GAIA_URLS`. If the URL constant changes, both sides update together. Never hardcode paths in handler files.
+
+---
+
+## 4. Three modes
+
+### Dev (browser Service Worker)
+
+Enable in `.env`:
+
+```
+MSW_ENABLED=true
+API_URL=http://localhost:3001/api/
+```
+
+On app load, `app/entry.client.tsx` checks:
+
+```ts
+if (window.process.env.NODE_ENV === 'development' && window.process.env.MSW_ENABLED === true) {
+  const {worker} = await import('../test/worker');
+  return worker.start({onUnhandledRequest: 'bypass'});
+}
+```
+
+`test/worker.ts` calls `setupWorker(ping, ...handlers)` — the same handler array as tests, plus the Remix dev ping passthrough.
+
+The Service Worker file lives at `public/mockServiceWorker.js` and is served statically. It is installed automatically by the `msw` package via `msw.workerDirectory` in `package.json`.
+
+Server-side loaders also run under MSW when `MSW_ENABLED=true`. `app/entry.server.tsx` calls `startApiMocks()` from `test/msw.server.ts` before handling any request:
+
+```ts
+if (env.NODE_ENV !== 'production' && env.MSW_ENABLED) {
+  startApiMocks();
+}
+```
+
+`startApiMocks()` creates (or restarts) a Node `SetupServer` stored in `globalThis.__MSW_SERVER`, ensuring a single instance across HMR reloads.
+
+Both sides (browser worker + Node server) run simultaneously in dev mode, so SSR loaders and client fetches both hit the mock.
+
+### Unit / integration tests (Vitest)
+
+`vitest.config.ts` declares:
+
+```ts
+setupFiles: ['./test/setup.ts']
+```
+
+`test/setup.ts` imports `./test.server` which calls `setupServer(...handlers)` with Vitest lifecycle hooks:
+
+```
+beforeAll  → server.listen({ onUnhandledRequest: 'bypass' })
+afterEach  → server.resetHandlers()   // clears runtime overrides
+afterAll   → server.close()
+```
+
+Tests run with `npm run test -- --run` (CI) or `npm test` (watch). See [[test-runner]].
+
+Per-test handler overrides: call `server.use(http.get(...))` inside a test; `afterEach` resets them automatically.
+
+### CI/CD
+
+Vitest under CI uses the same Node server path above — no extra config. The `test:ci` script:
+
+```
+vitest --run --passWithNoTests --coverage --bail 1
+```
+
+For Playwright, MSW is **not** wired automatically. Playwright tests run against either:
+- a real API (default), or
+- the dev server with `MSW_ENABLED=true` in the environment.
+
+To use MSW in Playwright, start `npm run dev` with `MSW_ENABLED=true` and point Playwright's `baseURL` at the local server. The dev server MSW path (`test/msw.server.ts`) handles server-side interception; the browser Service Worker handles client-side fetches.
+
+---
+
+## 5. Writing a new mock
+
+**Step 1 — Define the data schema and seed records** (`test/mocks/{resource}/data.ts`):
+
+```ts
+import {primaryKey, nullable} from '@mswjs/data';
+
+export const resourceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  created_at: z.iso.datetime(),
+});
+
+export type ServerResource = z.infer<typeof resourceSchema>;
+
+const schema = {
+  id: primaryKey(String),
+  name: String,
+  created_at: String,
+};
+
+const data: ServerResource[] = [
+  {id: '1', name: 'Example', created_at: new Date().toISOString()},
+];
+
+export default {data, schema};
+```
+
+**Step 2 — Write handlers** (`test/mocks/{resource}/get.ts`, etc.):
+
+```ts
+import {http} from 'msw';
+import {GAIA_URLS} from '~/services/gaia/urls';
+import database from '../database';
+import {url} from '../url';
+
+const all = http.get(url(GAIA_URLS.resources), () =>
+  Response.json({data: database.resources.getAll()})
+);
+
+const one = http.get(url(GAIA_URLS.resourcesId), ({params}) => {
+  const data = database.resources.findFirst({
+    where: {id: {equals: String(params.id)}},
+  });
+  if (!data) return Response.json({error: 'Not found'}, {status: 404});
+  return Response.json({data});
+});
+
+export default [one, all];
+```
+
+**Step 3 — Barrel the handlers** (`test/mocks/{resource}/index.ts`):
+
+```ts
+import del from './delete';
+import get from './get';
+import post from './post';
+import put from './put';
+
+export default [...get, post, put, del];
+```
+
+**Step 4 — Register in the global handler registry** (`test/mocks/index.ts`):
+
+```ts
+import resources from './resources';
+
+const handlers = [...existingHandlers, ...resources];
+export default handlers;
+```
+
+**Step 5 — Add factory schema to the database** (`test/mocks/database.ts`):
+
+```ts
+import {factory} from '@mswjs/data';
+import resources from './resources/data';
+
+const database = factory({
+  resources: resources.schema,
+  // ...existing models
+});
+
+export const resetTestData = () => {
+  database.resources.deleteMany({where: {id: {notIn: ['0']}}});
+  resources.data.forEach(database.resources.create);
+  // ...reset other models
+};
+
+resetTestData();
+export default database;
+```
+
+**Step 6 — Add URL constants** (`app/services/gaia/urls.ts`):
+
+```ts
+export const GAIA_URLS = {
+  resources: 'resources',
+  resourcesId: 'resources/:id',
+};
+```
+
+The `/new-service` command scaffolds steps 1–6 automatically. Run it instead of doing this by hand.
+
+---
+
+## 6. Database factory pattern
+
+`test/mocks/database.ts` composes all resource schemas into a single `@mswjs/data` factory. The factory provides typed in-memory CRUD: `create`, `findFirst`, `findMany`, `getAll`, `update`, `delete`, `deleteMany`.
+
+`resetTestData()` is called:
+- **Once on module load** — seeds the database for the first test in a file.
+- **Explicitly in test files** — call it in `beforeEach` when a test mutates data and the next test must start clean.
+
+```ts
+import {resetTestData} from 'test/mocks/database';
+
+beforeEach(() => {
+  resetTestData();
+});
+```
+
+`test/test.server.ts` calls `server.resetHandlers()` in `afterEach` — this resets runtime handler overrides but **not** the database. Always call `resetTestData()` explicitly in tests that write, update, or delete records.
+
+`test/mocks/faker.ts` exports a seeded `faker` instance (seed `7`) so generated values are deterministic across runs.
+
+---
+
+## 7. Common pitfalls
+
+| Pitfall | Cause | Fix |
+|---|---|---|
+| Request escapes to real network | Handler URL doesn't match ky URL | Always use `url(GAIA_URLS.key)` — never a hardcoded string |
+| Test sees stale data after mutation | Forgot `resetTestData()` between tests | Call in `beforeEach` for any test suite that writes |
+| MSW not active in dev | `MSW_ENABLED` missing or false in `.env` | Set `MSW_ENABLED=true` in `.env` (see `.env.example`) |
+| Server-side requests bypass mock in dev | `entry.server.tsx` check failed | Ensure `env.MSW_ENABLED` is truthy (it's a boolean env read by `env.server.ts`) |
+| Handler added but never triggered | Not registered in `test/mocks/index.ts` | Add the resource barrel to the registry |
+| Runtime override persists across tests | Didn't rely on `afterEach` reset | `server.resetHandlers()` runs automatically; don't call `server.use()` outside a test body |
+| Playwright ignores mocks | Playwright doesn't use Vitest server | Start dev server with `MSW_ENABLED=true` and point Playwright at it |
