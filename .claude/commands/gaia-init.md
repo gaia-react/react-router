@@ -83,6 +83,19 @@ If any install step fails, print the command so the user can run it manually.
 - `claude plugin marketplace add AgriciDaniel/claude-obsidian`
 - `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
+### Install Chromatic MCP (optional but recommended)
+
+Lets Claude query Storybook components, props, and visual-regression diffs directly. Requires a Chromatic account — skip if the user opted out of Chromatic.
+
+```bash
+npx storybook add @storybook/addon-mcp
+npx mcp-add --type http --url "http://localhost:6006/mcp" \
+  --client-id "cdf3737dff9d485485968e50b63fd8b4" \
+  --scope project
+```
+
+First connection prompts Chromatic sign-in. See `wiki/dependencies/Chromatic.md` for details.
+
 ### Update Code Review Audit agent
 
 Edit `.claude/agents/code-review-audit.md` — replace `{variables}` with paths matching this project and the user's OS:

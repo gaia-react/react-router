@@ -21,6 +21,7 @@ Most templates treat AI as an afterthought: drop a `CLAUDE.md` in the root and h
 - **Code-review-audit agent** — required before every PR merge via the `pr-merge-workflow` rule
 - **LLM knowledge base (wiki)** — architecture, modules, dependencies, decisions, flows. Claude reads a ~200-word cache at session start and fetches specific pages on demand. Replaces bloated `CLAUDE.md` sprawl and keeps per-request token costs down.
 - **Obsidian integration** — the [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin adds skills for ingesting sources, querying, linting, auto-research loops, and saving conversations directly into the vault
+- **Chromatic MCP ready** — Storybook 10.3+ means `@storybook/addon-mcp` + [Chromatic MCP](https://www.chromatic.com/docs/mcp/) drops in; Claude can query components and reason about visual-regression diffs directly (opt-in via `/gaia-init`)
 - **4 bundled project skills** — `react-code`, `typescript`, `tailwind`, `skeleton-loaders`
 
 ## What You Get (Foundation)
