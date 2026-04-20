@@ -32,7 +32,6 @@ See [[GAIA Philosophy]] for the long version.
 - **Mocking**: [[MSW]] + `@mswjs/data` for tests, Storybook, and dev
 - **Storybook** v10 with React Router, i18n, dark mode, MSW addons
 - **Quality**: 20+ ESLint plugins, Prettier, Stylelint, [[Husky]] pre-commit hooks
-- **Docs**: [[VitePress]] with GitHub Pages deploy
 - **Claude Code**: [[Claude Integration]] with commands, rules, hooks, agents
 
 ## Top-Level Architecture
