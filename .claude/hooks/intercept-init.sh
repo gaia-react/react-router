@@ -2,6 +2,9 @@
 # Redirect the built-in /init command to /gaia-init on this template.
 # Fires on UserPromptSubmit. Exit 2 + stderr = blocking message to Claude.
 
+# If jq isn't installed, don't block — fail open so we never lock the user out.
+command -v jq >/dev/null 2>&1 || exit 0
+
 prompt=$(jq -r '.prompt // ""' < /dev/stdin)
 
 if [[ "$prompt" =~ ^/init([[:space:]]|$) ]]; then

@@ -194,7 +194,7 @@ Insert a new entry directly below the `# Log` heading (log is append-only, newes
 
 2. Remove the `/init` interceptor — it exists only to protect the template's curated CLAUDE.md, and is no longer needed once the template has been initialized:
    - Delete `.claude/hooks/intercept-init.sh`
-   - Remove the entire `"UserPromptSubmit"` block from `.claude/settings.json` (the key and its array value)
+   - Edit `.claude/settings.json`: from the `hooks.UserPromptSubmit` array, remove only the matcher entry whose inner `hooks[].command` is `.claude/hooks/intercept-init.sh`. Preserve any other entries the user may have added. If removing it leaves `UserPromptSubmit` as an empty array, also remove the `UserPromptSubmit` key itself.
 
 3. Output: "GAIA React project is ready for development with a clean slate!"
 
