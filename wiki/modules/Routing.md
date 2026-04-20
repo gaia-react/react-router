@@ -29,21 +29,38 @@ You can switch to standard React Router 7 routing if you prefer.
 
 Routes are organized using flat-routes folder syntax — `_` prefix + `+` suffix marks a folder as a layout/route group.
 
-| Folder      | Purpose                         | Auth requirement                            |
-| ----------- | ------------------------------- | ------------------------------------------- |
-| `_public+`  | Home, marketing, public content | none                                        |
-| `_auth+`    | Login, register, password reset | redirects authenticated users away          |
-| `_session+` | Authenticated app               | redirects unauthenticated users to `_auth+` |
-| `_legal+`   | Terms, privacy, company         | none                                        |
-| `actions+`  | Root-level form actions (no UI) | varies by action                            |
+| Folder      | Purpose                         | Auth requirement                                |
+| ----------- | ------------------------------- | ----------------------------------------------- |
+| `_public+`  | Home, marketing, public content | none                                            |
+| `_session+` | Hook point for auth-guarded app | stub — add your own guard loader here           |
+| `_legal+`   | Terms, privacy, company         | none                                            |
+| `actions+`  | Root-level form actions (no UI) | varies by action                                |
 
 GAIA ships these `actions+` endpoints out of the box:
 
-- `logout.ts`
 - `set-language.ts`
 - `set-theme.ts`
 
-See [[Auth Flow]] for redirect semantics.
+## `_session+/` hook point
+
+`app/routes/_session+/_layout.tsx` is an intentionally empty stub. To add an auth guard, add a loader that throws `redirect('/login')` if the user is not authenticated:
+
+```tsx
+import {redirect} from 'react-router';
+import {Outlet} from 'react-router';
+
+export const loader = async ({request}: Route.LoaderArgs) => {
+  // Example: check your session/cookie/JWT here
+  const user = await getSessionUser(request);
+  if (!user) throw redirect('/login');
+  return null;
+};
+
+const SessionLayout = () => <Outlet />;
+export default SessionLayout;
+```
+
+All routes nested under `_session+/` inherit this guard. Choose any auth provider: Supabase, Clerk, Auth0, custom sessions, etc.
 
 ## Thin Routes Convention
 
