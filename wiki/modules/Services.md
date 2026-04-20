@@ -56,11 +56,11 @@ export const GAIA_URLS = {
 ```ts
 import {api} from '../api';
 import {GAIA_URLS} from '../urls';
-import {thingSchema} from './parsers';
+import {resourceSchema} from './parsers';
 
-export const getThingById = async (id: string): Promise<Thing> => {
-  const result = await api(GAIA_URLS.thingsId, {pathParams: {id}});
-  return thingSchema.parse(result.data);
+export const getResourceById = async (id: string): Promise<Resource> => {
+  const result = await api(GAIA_URLS.resourcesId, {pathParams: {id}});
+  return resourceSchema.parse(result.data);
 };
 ```
 
