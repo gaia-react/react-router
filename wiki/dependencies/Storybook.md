@@ -15,12 +15,6 @@ Component-Driven Development environment. v10 with `@storybook/react-vite`.
 
 ## Companion packages
 
-- `@storybook/react-vite` — framework
-- `@storybook/addon-docs`, `@storybook/addon-links`
-- `eslint-plugin-storybook`
-- `@vueless/storybook-dark-mode`
-- `storybook-react-i18next`
-- `msw-storybook-addon`
-- `chromatic` — visual regression on top of stories
+`@storybook/react-vite`, `@storybook/addon-docs`, `@storybook/addon-links`, `eslint-plugin-storybook`, `@vueless/storybook-dark-mode`, `storybook-react-i18next`, `msw-storybook-addon`, `chromatic`.
 
 See [[Storybook]] module page.
