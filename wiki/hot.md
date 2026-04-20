@@ -16,24 +16,15 @@ updated: 2026-04-20T00:00:00
 
 ## Last Updated
 
-2026-04-20. Initial ingest of the GAIA React Router project. Wiki vault scaffolded from scratch in Mode B (codebase) + decisions/ADRs.
-
-## Key Recent Facts
-
-- GAIA is a React Router 7 starter template — heavy on infrastructure, deliberately ships **no component library**. Form components are the star.
-- Quality is enforced by tooling: 20+ ESLint plugins, pre-commit Husky+lint-staged (typecheck + lint + tests), zero-warning [[Quality Gate]] before merge.
-- Single MSW mocking layer drives Vitest, Storybook, and (optionally) the dev server. `composeStory` shares setup between Storybook and Vitest tests.
-- TypeScript files (not JSON) for i18n strings — for type safety and lint-staged enforcement of missing keys.
-- Claude integration is first-class: 8 commands, 10 rules, 4 hooks, `code-review-audit` agent + 3 specialist subagents, 4 local skills.
-- Project version: 1.0.0-beta. Author: Steven Sacks.
+2026-04-20. Branch `chore/claude-optimizations`. Just ingested `/handoff` + `/pickup` commands. Vault now has 69 pages.
 
 ## Recent Changes
 
-- Created: vault scaffold (`wiki/CLAUDE.md`, `index.md`, `log.md`, `hot.md`, `overview.md`)
-- Created: 13 module pages, 4 flow pages, 2 entity pages, 19 dependency pages, 6 decision pages, 13 concept pages, 1 source summary
-- Created: `wiki/sources/Initial Ingest.md` documenting what was read
+- Created: [[handoff command]], [[pickup command]] (concepts/)
+- Updated: [[Claude Integration]] commands table, [[index]], [[log]]
+- Project `CLAUDE.md` updated upstream — hot cache now enforced at ~200 words; fetch wiki pages on demand only; don't cross-load `wiki/app/` and `wiki/brand/` domains.
 
 ## Active Threads
 
-- None — vault is freshly scaffolded
-- Suggested next ingests: a deeper read of `app/components/Form/*` (each form component as its own wiki page), individual route walkthroughs, real example flows from `things/` before they're stripped by `/gaia-init`
+- Wiki currently codebase-only (Mode B). No `wiki/brand/` or `wiki/business/` content yet — create on demand.
+- Open suggestion: deeper ingest of `app/components/Form/*` and the example `things/` service before `/gaia-init` strips it.
