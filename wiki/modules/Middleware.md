@@ -25,4 +25,4 @@ Sets up the i18next instance per request and exposes:
 
 Used by every route loader that needs to translate meta tags. See [[i18n]].
 
-Add other middleware (auth checks, request logging, feature flags, …) as your app needs them.
+Ask Claude to add other middleware (auth checks, request logging, feature flags, …) as your app needs them.
