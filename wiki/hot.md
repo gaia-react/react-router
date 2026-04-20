@@ -1,3 +1,11 @@
+<!--
+CACHE DISCIPLINE — enforced on every rewrite (Stop hook):
+  - Max ~200 words total
+  - Purpose: "where did we leave off?" — the current state of the work
+  - Include: current branch / milestone, last-shipped thing, recent wiki changes, active threads
+  - If a fact appears here twice across sessions, move it to the right wiki page and delete it from this cache
+  - It is a cache, not a journal. Overwrite completely each update.
+-->
 ---
 type: meta
 title: Hot Cache
