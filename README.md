@@ -2,7 +2,7 @@
 
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
-**Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end — and token-efficient enough to do it at scale.
+**Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
 Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured *and* documented for Claude in a way that keeps per-request costs down and output quality up.
 
@@ -25,7 +25,7 @@ Most templates treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the r
 
 ## How GAIA keeps Claude token-efficient
 
-- **Wiki, not `CLAUDE.md` sprawl** — architecture, modules, dependencies, decisions, and flows live in `wiki/` as focused, linked markdown pages. A ~200-word `hot.md` cache loads at session start; everything else is fetched on demand. You're not paying for the whole manual on every turn.
+- **Wiki, not `CLAUDE.md` sprawl** — architecture, modules, dependencies, decisions, and flows live in `wiki/` as focused, linked markdown pages. Ask Claude "how do I add a new route?", "how does dark mode wire through?", or "what's the testing layer setup?" — it pulls the specific wiki page, not the whole manual. A ~200-word `hot.md` cache loads at session start; everything else is fetched on demand. You're not paying for the whole manual on every turn.
 - **Path-scoped rules** — the `accessibility` rule only loads when Claude edits `app/components/`. The `api-service` rule only loads inside `app/services/`. Rules are surgical; context stays under control.
 - **`playwright-cli` for E2E work** — the [Playwright CLI](https://github.com/microsoft/playwright-cli) lets Claude drive a real browser through a single shell call per interaction (`playwright-cli click e3`, `playwright-cli snapshot`), instead of a persistent MCP session round-tripping snapshots and screenshots. Debugging a failing spec or authoring a new one costs a handful of tool invocations, not dozens. The `playwright` rule enforces semantic selectors, web-first assertions, and the SSR hydration barrier — Claude writes specs Claude can run, automatically.
 - **`/audit-knowledge`** — a periodic sweep that finds duplication and bloat across memory, wiki, and auto-loaded files. When project knowledge drifts, you clean it up instead of letting prompt debt compound.
@@ -78,7 +78,7 @@ GAIA bundles the traditional stack Claude's output rests on. Every piece is pre-
 GAIA is a **Claude-native base template**, not a full-stack kit or a component library. It sets up everything Claude needs to write your app correctly and leaves the product-layer choices to you.
 
 - Configuring 20+ linting rules, four layers of testing, i18n, CI — **and** the full Claude toolchain (commands, rules, hooks, agents, wiki, plugins) — correctly takes days. GAIA solves that once.
-- **Every tool is pre-configured but removable.** Don't need i18n? Remove it. Prefer a different icon set? Swap it. Nothing is locked in — including the Claude layer.
+- **Every tool is pre-configured but removable — ask Claude to swap it.** Don't need i18n? Tell Claude to rip it out. Prefer a different icon set? Ask Claude to swap it in. Because Claude understands how the pieces are wired together, removals and substitutions stay coherent instead of leaving orphaned imports and stale rules. Nothing is locked in — including the Claude layer.
 - Pre-commit hooks run typechecking, linting, and tests. Pre-tool hooks catch Claude mistakes before they reach disk. The quality gate catches issues before they compound.
 - Best practices are baked into working patterns documented in the wiki — and into rules Claude loads automatically.
 
@@ -217,7 +217,7 @@ This template uses [Tailwind v4](https://tailwindcss.com/) with the class-strate
 
 ### Icons
 
-[FontAwesome](https://fontawesome.com/) is included. You're free to change it if you like.
+[FontAwesome](https://fontawesome.com/) is included. Ask Claude to swap it for Heroicons, Lucide, or any other icon set — Claude will update imports and icon usages across the app.
 
 ### i18n
 
