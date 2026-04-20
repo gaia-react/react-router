@@ -8,6 +8,13 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] ingest | Form components deep dive + things service
+
+- Sources: `app/components/Form/*` (all 15 components + Field subparts + YearMonthDay utils), `app/services/gaia/things/*`
+- Pages created: [[Form Field]], [[Form Text Inputs]], [[Form Select]], [[Form YearMonthDay]], [[Form Choices]], [[Form Layout]], [[things Service]]
+- Pages updated: [[Form Components]] (deep-dive column), [[Services]] (things cross-link), [[API Service Pattern]] (things cross-link), [[index]], [[hot]]
+- Key insight: YearMonthDay's Conform integration requires two non-obvious workarounds — native `input` event stop-propagation at the container div (React's synthetic delegation routes through `document`, same node as Conform's listener, so React-level `stopPropagation` is a no-op) and DOM-level hidden input value sync before `onChange` fires so Conform's FormData read returns the new value.
+
 ## [2026-04-20] ingest | Claude commands handoff + pickup
 
 - Sources: `.claude/commands/handoff.md`, `.claude/commands/pickup.md`
