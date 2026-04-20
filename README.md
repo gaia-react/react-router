@@ -8,8 +8,9 @@ Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, 
 
 ## Quick Start
 
+Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
+
 ```bash
-# Requires Node >= 22.19.0
 npx create-react-router@latest --template gaia-react/react-router
 ```
 
@@ -19,23 +20,28 @@ Open Claude Code in the project and type `/init`.
 
 Most templates treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the root and hope the model figures out the rest. GAIA treats Claude as an engineer you *manage*. That shift exposes two failure modes the bolt-on approach papers over.
 
-**Trust.** You can't manage an engineer you can't predict. Without enforceable conventions, Claude reverts to its training distribution — which isn't your codebase. GAIA embeds project conventions as auto-loaded rules, pre-tool hooks that block mistakes at disk, a required code-review agent before every merge, and a quality gate before every commit. Claude writes code that matches your patterns on day one, and can't ship code that doesn't.
+### Trust
 
-**Token economics.** Context bloat isn't just `CLAUDE.md` sprawl. Instructions get dropped into global memory, forgotten, and accumulate into redundancies or conflicts — an invisible cost that keeps growing every session. GAIA keeps token usage minimized: path-scoped rules that only load when relevant, and a fetch-on-demand Obsidian wiki that replaces `CLAUDE.md` sprawl entirely.
+You can't manage an engineer you can't predict. Without enforceable conventions, Claude reverts to its training distribution — an average of every codebase on the internet, bad code and all. GAIA's codebase is what you actually want Claude matching. With GAIA, Claude writes code that follows best practices on day one — and can't ship code that doesn't.
+
+### Token economics
+
+Context bloat isn't just `CLAUDE.md` sprawl. Instructions get dropped into global memory, forgotten, and accumulate into redundancies and conflicts — an invisible cost that compounds every session. GAIA keeps token usage minimal by design.
 
 ## How GAIA makes Claude trustworthy
 
-- **Claude writes code that matches best practices on day one — and can't ship code that doesn't.** Best practices are baked into GAIA, not pattern-matched from whatever's in the repo.
+- **Best practices are baked in, not pattern-matched.** Rules encode the conventions directly instead of hoping Claude infers them from whatever's already in the repo.
 - **Guardrails against technical debt.** Rules block debt-accumulating patterns from being written in the first place — untyped exports, untested components, hardcoded strings, a11y gaps.
 - **Test-driven development** via the bundled `tdd` skill. Red-green-refactor loop, tests before code — tailored for Vitest, React Testing Library, Storybook `composeStory`, and MSW.
-- **Code-review audit agent runs before every merge.** A required Claude subagent scans the branch diff for security, performance, code smells, and anti-patterns, then invokes [React Doctor](https://github.com/millionco/react-doctor) for 47+ React-specific rules. The `pr-merge-workflow` rule makes it a hard gate — no "small PR" override.
+- **Code-review audit before every merge.** A Claude subagent scans the branch diff for security, performance, code smells, and anti-patterns — and blocks the merge until the issues are fixed and committed.
 - **Quality gate before commit** — typecheck, lint, tests, and build must all pass. Not "mostly clean" — actually clean.
 
 ## How GAIA keeps Claude token-efficient
 
-- **Path-scoped rules** load only when Claude touches a matching file. The `accessibility` rule loads inside `app/components/`; the `api-service` rule loads inside `app/services/`. No preloaded manual.
-- **Obsidian wiki replaces `CLAUDE.md` sprawl.** Architecture, flows, and decisions live in `wiki/` as focused, linked markdown. Claude pulls the specific page it needs; a ~200-word `hot.md` is the only thing loaded at session start.
-- **Tailored wiki behavior for GAIA.** A `wiki-maintenance` rule and session-start/stop hooks keep the `claude-obsidian` plugin's habits (ingest cadence, hot-cache discipline, link hygiene) matched to this project's conventions.
+- **Rules are scoped to activate only when needed.** Claude loads the ones that match what it's editing — nothing else.
+- **[Obsidian](https://obsidian.md) wiki, fetched on demand.** Project knowledge lives as focused, linked markdown pages. Claude opens the one page it needs — *"How does dark mode wire through?"* — instead of preloading the whole manual.
+- **Wiki behavior tailored to GAIA.** Session hooks keep Obsidian's workflow (ingest cadence, cache discipline, link hygiene) aligned with the project's conventions.
+- **Periodic knowledge audit** sweeps memory, wiki, and auto-loaded files for duplication, conflicts, and stale instructions before they start costing tokens.
 - **Session continuity.** `/handoff` + `/pickup` replace re-briefing Claude from scratch at every session start.
 
 ## What Claude rides on (the foundation)
@@ -59,55 +65,33 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 
 ### Foundation
 
-|                          |         GAIA          |  Epic Stack   | create-t3-app | RedwoodJS |
-| ------------------------ | :-------------------: | :-----------: | :-----------: | :-------: |
-| TypeScript               |           ✓           |       ✓       |       ✓       |     ✓     |
-| Routing                  |    React Router 7     | React Router 7 |    Next.js    | React Router |
-| Tailwind                 |           ✓           |       ✓       |       ✓       |     ✗     |
-| Dark mode                |           ✓           |       ✗       |       ✗       |     ✗     |
-| i18n                     |           ✓           |       ✗       |       ✗       |     ✗     |
-| Unit / integration tests |        Vitest         |    Vitest     |       ✗       |   Jest    |
-| Component testing        | Storybook + Chromatic |       ✗       |       ✗       | Storybook |
-| E2E tests                |      Playwright       |  Playwright   |       ✗       |     ✗     |
-| Mock API                 |          MSW          |       ✗       |       ✗       |     ✗     |
-| Forms                    |     Conform + Zod     |       ✗       |       ✗       |     ✗     |
-| Accessibility guardrails |           ✓           |       ✗       |       ✗       |     ✗     |
+|                          |         GAIA          |   Epic Stack   |     RedwoodJS     | create-t3-app |
+| ------------------------ | :-------------------: | :------------: | :---------------: | :-----------: |
+| TypeScript               |          ✅           |       ✅       |        ✅         |      ✅       |
+| Routing                  |    React Router 7     | React Router 7 | @redwoodjs/router |    Next.js    |
+| Tailwind                 |          ✅           |       ✅       |        ❌         |      ✅       |
+| Dark mode                |          ✅           |       ❌       |        ❌         |      ❌       |
+| i18n                     |          ✅           |       ❌       |        ❌         |      ❌       |
+| Unit / integration tests |        Vitest         |     Vitest     |       Jest        |      ❌       |
+| Component testing        | Storybook + Chromatic |       ❌       |     Storybook     |      ❌       |
+| E2E tests                |      Playwright       |   Playwright   |        ❌         |      ❌       |
+| Mock API                 |          MSW          |       ❌       |        ❌         |      ❌       |
+| Forms                    |     Conform + Zod     |       ❌       |        ❌         |      ❌       |
+| Accessibility guardrails |          ✅           |       ❌       |        ❌         |      ❌       |
 
 ### Claude-native
 
-|                            | GAIA | Epic Stack | create-t3-app | RedwoodJS |
-| -------------------------- | :--: | :--------: | :-----------: | :-------: |
-| Path-scoped rules          |  15  |     ✗      |       ✗       |     ✗     |
-| Enforcement hooks          |  7   |     ✗      |       ✗       |     ✗     |
-| Claude Code commands       |  11  |     ✗      |       ✗       |     ✗     |
-| Bundled skills             |  6   |     ✗      |       ✗       |     ✗     |
-| Code-review audit agent    |  ✓   |     ✗      |       ✗       |     ✗     |
-| Obsidian wiki integration  |  ✓   |     ✗      |       ✗       |     ✗     |
-| MCP integrations           |  ✓   |     ✗      |       ✗       |     ✗     |
-
-## Installation
-
-Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
-
-```sh
-npx create-react-router@latest --template gaia-react/react-router
-```
-
-Then open Claude Code in the project and type `/init`.
+Epic Stack, RedwoodJS, and create-t3-app don't ship Claude tooling at all. GAIA adds 15 path-scoped rules, 7 enforcement hooks, 11 Claude Code commands, 6 bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
 
 ## One-Command Initialization
 
 The template ships clean. `/init` finishes the last-mile setup:
 
+- **Configures your project** — prompts for a title, sets the package name, docs title, CODEOWNERS, and localized site titles
 - **Installs dependencies** — runs `npm install` for you
-- **Strips GAIA branding** — FUNDING.yml, GAIA logo, Storybook BRAND config
-- **Configures i18n** — prompts for your language set (English, Japanese, French, Spanish, German, or a custom list), scaffolds matching language files, updates `LanguageSelect` and Storybook globals
-- **Sets project metadata** — `package.json` name, `CLAUDE.md` title, `CODEOWNERS`, and localized site titles
-- **Installs Claude skills** — [React Doctor](https://github.com/millionco/react-doctor) and [Playwright CLI](https://github.com/microsoft/playwright-cli)
-- **Installs Claude plugins** — `typescript-lsp` (from the official Claude Plugins marketplace) and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
-- **Offers Chromatic MCP setup** — runs `/setup-chromatic-mcp` if you opt in; otherwise you can run it any time later
-- **Initializes the wiki** — refreshes `wiki/hot.md` and appends an init entry to `wiki/log.md`
-- **Verifies** via the quality gate: `typecheck && lint && test:ci && build`
+- **Configures i18n** — prompts for your language set, scaffolds the matching language files, and updates the component and Storybook wiring
+- **Installs Claude skills and plugins** — [React Doctor](https://github.com/millionco/react-doctor), [Playwright CLI](https://github.com/microsoft/playwright-cli), `typescript-lsp`, and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
+- **Offers Chromatic MCP setup** — opts you in to the Storybook MCP server if you want it
 
 After `/init` finishes, you have a clean app shell **and** a fully-configured Claude workflow ready to use.
 
@@ -117,19 +101,13 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Commands
 
-| Command                | What it does                                                            |
-| ---------------------- | ----------------------------------------------------------------------- |
-| `/init`                | Full template initialization (see above)                                |
-| `/new-route`           | Scaffold a route with page component, test, story, and i18n keys        |
-| `/new-component`       | Scaffold a component with optional test and story                       |
-| `/new-service`         | Scaffold an API service with requests, Zod schemas, URLs, and MSW mocks |
-| `/new-hook`            | Scaffold a custom hook with test file                                   |
-| `/audit-code`          | Run the full quality gate (typecheck, lint, test, E2E, build)           |
-| `/audit-knowledge`     | Audit memory, wiki, and auto-loaded files for duplication and bloat     |
-| `/migrate`             | Upgrade a package to latest, apply breaking changes, run quality gate   |
-| `/handoff`             | Save a session handoff doc so the next session can resume cold          |
-| `/pickup`              | Resume from the latest handoff — reports state, drift, and next action  |
-| `/setup-chromatic-mcp` | Idempotent install of `@storybook/addon-mcp` + Chromatic MCP server     |
+| Command            | What it does                                                           |
+| ------------------ | ---------------------------------------------------------------------- |
+| `/init`            | Full template initialization (see above)                               |
+| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate  |
+| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat    |
+| `/handoff`         | Save a session handoff doc so the next session can resume cold         |
+| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action |
 
 ### Rules, hooks, skills
 
@@ -139,11 +117,11 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Code review before merge
 
-The `pr-merge-workflow` rule makes the `code-review-audit` agent a required step before `gh pr merge`. The agent reviews the branch diff for security, performance, code smells, and anti-patterns — and blocks the merge until reported issues are fixed and committed.
+Every merge runs through a code-review pass against the branch diff — security, performance, code smells, anti-patterns — and blocks until the issues are fixed and committed.
 
 ### Wiki
 
-GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies, decisions, flows, concepts — committed to git and shared across the team. Editable in [Obsidian](https://obsidian.md) for graph view, backlinks, and search. The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin (installed by `/init`) adds `/wiki-ingest`, `/wiki-query`, `/wiki-lint`, `/autoresearch`, and `/save` for working with the vault.
+GAIA ships with an [Obsidian](https://obsidian.md) wiki knowledge base — architecture, modules, dependencies, decisions, flows, concepts — committed to git and shared across the team. The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin (installed by `/init`) adds `/wiki-ingest`, `/wiki-query`, `/wiki-lint`, `/autoresearch`, and `/save` for working with the vault. Open `wiki/` in Obsidian for graph view, backlinks, and search.
 
 ### Chromatic MCP
 
@@ -175,13 +153,10 @@ Ask Claude to run, add, or debug tests — Vitest, Storybook + Chromatic, and Pl
 
 ## Deployment
 
-Standard React Router 7 build (`npm run build`) and start (`npm start`). Deploy to any Node host.
+GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for the target you want — Vercel, Fly, AWS, a bare Node host, a Docker container, anywhere React Router 7 can run. Claude will wire up the build, environment variables, and any CI/CD you need.
 
-<details>
-<summary>History</summary>
+## History
 
 The GAIA Flash Framework was Flash's most popular framework — **its killer feature was automation**. It collapsed repetitive Flash plumbing into a few declarative patterns so engineers could focus on the product, and was used on over 100,000 sites at every major digital agency worldwide.
 
-GAIA React carries that automation philosophy into the AI-native era. Where the original automated Flash boilerplate, this template automates the Claude workflow — conventions, rules, hooks, gates, wiki — so Claude can ship features end-to-end without the engineer wiring the scaffolding every time.
-
-</details>
+GAIA React carries that automation philosophy into the AI-native era. Where the original automated Flash boilerplate, this template automates the Claude workflow — conventions, rules, hooks, gates, wiki — so you can ship features end-to-end without wiring the scaffolding every time.
