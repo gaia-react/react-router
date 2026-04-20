@@ -1,5 +1,5 @@
 export default {
-  componentsLabel: 'Components',
+  componentsLabel: 'Component Testing',
   componentsValue: 'Storybook + Chromatic',
   cta: 'View on GitHub',
   eyebrow: 'GAIA React Template',
@@ -8,7 +8,7 @@ export default {
   frameworkLabel: 'Framework',
   frameworkValue: 'React Router 7',
   heroTagline:
-    'The React Router template where Claude can actually own features — trustworthy, token-efficient, and grounded in the stack.',
+    'The React Router template where Claude can actually own features. Trustworthy, token-efficient, and grounded in the stack.',
   heroTitle: 'Start with something solid.',
   languageLabel: 'Language',
   languageValue: 'TypeScript',

@@ -1,5 +1,5 @@
 export default {
-  componentsLabel: 'コンポーネント',
+  componentsLabel: 'コンポーネントテスト',
   componentsValue: 'Storybook + Chromatic',
   cta: 'GitHubで見る',
   eyebrow: 'GAIA Reactテンプレート',
@@ -8,7 +8,7 @@ export default {
   frameworkLabel: 'フレームワーク',
   frameworkValue: 'React Router 7',
   heroTagline:
-    'Claudeが実際に機能を任せられるReact Routerテンプレート。信頼性が高く、トークン効率が良く、スタックに精通しています。',
+    'Claudeが実際に機能を任せられるReact Routerテンプレートです。信頼性が高く、トークン効率が良く、スタックに精通しています。',
   heroTitle: '確かな基盤からはじめる。',
   languageLabel: '言語',
   languageValue: 'TypeScript',

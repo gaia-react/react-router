@@ -15,14 +15,11 @@ const Header: FC<HeaderProps> = ({className}) => {
 
   return (
     <header
-      className={twMerge(
-        'relative z-10 w-full px-8 py-6 sm:px-16 sm:py-8',
-        className
-      )}
+      className={twMerge('relative z-10 w-full px-8 py-4 sm:px-16', className)}
     >
       <div className="flex w-full items-center justify-between">
         <Link aria-label={t('meta.siteName')} className="text-body" to="/">
-          <GaiaLogo className="h-7 sm:h-9" role="img" />
+          <GaiaLogo className="h-6 sm:h-7" role="img" />
         </Link>
         <div className="flex items-center gap-6">
           <LanguageSelect />
