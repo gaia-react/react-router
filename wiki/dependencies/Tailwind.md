@@ -24,8 +24,4 @@ Utility-first CSS framework. GAIA uses **Tailwind v4** with the Vite plugin.
 
 ## Conventions
 
-See the `tailwind` skill (`.claude/skills/tailwind/`) and the `tailwind` rule (`.claude/rules/tailwind.md`) for the full ruleset:
-
-- No `px` units in classes — use the spacing scale or `rem` for custom values
-- Use `twJoin` for static class lists, `twMerge` only when classes can conflict
-- `dark:` variant powers the [[Theme Flow]]
+See `tailwind` rule (`.claude/rules/tailwind.md`) for the full ruleset. `dark:` variant powers the [[Theme Flow]].
