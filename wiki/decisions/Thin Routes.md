@@ -22,4 +22,4 @@ Route files (`app/routes/**`) contain only loader, action, meta, and a one-line 
 - `app/routes/**` rule guides code review
 - `/new-route` scaffolds in this exact pattern
 
-See [[Routing]], [[Pages]], [[new-route rule|new-route]].
+See [[Routing]], [[Pages]], and the `new-route` rule at `.claude/rules/new-route.md`.
