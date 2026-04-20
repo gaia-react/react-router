@@ -84,7 +84,6 @@ Every change passes through [[Quality Gate]]: typecheck → lint → unit test �
 | E2E                |        Playwright         |     —      |      —      |    —    |
 | Visual regression  |       Chromatic CI        |     —      |      —      |    —    |
 | i18n examples      |          2 langs          |     —      |      —      |    —    |
-| Auth example       | login + session + guards  |     —      |      —      |    —    |
 | Form validation    |       Conform + Zod       |     —      |      —      |    —    |
 | Dark mode          |        end-to-end         |     —      |      —      |    —    |
 | API mocking        |      MSW everywhere       |     —      |      —      |    —    |
