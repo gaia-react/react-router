@@ -46,7 +46,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 ## Flows
 
-- [[Auth Flow]]
 - [[Theme Flow]]
 - [[Language Flow]]
 - [[Form Submit Flow]]
