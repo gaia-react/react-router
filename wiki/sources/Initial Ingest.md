@@ -1,7 +1,10 @@
 ---
 type: source
 source_type: codebase-scan
+status: archived
 ingested: 2026-04-20
+created: 2026-04-20
+updated: 2026-04-20
 tags: [source, initial]
 ---
 
