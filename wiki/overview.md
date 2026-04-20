@@ -91,7 +91,6 @@ Every change passes through [[Quality Gate]]: typecheck → lint → unit test �
 | Dark mode          |        end-to-end         |     —      |      —      |    —    |
 | API mocking        |      MSW everywhere       |     —      |      —      |    —    |
 | Claude Code        | commands + rules + agents |     —      |      —      |    —    |
-| Docs site          |   VitePress + GH Pages    |     —      |      —      |    —    |
 
 ## Where to Go Next
 
