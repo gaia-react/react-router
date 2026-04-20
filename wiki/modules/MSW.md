@@ -12,7 +12,7 @@ tags: [module, msw, testing, mocking]
 
 # MSW (Mock Service Worker)
 
-GAIA uses [[MSW]] + `@mswjs/data` as the **single mocking layer** for unit tests, Playwright E2E, Storybook stories, and optional dev mode.
+GAIA uses [[MSW]] + `@mswjs/data` (npm package — no wiki page) as the **single mocking layer** for unit tests, Playwright E2E, Storybook stories, and optional dev mode.
 
 > [!key-insight] One mock set, three environments
 > The same handlers and in-memory database serve Vitest (CI/local), the dev server (MSW_ENABLED=true), and Playwright runs. You define a mock once; every surface sees the same fake API.
