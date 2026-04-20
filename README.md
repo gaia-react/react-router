@@ -113,6 +113,8 @@ Claude automatically follows project rules for coding guidelines, component test
 
 Once you're familiar with the GAIA framework, open Claude and run the `/gaia-init` command. This will remove the example code and give you a clean slate for your project.
 
+> **Note:** Don't run the built-in `/init` on a fresh GAIA checkout — it would overwrite the curated `CLAUDE.md`. A `UserPromptSubmit` hook (`.claude/hooks/intercept-init.sh`) intercepts `/init` and redirects to `/gaia-init`. Both the hook and its settings entry are removed automatically when `/gaia-init` finishes, so your project is free to use `/init` normally afterward.
+
 ### Wiki
 
 GAIA ships with a `wiki/` knowledge base — architecture, modules, dependencies, decisions, flows, and concepts — committed to git and shared across the team. It is structured for LLM consumption: small focused pages, wikilinks, frontmatter, and a `wiki/index.md` catalog so Claude fetches only what it needs.
