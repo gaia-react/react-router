@@ -3,37 +3,35 @@ import SparkMD5 from 'spark-md5';
 import {GAIA_URLS} from '~/services/gaia/urls';
 import {tryCatch} from '~/utils/function';
 import database from '../database';
+import {url} from '../url';
 
-export default http.post(
-  `${process.env.API_URL}${GAIA_URLS.login}`,
-  async ({request}) => {
-    const [error, login] = await tryCatch(async () => {
-      const data = await request.formData();
+export default http.post(url(GAIA_URLS.login), async ({request}) => {
+  const [error, login] = await tryCatch(async () => {
+    const data = await request.formData();
 
-      return Object.fromEntries(data.entries());
-    });
+    return Object.fromEntries(data.entries());
+  });
 
-    if (error) {
-      return Response.json({error}, {status: 400});
-    }
-
-    const data = database.user.findFirst({
-      where: {
-        email: {
-          equals: login.email as string,
-        },
-      },
-    });
-
-    if (!data || login.password !== SparkMD5.hash('passw0rd')) {
-      return new Response(null, {status: 401});
-    }
-
-    return Response.json(
-      {data},
-      {
-        status: 201,
-      }
-    );
+  if (error) {
+    return Response.json({error}, {status: 400});
   }
-);
+
+  const data = database.user.findFirst({
+    where: {
+      email: {
+        equals: login.email as string,
+      },
+    },
+  });
+
+  if (!data || login.password !== SparkMD5.hash('passw0rd')) {
+    return new Response(null, {status: 401});
+  }
+
+  return Response.json(
+    {data},
+    {
+      status: 201,
+    }
+  );
+});
