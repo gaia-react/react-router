@@ -104,6 +104,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Claude Skills]]
 - [[handoff command]]
 - [[pickup command]]
+- [[audit-knowledge command]]
 - [[Chromatic Opt-Out]]
 
 ## Sources

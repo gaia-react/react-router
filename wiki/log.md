@@ -8,6 +8,13 @@ updated: 2026-04-20
 
 Append-only. New entries at the TOP.
 
+## [2026-04-20] update | /audit-knowledge command added
+
+- Adapted `.claude/commands/audit-knowledge.md` from another project; portable path resolution (no hardcoded user paths); `.claude/audit/` gitignored
+- Pages created: [[audit-knowledge command]]
+- Pages updated: [[Claude Integration]] (commands table), [[overview]] (Knowledge Hygiene section), [[index]]
+- Also referenced in `README.md` and `docs/general/claude.md` commands tables
+
 ## [2026-04-20] ingest | Form components deep dive + things service
 
 - Sources: `app/components/Form/*` (all 15 components + Field subparts + YearMonthDay utils), `app/services/gaia/things/*`
