@@ -45,14 +45,7 @@ When a project requires authentication, use a global setup file (`auth.setup.ts`
 
 ## Parallelism and CI
 
-| Setting | Local | CI |
-|---|---|---|
-| workers | unlimited | 1 |
-| retries | 0 | 2 |
-| browsers | Chromium (+ opt-in multi) | Chromium |
-| `fullyParallel` | true | true |
-
-Multi-browser testing (webkit, Firefox, mobile) is opt-in via the `TEST_ALL_BROWSERS` flag in `playwright.config.ts`.
+`fullyParallel: true`; CI uses `workers: 1`, `retries: 2`. Multi-browser (webkit, Firefox, mobile) is opt-in via `TEST_ALL_BROWSERS`. See `.claude/rules/playwright.md` for the full table.
 
 ## Traces and screenshots
 
