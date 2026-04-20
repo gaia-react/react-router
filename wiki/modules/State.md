@@ -120,5 +120,5 @@ const AppWithState = () => {
 
 ## See Also
 
-- [[state-pattern]] — prescriptive rule (naming, typing, colocation)
+- `state-pattern` rule (`.claude/rules/state-pattern.md`) — prescriptive rule (naming, typing, colocation)
 - [[Theme Flow]] — full SSR→client theme lifecycle
