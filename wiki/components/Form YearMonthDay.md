@@ -35,28 +35,11 @@ When the user changes year or month, `getSafeValue` computes the new ISO string,
 
 ### 1. Block native `input` events from bubbling to Conform
 
-```tsx
-const containerRef = useCallback((node: HTMLDivElement | null) => {
-  if (node) {
-    node.addEventListener('input', (event) => event.stopPropagation());
-  }
-}, []);
-```
-
-Conform's `useForm` attaches an `input` listener on `document` that reads `FormData` and uses it to revalidate. When the three child Selects fire `input`, Conform reads **stale** FormData (the hidden input hasn't been repopulated yet) and overwrites the controlled Select values.
-
-**Why native `addEventListener` and not React `onInput`?** React's synthetic event system delegates to the document root after SSR hydration, so both React's handler and Conform's handler live on the same document node. `stopPropagation` is a no-op between two listeners on the same element. Attaching natively at the container div stops propagation before the event ever reaches `document`.
+A native `addEventListener` on the container div stops child Select `input` events before they reach Conform's document-level handler. React `onInput` cannot do this — after SSR hydration both React and Conform handlers land on the same `document` node, so `stopPropagation` is a no-op between them. See `app/components/Form/YearMonthDay/index.tsx:64-68`.
 
 ### 2. Sync the hidden input's DOM value before calling `onChange`
 
-```tsx
-if (hiddenRef.current) {
-  hiddenRef.current.value = newValue;
-}
-onChange(newValue);
-```
-
-`onChange` eventually triggers Conform revalidation, which reads `FormData` from the form. FormData reads DOM values, not React state — so the hidden input must carry the new value **at DOM level** before validation runs.
+`onChange` triggers Conform revalidation, which reads `FormData` from the DOM — not React state. The hidden input must be updated at DOM level first, before `onChange` fires. See `app/components/Form/YearMonthDay/index.tsx:78-82`.
 
 ## Caller pattern — `useInputControl`
 
