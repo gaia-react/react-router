@@ -22,7 +22,7 @@ Routes are organized using flat-routes folder syntax — `_` prefix + `+` suffix
 | ----------- | ------------------------------- | ----------------------------------------------- |
 | `_public+`  | Home, marketing, public content | none                                            |
 | `_session+` | Hook point for auth-guarded app | stub — add your own guard loader here           |
-| `_legal+`   | Terms, privacy, company         | none                                            |
+| `_legal+`   | Terms of service, privacy       | none                                            |
 | `actions+`  | Root-level form actions (no UI) | varies by action                                |
 
 GAIA ships these `actions+` endpoints out of the box:
