@@ -31,21 +31,16 @@ This means tests exercise the full request path: route loader → service functi
 
 ## 2. Folder structure
 
-```
-test/mocks/
-├── {resource}/
-│   ├── data.ts         # @mswjs/data schema + seed records
-│   ├── get.ts          # GET handlers (list + single)
-│   ├── post.ts         # POST handler
-│   ├── put.ts          # PUT handler
-│   ├── delete.ts       # DELETE handler
-│   └── index.ts        # barrel — re-exports all handlers as an array
-├── database.ts         # factory composition + resetTestData()
-├── faker.ts            # seeded faker instance (consistent test data)
-├── ping.ts             # passthrough for Remix dev ping
-├── url.ts              # URL helper — mirrors ky prefix-join logic
-└── index.ts            # registry — combines all resource handlers
-```
+| Path | Role |
+|---|---|
+| `test/mocks/{resource}/data.ts` | `@mswjs/data` schema + seed records |
+| `test/mocks/{resource}/get.ts` / `post.ts` / `put.ts` / `delete.ts` | HTTP handlers |
+| `test/mocks/{resource}/index.ts` | Barrel — re-exports all handlers as an array |
+| `test/mocks/database.ts` | Factory composition + `resetTestData()` |
+| `test/mocks/faker.ts` | Seeded faker instance (consistent test data) |
+| `test/mocks/ping.ts` | Passthrough for Remix dev ping |
+| `test/mocks/url.ts` | URL helper — mirrors ky prefix-join logic |
+| `test/mocks/index.ts` | Registry — combines all resource handlers |
 
 Support files:
 
