@@ -1,0 +1,32 @@
+---
+type: dependency
+status: active
+package: "@conform-to/react, @conform-to/zod"
+version: ^1.19.0
+role: form-validation
+created: 2026-04-20
+updated: 2026-04-20
+tags: [dependency, forms]
+---
+
+# Conform
+
+Form validation library used by [[Form Components]]. Pairs with [[Zod]] for the schema layer.
+
+- `@conform-to/react` — `useForm`, `useInputControl`, `getFormProps`
+- `@conform-to/zod` — `parseWithZod` for client + server validation
+
+> [!warning] Use the `/v4` subpath
+> Per [[Coding Guidelines]], import from `@conform-to/zod/v4` (Zod v4 compatibility), not the root.
+
+## Why GAIA uses it
+
+- Progressive enhancement — forms work without JS
+- One schema for client and server validation
+- Plays well with React Router 7 actions
+
+## Alternatives
+
+[remix-forms](https://remix-forms.seasoned.cc/), [RVF](https://www.rvf-js.io/)
+
+See [[Form Submit Flow]].
