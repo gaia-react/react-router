@@ -95,73 +95,11 @@ The service function and the MSW handler both import `GAIA_URLS`. If the URL con
 
 ## 4. Three modes
 
-### Dev (browser Service Worker)
-
-Enable in `.env`:
-
-```
-MSW_ENABLED=true
-API_URL=http://localhost:3001/api/
-```
-
-On app load, `app/entry.client.tsx` checks:
-
-```ts
-if (window.process.env.NODE_ENV === 'development' && window.process.env.MSW_ENABLED === true) {
-  const {worker} = await import('../test/worker');
-  return worker.start({onUnhandledRequest: 'bypass'});
-}
-```
-
-`test/worker.ts` calls `setupWorker(ping, ...handlers)` — the same handler array as tests, plus the Remix dev ping passthrough.
-
-The Service Worker file lives at `public/mockServiceWorker.js` and is served statically. It is installed automatically by the `msw` package via `msw.workerDirectory` in `package.json`.
-
-Server-side loaders also run under MSW when `MSW_ENABLED=true`. `app/entry.server.tsx` calls `startApiMocks()` from `test/msw.server.ts` before handling any request:
-
-```ts
-if (env.NODE_ENV !== 'production' && env.MSW_ENABLED) {
-  startApiMocks();
-}
-```
-
-`startApiMocks()` creates (or restarts) a Node `SetupServer` stored in `globalThis.__MSW_SERVER`, ensuring a single instance across HMR reloads.
-
-Both sides (browser worker + Node server) run simultaneously in dev mode, so SSR loaders and client fetches both hit the mock.
-
-### Unit / integration tests (Vitest)
-
-`vitest.config.ts` declares:
-
-```ts
-setupFiles: ['./test/setup.ts']
-```
-
-`test/setup.ts` imports `./test.server` which calls `setupServer(...handlers)` with Vitest lifecycle hooks:
-
-```
-beforeAll  → server.listen({ onUnhandledRequest: 'bypass' })
-afterEach  → server.resetHandlers()   // clears runtime overrides
-afterAll   → server.close()
-```
-
-Tests run with `npm run test -- --run` (CI) or `npm test` (watch). See [[test-runner]].
-
-Per-test handler overrides: call `server.use(http.get(...))` inside a test; `afterEach` resets them automatically.
-
-### CI/CD
-
-Vitest under CI uses the same Node server path above — no extra config. The `test:ci` script:
-
-```
-vitest --run --passWithNoTests --coverage --bail 1
-```
-
-For Playwright, MSW is **not** wired automatically. Playwright tests run against either:
-- a real API (default), or
-- the dev server with `MSW_ENABLED=true` in the environment.
-
-To use MSW in Playwright, start `npm run dev` with `MSW_ENABLED=true` and point Playwright's `baseURL` at the local server. The dev server MSW path (`test/msw.server.ts`) handles server-side interception; the browser Service Worker handles client-side fetches.
+| Mode | How it's wired | Entry point | Config |
+|---|---|---|---|
+| **Dev** | Browser Service Worker (client) + Node `SetupServer` (SSR) run simultaneously | `app/entry.client.tsx` starts `test/worker.ts`; `app/entry.server.tsx` calls `startApiMocks()` from `test/msw.server.ts` | Set `MSW_ENABLED=true` in `.env`; SW file at `public/mockServiceWorker.js` |
+| **Vitest** | Node `setupServer` via `test/test.server.ts`, registered in `test/setup.ts` as a `setupFiles` entry | `beforeAll → listen`, `afterEach → resetHandlers`, `afterAll → close` | `vitest.config.ts` → `setupFiles: ['./test/setup.ts']`; run with `npm run test -- --run` |
+| **CI/CD (Playwright)** | MSW is **not** wired automatically; tests run against a real API or the dev server | Start `npm run dev` with `MSW_ENABLED=true` and point Playwright's `baseURL` at it | `test:ci` script: `vitest --run --passWithNoTests --coverage --bail 1` |
 
 ---
 
