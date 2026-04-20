@@ -1,7 +1,10 @@
 ---
 type: meta
 title: Index
-updated: 2026-04-20
+status: active
+created: 2026-04-20
+updated: 2026-04-21
+tags: [meta]
 ---
 
 # Index
