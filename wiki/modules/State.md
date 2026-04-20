@@ -23,60 +23,16 @@ Each provider is registered in `app/state/index.tsx` and receives its initial va
 
 ## Canonical Pattern
 
-Every state slice in `app/state/` follows one of two variants.
+Every state slice in `app/state/` follows one of two variants — full implementations are in the `state-pattern` rule (`.claude/rules/state-pattern.md`).
 
-### Read-only (loader / async data)
+**Read-only** (value from SSR loader, components only read):
+Context holds `Maybe<T>`; hook asserts non-null and returns `T`. Optional `useMaybeX()` variant returns `Maybe<T>` without throwing.
 
-Use when the value originates on the server and components only read it:
-
-```tsx
-import type {FC, ReactNode} from 'react';
-import {createContext, useContext} from 'react';
-import type {Maybe} from '~/types';
-
-type ThingsContextValue = Maybe<Things>;
-
-const ThingsContext = createContext<ThingsContextValue>(undefined);
-
-export const useThings = (): Things => {
-  const context = useContext(ThingsContext) as Maybe<ThingsContextValue>;
-  if (!context) throw new Error('useThings must be used within a ThingsProvider');
-  return context;
-};
-
-// Optional variant — no throw, returns Maybe<Things>
-export const useMaybeThings = (): Maybe<Things> => useContext(ThingsContext);
-
-type ThingsProviderProps = {children: ReactNode; things?: Maybe<Things>};
-
-export const ThingsProvider: FC<ThingsProviderProps> = ({children, things}) => (
-  <ThingsContext.Provider value={things}>{children}</ThingsContext.Provider>
-);
-ThingsProvider.displayName = 'ThingsProvider';
-```
-
-### Editable (useState tuple)
-
-Use when components need to update the value client-side:
+**Editable** (client-side mutation needed):
+Context holds `[value, setter]` tuple (same shape as `useState`); use `noop` from `~/utils/function` as the default setter. Example:
 
 ```tsx
-import type {Dispatch, FC, ReactNode, SetStateAction} from 'react';
-import {createContext, useContext, useState} from 'react';
-import type {Maybe} from '~/types';
-import {noop} from '~/utils/function';
-
-type XContextValue = [Maybe<number>, Dispatch<SetStateAction<Maybe<number>>>];
-
 const XContext = createContext<XContextValue>([undefined, noop]);
-
-export const useX = () => {
-  const context = useContext(XContext) as Maybe<XContextValue>;
-  if (!context) throw new Error('useX must be used within an XProvider');
-  return context; // returns [value, setValue] tuple — same shape as useState
-};
-
-type XProviderProps = {children: ReactNode; initialState?: Maybe<number>};
-
 export const XProvider: FC<XProviderProps> = ({children, initialState}) => {
   const value = useState(initialState);
   return <XContext.Provider value={value}>{children}</XContext.Provider>;
