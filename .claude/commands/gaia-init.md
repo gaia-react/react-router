@@ -192,6 +192,10 @@ Insert a new entry directly below the `# Log` heading (log is append-only, newes
 
 1. Remove the gaia-init command from the project to prevent accidental re-runs.
 
-2. Output: "GAIA React project is ready for development with a clean slate!"
+2. Remove the `/init` interceptor — it exists only to protect the template's curated CLAUDE.md, and is no longer needed once the template has been initialized:
+   - Delete `.claude/hooks/intercept-init.sh`
+   - Edit `.claude/settings.json`: from the `hooks.UserPromptSubmit` array, remove only the matcher entry whose inner `hooks[].command` is `.claude/hooks/intercept-init.sh`. Preserve any other entries the user may have added. If removing it leaves `UserPromptSubmit` as an empty array, also remove the `UserPromptSubmit` key itself.
 
-3. Output: "Please restart Claude."
+3. Output: "GAIA React project is ready for development with a clean slate!"
+
+4. Output: "Please restart Claude."

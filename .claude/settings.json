@@ -3,6 +3,17 @@
     "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
   },
   "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "All",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/intercept-init.sh"
+          }
+        ]
+      }
+    ],
     "PreToolUse": [
       {
         "matcher": "Edit|Write",
