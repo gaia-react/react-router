@@ -1,13 +1,22 @@
 import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
-import gaiaLogo from '~/assets/images/gaia-logo.svg';
+import {faGithub} from '@fortawesome/free-brands-svg-icons';
 import LinkButton from '~/components/LinkButton';
+
+const CHIPS = [
+  'framework',
+  'language',
+  'styling',
+  'testing',
+  'forms',
+  'components',
+] as const;
 
 const IndexPage: FC = () => {
   const {t} = useTranslation('pages', {keyPrefix: 'index'});
 
   return (
-    <main className="bg-body relative flex min-h-dvh flex-col overflow-hidden">
+    <div className="bg-body relative flex h-full flex-col overflow-hidden">
       {/* Structural grid texture */}
       <div
         aria-hidden={true}
@@ -20,29 +29,17 @@ const IndexPage: FC = () => {
       />
 
       {/* Top accent bar */}
-      <div className="h-0.5 w-full bg-blue-500 dark:bg-blue-400" />
+      <div className="absolute top-0 left-0 z-10 h-0.5 w-full bg-blue-500 dark:bg-blue-400" />
 
-      {/* Header wordmark */}
-      <header className="px-8 pt-8 sm:px-16 sm:pt-12">
-        <img
-          alt="GAIA"
-          className="h-5 opacity-30 sm:h-6 dark:opacity-20"
-          src={gaiaLogo}
-        />
-      </header>
-
-      {/* Hero */}
       <section
         aria-labelledby="hero-title"
-        className="flex flex-1 flex-col justify-center px-8 py-16 sm:px-16 sm:py-24"
+        className="relative z-10 flex flex-1 flex-col justify-center p-8 sm:px-16 sm:py-12"
       >
         <div className="max-w-3xl">
-          {/* Eyebrow */}
           <p className="mb-4 font-mono text-xs tracking-widest text-blue-500 uppercase sm:text-sm dark:text-blue-400">
             {t('eyebrow')}
           </p>
 
-          {/* Title */}
           <h1
             className="text-body mb-6 text-4xl/tight font-light tracking-tight sm:text-6xl sm:leading-none"
             id="hero-title"
@@ -50,54 +47,40 @@ const IndexPage: FC = () => {
             {t('heroTitle')}
           </h1>
 
-          {/* Divider */}
           <div className="mb-8 h-px w-16 bg-blue-500 dark:bg-blue-400" />
 
-          {/* Tagline */}
-          <p className="text-secondary mb-12 max-w-lg text-base/relaxed sm:text-lg">
+          <p className="text-secondary mb-10 max-w-xl text-base/relaxed sm:text-lg">
             {t('heroTagline')}
           </p>
 
-          {/* CTAs */}
-          <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
+          <div className="flex">
             <LinkButton
+              icon={faGithub}
               size="lg"
-              to="https://reactrouter.com"
-              variant="primary"
-            >
-              {t('ctaPrimary')}
-            </LinkButton>
-            <LinkButton
-              size="lg"
-              to="https://github.com/remix-run/react-router"
+              to="https://github.com/gaia-react/react-router"
               variant="secondary"
             >
-              {t('ctaSecondary')}
+              {t('cta')}
             </LinkButton>
           </div>
         </div>
       </section>
 
-      {/* Foundation strip */}
-      <footer className="border-light border-t px-8 py-6 sm:px-16">
-        <dl className="flex flex-col gap-4 sm:flex-row sm:gap-12">
-          {(
-            [
-              ['stack', 'stackValue'],
-              ['runtime', 'runtimeValue'],
-              ['design', 'designValue'],
-            ] as const
-          ).map(([labelKey, valueKey]) => (
-            <div key={labelKey} className="flex flex-col gap-0.5">
+      <div className="relative z-10 px-8 py-6 sm:px-16">
+        <dl className="flex flex-wrap gap-x-10 gap-y-4">
+          {CHIPS.map((key) => (
+            <div key={key} className="flex flex-col gap-0.5">
               <dt className="text-secondary font-mono text-xs tracking-widest uppercase">
-                {t(labelKey)}
+                {t(`${key}Label`)}
               </dt>
-              <dd className="text-body text-sm font-medium">{t(valueKey)}</dd>
+              <dd className="text-body text-sm font-medium">
+                {t(`${key}Value`)}
+              </dd>
             </div>
           ))}
         </dl>
-      </footer>
-    </main>
+      </div>
+    </div>
   );
 };
 

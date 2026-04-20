@@ -2,7 +2,7 @@ import type {FC} from 'react';
 import {useTranslation} from 'react-i18next';
 import {Link} from 'react-router';
 import {twMerge} from 'tailwind-merge';
-import AppVersion from '~/components/AppVersion';
+import GaiaLogo from '~/components/GaiaLogo';
 import LanguageSelect from '~/components/LanguageSelect';
 import ThemeSwitcher from '~/components/ThemeSwitcher';
 
@@ -11,18 +11,20 @@ type HeaderProps = {
 };
 
 const Header: FC<HeaderProps> = ({className}) => {
-  const {t} = useTranslation();
+  const {t} = useTranslation('common');
 
   return (
-    <header className={twMerge('bg-secondary w-full px-4 py-2', className)}>
+    <header
+      className={twMerge(
+        'relative z-10 w-full px-8 py-6 sm:px-16 sm:py-8',
+        className
+      )}
+    >
       <div className="flex w-full items-center justify-between">
-        <div className="space-x-1.5">
-          <Link className="text-lg font-bold" to="/">
-            {t('meta.siteName', {ns: 'common'})}
-          </Link>
-          <AppVersion />
-        </div>
-        <div className="flex items-center gap-4">
+        <Link aria-label={t('meta.siteName')} className="text-body" to="/">
+          <GaiaLogo className="h-7 sm:h-9" role="img" />
+        </Link>
+        <div className="flex items-center gap-6">
           <LanguageSelect />
           <ThemeSwitcher />
         </div>
@@ -30,5 +32,7 @@ const Header: FC<HeaderProps> = ({className}) => {
     </header>
   );
 };
+
+Header.displayName = 'Header';
 
 export default Header;

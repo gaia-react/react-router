@@ -25,8 +25,13 @@ Ask the user using AskUserQuestion (multiSelect where appropriate):
 Run in one shell:
 
 ```bash
-rm -rf .github/FUNDING.yml .storybook/static/gaia-logo.png app/assets/images/gaia-logo.svg
+rm -rf .github/FUNDING.yml .storybook/static/gaia-logo.png app/assets/images/gaia-logo.svg app/components/GaiaLogo
 ```
+
+Then edit `app/components/Header/index.tsx`:
+
+- Remove the `GaiaLogo` import
+- Replace `<GaiaLogo className="h-7 sm:h-9" role="img" />` with a text wordmark: `<span className="text-body text-xl font-bold">{t('meta.siteName')}</span>`
 
 Then edit `.storybook/preview.ts`:
 
@@ -148,7 +153,7 @@ Insert directly below the `# Log` heading (log is append-only, newest on top):
 
 - Project name: <PROJECT_TITLE>
 - Languages: en + <OTHER_LANGS>
-- Removed: GAIA branding (FUNDING.yml, gaia-logo.svg/png, Storybook BRAND)
+- Removed: GAIA branding (FUNDING.yml, gaia-logo.svg/png, GaiaLogo component, Storybook BRAND)
 - Installed: React Doctor, TDD, Playwright CLI skills; typescript-lsp, claude-obsidian plugins
 ```
 
