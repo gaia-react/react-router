@@ -11,6 +11,15 @@ tags: [meta, log]
 
 Append-only. New entries at the TOP.
 
+## [2026-04-21] chore | Claude hooks governance — rules migrated to machine-enforced hooks
+
+- Added 4 PreToolUse `Bash` hooks: `block-bare-npm-test.sh`, `block-main-destructive-git.sh` (blocking) and `pr-merge-audit-check.sh`, `wiki-maintenance-check.sh` (advisory). Each uses an `if:` pattern for command-shape matching.
+- Deleted `.claude/rules/test-runner.md` (now enforced by `block-bare-npm-test.sh`) and `.claude/rules/wiki-maintenance.md` (checklist moved into the `wiki-maintenance-check.sh` heredoc).
+- Added `.claude/rules/git-workflow.md` (referenced by `block-main-destructive-git.sh`) and `.claude/rules/task-orchestration.md`.
+- Added `paths:` frontmatter to `storybook.md` and `tailwind.md` for scope-based auto-loading, matching the other scoped rules.
+- `settings.json`: `PreToolUse Edit|Write` → `Edit|Write|MultiEdit`; `UserPromptSubmit` matcher normalized `"All"` → `""`.
+- Wiki: rewrote [[Claude Hooks]] and [[Claude Integration]] to reflect the new hook set + matcher changes; updated [[test-runner]] to point at the hook; added [[Git Workflow]] and [[Task Orchestration]] concept pages.
+
 ## [2026-04-21] feat | Claude Integration Conventions concept page + skill references convention + TDD skill restructure
 
 - Added [[Claude Integration Conventions]] concept page (opt-in, not auto-loaded) + formalized skill `references/` convention on [[Claude Skills]] + registered in index (GAP.md Phase 3).

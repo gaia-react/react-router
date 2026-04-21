@@ -1,3 +1,9 @@
+---
+paths:
+  - 'app/**/*.stories.tsx'
+  - '.storybook/**/*'
+---
+
 # Storybook Conventions
 
 ## When to write a story

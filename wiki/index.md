@@ -99,7 +99,9 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[ESLint Fixes]]
 - [[test-runner]]
 - [[Pre-commit Hooks]]
+- [[Git Workflow]]
 - [[PR Merge Workflow]]
+- [[Task Orchestration]]
 - [[Code Review Audit Agent]]
 - [[Claude Hooks]]
 - [[Claude Integration Conventions]] — Conventions for Claude's config surface: extension points, monorepo retrofit, service swaps, domain isolation.

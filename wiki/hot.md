@@ -20,23 +20,20 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-20. Branch `feat/gaia-improvements`. Phases A–H complete; PR opening next.
+2026-04-21. Branch `chore/claude-hooks-governance`. Hooks governance pass in flight.
 
 ## Key Facts
 
-- Template ships clean: no `things`, `ExampleConsumer/Provider`, IndexPage TechStack/Examples, VitePress `docs/`, auth stack.
-- Auth deliberately non-prescriptive; `_session+/` kept as empty hook point with `README.md`.
-- New rules: `state-pattern`, `tailwind`, `storybook`, `playwright`. Generalized `api-service` (no `things`/`auth`).
-- Wiki rewritten self-contained: [[API Service Pattern]], [[MSW]], [[State]], [[Storybook]], [[Playwright]].
-- IndexPage redesigned (editorial layout, i18n-keyed project title).
-- `/gaia-init` trimmed 194→113 lines; Chromatic MCP added to Step 8.
+- Four new PreToolUse `Bash` hooks use `if:` patterns: `block-bare-npm-test` + `block-main-destructive-git` (blocking), `pr-merge-audit-check` + `wiki-maintenance-check` (advisory).
+- `.claude/rules/test-runner.md` and `.claude/rules/wiki-maintenance.md` deleted — enforcement moved into the hooks.
+- New rules: `git-workflow.md` (referenced by main-protection hook), `task-orchestration.md` (~5+ file work).
+- `storybook.md` + `tailwind.md` gained `paths:` frontmatter for scope-based auto-loading.
+- settings.json: Edit|Write matcher → Edit|Write|MultiEdit; UserPromptSubmit matcher `"All"` → `""`.
 
 ## Recent Changes
 
-- Deleted: auth stack, things service, ExampleConsumer/Provider, VitePress, IndexPage TechStack/Examples
-- Deps removed: `vitepress`, `remix-auth`, `remix-auth-form`
-- Deps kept (non-auth): `spark-md5`, `SESSION_SECRET` (theme/language/remix-toast cookies)
+- Wiki: [[Claude Hooks]] + [[Claude Integration]] rewritten for the new hook set; [[test-runner]] repointed at hook; added [[Git Workflow]] + [[Task Orchestration]] concepts.
 
 ## Active Threads
 
-- None. PR `feat/gaia-improvements` → `main` pending merge.
+- PR `chore/claude-hooks-governance` → `main` pending.

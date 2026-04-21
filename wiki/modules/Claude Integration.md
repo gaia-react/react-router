@@ -51,15 +51,16 @@ Rules activate automatically based on file paths — no need to invoke them.
 | `i18n.md` ([[i18n]])                   | `app/pages/**`, `app/components/**`, `app/languages/**` |
 | [[Accessibility]]                      | `app/components/**`, `app/pages/**`                     |
 | [[ESLint Fixes]]                       | ESLint-related files                                    |
-| [[test-runner]]                        | Test files                                              |
+| [[Git Workflow]]                       | All `git` commands (hook-enforced)                      |
 | [[Quality Gate]]                       | Commits (source + gate-affecting config only)           |
 | [[PR Merge Workflow]]                  | PR merges                                               |
+| [[Task Orchestration]]                 | Multi-file work (~5+ files)                             |
 
 ## Hooks
 
 Bash hooks wired through `.claude/settings.json`. Mixed event types.
 
-### PreToolUse (Edit/Write)
+### PreToolUse (Edit/Write/MultiEdit)
 
 | Hook                               | Type         | Behavior                                                                                   |
 | ---------------------------------- | ------------ | ------------------------------------------------------------------------------------------ |
@@ -70,9 +71,14 @@ Bash hooks wired through `.claude/settings.json`. Mixed event types.
 
 ### PreToolUse (Bash)
 
-| Hook                         | Type     | Behavior                                                                                                                   |
-| ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `wiki-maintenance-check.sh`  | Advisory | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc. |
+Each entry uses an `if:` pattern so the hook only runs for the matching command shape.
+
+| Hook                             | `if` pattern           | Type         | Behavior                                                                                                                                |
+| -------------------------------- | ---------------------- | ------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| `block-bare-npm-test.sh`         | `Bash(npm *)`          | **Blocking** | Denies bare `npm test` / `npm run test` (watch mode). Requires `--run` for a one-shot pass.                                             |
+| `block-main-destructive-git.sh`  | `Bash(git *)`          | **Blocking** | Denies `git commit` while HEAD is `main`/`master`, and denies force-push to `main`/`master`. See [[Git Workflow]].                      |
+| `pr-merge-audit-check.sh`        | `Bash(gh pr merge:*)`  | Advisory     | Reminds to run `code-review-audit` before merging. See [[PR Merge Workflow]].                                                           |
+| `wiki-maintenance-check.sh`      | `Bash(git commit:*)`   | Advisory     | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc.              |
 
 ### UserPromptSubmit
 
@@ -125,4 +131,4 @@ These activate automatically based on context.
 
 ## settings.json
 
-Registers the four hooks above on `Edit|Write` matchers. Enables `typescript-lsp@claude-plugins-official` plugin.
+Registers the PreToolUse hooks on `Edit|Write|MultiEdit` and `Bash` matchers, the `intercept-init.sh` UserPromptSubmit hook, and the `SessionStart` / `Stop` wiki-coherence hooks. Enables the `typescript-lsp@claude-plugins-official` plugin.

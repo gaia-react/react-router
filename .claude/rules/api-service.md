@@ -63,7 +63,7 @@ Mirror the service structure in `test/mocks/{domain}/`:
 - `index.ts` — barrel combining all handlers
 - `data.ts` — seed data for the `@mswjs/data` factory
 
-Register in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. Handler URLs **must** resolve to the same path as the service-layer request — use the shared `url()` helper so `API_URL` is applied consistently. See `wiki/modules/MSW.md` for the full contract.
+Register in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. Handler URLs **must** resolve to the same path as the service-layer request — use the shared `url()` helper so `API_URL` is applied consistently. See `wiki/modules/MSW Handlers.md` for the full contract.
 
 ## Checklist for New Service
 

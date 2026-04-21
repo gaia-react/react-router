@@ -8,6 +8,8 @@ tags: [concept, testing]
 
 # test-runner Rule
 
-Authoritative rule: `.claude/rules/test-runner.md`. Never run bare `npm test` — it starts watch mode. Use `npm run test -- --run` for a single CI-style pass.
+Never run bare `npm test` or `npm run test` — it starts vitest in watch mode. Use `npm run test -- --run` for a single CI-style pass.
 
-See [[Vitest]], [[Pre-commit Hooks]].
+Machine-enforced by `.claude/hooks/block-bare-npm-test.sh` (PreToolUse `Bash` hook with `if: Bash(npm *)`), which returns `exit 2` on a bare invocation. The former `.claude/rules/test-runner.md` was removed when the hook took over enforcement.
+
+See [[Vitest]], [[Pre-commit Hooks]], [[Claude Hooks]].
