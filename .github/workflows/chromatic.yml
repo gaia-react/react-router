@@ -9,7 +9,7 @@ concurrency:
 jobs:
   chromatic:
     name: Run Chromatic
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'chore:') && !startsWith(github.ref, 'refs/heads/wiki/')
+    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'chore:') && !startsWith(github.ref, 'refs/heads/wiki/') && !startsWith(github.ref, 'refs/heads/chore/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
