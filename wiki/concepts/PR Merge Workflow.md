@@ -44,8 +44,4 @@ Task(
 - Never merge with known issues from the audit.
 - If the user explicitly requests skipping the audit, confirm once before proceeding.
 
-## Source of truth
-
-Stub: `.claude/rules/pr-merge-workflow.md` (redirects here).
-
 See [[Code Review Audit Agent]], [[Quality Gate]], [[Git Workflow]].

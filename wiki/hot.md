@@ -24,15 +24,14 @@ tags: [meta]
 
 ## Key Facts
 
-- Four new PreToolUse `Bash` hooks use `if:` patterns: `block-bare-npm-test` + `block-main-destructive-git` (blocking), `pr-merge-audit-check` + `wiki-maintenance-check` (advisory).
-- `.claude/rules/test-runner.md` and `.claude/rules/wiki-maintenance.md` deleted — enforcement moved into the hooks.
-- New rules: `git-workflow.md` (referenced by main-protection hook), `task-orchestration.md` (~5+ file work).
-- `storybook.md` + `tailwind.md` gained `paths:` frontmatter for scope-based auto-loading.
+- Four PreToolUse `Bash` hooks use `if:` patterns: `block-bare-npm-test` + `block-main-destructive-git` (blocking), `pr-merge-audit-check` + `wiki-maintenance-check` (advisory).
+- `git-workflow.md` + `pr-merge-workflow.md` rules deleted — fully covered by their hooks. Quality-gate + task-orchestration rules slimmed to wiki-pointer stubs.
+- `storybook.md` + `tailwind.md` carry `paths:` frontmatter for scope-based auto-loading.
 - settings.json: Edit|Write matcher → Edit|Write|MultiEdit; UserPromptSubmit matcher `"All"` → `""`.
 
 ## Recent Changes
 
-- Wiki: [[Claude Hooks]] + [[Claude Integration]] rewritten for the new hook set; [[test-runner]] repointed at hook; added [[Git Workflow]] + [[Task Orchestration]] concepts.
+- Context-trim pass on `.claude/rules/` — 4 always-load rules slimmed/deleted (~103 lines of always-on context removed). Authoritative content now in `wiki/concepts/Git Workflow`, `PR Merge Workflow`, `Task Orchestration`, and `wiki/decisions/Quality Gate`.
 
 ## Active Threads
 

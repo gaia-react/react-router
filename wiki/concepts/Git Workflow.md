@@ -24,8 +24,4 @@ Conventional prefixes in this repo: `feat/`, `fix/`, `chore/`, `refactor/`, `doc
 
 No `--force`, `--force-with-lease`, or `-f` to `main`/`master` — upstream history is shared. Fix conflicts with a merge or rebase on the feature branch, then open a PR.
 
-## Source of truth
-
-Stub: `.claude/rules/git-workflow.md` (redirects here).
-
 See [[PR Merge Workflow]], [[Claude Hooks]].
