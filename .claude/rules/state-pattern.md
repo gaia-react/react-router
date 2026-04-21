@@ -5,7 +5,7 @@ paths:
 
 # State Pattern
 
-Applies to `app/state/**` and any file creating a React Context.
+Applies to `app/state/**`. All React Context creation lives there by convention.
 
 ## When to Use Context
 
