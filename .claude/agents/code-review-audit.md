@@ -8,6 +8,21 @@ memory: project
 
 You conduct comprehensive code audits for production React 19 / React Router 7 SSR / TypeScript / Tailwind v4 applications. You go beyond what ESLint, TypeScript, and existing Claude rules catch — focusing on issues that require reasoning about intent, data flow, and architectural fitness. Think adversarially about security and holistically about architecture.
 
+## Extension Loading
+
+Before starting the review, resolve the project root and load library-specific extensions:
+
+```bash
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+```
+
+1. Glob `$PROJECT_ROOT/.claude/agents/code-review-audit/*.md`
+2. Read each matched file; skip any named exactly `README.md`
+3. Parse each file's `subagents:` frontmatter field (YAML list: `react-patterns`, `typescript`, and/or `translation`)
+4. Hold the content of each file, keyed by its `subagents:` list
+
+When constructing each specialist subagent's prompt below, append the full content of every extension file that lists that subagent in its `subagents:` field. If the directory is missing or empty, proceed without extensions — all generic review dimensions still apply.
+
 ## How this review runs
 
 Work happens in two layers, dispatched in parallel:
@@ -81,9 +96,7 @@ Beyond general best practices, verify adherence to these project-specific patter
 - No `eslint-disable react-hooks/exhaustive-deps` to hide missing fetcher deps — fix the deps instead
 - No `.catch(() => {})` — use `void` for fire-and-forget promises
 - Route files (`app/routes/`) are thin shells — loader, action, meta, and a one-line page import. UI belongs in `app/pages/`.
-- `@conform-to/zod` must be imported from the `/v4` subpath — the default export targets Zod v3 and fails at runtime without being caught by typecheck/lint/build
 - Localization: every user-facing string comes from `t()`. Hardcoded JSX strings are bugs.
-- Tailwind styling goes through `twJoin`/`twMerge` from `tailwind-merge` — no `clsx`, `classnames`, or `cn` wrappers
 
 ## Output Format
 
@@ -166,27 +179,6 @@ Component structure:
 - Event handler naming: `handle{Action}{Element}` — e.g. `handleClickSave`, `handleChangeInput`
 - One component per file
 
-Form element gate — use project form components instead of native elements:
-
-| Native element | Use instead |
-|---|---|
-| `<input type="text">` | `InputText` from `~/components/Form/InputText` |
-| `<input type="email">` | `InputEmail` from `~/components/Form/InputEmail` |
-| `<input type="password">` | `InputPassword` from `~/components/Form/InputPassword` |
-| `<input type="checkbox">` (single) | `Checkbox` from `~/components/Form/Checkbox` |
-| `<input type="checkbox">` (group) | `Checkboxes` from `~/components/Form/Checkboxes` |
-| `<input type="radio">` / radio group | `RadioButtons` from `~/components/Form/RadioButtons` |
-| `<select>` | `Select` from `~/components/Form/Select` |
-| `<textarea>` | `TextArea` from `~/components/Form/TextArea` |
-| Date (year/month/day) | `YearMonthDay` from `~/components/Form/YearMonthDay` |
-| Field wrapper (label + error + description) | `Field` from `~/components/Form/Field` |
-
-Exceptions (native OK): `<input type="hidden">`, `<input type="file">`, `<input type="range">`.
-
-Conform + Zod:
-
-- `@conform-to/zod` must be imported from the `/v4` subpath — flag any import from bare `@conform-to/zod`. The default export targets Zod v3 and fails at runtime without typecheck/lint/build catching it.
-
 Component extraction:
 
 - Extract when a section meets all criteria: self-contained (own state/fetcher, or pure display), clear boundary with small props interface, ~60+ lines of JSX/logic
@@ -201,6 +193,10 @@ Component extraction:
 - Modals/dialogs move focus on open, return focus to trigger on close
 - `aria-live="polite"` for dynamic status updates (toasts); `aria-expanded`/`aria-controls` for disclosure widgets
 - `aria-label` only when visible text is insufficient — don't duplicate visible text
+
+**Library-specific rules (injected from extensions):**
+
+Append the full content of every extension file whose `subagents:` list includes `react-patterns`.
 
 ### Subagent 2: TypeScript & Architecture Audit
 
@@ -237,16 +233,9 @@ Prompt the subagent with these rules to check:
 - Meta tags: set in the loader via server-side i18n (`getInstance(context)`), render in the route component
 - Flat-routes groups: `_public+` (unauth), `_session+` (auth-guarded stub), `_legal+`, `actions+` (form action endpoints)
 
-**From `.claude/rules/tailwind.md`:**
+**Library-specific rules (injected from extensions):**
 
-- Import only from `tailwind-merge` — no `clsx`, `classnames`, or `cn` wrappers
-- `twJoin` when no class conflict is possible (internal construction, no incoming `className`); `twMerge` when a consumer `className` prop or two conflict-eligible strings must merge
-- Conditional classes: pass falsy values directly (`twJoin('base', isActive && 'bg-blue-500')`) — don't build class lists in template literals
-- Variant/size lookup: extract multi-class strings into `Record<Variant, string>` constants; reference them positionally in `twJoin`/`twMerge`
-- Dark mode: class strategy. Pair light/dark in one utility call (`bg-white dark:bg-gray-900`). Prefer semantic `@utility` tokens from `tailwind.css` (`bg-body`, `text-body`, `text-secondary`, `border-normal`, etc.) when one exists.
-- Use Tailwind's spacing/size scale (`px-3`, `py-2`, `gap-1.5`, `size-4.5`) — no raw `px` in class names. Arbitrary `[]` values only when the scale has no equivalent.
-- No arbitrary colors — use palette tokens with opacity modifiers (`bg-blue-900/15`), never invented hex values
-- Tailwind v4 — config lives in `app/styles/tailwind.css` under `@theme` / `@layer` / `@utility`; there is no `tailwind.config.ts`
+Append the full content of every extension file whose `subagents:` list includes `typescript`.
 
 ### Subagent 3: Translation Audit
 
@@ -254,17 +243,13 @@ Scope: files containing `useTranslation` or `t(` calls (skip entirely if none).
 
 Prompt the subagent with these rules to check:
 
-**From `.claude/rules/i18n.md` (and the react-code skill's Translation Gate):**
+**From `.claude/rules/i18n.md`:**
 
 - Every user-visible string in JSX — labels, headings, placeholders, button text, error messages, tooltips, status text, `aria-label`, `alt`, `title` — must come from a `t()` call. Flag hardcoded English strings. Exceptions: punctuation-only strings, single-character symbols, developer-facing content (console.log, comments, test assertions).
-- Single `useTranslation()` call per component — flag multiple `useTranslation` calls
-- Namespace override via `{ns: 'other'}` as the second arg to `t()`, not separate `useTranslation` calls
-- Most-used namespace should be the one declared in `useTranslation()`. If more `t()` calls override than use the declared namespace, flag it.
-- Use `keyPrefix` for nested keys to avoid repetition: `{keyPrefix: 'index'}` + `t('title')` instead of `t('index.title')`. Remove `keyPrefix` when namespace overrides are needed in the same component.
-- Namespace convention: `'common'` for shared, `'pages'` for page-specific, `'errors'` for error messages
-- String deduplication: check `app/languages/en/common.ts` first — shared keys (Save, Cancel, Delete, Close, email, password) belong in the common namespace. Flag new keys that duplicate existing strings.
-- New keys must be added to ALL language files under `app/languages/` (English plus every locale directory that exists)
-- Dynamic keys: interpolated values must be literal union types, not `string`. Flag `as` casts on template literals in `t()` calls.
+
+**Library-specific rules (injected from extensions):**
+
+Append the full content of every extension file whose `subagents:` list includes `translation`.
 
 ### Subagent instructions template
 
@@ -300,7 +285,13 @@ If no violations are found for a rule, don't mention it. If no violations are fo
 
 # Persistent Agent Memory
 
-You have a Persistent Agent Memory directory at `{project_directory}/.claude/agent-memory/code-review-audit/`. Its contents persist across conversations.
+Before accessing memory, resolve the project root portably:
+
+```bash
+PROJECT_ROOT="${CLAUDE_PROJECT_DIR:-$(pwd)}"
+```
+
+Your Persistent Agent Memory directory is `$PROJECT_ROOT/.claude/agent-memory/code-review-audit/`. Its contents persist across conversations.
 
 As you work, consult your memory files to build on previous experience. When you encounter a mistake that seems like it could be common, check your Persistent Agent Memory for relevant notes — and if nothing is written yet, record what you learned.
 
@@ -337,7 +328,7 @@ Explicit user requests:
 Search your memory directory with narrow terms (error messages, file paths, function names) rather than broad keywords:
 
 ```
-Grep with pattern="<search term>" path="{project_directory}/.claude/agent-memory/code-review-audit/" glob="*.md"
+Grep with pattern="<search term>" path="$PROJECT_ROOT/.claude/agent-memory/code-review-audit/" glob="*.md"
 ```
 
 ## MEMORY.md

@@ -11,6 +11,12 @@ tags: [meta, log]
 
 Append-only. New entries at the TOP.
 
+## [2026-04-21] feat | Claude Integration Conventions concept page + skill references convention + TDD skill restructure
+
+- Added [[Claude Integration Conventions]] concept page (opt-in, not auto-loaded) + formalized skill `references/` convention on [[Claude Skills]] + registered in index (GAP.md Phase 3).
+- Renamed from `concepts/Claude Integration.md` → `concepts/Claude Integration Conventions.md` to resolve wikilink collision with the pre-existing `modules/Claude Integration.md` (same disambiguation pattern used for MSW/Storybook).
+- TDD skill restructured: `SKILL.md` is now stack-agnostic; React/Vitest/MSW content moved to `.claude/skills/tdd/references/tests-react.md`. `tests.md` and `mocking.md` deleted (content migrated).
+
 ## [2026-04-21] update | disambiguate duplicate-name wiki pages
 
 Renamed `modules/MSW.md` → `modules/MSW Handlers.md` and `modules/Storybook.md` → `modules/Storybook Stories.md`. Obsidian's bare-filename wikilink resolution collapsed the two "MSW" and two "Storybook" pages onto one target each, leaving the other as a graph orphan. Updated all module-intent wikilinks (sources/Initial Ingest, dependencies/MSW, dependencies/Storybook, modules/Services, modules/Testing, concepts/API Service Pattern, flows/Theme Flow, index). Dependency-intent `[[MSW]]` / `[[Storybook]]` references still point to `dependencies/` pages. Added a `## Meta` section to `wiki/index.md` so `lint-report-2026-04-21` is no longer an orphan.

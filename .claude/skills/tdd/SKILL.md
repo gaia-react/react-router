@@ -1,47 +1,33 @@
 ---
 name: tdd
-description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development. Tailored for GAIA — Vitest, React Testing Library, Storybook composeStory, MSW.
+description: Test-driven development with red-green-refactor loop. Use when user wants to build features or fix bugs using TDD, mentions "red-green-refactor", wants integration tests, or asks for test-first development.
 ---
 
-# Test-Driven Development (GAIA)
+# Test-Driven Development
+
+## Selecting a Stack Reference
+
+Before writing the first red test, consult the reference for your stack:
+
+- **React / Vitest / MSW / Storybook** → [references/tests-react.md](references/tests-react.md)
+
+Add a new `references/tests-{stack}.md` when adopting a new stack. The stack reference covers concrete patterns, test layers, mocking rules, and good/bad examples specific to that environment.
 
 ## Philosophy
 
-**Core principle**: tests should verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
+**Core principle**: tests verify behavior through public interfaces, not implementation details. Code can change entirely; tests shouldn't.
 
-**Good tests** are integration-style: they exercise real code paths through public APIs. They describe _what_ the system does, not _how_ it does it. A good test reads like a specification — "user submits a valid form and sees a success toast" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
+**Good tests** are integration-style — they exercise real code paths through public APIs and describe _what_ the system does, not _how_. A good test reads like a specification: "user submits a valid form and sees a success toast" tells you exactly what capability exists. These tests survive refactors because they don't care about internal structure.
 
-**Bad tests** are coupled to implementation. They mock internal collaborators, assert on `t()` call signatures, spy on `useState` setters, or query MSW handler internals. The warning sign: your test breaks when you refactor, but behavior hasn't changed.
-
-See [tests.md](tests.md) for GAIA-native examples and [mocking.md](mocking.md) for mocking guidelines.
-
-## GAIA testing layers
-
-Four layers share one mocking foundation (`msw` + `msw/data`). Each has a natural TDD rhythm:
-
-| Layer | Tool | Runner | File location | What to assert |
-| --- | --- | --- | --- | --- |
-| Unit / hook | RTL `renderHook` | Vitest | `app/hooks/<name>/tests/` | hook return values, state transitions, callbacks |
-| Component | RTL + Storybook `composeStory` | Vitest | `app/components/<Name>/tests/` | rendered DOM, user interactions, props behavior |
-| Service | MSW handlers + Zod | Vitest | `app/services/<name>/tests/` | parsed response shape, request payload, error cases |
-| E2E | Playwright + MSW browser | Playwright | `.playwright/e2e/*.spec.ts` | full user flow across routes |
-
-Write the test at the **lowest layer that can verify the behavior.** A button's disabled state is a component test, not an E2E. A route's redirect is E2E; a loader's parsing is a service test.
-
-See `.claude/rules/component-testing.md` for the `composeStory` contract and `.claude/rules/api-service.md` for service-test conventions.
+**Bad tests** are coupled to implementation. They mock internal collaborators, spy on state setters, or assert on internal call signatures. The warning sign: your test breaks when you refactor, but behavior hasn't changed.
 
 ## Anti-Pattern: Horizontal Slices
 
 **DO NOT write all tests first, then all implementation.** This is "horizontal slicing" — treating RED as "write all tests" and GREEN as "write all code."
 
-This produces **crap tests**:
+Tests written in bulk test _imagined_ behavior, not _actual_ behavior. You outrun your headlights, committing to structure before understanding the implementation, producing tests insensitive to real changes.
 
-- Tests written in bulk test _imagined_ behavior, not _actual_ behavior
-- You end up testing the _shape_ of things (prop types, handler signatures) rather than user-facing behavior
-- Tests become insensitive to real changes — they pass when behavior breaks, fail when behavior is fine
-- You outrun your headlights, committing to test structure before understanding the implementation
-
-**Correct approach**: vertical slices via tracer bullets. One test → one implementation → repeat. Each test responds to what you learned from the previous cycle.
+**Correct approach**: vertical slices via tracer bullets. One test → one implementation → repeat.
 
 ```
 WRONG (horizontal):
@@ -61,7 +47,7 @@ RIGHT (vertical):
 
 Before writing any code:
 
-- [ ] Confirm with user which layer owns this test (hook, component, service, e2e)
+- [ ] Confirm which layer owns this test (see stack reference for layer breakdown)
 - [ ] Confirm which behaviors to test (prioritize)
 - [ ] Identify opportunities for [deep modules](deep-modules.md) — small interface, deep implementation
 - [ ] Design interfaces for [testability](interface-design.md)
@@ -70,34 +56,15 @@ Before writing any code:
 
 Ask: "What should the public interface look like? Which behaviors are most important to test?"
 
-**You can't test everything.** Focus testing effort on critical paths and complex logic, not every possible edge case.
+**You can't test everything.** Focus on critical paths and complex logic, not every edge case.
 
 ### 2. Tracer Bullet
 
-Write ONE test that confirms ONE thing about the system end-to-end for this layer:
-
-```
-RED:   Write test for first behavior → test fails
-GREEN: Write minimal code to pass → test passes
-```
-
-For components, the tracer bullet is almost always: `composeStory(Default)` renders without throwing. For services, it's: the happy-path request returns a Zod-parsed result.
+Write ONE test that confirms ONE thing end-to-end for this layer. `RED → GREEN`. The tracer bullet confirms the testing infrastructure wires up before adding real coverage.
 
 ### 3. Incremental Loop
 
-For each remaining behavior:
-
-```
-RED:   Write next test → fails
-GREEN: Minimal code to pass → passes
-```
-
-Rules:
-
-- One test at a time
-- Only enough code to pass current test
-- Don't anticipate future tests
-- Keep tests focused on observable behavior
+For each remaining behavior: `RED → GREEN`. One test at a time. Only enough code to pass the current test. Don't anticipate future tests.
 
 ### 4. Refactor
 
@@ -115,9 +82,9 @@ After all tests pass, look for [refactor candidates](refactoring.md):
 
 ```
 [ ] Test describes behavior, not implementation
-[ ] Test uses public interface only (no spying on internals, no asserting on t() args)
+[ ] Test uses public interface only (no spying on internals)
 [ ] Test would survive an internal refactor
 [ ] Code is minimal for this test
 [ ] No speculative features added
-[ ] Mock only at system boundaries (APIs via MSW, time, navigation)
+[ ] Mock only at system boundaries (network, time, randomness)
 ```

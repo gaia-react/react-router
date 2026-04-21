@@ -18,6 +18,19 @@ Reviews security, performance, code smells, architecture, robustness, and mainta
 
 `.claude/agent-memory/code-review-audit/MEMORY.md` — accumulates patterns and issues across reviews. Versioned with the project.
 
+## Extension mechanism
+
+Library-specific audit rules live in `.claude/agents/code-review-audit/*.md`. Each file targets one or more specialist subagents via YAML frontmatter (`subagents: [react-patterns, typescript, translation]`). The agent reads all extension files at startup and injects their rules into the relevant subagent prompts.
+
+To swap a library: remove its extension file, add one for the replacement. The main agent definition stays unchanged. See the `README.md` in that directory for the full format.
+
+| File | Library |
+|---|---|
+| `conform.md` | `@conform-to/zod` |
+| `tailwind-merge.md` | `tailwind-merge` |
+| `react-i18next.md` | `react-i18next` |
+| `form-components.md` | GAIA Form Components |
+
 ## Trigger
 
 Always before `gh pr merge` ([[PR Merge Workflow]]). Also on demand for any review.

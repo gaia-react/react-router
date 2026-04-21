@@ -1,3 +1,9 @@
+---
+paths:
+  - '.playwright/**/*'
+  - 'playwright.config.*'
+---
+
 # Playwright E2E Conventions
 
 ## File locations

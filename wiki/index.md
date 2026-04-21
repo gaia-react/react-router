@@ -11,6 +11,8 @@ tags: [meta]
 
 Master catalog of every page in the wiki. Newly created pages must be added here.
 
+> **Domain isolation:** Technical work fetches from `wiki/app/` and related technical folders only. Brand/business work fetches from `wiki/brand/` or `wiki/business/` only. Cross-load only when the task genuinely spans both domains.
+
 ## Top-level
 
 - [[overview]] — executive summary
@@ -100,6 +102,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[PR Merge Workflow]]
 - [[Code Review Audit Agent]]
 - [[Claude Hooks]]
+- [[Claude Integration Conventions]] — Conventions for Claude's config surface: extension points, monorepo retrofit, service swaps, domain isolation.
 - [[Claude Skills]]
 - [[handoff command]]
 - [[pickup command]]
