@@ -11,9 +11,11 @@ tags: [meta, log]
 
 Append-only. New entries at the TOP.
 
-## [2026-04-21] feat | Claude Integration concept page + skill references convention
+## [2026-04-21] feat | Claude Integration Conventions concept page + skill references convention + TDD skill restructure
 
-- 2026-04-21 — Added [[Claude Integration]] concept page + formalized skill `references/` convention + registered in index (GAP.md Phase 3).
+- Added [[Claude Integration Conventions]] concept page (opt-in, not auto-loaded) + formalized skill `references/` convention on [[Claude Skills]] + registered in index (GAP.md Phase 3).
+- Renamed from `concepts/Claude Integration.md` → `concepts/Claude Integration Conventions.md` to resolve wikilink collision with the pre-existing `modules/Claude Integration.md` (same disambiguation pattern used for MSW/Storybook).
+- TDD skill restructured: `SKILL.md` is now stack-agnostic; React/Vitest/MSW content moved to `.claude/skills/tdd/references/tests-react.md`. `tests.md` and `mocking.md` deleted (content migrated).
 
 ## [2026-04-21] update | disambiguate duplicate-name wiki pages
 

@@ -1,17 +1,17 @@
 ---
 type: concept
-title: Claude Integration
+title: Claude Integration Conventions
 status: active
 created: 2026-04-21
 updated: 2026-04-21
 tags: [claude, meta, configuration]
 ---
 
-# Claude Integration
+# Claude Integration Conventions
 
 > Not auto-loaded. Consult on demand when a Claude-integration retrofit is in scope.
 
-Conventions for GAIA's Claude Code config surface: extension points, monorepo retrofit, service swaps, domain isolation.
+Conventions for GAIA's Claude Code config surface: extension points, monorepo retrofit, service swaps, domain isolation. For the inventory of what currently exists in this project, see [[modules/Claude Integration|the modules page]].
 
 ## 1. Directory overview
 
@@ -25,7 +25,7 @@ Conventions for GAIA's Claude Code config surface: extension points, monorepo re
 | `.claude/agent-memory/` | Persistent agent memory (versioned, committed) | Auto per named agent |
 | `wiki/` | Knowledge base — architecture, decisions, patterns | Manual (on-demand fetch) |
 
-See [[Claude Integration]] (modules) for the inventory of current commands, rules, hooks, and skills.
+See [[modules/Claude Integration|the modules page]] for the inventory of current commands, rules, hooks, and skills.
 
 ## 2. Agent extensions (review-type agents only)
 

@@ -10,7 +10,7 @@ tags: [concept, claude, skills]
 
 `.claude/skills/` holds project-local skills (react-code, typescript, tailwind, skeleton-loaders). Each has a `SKILL.md` defining when it activates and its rules. Skills apply by context/intent; rules apply by file path.
 
-See [[Claude Integration]] (modules) for the full skills inventory.
+See [[modules/Claude Integration|the modules page]] for the full skills inventory.
 
 ## Skill references convention
 
@@ -20,4 +20,4 @@ Stack-specific or deep-dive content lives in `references/{topic}.md` inside the 
 
 **Example:** `skills/tdd/SKILL.md` links to `skills/tdd/references/tests-react.md`. A new Svelte testing reference would go in `skills/tdd/references/tests-svelte.md`.
 
-See [[Claude Integration]] (concepts) for the broader convention covering extension points, monorepo retrofit, and service swaps.
+See [[Claude Integration Conventions]] for the broader convention covering extension points, monorepo retrofit, and service swaps.

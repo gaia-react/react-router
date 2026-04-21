@@ -102,7 +102,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[PR Merge Workflow]]
 - [[Code Review Audit Agent]]
 - [[Claude Hooks]]
-- [[Claude Integration]] — Conventions for Claude's config surface: extension points, monorepo retrofit, service swaps, domain isolation.
+- [[Claude Integration Conventions]] — Conventions for Claude's config surface: extension points, monorepo retrofit, service swaps, domain isolation.
 - [[Claude Skills]]
 - [[handoff command]]
 - [[pickup command]]
