@@ -8,11 +8,24 @@ tags: [concept, git, workflow]
 
 # Git Workflow
 
-Authoritative rule: `.claude/rules/git-workflow.md`. Two invariants:
+Two invariants, machine-enforced by `.claude/hooks/block-main-destructive-git.sh` (PreToolUse `Bash` hook with `if: Bash(git *)`). The hook emits `permissionDecision: "deny"` with a reason string, so Claude cannot bypass it without explicit user override.
 
-1. **No commits to `main`/`master`** — always branch first (`feat/`, `fix/`, `chore/`, `refactor/`, `docs/`, `test/`).
-2. **No force-push to `main`/`master`** — no `--force`, `--force-with-lease`, or `-f` when the refspec mentions `main`/`master`.
+## 1. Never commit directly to `main` or `master`
 
-Machine-enforced by `.claude/hooks/block-main-destructive-git.sh` (PreToolUse `Bash` hook with `if: Bash(git *)`). The hook emits `permissionDecision: "deny"` with a reason string, so Claude cannot bypass it without explicit user override.
+Always work on a feature branch. If HEAD is on `main`/`master`, create one first:
+
+```bash
+git switch -c <type>/<short-description>
+```
+
+Conventional prefixes in this repo: `feat/`, `fix/`, `chore/`, `refactor/`, `docs/`, `test/`.
+
+## 2. Never force-push to `main` or `master`
+
+No `--force`, `--force-with-lease`, or `-f` to `main`/`master` — upstream history is shared. Fix conflicts with a merge or rebase on the feature branch, then open a PR.
+
+## Source of truth
+
+Stub: `.claude/rules/git-workflow.md` (redirects here).
 
 See [[PR Merge Workflow]], [[Claude Hooks]].
