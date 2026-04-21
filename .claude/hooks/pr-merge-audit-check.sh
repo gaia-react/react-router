@@ -1,6 +1,6 @@
 #!/bin/bash
 # Advisory reminder fired before `gh pr merge`:
-# require a code-review-audit pass per .claude/rules/pr-merge-workflow.md.
+# require a code-review-audit pass per wiki/concepts/PR Merge Workflow.md.
 # Exit 0 always (non-blocking).
 
 input=$(cat)
@@ -20,7 +20,7 @@ fi
 cat <<'EOF' >&2
 Reminder — run the code-review-audit before merging.
 
-Per .claude/rules/pr-merge-workflow.md:
+Per wiki/concepts/PR Merge Workflow.md:
   1. Spawn code-review-audit agent on the branch vs main
   2. Fix every issue (security, performance, code quality)
   3. Commit + push fixes to the PR branch

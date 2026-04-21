@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # PreToolUse Bash hook: block commits to main/master and force-push to main/master.
-# Rule: .claude/rules/git-workflow.md
+# Policy: wiki/concepts/Git Workflow.md
 set -euo pipefail
 
 payload=$(cat)
@@ -24,7 +24,7 @@ deny() {
 if [[ "$cmd" =~ git[[:space:]]+commit([[:space:]]|$) ]]; then
   branch=$(git symbolic-ref --short HEAD 2>/dev/null || echo "")
   if [[ "$branch" == "main" || "$branch" == "master" ]]; then
-    deny "Commits to '$branch' are forbidden (.claude/rules/git-workflow.md). Create a feature branch first."
+    deny "Commits to '$branch' are forbidden (wiki/concepts/Git Workflow.md). Create a feature branch first."
   fi
 fi
 
@@ -32,7 +32,7 @@ fi
 if [[ "$cmd" =~ git[[:space:]]+push ]] \
    && [[ "$cmd" =~ (--force|--force-with-lease|[[:space:]]-f([[:space:]]|$)) ]] \
    && [[ "$cmd" =~ (main|master)([[:space:]]|$|:) ]]; then
-  deny "Force-push to main/master is forbidden (.claude/rules/git-workflow.md)."
+  deny "Force-push to main/master is forbidden (wiki/concepts/Git Workflow.md)."
 fi
 
 exit 0
