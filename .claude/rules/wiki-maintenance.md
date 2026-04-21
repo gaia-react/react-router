@@ -9,6 +9,7 @@ Before executing `git commit` (or any commit command), evaluate whether the work
 - A decision worth recording as an ADR (chose X over Y, rejected approach Z with reason)
 - A non-obvious invariant, gotcha, or workaround discovered while debugging
 - A breaking change to a documented interface
+- A library-specific extension added, removed, or substantially changed in `.claude/agents/code-review-audit/` — update `wiki/concepts/Code Review Audit Agent.md` to reflect the current extension list
 
 ## Do NOT file a wiki update for:
 
