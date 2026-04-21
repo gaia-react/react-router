@@ -1,3 +1,9 @@
+---
+paths:
+  - 'app/**/*.tsx'
+  - 'app/**/*.css'
+---
+
 # Tailwind Conventions
 
 ## Canonical helpers — `tailwind-merge`

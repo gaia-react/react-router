@@ -31,7 +31,7 @@
     ],
     "UserPromptSubmit": [
       {
-        "matcher": "All",
+        "matcher": "",
         "hooks": [
           {
             "type": "command",
@@ -42,7 +42,7 @@
     ],
     "PreToolUse": [
       {
-        "matcher": "Edit|Write",
+        "matcher": "Edit|Write|MultiEdit",
         "hooks": [
           {
             "type": "command",
@@ -59,6 +59,33 @@
           {
             "type": "command",
             "command": ".claude/hooks/check-story-exists.sh"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-bare-npm-test.sh",
+            "if": "Bash(npm *)"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-main-destructive-git.sh",
+            "if": "Bash(git *)",
+            "statusMessage": "Checking main-branch protection…"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/pr-merge-audit-check.sh",
+            "if": "Bash(gh pr merge:*)",
+            "statusMessage": "Checking PR-merge audit gate…"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/wiki-maintenance-check.sh",
+            "if": "Bash(git commit:*)"
           }
         ]
       }
