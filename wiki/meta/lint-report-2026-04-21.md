@@ -10,102 +10,98 @@ tags: [meta, lint]
 
 ## Summary
 
-- Pages scanned: 73
-- Issues found: 11 (4 critical, 4 warnings, 3 suggestions)
-- Resolved: 10 (1 auto-fixed at lint time, 9 verified already fixed or fixed in this pass)
-- False positives: 1 (S3 — git timestamps show pages predated the log entry by ~45 seconds)
-
-## Resolution Pass — 2026-04-21
-
-All actionable findings have been resolved:
-
-- **C2–C4** (dead wikilinks in `log.md`) — already annotated with plain-text `Name` (deleted Phase X) before this pass; no live `[[…]]` references remain to deleted pages.
-- **W1/W2** (frontmatter gaps) — verified: `hot.md`, `log.md`, `index.md`, `CLAUDE.md` all carry the required five fields.
-- **W3** (MSW companion-package contradiction) — both `dependencies/MSW.md` and `dependencies/Storybook.md` now clarify that `msw-storybook-addon` is installed but deliberately unused.
-- **W4** (flow count drift) — `sources/Initial Ingest.md` updated to "4 flows (Auth Flow since removed)".
-- **S1** (index missing Meta section) — `index.md` has `## Meta` with the current lint report.
-- **S2** (imprecise `[[Coding Guidelines]]` pointer in `dependencies/Conform.md`) — replaced with a direct citation to `.claude/skills/react-code/` and the conform subagent, since the `/v4` rule lives there, not in the rules file.
-- **S3** — **false positive.** Git log shows `wiki/concepts/Claude Hooks.md` (commit `505ae06`, 13:51:16) and `wiki/concepts/Claude Skills.md` (commit `67db13a`, 13:51:29) were added **before** `wiki/log.md` (commit `10b3cda`, 13:52), so the Initial Ingest entry listing them as created pages is accurate.
-
----
-
-## Original findings
-
-- Auto-fixed at lint time: 1 (dead link `[[test-runner Rule]]` → `[[test-runner]]` in `concepts/Pre-commit Hooks.md`)
+- Pages scanned: 77
+- Issues found: 9 (3 critical, 3 warnings, 3 suggestions)
 
 ---
 
 ## Critical (must fix)
 
-### C1. Dead link: `[[test-runner Rule]]` — FIXED
-- **Affected**: `concepts/Pre-commit Hooks.md` (line 13)
-- **Problem**: Page is named `test-runner`, not `test-runner Rule`. The link was broken post-compression.
-- **Fix applied**: Replaced `[[test-runner Rule]]` with `[[test-runner]]`.
+### C1. Dead link: `[[CLAUDE]]` in `wiki/index.md`
 
-### C2. Dead link: `[[Auth Flow]]` in `log.md`
-- **Affected**: `log.md` line 84 (Initial Ingest entry)
-- **Problem**: `wiki/flows/Auth Flow.md` was deleted in Phase D (auth stack removal). The log entry references it as a created page.
-- **Suggested fix**: Change `[[Auth Flow]]` to plain text `Auth Flow` (struck-through or annotated as deleted) since `log.md` is append-only history. Or add `~~[[Auth Flow]]~~` to signal deletion.
+- **Affected**: `wiki/index.md` line 21
+- **Problem**: `wiki/CLAUDE.md` was renamed to `wiki/README.md` (commit `19f25d6`). The index still has `- [[CLAUDE]] — vault schema and conventions`, which resolves to nothing.
+- **Fix**: Change `[[CLAUDE]]` to `[[README]]` (or remove the entry if README is intentionally excluded from the catalog).
 
-### C3. Dead link: `[[things Service]]` in `log.md`
-- **Affected**: `log.md` line 66
-- **Problem**: `things Service` page was never created as a standalone wiki page (the log says it was, but no file exists). Deleted in Phase C.
-- **Suggested fix**: Same as C2 — annotate as deleted history.
+### C2. Dead link: `[[CLAUDE]]` in `wiki/log.md`
 
-### C4. Dead links: `[[VitePress]]` and `[[remix-auth]]` in `log.md`
-- **Affected**: `log.md` line 86
-- **Problem**: Both dependency pages were deleted (VitePress and remix-auth removed from the project). The Initial Ingest log lists them as created pages.
-- **Suggested fix**: Annotate as deleted in the log, or plain text. These were historical creations that no longer exist.
+- **Affected**: `wiki/log.md` line 104 (Initial Ingest entry)
+- **Problem**: Same rename as C1. `log.md` is append-only, so this is historical, but the wikilink still resolves to a missing file.
+- **Fix**: Replace `[[CLAUDE]]` with plain text `CLAUDE` (annotated as renamed) since the log is append-only history. Or redirect to `[[README]]`.
+
+### C3. `wiki/modules/Claude Integration.md` does not document `wiki-squash-autocommits.sh`
+
+- **Affected**: `wiki/modules/Claude Integration.md` — SessionStart/Stop hooks section
+- **Problem**: `wiki/concepts/Claude Hooks.md` line 44 lists `wiki-squash-autocommits.sh` as a Stop hook alongside `wiki-session-stop.sh`. The hook file exists (`.claude/hooks/wiki-squash-autocommits.sh`) and is registered in `.claude/settings.json`. But `modules/Claude Integration.md` lists only `wiki-session-start.sh` and `wiki-session-stop.sh` in the SessionStart/Stop table — `wiki-squash-autocommits.sh` is missing.
+- **Fix**: Add `wiki-squash-autocommits.sh` to the Stop hooks row in `modules/Claude Integration.md`.
 
 ---
 
 ## Warnings (should fix)
 
-### W1. Missing frontmatter fields: `hot.md`, `log.md`, `index.md`
-- **Affected**: All three top-level meta pages
-- **Problem**: Missing `status`, `created`, and `tags` fields. These are meta pages intentionally kept minimal but the vault schema (CLAUDE.md) requires all five fields.
-- **Suggested fix**: Add `status: active`, `created: 2026-04-20`, and appropriate `tags: [meta]` to each.
+### W1. Orphan: `wiki/README.md` has zero inbound wikilinks
 
-### W2. Missing frontmatter: `CLAUDE.md` (vault schema file)
-- **Affected**: `wiki/CLAUDE.md`
-- **Problem**: Has no YAML frontmatter at all — no `type`, `status`, `created`, `updated`, `tags`.
-- **Suggested fix**: Add frontmatter with `type: meta`, `status: active`, `created: 2026-04-20`, `updated: 2026-04-20`, `tags: [meta, schema]`.
+- **Affected**: `wiki/README.md`
+- **Problem**: After the rename from `CLAUDE.md` to `README.md`, no wiki page links to `[[README]]`. The index still points to `[[CLAUDE]]` (C1 above), so `README.md` is a graph orphan.
+- **Fix**: Fix C1 first (update `[[CLAUDE]]` to `[[README]]` in `index.md`). That alone resolves the orphan.
 
-### W3. Stale claim: `dependencies/MSW.md` lists `msw-storybook-addon` as a companion package
-- **Affected**: `dependencies/MSW.md` line 18 and `dependencies/Storybook.md` line 18
-- **Problem**: `modules/Storybook.md` explicitly states "No `msw-storybook-addon` — API-level mocking is not used in stories." However, `msw-storybook-addon` IS in `package.json` at version `2.0.7`. The contradiction is between the module page (says not used) and the dependency pages (list it as companion). The module page appears to be the authoritative intent.
-- **Suggested fix**: Clarify in `dependencies/MSW.md` and `dependencies/Storybook.md` that `msw-storybook-addon` is installed but deliberately unused — stories use `@mswjs/data` directly instead.
+### W2. Naming convention violations — filename case
 
-### W4. `log.md` references 6 flows in Initial Ingest entry but only 3 survive
-- **Affected**: `log.md` line 84 and `sources/Initial Ingest.md` line 45
-- **Problem**: Both pages state "6 flows" were created at ingest (`Auth Flow`, `Theme Flow`, `Language Flow`, `Form Submit Flow` — but that's only 4 listed; Auth Flow was then deleted). The count claim is now wrong.
-- **Suggested fix**: `Initial Ingest.md` line 45 says "6 flows" — should be updated to note that Auth Flow was subsequently deleted.
+- **Affected**: The following files use non-Title-Case names contrary to the "filenames: Title Case with spaces" convention:
+  - `concepts/audit-knowledge command.md` — should be `Audit-Knowledge Command.md` or `audit-knowledge Command.md`
+  - `concepts/handoff command.md` — should be `Handoff Command.md`
+  - `concepts/pickup command.md` — should be `Pickup Command.md`
+  - `concepts/test-runner.md` — should be `Test Runner.md`
+  - `decisions/composeStory Pattern.md` — mixed case, debatable; `ComposeStory Pattern.md` would be fully Title Case
+  - `modules/i18n.md` — all-lowercase; `I18n.md` or `i18n.md` by convention (intentional lowercase for the abbreviation)
+  - `dependencies/i18next.md` — same as above
+  - `dependencies/remix-flat-routes.md` — kebab-case package name; `Remix Flat Routes.md` would match Title Case
+  - `dependencies/remix-i18next.md` — same; `Remix I18next.md`
+  - `dependencies/remix-toast.md` — same; `Remix Toast.md`
+- **Note**: `i18n.md`, `i18next.md`, `remix-*` names are arguably intentional (matching package name case). The command pages (`handoff command.md` etc.) are clearest violations.
+- **Fix**: Rename command/concept pages to Title Case. Evaluate dependency pages individually — package-name filenames may be an intentional convention.
+
+### W3. `wiki/modules/Claude Integration.md` Skills table is stale
+
+- **Affected**: `wiki/modules/Claude Integration.md` — Skills section (lines 120–130)
+- **Problem**: The Skills table lists 4 skills (`react-code`, `typescript`, `tailwind`, `skeleton-loaders`) and notes "These activate automatically based on context." However, `wiki/concepts/Claude Integration Conventions.md` §3 documents a `tdd` skill with a `references/` convention (tests-react.md reference file). The `tdd` skill is not in the Skills table.
+- **Fix**: Add `tdd` skill row to the Skills table in `modules/Claude Integration.md`.
 
 ---
 
 ## Suggestions (worth considering)
 
-### S1. `index.md` does not include `wiki/meta/` directory
-- **Affected**: `wiki/index.md`
-- **Problem**: The `meta/` subdirectory is documented in `CLAUDE.md`'s structure table but has no entry in `index.md`. Now that this lint report exists, `index.md` should gain a `## Meta` section listing lint reports.
-- **Suggested fix**: Add `## Meta` section with `- [[lint-report-2026-04-21]]`.
+### S1. `wiki/modules/Claude Integration.md` Initial Ingest count is stale
 
-### S2. `Conform` page references `@conform-to/zod/v4` subpath but links to `[[Coding Guidelines]]` for the rule
-- **Affected**: `dependencies/Conform.md`
-- **Problem**: The `[[Coding Guidelines]]` page is now a one-line pointer stub. The actual Conform/Zod v4 import rule lives in `.claude/rules/coding-guidelines.md` but that specific detail was in the old full-text page. Worth verifying the rule file explicitly documents the `/v4` subpath.
-- **Suggested fix**: Check `.claude/rules/coding-guidelines.md` — if the `/v4` subpath rule is there, no action needed. If not, add it.
+- **Affected**: `wiki/sources/Initial Ingest.md` line 41
+- **Problem**: "8 commands, 10 rules, 4 hooks, 1 review agent + 3 specialists, 4 skills" is the count from the initial ingest. Since then: hooks governance added 4 PreToolUse Bash hooks + SessionStart/Stop pair (total now 12 hooks); `tdd` skill added (total 5 skills); several commands added. The count is stale.
+- **Fix**: Low priority — `Initial Ingest` is a historical source document. Either update the count or annotate "as of ingest date."
 
-### S3. `log.md` Initial Ingest entry lists `[[Claude Skills]]` but that page was created post-ingest
-- **Affected**: `log.md` line 88
-- **Problem**: The Initial Ingest concepts list includes `[[Claude Skills]]` and `[[Claude Hooks]]`, but these were added in the wiki-coherence hooks entry or later sessions, not the initial ingest. Minor historical inaccuracy.
-- **Suggested fix**: Low priority — log is append-only history, acceptable to leave.
+### S2. Unlinked mentions of "Playwright" in non-linking pages
+
+- **Affected**:
+  - `wiki/overview.md` line 84 — comparison table cell "Playwright" unlinked
+  - `wiki/decisions/TypeScript Language Files.md` line 21 — "Playwright assertions" unlinked
+  - `wiki/sources/Initial Ingest.md` line 36 — "Playwright" unlinked in big-ideas list
+- **Fix**: Add `[[Playwright]]` wikilinks at these three mention sites.
+
+### S3. `wiki/concepts/Claude Hooks.md` — `claude-obsidian` plugin mentioned without a page or link
+
+- **Affected**: `wiki/modules/Claude Integration.md` line ~134 and `wiki/concepts/Claude Hooks.md` (SessionStart/Stop section)
+- **Problem**: The `claude-obsidian` plugin is described functionally but has no wiki page and is never linked. It is a meaningful dependency for the wiki coherence hook pair.
+- **Fix**: Either add a `wiki/dependencies/claude-obsidian.md` stub, or add a brief inline description and link to its GitHub/npm in the Claude Integration or Claude Hooks page. Low priority.
 
 ---
 
 ## Checks with clean results
 
-- **Orphan pages**: None. All 73 pages have at least one inbound wikilink (excluding meta-exempt: index, hot, log, CLAUDE, overview, Initial Ingest).
-- **Stale seed pages**: None. No pages have `status: seed`.
-- **Pages over 300 lines**: None. All pages are within the recommended size limit.
-- **Shrunk pointer pages**: All 9 compressed pages (Coding Guidelines, test-runner, Pre-commit Hooks, handoff command, pickup command, Chromatic Opt-Out, Claude Skills, Accessibility, PR Merge Workflow) have valid inbound links (2–7 each) and are not orphans.
-- **Index staleness**: `wiki/index.md` has no stale entries pointing to deleted files. Auth Flow, remix-auth, VitePress, and things Service were already removed from the index.
+- **Dead links (wikilinks)**: All wikilinks resolve to existing files except C1/C2 (`[[CLAUDE]]`). Path-style links (`[[modules/Claude Integration|the modules page]]`) resolve correctly to `modules/Claude Integration.md`.
+- **Required frontmatter**: All 77 pages have `type`, `status`, `created`, `updated`, and `tags`. `README.md` has all five fields (no `title:` field, but `title:` is not required per the schema in `README.md` itself).
+- **Empty sections**: No headings found with zero content underneath.
+- **Stale seed pages**: No pages with `status: seed`.
+- **Pages over 300 lines**: None. Largest pages: `modules/MSW Handlers.md` (157 lines), `concepts/Claude Integration Conventions.md` (154 lines), `modules/Claude Integration.md` (134 lines).
+- **Folder naming**: All domain folders use lowercase (`components/`, `concepts/`, `decisions/`, `dependencies/`, `entities/`, `flows/`, `meta/`, `modules/`, `sources/`). Convention satisfied.
+- **Tag casing**: All tags are lowercase across all pages. Convention satisfied.
+- **Stale index entries**: `index.md` has no entries pointing to deleted pages. Auth Flow, remix-auth, VitePress, and things Service were previously cleaned from the index. Only `[[CLAUDE]]` (C1) points to a renamed file.
+- **Orphan pages** (excluding README — see W1): All other 76 pages have at least one inbound wikilink. Pages confirmed with 1–2 inbound links (borderline but acceptable): `log.md` (1), `Initial Ingest` (2), `lint-report-2026-04-21` (2), `FontAwesome` (3), `Utils` (3), `Steven Sacks` (3), `Accessibility` (4).
+- **Stale claims**: No factual contradictions found between pages beyond the hook inventory gap (C3) and skill count (W3).
