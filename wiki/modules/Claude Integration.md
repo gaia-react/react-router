@@ -4,7 +4,7 @@ path: .claude/
 status: active
 purpose: Claude Code integration — commands, rules, hooks, agents, skills
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-21
 tags: [module, claude, hooks]
 ---
 
@@ -38,18 +38,22 @@ See individual rules for the patterns each command produces.
 
 Rules activate automatically based on file paths — no need to invoke them.
 
-| Rule                         | Applies to                                              |
-| ---------------------------- | ------------------------------------------------------- |
-| [[Coding Guidelines]]        | All code                                                |
-| [[Component Testing]]        | `app/**/tests/**`, `test/**`                            |
-| `new-route.md` ([[Routing]]) | `app/routes/**`, `app/pages/**`                         |
-| [[API Service Pattern]]      | `app/services/**`, `test/mocks/**`                      |
-| `i18n.md` ([[i18n]])         | `app/pages/**`, `app/components/**`, `app/languages/**` |
-| [[Accessibility]]            | `app/components/**`, `app/pages/**`                     |
-| [[ESLint Fixes]]             | ESLint-related files                                    |
-| [[test-runner]]              | Test files                                              |
-| [[Quality Gate]]             | Commits                                                 |
-| [[PR Merge Workflow]]        | PR merges                                               |
+| Rule                                   | Applies to                                              |
+| -------------------------------------- | ------------------------------------------------------- |
+| [[Coding Guidelines]]                  | All code                                                |
+| [[Component Testing]]                  | `app/**/tests/**`, `test/**`                            |
+| `new-route.md` ([[Routing]])           | `app/routes/**`, `app/pages/**`                         |
+| [[API Service Pattern]]                | `app/services/**`, `test/mocks/**`                      |
+| `state-pattern.md` ([[State]])         | `app/state/**`                                          |
+| `storybook.md` ([[Storybook Stories]]) | `app/**/*.stories.tsx`, `.storybook/**`                 |
+| `tailwind.md` ([[Tailwind]])           | `app/**/*.{tsx,css}`                                    |
+| `playwright.md` ([[Playwright]])       | `.playwright/**`, `playwright.config.*`                 |
+| `i18n.md` ([[i18n]])                   | `app/pages/**`, `app/components/**`, `app/languages/**` |
+| [[Accessibility]]                      | `app/components/**`, `app/pages/**`                     |
+| [[ESLint Fixes]]                       | ESLint-related files                                    |
+| [[test-runner]]                        | Test files                                              |
+| [[Quality Gate]]                       | Commits (source + gate-affecting config only)           |
+| [[PR Merge Workflow]]                  | PR merges                                               |
 
 ## Hooks
 
@@ -63,6 +67,12 @@ Bash hooks wired through `.claude/settings.json`. Mixed event types.
 | `block-vitest-globals-tsconfig.sh` | **Blocking** | Prevents adding `vitest/globals` to `tsconfig.json`. Use explicit imports.                 |
 | `check-i18n-strings.sh`            | Advisory     | Reminds to use `t()` for user-facing strings in pages/components                           |
 | `check-story-exists.sh`            | Advisory     | Reminds to add a Storybook story for new components                                        |
+
+### PreToolUse (Bash)
+
+| Hook                         | Type     | Behavior                                                                                                                   |
+| ---------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `wiki-maintenance-check.sh`  | Advisory | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc. |
 
 ### UserPromptSubmit
 

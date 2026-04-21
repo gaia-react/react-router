@@ -12,7 +12,26 @@ tags: [meta, lint]
 
 - Pages scanned: 73
 - Issues found: 11 (4 critical, 4 warnings, 3 suggestions)
-- Auto-fixed: 1 (dead link `[[test-runner Rule]]` → `[[test-runner]]` in `concepts/Pre-commit Hooks.md`)
+- Resolved: 10 (1 auto-fixed at lint time, 9 verified already fixed or fixed in this pass)
+- False positives: 1 (S3 — git timestamps show pages predated the log entry by ~45 seconds)
+
+## Resolution Pass — 2026-04-21
+
+All actionable findings have been resolved:
+
+- **C2–C4** (dead wikilinks in `log.md`) — already annotated with plain-text `Name` (deleted Phase X) before this pass; no live `[[…]]` references remain to deleted pages.
+- **W1/W2** (frontmatter gaps) — verified: `hot.md`, `log.md`, `index.md`, `CLAUDE.md` all carry the required five fields.
+- **W3** (MSW companion-package contradiction) — both `dependencies/MSW.md` and `dependencies/Storybook.md` now clarify that `msw-storybook-addon` is installed but deliberately unused.
+- **W4** (flow count drift) — `sources/Initial Ingest.md` updated to "4 flows (Auth Flow since removed)".
+- **S1** (index missing Meta section) — `index.md` has `## Meta` with the current lint report.
+- **S2** (imprecise `[[Coding Guidelines]]` pointer in `dependencies/Conform.md`) — replaced with a direct citation to `.claude/skills/react-code/` and the conform subagent, since the `/v4` rule lives there, not in the rules file.
+- **S3** — **false positive.** Git log shows `wiki/concepts/Claude Hooks.md` (commit `505ae06`, 13:51:16) and `wiki/concepts/Claude Skills.md` (commit `67db13a`, 13:51:29) were added **before** `wiki/log.md` (commit `10b3cda`, 13:52), so the Initial Ingest entry listing them as created pages is accurate.
+
+---
+
+## Original findings
+
+- Auto-fixed at lint time: 1 (dead link `[[test-runner Rule]]` → `[[test-runner]]` in `concepts/Pre-commit Hooks.md`)
 
 ---
 
