@@ -111,13 +111,6 @@ Ask the user: "Set up Chromatic MCP now?" — if **yes**, invoke the `/setup-chr
 
 The setup flow prompts the user for scope (project vs user) and URL, installs the Storybook addon, and registers the MCP. Requires a Chromatic account (free for open source): https://www.chromatic.com/start.
 
-### Update Code Review Audit agent
-
-Edit `.claude/agents/code-review-audit.md` — replace `{variables}` with paths matching this project and the user's OS:
-
-- `{project_directory}` (example: `/Users/username/Documents/projects/my-gaia-app`)
-- "Session transcript logs" path (OS-specific; typically `~/.claude/logs/` on macOS/Linux)
-
 ## Step 10: Refresh the wiki
 
 The template ships with a wiki shaped for the upstream GAIA project. Refresh the two files that encode "where we are right now" so the new project starts with a clean context:

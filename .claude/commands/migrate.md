@@ -24,16 +24,16 @@ Compare major versions. If major bump detected, fetch the changelog/migration gu
 
 Use the following sources per package:
 
-| Package      | Migration guide source                                                   |
-| ------------ | ------------------------------------------------------------------------ |
-| react-router | `https://reactrouter.com/upgrading/v7` or relevant version path          |
-| tailwindcss  | `https://tailwindcss.com/docs/upgrade-guide`                             |
-| storybook    | `https://storybook.js.org/docs/migration-guide`                          |
-| vitest       | `https://vitest.dev/guide/migration`                                     |
-| playwright   | `https://playwright.dev/docs/release-notes`                              |
-| eslint       | `https://eslint.org/docs/latest/use/migrate-to-X` (replace X with major) |
+| Package      | Migration guide source                                                   | Changelog (authoritative for unstable/breaking changes) |
+| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------- |
+| react-router | `https://reactrouter.com/upgrading/v7` or relevant version path          | `https://github.com/remix-run/react-router/blob/main/CHANGELOG.md` |
+| tailwindcss  | `https://tailwindcss.com/docs/upgrade-guide`                             | `https://github.com/tailwindlabs/tailwindcss/releases` |
+| storybook    | `https://storybook.js.org/docs/migration-guide`                          | `https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md` |
+| vitest       | `https://vitest.dev/guide/migration`                                     | `https://github.com/vitest-dev/vitest/releases` |
+| playwright   | `https://playwright.dev/docs/release-notes`                              | `https://github.com/microsoft/playwright/releases` |
+| eslint       | `https://eslint.org/docs/latest/use/migrate-to-X` (replace X with major) | `https://github.com/eslint/eslint/blob/main/CHANGELOG.md` |
 
-Fetch the migration guide using `WebFetch` if available, or summarize known breaking changes from your training data.
+Fetch the migration guide AND scan the changelog for the bumped version. The changelog catches unstable or breaking changes in a point release that the migration guide may not yet reflect. Use `WebFetch` for both, or summarize known breaking changes from your training data.
 
 ### 2c: Update package.json
 
