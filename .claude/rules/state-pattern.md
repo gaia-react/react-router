@@ -1,3 +1,8 @@
+---
+paths:
+  - 'app/state/**/*'
+---
+
 # State Pattern
 
 Applies to `app/state/**` and any file creating a React Context.
