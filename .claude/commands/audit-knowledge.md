@@ -91,7 +91,7 @@ The report you produce is a **contract** to a Sonnet-level executor. Assume it c
 | Machine-local agent memory                     | `$AGENT_MEMORY_DIR/`                            | Per-agent, on demand                                        |
 | Project agent memory                           | `$PROJECT_ROOT/.claude/agent-memory/`           | Per-agent, on demand                                        |
 | Project CLAUDE.md (root)                       | `$PROJECT_ROOT/CLAUDE.md`                       | Auto at session start                                       |
-| Project CLAUDE.md (wiki)                       | `$PROJECT_ROOT/wiki/CLAUDE.md`                  | Auto when cwd matches `wiki/`                               |
+| Wiki README                                    | `$PROJECT_ROOT/wiki/README.md`                  | On demand only                                              |
 | Project rules                                  | `$PROJECT_ROOT/.claude/rules/*.md`              | Auto by `paths:` frontmatter match                          |
 | Project commands                               | `$PROJECT_ROOT/.claude/commands/*.md`           | On invocation only                                          |
 | Wiki hot cache                                 | `$PROJECT_ROOT/wiki/hot.md`                     | Auto at session start                                       |
@@ -138,7 +138,7 @@ find "$PROJECT_ROOT/wiki" -type f -name "*.md"
 find "$PROJECT_ROOT" -maxdepth 3 -name CLAUDE.md -not -path '*/node_modules/*'
 
 # Word counts for auto-loaded files
-wc -w "$PROJECT_ROOT"/CLAUDE.md "$PROJECT_ROOT"/wiki/CLAUDE.md "$PROJECT_ROOT"/wiki/hot.md "$PROJECT_ROOT"/.claude/rules/*.md 2>/dev/null
+wc -w "$PROJECT_ROOT"/CLAUDE.md "$PROJECT_ROOT"/wiki/hot.md "$PROJECT_ROOT"/.claude/rules/*.md 2>/dev/null
 ```
 
 Record per file: path, word count, last-modified. Compute totals per store.
@@ -170,7 +170,7 @@ Targets (flag anything over):
 | ---------------------------------------------------------------------------------- | ---------- | ------------------------------------------ |
 | `wiki/hot.md`                                                                      | ≤200 words | Cache discipline per `wiki/hot.md` comment |
 | `CLAUDE.md` (root)                                                                 | ≤400 words | Routing + principles only                  |
-| `wiki/CLAUDE.md`                                                                   | ≤300 words | Wiki conventions only                      |
+| `wiki/README.md`                                                                   | —          | On demand — no auto-load budget needed     |
 | Any nested `CLAUDE.md` discovered in Step 1 (monorepo package, subapp, docs, etc.) | ≤400 words | Scoped routing                             |
 | Any single `.claude/rules/*.md`                                                    | ≤200 lines | Focused rule                               |
 
