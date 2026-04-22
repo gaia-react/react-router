@@ -21,10 +21,23 @@ Solo developers shipping Claude-heavy projects, product teams standardizing how 
 Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
 
 ```bash
+npx create-gaia my-app
+```
+
+This pulls the latest tagged release (scrubbed of dev notes), sets up `.gaia/VERSION` for later `/gaia-update` runs, and `git init`s your project. Then open Claude Code in the project and run `/gaia-init` to configure i18n, strip GAIA branding, and install Claude plugins.
+
+<details>
+<summary>Alternative: pin to <code>main</code> or a specific commit</summary>
+
+If you want today's unreleased `main` (carries in-flight dev context in the wiki), use the upstream React Router template flow:
+
+```bash
 npx create-react-router@latest --template gaia-react/react-router
 ```
 
-Open Claude Code in the project and type `/init`.
+Then run `/gaia-init` as above. You may want to reset `wiki/hot.md` and `wiki/log.md` manually since they carry our session-in-progress cache on `main`.
+
+</details>
 
 ## The two problems GAIA solves
 
@@ -111,13 +124,14 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Commands
 
-| Command            | What it does                                                           |
-| ------------------ | ---------------------------------------------------------------------- |
-| `/init`            | Full template initialization (see above)                               |
-| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate  |
-| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat    |
-| `/handoff`         | Save a session handoff doc so the next session can resume cold         |
-| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action |
+| Command            | What it does                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `/init`            | Full template initialization (see above)                                                    |
+| `/gaia-update`     | Pull the latest GAIA release into your project — three-way diff, respects your customizations |
+| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate                       |
+| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat                         |
+| `/handoff`         | Save a session handoff doc so the next session can resume cold                              |
+| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action                      |
 
 ### Rules, hooks, skills
 

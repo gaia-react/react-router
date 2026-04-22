@@ -1,0 +1,38 @@
+name: Feature request
+description: Suggest a new skill, command, pattern, or improvement for GAIA.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What gap or friction are you running into?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What would you like GAIA to do differently?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - New skill
+        - New command
+        - New wiki concept / decision / module
+        - New scaffold (route, component, hook, service)
+        - Existing code pattern or convention
+        - Tooling or CI
+        - create-gaia / /gaia-init / /gaia-update
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you've thought about or tried.

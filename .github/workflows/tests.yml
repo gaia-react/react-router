@@ -16,6 +16,13 @@ jobs:
     if: (github.event_name == 'pull_request') && !startsWith(github.head_ref, 'wiki/') && !startsWith(github.head_ref, 'chore/')
     timeout-minutes: 60
     runs-on: ubuntu-latest
+    env:
+      # Fallback placeholders let PRs from forks (which can't read repo secrets) still run the suite.
+      # MSW intercepts outbound HTTP so the real API_URL is not needed; SESSION_SECRET just needs to be non-empty.
+      API_URL: ${{ secrets.API_URL || 'http://localhost:3000/api' }}
+      MSW_ENABLED: ${{ secrets.MSW_ENABLED || 'true' }}
+      SESSION_SECRET: ${{ secrets.SESSION_SECRET || 'ci-placeholder-session-secret-not-real' }}
+      SITE_URL: ${{ secrets.SITE_URL || 'http://localhost:3000' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,26 +37,22 @@ jobs:
       - name: get-npm-version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.3.1
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Lint
+        run: npm run lint-dry
       - name: Run Vitest tests
         run: npm run test:ci
         env:
-          API_URL: ${{ secrets.API_URL }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          MSW_ENABLED: ${{ secrets.MSW_ENABLED }}
           npm_package_version: ${{ steps.package-version.outputs.current-version}}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          SITE_URL: ${{ secrets.SITE_URL }}
       - name: Install Playwright Browsers
         run: npx playwright install --with-deps
       - name: Run Playwright tests
         run: npx playwright test
         env:
-          API_URL: ${{ secrets.API_URL }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          MSW_ENABLED: ${{ secrets.MSW_ENABLED }}
           npm_package_version: ${{ steps.package-version.outputs.current-version}}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          SITE_URL: ${{ secrets.SITE_URL }}
       - uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         name: Upload Playwright failed test traces
