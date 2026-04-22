@@ -11,6 +11,9 @@ wiki/entities
 wiki/meta
 wiki/.obsidian/workspace.json
 
+# Maintainer-only concept pages (document GAIA administration, not adopter workflow)
+wiki/concepts/Release Workflow.md
+
 # Scratch + transient
 .raw
 .gaia/cache

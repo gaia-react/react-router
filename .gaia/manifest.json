@@ -1,6 +1,6 @@
 {
   "version": "1.0.0",
-  "generated": "2026-04-22T05:56:53Z",
+  "generated": "2026-04-22T06:21:06Z",
   "files": {
     ".claude/agents/code-review-audit.md": "owned",
     ".claude/agents/code-review-audit/README.md": "owned",
@@ -295,6 +295,7 @@
     "wiki/concepts/PR Merge Workflow.md": "wiki-owned",
     "wiki/concepts/Pre-commit Hooks.md": "wiki-owned",
     "wiki/concepts/Task Orchestration.md": "wiki-owned",
+    "wiki/concepts/Update Workflow.md": "wiki-owned",
     "wiki/concepts/audit-knowledge command.md": "wiki-owned",
     "wiki/concepts/handoff command.md": "wiki-owned",
     "wiki/concepts/pickup command.md": "wiki-owned",
