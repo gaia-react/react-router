@@ -12,7 +12,7 @@ type: meta
 title: Hot Cache
 status: active
 created: 2026-04-20
-updated: 2026-04-21
+updated: 2026-04-22
 tags: [meta]
 ---
 
@@ -20,19 +20,22 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-21. Branch `chore/claude-hooks-governance`. Hooks governance pass in flight.
+2026-04-22. Branch `feat/release-infrastructure` → PR #26 open, auto-merge armed (squash), awaiting review + CI.
 
 ## Key Facts
 
-- Four PreToolUse `Bash` hooks use `if:` patterns: `block-bare-npm-test` + `block-main-destructive-git` (blocking), `pr-merge-audit-check` + `wiki-maintenance-check` (advisory).
-- `git-workflow.md` + `pr-merge-workflow.md` rules deleted — fully covered by their hooks. Quality-gate + task-orchestration rules slimmed to wiki-pointer stubs.
-- `storybook.md` + `tailwind.md` carry `paths:` frontmatter for scope-based auto-loading.
-- settings.json: Edit|Write matcher → Edit|Write|MultiEdit; UserPromptSubmit matcher `"All"` → `""`.
+- First public release infrastructure landed: `CHANGELOG.md`, `.github/workflows/release.yml` (tag-triggered), `.gaia/{VERSION,manifest.json,release-exclude}`, `.gaia/scripts/generate-manifest.mjs`.
+- Two new commands: `/gaia-release` (maintainer, stripped from tarball) and `/gaia-update` (adopter-facing, three-way diff).
+- File classes in `.gaia/manifest.json`: `owned` / `shared` / `wiki-owned`; implicit adopter-owned sentinels = `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, `.gaia/VERSION`, `.gaia/manifest.json`.
+- Separate `create-gaia` package scaffolded at `../create-gaia/` (zero-dep npm CLI). Not yet a git repo or published.
+- CI made fork-safe: secrets fall back to placeholders; Chromatic skips when its token is absent.
 
 ## Recent Changes
 
-- Context-trim pass on `.claude/rules/` — 4 always-load rules slimmed/deleted (~103 lines of always-on context removed). Authoritative content now in `wiki/concepts/Git Workflow`, `PR Merge Workflow`, `Task Orchestration`, and `wiki/decisions/Quality Gate`.
+- New concept pages: [[Release Workflow]], [[Update Workflow]]. [[Claude Integration]] commands table extended. Index updated.
 
 ## Active Threads
 
-- PR `chore/claude-hooks-governance` → `main` pending.
+- PR #26 `feat/release-infrastructure` → `main`: auto-merge pending review + CI green.
+- Post-merge: publish `create-gaia@0.1.0` once v1.0.0 is tagged.
+- User may want more improvements before first `/gaia-release` tags v1.0.0.
