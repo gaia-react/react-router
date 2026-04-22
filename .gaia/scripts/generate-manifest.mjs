@@ -8,22 +8,30 @@
 // Run from repo root: `node .gaia/scripts/generate-manifest.mjs`.
 // Usually invoked by `/gaia-release`.
 
+/* eslint-disable sonarjs/no-os-command-from-path --
+ * Maintainer-only release tooling invoked from `/gaia-release`. Resolving
+ * `git` via PATH is intentional so the script is portable across a Linux CI
+ * runner and a macOS workstation; pinning an absolute path would be brittle.
+ */
+
 import {execSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
-import {resolve} from 'node:path';
+import path from 'node:path';
 
-const repoRoot = execSync('git rev-parse --show-toplevel', {encoding: 'utf8'}).trim();
-const versionPath = resolve(repoRoot, '.gaia/VERSION');
-const excludePath = resolve(repoRoot, '.gaia/release-exclude');
+const repoRoot = execSync('git rev-parse --show-toplevel', {
+  encoding: 'utf8',
+}).trim();
+const versionPath = path.resolve(repoRoot, '.gaia/VERSION');
+const excludePath = path.resolve(repoRoot, '.gaia/release-exclude');
 
 const version = readFileSync(versionPath, 'utf8').trim();
 
 const ADOPTER_OWNED_SENTINELS = new Set([
+  '.gaia/manifest.json',
+  '.gaia/VERSION',
+  'CHANGELOG.md',
   'wiki/hot.md',
   'wiki/log.md',
-  'CHANGELOG.md',
-  '.gaia/VERSION',
-  '.gaia/manifest.json',
 ]);
 
 const SHARED = new Set([
@@ -31,8 +39,8 @@ const SHARED = new Set([
   '.github/CODEOWNERS',
   '.github/FUNDING.yml',
   'CLAUDE.md',
-  'README.md',
   'package.json',
+  'README.md',
   'wiki/index.md',
 ]);
 
@@ -57,46 +65,43 @@ const parseExcludePatterns = (text) =>
     .filter((line) => line && !line.startsWith('#'))
     .map((pattern) => {
       const escaped = pattern
-        .replaceAll('.', '\\.')
-        .replaceAll('+', '\\+')
-        .replaceAll('?', '\\?')
+        .replaceAll('.', String.raw`\.`)
+        .replaceAll('+', String.raw`\+`)
+        .replaceAll('?', String.raw`\?`)
         .replaceAll('*', '[^/]*');
+
       return new RegExp(`^${escaped}(/|$)`);
     });
 
 const excludePatterns = parseExcludePatterns(readFileSync(excludePath, 'utf8'));
 
-const isExcluded = (path) => excludePatterns.some((re) => re.test(path));
+const isExcluded = (p) => excludePatterns.some((re) => re.test(p));
 
-const classify = (path) => {
-  if (ADOPTER_OWNED_SENTINELS.has(path)) return null;
-  if (SHARED.has(path)) return 'shared';
-  if (SHARED_PREFIXES.some((prefix) => path.startsWith(prefix))) return 'shared';
-  if (WIKI_OWNED_EXACT.has(path)) return 'wiki-owned';
-  if (WIKI_OWNED_PREFIXES.some((prefix) => path.startsWith(prefix))) return 'wiki-owned';
+const classify = (p) => {
+  if (ADOPTER_OWNED_SENTINELS.has(p)) return null;
+  if (SHARED.has(p)) return 'shared';
+  if (SHARED_PREFIXES.some((prefix) => p.startsWith(prefix))) return 'shared';
+  if (WIKI_OWNED_EXACT.has(p)) return 'wiki-owned';
+  if (WIKI_OWNED_PREFIXES.some((prefix) => p.startsWith(prefix)))
+    return 'wiki-owned';
+
   return 'owned';
 };
 
-const gitFiles = execSync('git ls-files', {cwd: repoRoot, encoding: 'utf8'})
-  .split('\n')
-  .filter(Boolean);
-
-const files = {};
-for (const path of gitFiles) {
-  if (isExcluded(path)) continue;
-  const cls = classify(path);
-  if (cls === null) continue;
-  files[path] = cls;
-}
-
-const sortedFiles = Object.fromEntries(
-  Object.entries(files).sort(([a], [b]) => a.localeCompare(b)),
+const files = Object.fromEntries(
+  execSync('git ls-files', {cwd: repoRoot, encoding: 'utf8'})
+    .split('\n')
+    .filter(Boolean)
+    .filter((p) => !isExcluded(p))
+    .map((p) => [p, classify(p)])
+    .filter(([, cls]) => cls !== null)
+    .toSorted(([a], [b]) => a.localeCompare(b))
 );
 
 const manifest = {
-  version,
+  files,
   generated: new Date().toISOString(),
-  files: sortedFiles,
+  version,
 };
 
 process.stdout.write(`${JSON.stringify(manifest, null, 2)}\n`);
