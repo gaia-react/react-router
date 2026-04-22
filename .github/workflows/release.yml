@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Publish GitHub Release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout at tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Derive version
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify .gaia/VERSION matches tag
+        run: |
+          FILE_VERSION=$(cat .gaia/VERSION | tr -d '[:space:]')
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$FILE_VERSION" != "$TAG_VERSION" ]; then
+            echo "::error::Tag $TAG_VERSION does not match .gaia/VERSION ($FILE_VERSION). Run /gaia-release before tagging."
+            exit 1
+          fi
+
+      - name: Extract CHANGELOG section
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Extract from "## [$VERSION]" up to (but not including) the next "## [" heading.
+          awk -v ver="$VERSION" '
+            $0 ~ "^## \\["ver"\\]" { found=1; print; next }
+            found && /^## \[/ { exit }
+            found { print }
+          ' CHANGELOG.md > release-notes.md
+          if [ ! -s release-notes.md ]; then
+            echo "::error::Could not find '## [$VERSION]' section in CHANGELOG.md"
+            exit 1
+          fi
+          echo "notes-path=release-notes.md" >> "$GITHUB_OUTPUT"
+
+      - name: Build scrubbed tarball
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          # Drive the tarball from `git ls-files` so it only contains tracked
+          # files (no .DS_Store, node_modules, build artifacts, etc.) and then
+          # additionally filter out paths matched by .gaia/release-exclude.
+          git ls-files > /tmp/all-tracked.txt
+          awk '/^[[:space:]]*#/ {next} NF==0 {next} {print}' .gaia/release-exclude \
+            | sed 's|[][\\.*^$()+?{}|]|\\&|g' \
+            | awk '{print "^"$0"(/|$)"}' \
+            > /tmp/exclude-regex.txt
+          if [ -s /tmp/exclude-regex.txt ]; then
+            grep -vE -f /tmp/exclude-regex.txt /tmp/all-tracked.txt > /tmp/include.txt
+          else
+            cp /tmp/all-tracked.txt /tmp/include.txt
+          fi
+          tar -czf "gaia-${TAG}.tar.gz" \
+            --transform "s,^,gaia-${TAG}/," \
+            -T /tmp/include.txt
+          echo "Tarball contents (first 30):"
+          tar -tzf "gaia-${TAG}.tar.gz" | head -30
+          echo "Total entries: $(tar -tzf gaia-${TAG}.tar.gz | wc -l)"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          gh release create "$TAG" \
+            "gaia-${TAG}.tar.gz" \
+            --title "$TAG" \
+            --notes-file release-notes.md

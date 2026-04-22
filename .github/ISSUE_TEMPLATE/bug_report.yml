@@ -1,0 +1,63 @@
+name: Bug report
+description: Something in the GAIA template is broken or behaves unexpectedly.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please fill in what you can.
+  - type: input
+    id: gaia-version
+    attributes:
+      label: GAIA version
+      description: Contents of `.gaia/VERSION` in your project (or the tag you scaffolded from).
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: node-version
+    attributes:
+      label: Node version
+      description: Output of `node --version`.
+      placeholder: "v22.19.0"
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you expect, and what actually happened?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction
+      description: |
+        Minimal steps to reproduce. Even better — a link to a public repo that reproduces it.
+      placeholder: |
+        1. Scaffold via `npx create-gaia my-app`
+        2. Run `/gaia-init` in Claude Code
+        3. …
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / errors
+      render: shell
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Template code (app/, config)
+        - Claude integration (.claude/, skills, commands, hooks)
+        - Wiki
+        - Tooling (build, test, lint, Storybook, Playwright)
+        - create-gaia CLI
+        - /gaia-init
+        - /gaia-update
+        - Other
+    validations:
+      required: true

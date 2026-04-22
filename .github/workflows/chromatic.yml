@@ -7,9 +7,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  has-chromatic-token:
+    name: Check for Chromatic token
+    runs-on: ubuntu-latest
+    outputs:
+      present: ${{ steps.check.outputs.present }}
+    steps:
+      - id: check
+        env:
+          HAS_TOKEN: ${{ secrets.CHROMATIC_PROJECT_TOKEN != '' }}
+        run: echo "present=$HAS_TOKEN" >> "$GITHUB_OUTPUT"
+
   chromatic:
     name: Run Chromatic
-    if: github.event_name == 'push' && !contains(github.event.head_commit.message, 'chore:') && !startsWith(github.ref, 'refs/heads/wiki/') && !startsWith(github.ref, 'refs/heads/chore/')
+    needs: has-chromatic-token
+    if: needs.has-chromatic-token.outputs.present == 'true' && github.event_name == 'push' && !contains(github.event.head_commit.message, 'chore:') && !startsWith(github.ref, 'refs/heads/wiki/') && !startsWith(github.ref, 'refs/heads/chore/')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -38,9 +50,9 @@ jobs:
           externals: 'app/styles/tailwind.css'
         env:
           SB: 1
-          API_URL: ${{ secrets.API_URL }}
+          API_URL: ${{ secrets.API_URL || 'http://localhost:3000/api' }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-          MSW_ENABLED: ${{ secrets.MSW_ENABLED }}
+          MSW_ENABLED: ${{ secrets.MSW_ENABLED || 'true' }}
           npm_package_version: ${{ steps.package-version.outputs.current-version}}
-          SESSION_SECRET: ${{ secrets.SESSION_SECRET }}
-          SITE_URL: ${{ secrets.SITE_URL }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET || 'ci-placeholder-session-secret-not-real' }}
+          SITE_URL: ${{ secrets.SITE_URL || 'http://localhost:3000' }}

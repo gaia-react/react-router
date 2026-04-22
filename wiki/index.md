@@ -106,6 +106,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Claude Hooks]]
 - [[Claude Integration Conventions]] — Conventions for Claude's config surface: extension points, monorepo retrofit, service swaps, domain isolation.
 - [[Claude Skills]]
+- [[Release Workflow]] — Maintainer flow: `/gaia-release`, `release.yml`, tarball scrubbing, `create-gaia` bootstrapper.
+- [[Update Workflow]] — Adopter flow: `/gaia-update` three-way diff, manifest classes (`owned` / `shared` / `wiki-owned`), `.gaia-merge` sidecar patches.
 - [[handoff command]]
 - [[pickup command]]
 - [[audit-knowledge command]]

@@ -21,6 +21,8 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | Command            | What it does                                                                                              |
 | ------------------ | --------------------------------------------------------------------------------------------------------- |
 | `/gaia-init`            | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                  |
+| `/gaia-update`          | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])        |
+| `/gaia-release`         | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]]) |
 | `/new-route`            | Scaffold a route + page + tests + i18n                                                                    |
 | `/new-component`        | Scaffold a component with optional test + story                                                           |
 | `/new-service`          | Scaffold an API service + Zod + URL constants + MSW mocks                                                 |

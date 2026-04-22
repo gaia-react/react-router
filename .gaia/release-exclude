@@ -1,0 +1,31 @@
+# Paths excluded from the distribution tarball produced by release.yml.
+# These exist in the template repo for the GAIA team's own workflow but have
+# no business on an adopter's machine. Format is tar --exclude-from: one
+# path or glob per line, comments with `#` are honored.
+
+# Maintainer-only commands (keep /handoff, /pickup, /audit-knowledge — adopter-useful)
+.claude/commands/gaia-release.md
+
+# Wiki internals (team-specific)
+wiki/entities
+wiki/meta
+wiki/.obsidian/workspace.json
+
+# Maintainer-only concept pages (document GAIA administration, not adopter workflow)
+wiki/concepts/Release Workflow.md
+
+# Scratch + transient
+.raw
+.gaia/cache
+.gaia-backup
+.gaia-merge
+
+# Release-time maintainer tooling (not needed by adopters)
+.gaia/release-exclude
+.gaia/scripts
+
+# Plans / handoff artifacts (machine-local)
+.claude/handoff
+.claude/worktrees
+.claude/agent-memory
+.claude/audit

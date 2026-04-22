@@ -44,3 +44,8 @@ coverage
 .claude/worktrees/
 .claude/handoff/
 .claude/scheduled_tasks.lock
+
+# GAIA release/update working directories
+.gaia/cache/
+.gaia-backup/
+.gaia-merge/
