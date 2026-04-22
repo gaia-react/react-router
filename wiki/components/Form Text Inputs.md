@@ -14,12 +14,12 @@ tags: [component, forms, inputs]
 
 ## Components
 
-| Component | Controlled by | Key behaviours |
-| --- | --- | --- |
-| `InputText` | `value` / `defaultValue` | Canonical base — all others delegate to it. Tracks length locally only when `maxLength` set. `readOnly` → `disabled` styling + `tabIndex={-1}`. `aria-label` cascade: explicit → string `label` → `name`. `InputProps` extends `ComponentProps<'input'>` with icon/className extras. |
-| `InputEmail` | delegates to InputText | Defaults `autoComplete='email'`, `label`/`placeholder` from `common` i18n namespace. |
-| `InputPassword` | delegates to InputText | `type='password'` override comes after `{...props}` spread — callers cannot change it. Defaults `autoComplete='password'`, label from `common.password`. |
-| `TextArea` | `value` / `defaultValue` | `autosize` library for `resize='auto'` (default); `resize='y'` falls back to CSS `resize-y`. `useImperativeHandle` exposes textarea node to Conform. |
+| Component       | Controlled by            | Key behaviours                                                                                                                                                                                                                                                                       |
+| --------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `InputText`     | `value` / `defaultValue` | Canonical base — all others delegate to it. Tracks length locally only when `maxLength` set. `readOnly` → `disabled` styling + `tabIndex={-1}`. `aria-label` cascade: explicit → string `label` → `name`. `InputProps` extends `ComponentProps<'input'>` with icon/className extras. |
+| `InputEmail`    | delegates to InputText   | Defaults `autoComplete='email'`, `label`/`placeholder` from `common` i18n namespace.                                                                                                                                                                                                 |
+| `InputPassword` | delegates to InputText   | `type='password'` override comes after `{...props}` spread — callers cannot change it. Defaults `autoComplete='password'`, label from `common.password`.                                                                                                                             |
+| `TextArea`      | `value` / `defaultValue` | `autosize` library for `resize='auto'` (default); `resize='y'` falls back to CSS `resize-y`. `useImperativeHandle` exposes textarea node to Conform.                                                                                                                                 |
 
 ## Shared conventions
 

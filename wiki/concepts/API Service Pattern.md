@@ -16,13 +16,13 @@ Related: [[Services]], [[MSW Handlers]]
 
 Each domain lives under `app/services/gaia/{domain}/`:
 
-| File                 | Role                                                         |
-| -------------------- | ------------------------------------------------------------ |
-| `requests.server.ts` | API functions — `.server.ts` suffix enforces server-only     |
-| `parsers.ts`         | Zod schemas for response validation                          |
-| `types.ts`           | TypeScript types derived from Zod                            |
+| File                 | Role                                                                                                               |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `requests.server.ts` | API functions — `.server.ts` suffix enforces server-only                                                           |
+| `parsers.ts`         | Zod schemas for response validation                                                                                |
+| `types.ts`           | TypeScript types derived from Zod                                                                                  |
 | `state.tsx`          | Read-only React Context + hook (optional, add when a route needs to pass fetched data to deeply nested components) |
-| `index.ts`           | Barrel for non-server exports (parsers, types, state)        |
+| `index.ts`           | Barrel for non-server exports (parsers, types, state)                                                              |
 
 Register server-side exports in `app/services/gaia/index.server.ts`.
 
@@ -30,14 +30,14 @@ Register server-side exports in `app/services/gaia/index.server.ts`.
 
 `/new-service` emits all files for a domain. Live examples in `app/services/gaia/`:
 
-| File                 | Key rules                                                                                  |
-| -------------------- | ------------------------------------------------------------------------------------------ |
-| `urls.ts`            | All endpoints in one `GAIA_URLS` constant; colon-prefixed segments interpolated from `pathParams` |
-| `api.ts`             | `create<ServerResponse>()` from `../api`; wraps Ky with snake↔camel, base URL, auth headers |
+| File                 | Key rules                                                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `urls.ts`            | All endpoints in one `GAIA_URLS` constant; colon-prefixed segments interpolated from `pathParams`                      |
+| `api.ts`             | `create<ServerResponse>()` from `../api`; wraps Ky with snake↔camel, base URL, auth headers                            |
 | `parsers.ts`         | `z.iso.datetime()` not `z.string().datetime()`; `.nullish()` for optional fields; always `.parse()` not `.safeParse()` |
-| `types.ts`           | `z.infer<typeof schema>` only — never hand-maintain types alongside schemas               |
-| `requests.server.ts` | `.server.ts` suffix enforces server-only; `body: FormData` for mutations; `attempt()` for graceful error handling |
-| `index.server.ts`    | Barrel: `import * as resources from './resources/requests.server'; export default {resources}` |
+| `types.ts`           | `z.infer<typeof schema>` only — never hand-maintain types alongside schemas                                            |
+| `requests.server.ts` | `.server.ts` suffix enforces server-only; `body: FormData` for mutations; `attempt()` for graceful error handling      |
+| `index.server.ts`    | Barrel: `import * as resources from './resources/requests.server'; export default {resources}`                         |
 
 A typical request function:
 

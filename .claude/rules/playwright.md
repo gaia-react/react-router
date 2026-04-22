@@ -30,15 +30,15 @@ One spec file per major user flow; one `test.describe` block per scenario group.
 Use ARIA roles and accessible names first:
 
 ```ts
-page.getByRole('button', {name: 'Save'})
-page.getByRole('link', {name: 'Create'})
-page.getByRole('textbox', {name: 'Name'})
+page.getByRole('button', {name: 'Save'});
+page.getByRole('link', {name: 'Create'});
+page.getByRole('textbox', {name: 'Name'});
 ```
 
 Fall back to `page.locator()` with meaningful attributes only when role queries are insufficient:
 
 ```ts
-page.locator('select', {hasText: 'English'})
+page.locator('select', {hasText: 'English'});
 ```
 
 Do **not** use CSS class selectors or XPath.
@@ -57,7 +57,7 @@ React Router 7 SSR renders before JS hydrates. Call the hydration helper
 import {hydration} from '../utils';
 
 await page.goto('/');
-await hydration(page);   // waits for <meta name="hydrated" content="true">
+await hydration(page); // waits for <meta name="hydrated" content="true">
 ```
 
 ## MSW + real dev server

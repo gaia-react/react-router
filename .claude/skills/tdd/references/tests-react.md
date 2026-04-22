@@ -4,12 +4,12 @@
 
 Four layers share one mocking foundation (`msw` + `@mswjs/data`). Write tests at the **lowest layer that can verify the behavior** — a button's disabled state is a component test, not E2E; a route's redirect is E2E, a loader's parsing is a service test.
 
-| Layer | Tool | Runner | File location | What to assert |
-| --- | --- | --- | --- | --- |
-| Unit / hook | RTL `renderHook` | Vitest | `app/hooks/<name>/tests/` | hook return values, state transitions, callbacks |
-| Component | RTL + Storybook `composeStory` | Vitest | `app/components/<Name>/tests/` | rendered DOM, user interactions, props behavior |
-| Service | MSW handlers + Zod | Vitest | `app/services/<name>/tests/` | parsed response shape, request payload, error cases |
-| E2E | Playwright + MSW browser | Playwright | `.playwright/e2e/*.spec.ts` | full user flow across routes |
+| Layer       | Tool                           | Runner     | File location                  | What to assert                                      |
+| ----------- | ------------------------------ | ---------- | ------------------------------ | --------------------------------------------------- |
+| Unit / hook | RTL `renderHook`               | Vitest     | `app/hooks/<name>/tests/`      | hook return values, state transitions, callbacks    |
+| Component   | RTL + Storybook `composeStory` | Vitest     | `app/components/<Name>/tests/` | rendered DOM, user interactions, props behavior     |
+| Service     | MSW handlers + Zod             | Vitest     | `app/services/<name>/tests/`   | parsed response shape, request payload, error cases |
+| E2E         | Playwright + MSW browser       | Playwright | `.playwright/e2e/*.spec.ts`    | full user flow across routes                        |
 
 ## Component Tests via `composeStory`
 
@@ -94,7 +94,10 @@ describe('getThings', () => {
   test('returns Zod-parsed Things collection', async () => {
     const things = await getThings();
     expect(things).toHaveLength(3);
-    expect(things[0]).toMatchObject({id: expect.any(String), name: expect.any(String)});
+    expect(things[0]).toMatchObject({
+      id: expect.any(String),
+      name: expect.any(String),
+    });
   });
 
   test('throws on malformed response', async () => {
@@ -110,13 +113,13 @@ The tracer bullet for services: the happy-path request returns a Zod-parsed resu
 
 Mock at **system boundaries** only:
 
-| Boundary | Mock via | Example |
-| --- | --- | --- |
-| HTTP / external APIs | MSW handlers in `test/mocks/` | REST calls made by `app/services/` |
-| Database read/write | `@mswjs/data` factory via `database` | `database.things.create(...)` in a test |
-| Time | `vi.useFakeTimers()` | Debounced handlers, TTL expiry |
-| Randomness | `vi.spyOn` at boundary | IDs, crypto |
-| Navigation (unit scope) | `stubs.reactRouter({routes})` | Buttons that push to `/done` |
+| Boundary                | Mock via                             | Example                                 |
+| ----------------------- | ------------------------------------ | --------------------------------------- |
+| HTTP / external APIs    | MSW handlers in `test/mocks/`        | REST calls made by `app/services/`      |
+| Database read/write     | `@mswjs/data` factory via `database` | `database.things.create(...)` in a test |
+| Time                    | `vi.useFakeTimers()`                 | Debounced handlers, TTL expiry          |
+| Randomness              | `vi.spyOn` at boundary               | IDs, crypto                             |
+| Navigation (unit scope) | `stubs.reactRouter({routes})`        | Buttons that push to `/done`            |
 
 **Never mock:**
 
@@ -157,7 +160,9 @@ Why bad: tests the mock, not the component. Use `stubs.reactRouter({routes: [{pa
 ```tsx
 // BAD: reads MSW internals
 test('saveThing called POST', async () => {
-  const handler = server.listHandlers().find(h => h.info.path.endsWith('/things'));
+  const handler = server
+    .listHandlers()
+    .find((h) => h.info.path.endsWith('/things'));
   expect(handler).toBeDefined();
 });
 ```

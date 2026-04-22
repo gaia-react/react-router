@@ -10,15 +10,19 @@
 
 **Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
-Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured *and* documented for Claude in a way that keeps per-request costs down and output quality up.
+Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured _and_ documented for Claude in a way that keeps per-request costs down and output quality up.
 
 ## Who it's for
 
-Solo developers shipping Claude-heavy projects, product teams standardizing how Claude works across the org, and agencies that want a templated starting point for client work. If Claude writes most of your code, GAIA is the substrate that makes that trustworthy.
+- Solo developers shipping Claude-built projects
+- Product teams standardizing how Claude works across the org
+- Agencies that want a templated starting point for client work
+
+If Claude writes most of your code, GAIA is the substrate that makes it trustworthy.
 
 ## Quick Start
 
-Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 LTS installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
+Make sure you have [Node.js](https://nodejs.org/en/) >= 22.19.0 installed, preferably via [nvm](https://github.com/nvm-sh/nvm).
 
 ```bash
 npx create-gaia my-app
@@ -41,7 +45,7 @@ Then run `/gaia-init` as above. You may want to reset `wiki/hot.md` and `wiki/lo
 
 ## The two problems GAIA solves
 
-Most templates treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the root and hope the model figures out the rest. GAIA treats Claude as an engineer you *manage*. That shift exposes two failure modes the bolt-on approach papers over.
+Most templates treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the root and hope the model figures out the rest. GAIA treats Claude as an engineer you _manage_. That shift exposes two failure modes the bolt-on approach papers over.
 
 ### Trust
 
@@ -56,15 +60,15 @@ Context bloat isn't just `CLAUDE.md` sprawl. Instructions get dropped into globa
 - **Best practices are baked in, not pattern-matched.** Rules encode the conventions directly instead of hoping Claude infers them from whatever's already in the repo.
 - **Guardrails against technical debt.** Rules block debt-accumulating patterns from being written in the first place — untyped exports, untested components, hardcoded strings, a11y gaps.
 - **Test-driven development** via the bundled `tdd` skill. Red-green-refactor loop, tests before code — tailored for Vitest, React Testing Library, Storybook `composeStory`, and MSW.
-- **Code-review audit before every merge.** A Claude subagent scans the branch diff for security, performance, code smells, and anti-patterns — and blocks the merge until the issues are fixed and committed.
+- **Code-review audit before every merge.** A Claude subagent scans the branch diff for security, performance, code smells, and antipatterns — and blocks the merge until the issues are fixed and committed.
 - **Quality gate before commit** — typecheck, lint, tests, and build must all pass. Not "mostly clean" — actually clean.
 
 ## How GAIA keeps Claude token-efficient
 
 - **Rules are scoped to activate only when needed.** Claude loads the ones that match what it's editing — nothing else.
-- **[Obsidian](https://obsidian.md) wiki, fetched on demand.** Project knowledge lives as focused, linked markdown pages. Claude opens the one page it needs — *"How does dark mode wire through?"* — instead of preloading the whole manual.
+- **[Obsidian](https://obsidian.md) wiki, fetched on demand.** Project knowledge lives as focused, linked Markdown pages. Claude opens the one page it needs — _"How does dark mode wire through?"_ — instead of preloading the whole manual.
 - **Wiki behavior tailored to GAIA.** Session hooks keep Obsidian's workflow (ingest cadence, cache discipline, link hygiene) aligned with the project's conventions.
-- **Periodic knowledge audit** sweeps memory, wiki, and auto-loaded files for duplication, conflicts, and stale instructions before they start costing tokens.
+- **Periodic knowledge audit** sweeps memory, wiki, and autoloaded files for duplication, conflicts, and stale instructions before they start costing tokens.
 - **Session continuity.** `/handoff` + `/pickup` replace re-briefing Claude from scratch at every session start.
 
 ## What Claude rides on (the foundation)
@@ -124,14 +128,14 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Commands
 
-| Command            | What it does                                                                                |
-| ------------------ | ------------------------------------------------------------------------------------------- |
-| `/init`            | Full template initialization (see above)                                                    |
+| Command            | What it does                                                                                  |
+| ------------------ | --------------------------------------------------------------------------------------------- |
+| `/init`            | Full template initialization (see above)                                                      |
 | `/gaia-update`     | Pull the latest GAIA release into your project — three-way diff, respects your customizations |
-| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate                       |
-| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat                         |
-| `/handoff`         | Save a session handoff doc so the next session can resume cold                              |
-| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action                      |
+| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate                         |
+| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat                           |
+| `/handoff`         | Save a session handoff doc so the next session can resume cold                                |
+| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action                        |
 
 ### Rules, hooks, skills
 
@@ -141,7 +145,7 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Code review before merge
 
-Every merge runs through a code-review pass against the branch diff — security, performance, code smells, anti-patterns — and blocks until the issues are fixed and committed.
+Every merge runs through a code-review pass against the branch diff — security, performance, code smells, antipatterns — and blocks until the issues are fixed and committed.
 
 ### Wiki
 
@@ -157,15 +161,15 @@ GAIA is driven through Claude. Ask for what you need.
 
 **Build things:**
 
-- *"Add a new route for settings."* → triggers `/new-route`, applies routing + i18n + test rules.
-- *"Add German as a supported language."* → Claude walks the i18n setup.
-- *"Add a zip-code field to the address form with validation."* → Claude uses the form patterns from the wiki.
+- _"Add a new route for settings."_ → triggers `/new-route`, applies routing + i18n + test rules.
+- _"Add German as a supported language."_ → Claude walks the i18n setup.
+- _"Add a zip-code field to the address form with validation."_ → Claude uses the form patterns from the wiki.
 
 **Ask about the codebase:**
 
-- *"How does dark mode wire through?"* → Claude fetches the wiki page on demand.
-- *"What state patterns do we use?"* → one page lookup, no context bloat.
-- *"Explain the form-submit flow."* → direct answer from the wiki.
+- _"How does dark mode wire through?"_ → Claude fetches the wiki page on demand.
+- _"What state patterns do we use?"_ → one-page lookup, no context bloat.
+- _"Explain the form-submit flow."_ → direct answer from the wiki.
 
 **Extend:**
 

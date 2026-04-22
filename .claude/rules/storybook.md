@@ -78,14 +78,14 @@ parameters: {wrap: 'p-4'},
 
 ## Story variant naming
 
-| Variant name     | When to use                                       |
-| ---------------- | ------------------------------------------------- |
-| `Default`        | The primary/happy-path render (always present)    |
-| `Loading`        | Component in loading/pending state                |
-| `Disabled`       | Component in disabled state                       |
-| `WithError`      | Component showing a validation or server error    |
+| Variant name        | When to use                                    |
+| ------------------- | ---------------------------------------------- |
+| `Default`           | The primary/happy-path render (always present) |
+| `Loading`           | Component in loading/pending state             |
+| `Disabled`          | Component in disabled state                    |
+| `WithError`         | Component showing a validation or server error |
 | `NoItems` / `Empty` | Empty-state variant                            |
-| `LongStrings`    | Overflow / wrapping stress test                   |
+| `LongStrings`       | Overflow / wrapping stress test                |
 
 ## Dark-mode and Chromatic
 

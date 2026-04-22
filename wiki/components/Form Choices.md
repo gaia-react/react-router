@@ -20,14 +20,14 @@ Checkboxes and radios share a layout primitive and a sizing table.
 
 ## Components
 
-| Component | Renders | Disabled when | Notes |
-| --- | --- | --- | --- |
-| `CheckboxRadioGroup` | `role="group"` flex container | — | `isHorizontal` toggles `flex-col` vs row; used by `Checkboxes` and `BaseRadioButtons` |
-| `Checkbox` | `<input type="checkbox">` + optional `<label>` | `readOnly` implies disabled | `required` only set once an error surfaces (prevents native browser stealing focus); wraps in `FieldStatus` when description/error present |
-| `Checkboxes` | Grouped `Checkbox` list | `disabled ?? options.every(disabled)` | Keyed by each option's own `name`; `isRequired` only when every option is required |
-| `InputRadio` | `<input type="radio">` + `<label>` | per-option `disabled` | `id={name}-{value}` synthesized; same `required && error` gate as Checkbox |
-| `RadioButtons` | `InputRadio` group wrapped in [[Form Field]] | — | Use this for the standard field-chrome layout |
-| `BaseRadioButtons` | Bare radio group, no field chrome | — | Keyed by `md5(option)` (`~/utils/object`) to handle duplicate values; use when rendering outside a Field |
+| Component            | Renders                                        | Disabled when                         | Notes                                                                                                                                      |
+| -------------------- | ---------------------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CheckboxRadioGroup` | `role="group"` flex container                  | —                                     | `isHorizontal` toggles `flex-col` vs row; used by `Checkboxes` and `BaseRadioButtons`                                                      |
+| `Checkbox`           | `<input type="checkbox">` + optional `<label>` | `readOnly` implies disabled           | `required` only set once an error surfaces (prevents native browser stealing focus); wraps in `FieldStatus` when description/error present |
+| `Checkboxes`         | Grouped `Checkbox` list                        | `disabled ?? options.every(disabled)` | Keyed by each option's own `name`; `isRequired` only when every option is required                                                         |
+| `InputRadio`         | `<input type="radio">` + `<label>`             | per-option `disabled`                 | `id={name}-{value}` synthesized; same `required && error` gate as Checkbox                                                                 |
+| `RadioButtons`       | `InputRadio` group wrapped in [[Form Field]]   | —                                     | Use this for the standard field-chrome layout                                                                                              |
+| `BaseRadioButtons`   | Bare radio group, no field chrome              | —                                     | Keyed by `md5(option)` (`~/utils/object`) to handle duplicate values; use when rendering outside a Field                                   |
 
 ## Which one to reach for
 

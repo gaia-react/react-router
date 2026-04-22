@@ -15,15 +15,15 @@ Conventions for GAIA's Claude Code config surface: extension points, monorepo re
 
 ## 1. Directory overview
 
-| Directory / File | Purpose | Loaded |
-|---|---|---|
-| `.claude/agents/` | Named subagents (`.md` per agent); extension dirs for review-type agents | Manual (Task tool) |
-| `.claude/commands/` | Slash commands (`/new-route`, `/gaia-init`, etc.) | Manual (slash invocation) |
-| `.claude/hooks/` | Bash scripts wired in `settings.json` | Auto on matched tool events |
-| `.claude/rules/` | Coding rules; optionally path-scoped via `paths:` frontmatter | Auto (global) or path-scoped |
-| `.claude/skills/` | Context-triggered skills (`react-code`, `typescript`, etc.) | Auto on context/intent match |
-| `.claude/agent-memory/` | Persistent agent memory (versioned, committed) | Auto per named agent |
-| `wiki/` | Knowledge base — architecture, decisions, patterns | Manual (on-demand fetch) |
+| Directory / File        | Purpose                                                                  | Loaded                       |
+| ----------------------- | ------------------------------------------------------------------------ | ---------------------------- |
+| `.claude/agents/`       | Named subagents (`.md` per agent); extension dirs for review-type agents | Manual (Task tool)           |
+| `.claude/commands/`     | Slash commands (`/new-route`, `/gaia-init`, etc.)                        | Manual (slash invocation)    |
+| `.claude/hooks/`        | Bash scripts wired in `settings.json`                                    | Auto on matched tool events  |
+| `.claude/rules/`        | Coding rules; optionally path-scoped via `paths:` frontmatter            | Auto (global) or path-scoped |
+| `.claude/skills/`       | Context-triggered skills (`react-code`, `typescript`, etc.)              | Auto on context/intent match |
+| `.claude/agent-memory/` | Persistent agent memory (versioned, committed)                           | Auto per named agent         |
+| `wiki/`                 | Knowledge base — architecture, decisions, patterns                       | Manual (on-demand fetch)     |
 
 See [[modules/Claude Integration|the modules page]] for the inventory of current commands, rules, hooks, and skills.
 

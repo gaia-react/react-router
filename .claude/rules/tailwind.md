@@ -26,11 +26,11 @@ Pass falsy values directly — `twJoin`/`twMerge` skips them.
 
 ```tsx
 // correct
-twJoin('base', isActive && 'bg-blue-500', error && 'border-red-500')
+twJoin('base', isActive && 'bg-blue-500', error && 'border-red-500');
 
 // avoid: ternaries that produce two positive values are fine, but
 // don't wrap in template literals just to concatenate — pass separately
-twJoin('base', condition ? 'a' : 'b')  // ok
+twJoin('base', condition ? 'a' : 'b'); // ok
 ```
 
 Template literals inside `twJoin`/`twMerge` are acceptable **only** when interpolating a pre-built string from a lookup table (e.g., `ICON_POSITION[iconPosition]` from a `Record<string, string>`). Don't use template literals to build class lists inline.
@@ -55,27 +55,27 @@ Dark mode uses the **class strategy** via `@custom-variant dark (&:where(.dark, 
 Always pair light and dark in one utility call:
 
 ```tsx
-'bg-white dark:bg-gray-900'
-'text-gray-900 dark:text-white'
+'bg-white dark:bg-gray-900';
+'text-gray-900 dark:text-white';
 ```
 
 Prefer semantic `@utility` tokens from `tailwind.css` over raw paired classes when a token exists:
 
-| Token | Expands to |
-|---|---|
-| `bg-body` | `bg-white dark:bg-gray-900` |
-| `bg-secondary` | `bg-gray-100 dark:bg-gray-800` |
-| `text-body` | `text-gray-900 dark:text-white` |
-| `text-secondary` | `text-gray-500 dark:text-gray-400` |
-| `text-disabled` | `text-gray-900/15 dark:text-white/15` |
-| `text-placeholder` | `text-gray-400 dark:text-gray-600` |
-| `text-invalid` | `text-red-600 dark:text-red-500` |
-| `border-normal` | `border-gray-300 dark:border-gray-600` |
-| `border-strong` | `border-gray-400 dark:border-gray-500` |
-| `border-medium` | `border-gray-200 dark:border-gray-700` |
-| `border-light` | `border-gray-100 dark:border-gray-800` |
-| `border-disabled` | `border-gray-300 dark:border-gray-700` |
-| `input-invalid` | error ring + border combo |
+| Token              | Expands to                             |
+| ------------------ | -------------------------------------- |
+| `bg-body`          | `bg-white dark:bg-gray-900`            |
+| `bg-secondary`     | `bg-gray-100 dark:bg-gray-800`         |
+| `text-body`        | `text-gray-900 dark:text-white`        |
+| `text-secondary`   | `text-gray-500 dark:text-gray-400`     |
+| `text-disabled`    | `text-gray-900/15 dark:text-white/15`  |
+| `text-placeholder` | `text-gray-400 dark:text-gray-600`     |
+| `text-invalid`     | `text-red-600 dark:text-red-500`       |
+| `border-normal`    | `border-gray-300 dark:border-gray-600` |
+| `border-strong`    | `border-gray-400 dark:border-gray-500` |
+| `border-medium`    | `border-gray-200 dark:border-gray-700` |
+| `border-light`     | `border-gray-100 dark:border-gray-800` |
+| `border-disabled`  | `border-gray-300 dark:border-gray-700` |
+| `input-invalid`    | error ring + border combo              |
 
 ## Units
 

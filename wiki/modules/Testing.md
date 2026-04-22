@@ -30,16 +30,16 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]]
 
 ## test/ folder
 
-| File             | Purpose                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------- |
-| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW Handlers]] for full structure            |
-| `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                           |
-| `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`                         |
-| `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                                  |
-| `setup.ts`       | Vitest setup file                                                                           |
-| `test.server.ts` | MSW server for Vitest                                                                       |
-| `utils.ts`       | Test helpers (delay, date generators)                                                       |
-| `worker.ts`      | MSW browser worker handlers                                                                 |
+| File             | Purpose                                                                          |
+| ---------------- | -------------------------------------------------------------------------------- |
+| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW Handlers]] for full structure |
+| `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                |
+| `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`              |
+| `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                       |
+| `setup.ts`       | Vitest setup file                                                                |
+| `test.server.ts` | MSW server for Vitest                                                            |
+| `utils.ts`       | Test helpers (delay, date generators)                                            |
+| `worker.ts`      | MSW browser worker handlers                                                      |
 
 ## Component test pattern
 

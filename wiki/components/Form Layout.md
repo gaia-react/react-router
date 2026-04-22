@@ -16,11 +16,11 @@ Three small helpers that sit around actual input components.
 
 ## Components
 
-| Component | Renders | Key props / behaviour |
-| --- | --- | --- |
-| `Chain` | `role="group"` flex row | Groups inputs into one chained field (currency+amount, country code+phone). `isFullWidth` stretches to container. CSS-module selectors round only outermost corners. |
-| `FormActions` | Horizontal button row | `align='right'` (default, `justify-end`) or `'left'` (`pl-0.5` optical nudge). `gap-4`; override via `className`. |
-| `FormError` | Dismissible error banner | Reads `error` from `useActionData`. Dismisses until a new error string arrives; `hide` prop suppresses. `<button type="button">` prevents accidental submit; `<span role="alert">` for screen readers. |
+| Component     | Renders                  | Key props / behaviour                                                                                                                                                                                  |
+| ------------- | ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Chain`       | `role="group"` flex row  | Groups inputs into one chained field (currency+amount, country code+phone). `isFullWidth` stretches to container. CSS-module selectors round only outermost corners.                                   |
+| `FormActions` | Horizontal button row    | `align='right'` (default, `justify-end`) or `'left'` (`pl-0.5` optical nudge). `gap-4`; override via `className`.                                                                                      |
+| `FormError`   | Dismissible error banner | Reads `error` from `useActionData`. Dismisses until a new error string arrives; `hide` prop suppresses. `<button type="button">` prevents accidental submit; `<span role="alert">` for screen readers. |
 
 ## Composition
 

@@ -14,10 +14,10 @@ Source: `.claude/rules/component-testing.md`.
 
 Always use Storybook stories with `composeStory`. Never manually mock framework deps like `react-router` or `react-i18next`. `/new-component` scaffolds both files.
 
-| File                        | What it contains                                              |
-| --------------------------- | ------------------------------------------------------------- |
-| `tests/index.stories.tsx`   | `Meta` + named `StoryFn` exports; stubs as decorators         |
-| `tests/index.test.tsx`      | `composeStory(Story, Meta)` → render → assertions             |
+| File                      | What it contains                                      |
+| ------------------------- | ----------------------------------------------------- |
+| `tests/index.stories.tsx` | `Meta` + named `StoryFn` exports; stubs as decorators |
+| `tests/index.test.tsx`    | `composeStory(Story, Meta)` → render → assertions     |
 
 ```tsx
 const MyComponent = composeStory(Default, Meta);

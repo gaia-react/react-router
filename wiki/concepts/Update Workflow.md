@@ -13,24 +13,24 @@ How `/gaia-update` pulls a newer GAIA release into an initialized project withou
 
 ## Primitives
 
-| File | Role |
-|---|---|
-| `.gaia/VERSION` | Adopter's current baseline — which GAIA version `my-app/` was scaffolded from (or last `/gaia-update`d to). |
-| `.gaia/manifest.json` | Ships with every release. Maps each file in the release to a class. |
-| `.gaia/cache/` | Gitignored. Holds downloaded baseline + latest tarballs for the 3-way comparison. |
-| `.gaia-merge/` | Gitignored. Sidecar `.patch` files emitted for files the update can't safely auto-merge. Adopter resolves manually. |
-| `.gaia-backup/` | Gitignored. Per-timestamp backups of any file the adopter agreed to overwrite. |
+| File                  | Role                                                                                                                |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `.gaia/VERSION`       | Adopter's current baseline — which GAIA version `my-app/` was scaffolded from (or last `/gaia-update`d to).         |
+| `.gaia/manifest.json` | Ships with every release. Maps each file in the release to a class.                                                 |
+| `.gaia/cache/`        | Gitignored. Holds downloaded baseline + latest tarballs for the 3-way comparison.                                   |
+| `.gaia-merge/`        | Gitignored. Sidecar `.patch` files emitted for files the update can't safely auto-merge. Adopter resolves manually. |
+| `.gaia-backup/`       | Gitignored. Per-timestamp backups of any file the adopter agreed to overwrite.                                      |
 
 ## File classes
 
 The manifest assigns each shipped file exactly one class. Anything **not** in the manifest is implicitly adopter-owned and invisible to `/gaia-update`.
 
-| Class | Meaning | Drift handling |
-|---|---|---|
-| `owned` | GAIA controls fully — skills, commands, rules, hooks, config files. | Pristine → overwrite silently. Drifted → prompt: skip / overwrite / backup+overwrite. |
-| `shared` | GAIA seeds; adopter customizes — `package.json`, `CLAUDE.md`, `README.md`, `.claude/settings.json`, `.github/workflows/*`, `wiki/index.md`. | Pristine → overwrite silently. Drifted → write `.gaia-merge/<path>.patch`, skip, let adopter resolve. |
-| `wiki-owned` | GAIA-seeded wiki pages adopter may edit — concepts, decisions, modules, flows, dependencies. | Same as `shared`. |
-| *(implicit)* | Adopter-owned. `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, and any file the adopter created. | Never touched by `/gaia-update`. |
+| Class        | Meaning                                                                                                                                     | Drift handling                                                                                        |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `owned`      | GAIA controls fully — skills, commands, rules, hooks, config files.                                                                         | Pristine → overwrite silently. Drifted → prompt: skip / overwrite / backup+overwrite.                 |
+| `shared`     | GAIA seeds; adopter customizes — `package.json`, `CLAUDE.md`, `README.md`, `.claude/settings.json`, `.github/workflows/*`, `wiki/index.md`. | Pristine → overwrite silently. Drifted → write `.gaia-merge/<path>.patch`, skip, let adopter resolve. |
+| `wiki-owned` | GAIA-seeded wiki pages adopter may edit — concepts, decisions, modules, flows, dependencies.                                                | Same as `shared`.                                                                                     |
+| _(implicit)_ | Adopter-owned. `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, and any file the adopter created.                                              | Never touched by `/gaia-update`.                                                                      |
 
 Sentinel paths (always adopter-owned regardless of what GAIA ships): `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, `.gaia/VERSION`, `.gaia/manifest.json`.
 
@@ -50,22 +50,22 @@ Sentinel paths (always adopter-owned regardless of what GAIA ships): `wiki/hot.m
 
 For every file `P` in the latest manifest:
 
-| Condition | Action |
-|---|---|
-| Not in adopter, not in baseline | **New file** — add (default yes). |
-| Not in adopter, present in baseline | Adopter deleted — **skip** (respect intent). |
-| `adopter[P] == baseline[P]` | **Overwrite** with latest (any class). |
-| Adopter drifted, latest unchanged from baseline | **Skip** (no upstream change). |
-| Adopter drifted, latest changed, `owned` | Show diff, prompt `skip` (default) / `overwrite` / `backup+overwrite`. |
-| Adopter drifted, latest changed, `shared` or `wiki-owned` | Write `.gaia-merge/<path>.patch`. Adopter resolves. |
+| Condition                                                 | Action                                                                 |
+| --------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Not in adopter, not in baseline                           | **New file** — add (default yes).                                      |
+| Not in adopter, present in baseline                       | Adopter deleted — **skip** (respect intent).                           |
+| `adopter[P] == baseline[P]`                               | **Overwrite** with latest (any class).                                 |
+| Adopter drifted, latest unchanged from baseline           | **Skip** (no upstream change).                                         |
+| Adopter drifted, latest changed, `owned`                  | Show diff, prompt `skip` (default) / `overwrite` / `backup+overwrite`. |
+| Adopter drifted, latest changed, `shared` or `wiki-owned` | Write `.gaia-merge/<path>.patch`. Adopter resolves.                    |
 
 Files deleted upstream (in baseline, not in latest):
 
-| Condition | Action |
-|---|---|
-| Not in adopter | Already gone. Skip. |
+| Condition                   | Action                              |
+| --------------------------- | ----------------------------------- |
+| Not in adopter              | Already gone. Skip.                 |
 | `adopter[P] == baseline[P]` | Prompt `delete` (default) / `keep`. |
-| Adopter drifted | Prompt `keep` (default) / `delete`. |
+| Adopter drifted             | Prompt `keep` (default) / `delete`. |
 
 ## Safety invariants
 

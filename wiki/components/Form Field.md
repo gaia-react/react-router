@@ -27,10 +27,10 @@ Other props: `className`, `classNameDescription`, `classNameLabel`, `description
 
 ## Sub-components
 
-| Sub-component | Row | Key behaviour |
-| --- | --- | --- |
-| `FieldLabel` | top | `<label htmlFor>` or `<div>` depending on name/id; `isLegend` switches to `<legend>` (used by YearMonthDay's fieldset). Right-aligns `required` marker and `extra` slot. `FieldRequiredText` changes color on error state. |
-| `FieldStatus` | bottom | `role="status"` live region. Left: description + error. Right: `MaxLength` counter (suppressed by `hideMaxLength`; spacer preserves alignment when counter present but description absent). |
+| Sub-component | Row    | Key behaviour                                                                                                                                                                                                              |
+| ------------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `FieldLabel`  | top    | `<label htmlFor>` or `<div>` depending on name/id; `isLegend` switches to `<legend>` (used by YearMonthDay's fieldset). Right-aligns `required` marker and `extra` slot. `FieldRequiredText` changes color on error state. |
+| `FieldStatus` | bottom | `role="status"` live region. Left: description + error. Right: `MaxLength` counter (suppressed by `hideMaxLength`; spacer preserves alignment when counter present but description absent).                                |
 
 ## Why components reach for Field directly
 

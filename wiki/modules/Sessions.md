@@ -13,10 +13,10 @@ tags: [module, sessions, cookies]
 
 `app/sessions.server/` contains cookie management code. The `.server` suffix excludes these from the client bundle.
 
-| File          | Cookie     | Purpose                                                    |
-| ------------- | ---------- | ---------------------------------------------------------- |
-| `language.ts` | `language` | i18n preference (`languageCookie`)                         |
-| `theme.ts`    | theme      | Light/dark preference; also exposes `getThemeSession`      |
+| File          | Cookie     | Purpose                                               |
+| ------------- | ---------- | ----------------------------------------------------- |
+| `language.ts` | `language` | i18n preference (`languageCookie`)                    |
+| `theme.ts`    | theme      | Light/dark preference; also exposes `getThemeSession` |
 
 Both use React Router 7's `createCookieSessionStorage`. Secrets come from `env.SESSION_SECRET` (Zod-validated).
 

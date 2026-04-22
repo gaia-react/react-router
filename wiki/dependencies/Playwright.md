@@ -28,7 +28,7 @@ Tests that mutate MSW in-memory state call `resetTestData()` from `test/mocks/da
 import {hydration} from '../utils';
 
 await page.goto('/');
-await hydration(page);  // must come before any interaction
+await hydration(page); // must come before any interaction
 ```
 
 ## Selectors

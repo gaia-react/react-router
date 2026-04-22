@@ -18,12 +18,12 @@ GAIA uses [[remix-flat-routes]] on top of [[React Router 7]] for file-based rout
 
 Routes are organized using flat-routes folder syntax — `_` prefix + `+` suffix marks a folder as a layout/route group.
 
-| Folder      | Purpose                         | Auth requirement                                |
-| ----------- | ------------------------------- | ----------------------------------------------- |
-| `_public+`  | Home, marketing, public content | none                                            |
-| `_session+` | Hook point for auth-guarded app | stub — add your own guard loader here           |
-| `_legal+`   | Terms of service, privacy       | none                                            |
-| `actions+`  | Root-level form actions (no UI) | varies by action                                |
+| Folder      | Purpose                         | Auth requirement                      |
+| ----------- | ------------------------------- | ------------------------------------- |
+| `_public+`  | Home, marketing, public content | none                                  |
+| `_session+` | Hook point for auth-guarded app | stub — add your own guard loader here |
+| `_legal+`   | Terms of service, privacy       | none                                  |
+| `actions+`  | Root-level form actions (no UI) | varies by action                      |
 
 GAIA ships these `actions+` endpoints out of the box:
 
@@ -41,13 +41,13 @@ GAIA ships these `actions+` endpoints out of the box:
 
 `/new-route` scaffolds routes in this shape. The scaffold output includes:
 
-| File | Contents |
-|---|---|
-| `app/routes/{group}/{name}.tsx` | Loader (with server-side i18n for meta), route component, `useLoaderData` |
-| `app/pages/{Group}/{Name}/index.tsx` | Page component with `useTranslation` |
-| `app/pages/{Group}/{Name}/tests/index.test.tsx` | Vitest test via `composeStory` |
-| `app/pages/{Group}/{Name}/tests/index.stories.tsx` | Storybook story |
-| `app/languages/en/pages/{name}.ts` + other locales | i18n keys |
+| File                                               | Contents                                                                  |
+| -------------------------------------------------- | ------------------------------------------------------------------------- |
+| `app/routes/{group}/{name}.tsx`                    | Loader (with server-side i18n for meta), route component, `useLoaderData` |
+| `app/pages/{Group}/{Name}/index.tsx`               | Page component with `useTranslation`                                      |
+| `app/pages/{Group}/{Name}/tests/index.test.tsx`    | Vitest test via `composeStory`                                            |
+| `app/pages/{Group}/{Name}/tests/index.stories.tsx` | Storybook story                                                           |
+| `app/languages/en/pages/{name}.ts` + other locales | i18n keys                                                                 |
 
 ## Server-side i18n in loaders
 

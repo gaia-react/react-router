@@ -90,22 +90,22 @@ Iterate keys of `.files`. For each `<path>, <class>` entry, apply the decision t
 
 For every file `P` in the latest manifest:
 
-| Condition | Action |
-|---|---|
-| `adopter[P]` does not exist AND `baseline[P]` does not exist | **New file**: copy `latest[P]` into the project (default yes; prompt if the user opted into step-through). |
-| `adopter[P]` does not exist AND `baseline[P]` exists | Adopter deleted this file. **Respect**: skip. |
-| `adopter[P] == baseline[P]` | No drift. **Overwrite** with `latest[P]` silently (applies to all classes). |
-| `adopter[P] != baseline[P]` AND `latest[P] == baseline[P]` | Drift only from adopter. **Skip** — upstream made no change. |
-| `adopter[P] != baseline[P]` AND `latest[P] != baseline[P]` AND class is `owned` | Show unified diff (`latest[P]` vs `adopter[P]`). Prompt: `skip` (default) / `overwrite` (copy latest, back up adopter to `.gaia-backup/`) / `backup-and-overwrite` (same as overwrite but retains adopter's content as `<path>.local` too). |
-| `adopter[P] != baseline[P]` AND `latest[P] != baseline[P]` AND class is `shared` or `wiki-owned` | Do **not** auto-modify. Write `.gaia-merge/<path>.patch` containing a three-way diff (baseline / latest / adopter) so the user can resolve manually. Record the conflict in the summary. |
+| Condition                                                                                        | Action                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `adopter[P]` does not exist AND `baseline[P]` does not exist                                     | **New file**: copy `latest[P]` into the project (default yes; prompt if the user opted into step-through).                                                                                                                                  |
+| `adopter[P]` does not exist AND `baseline[P]` exists                                             | Adopter deleted this file. **Respect**: skip.                                                                                                                                                                                               |
+| `adopter[P] == baseline[P]`                                                                      | No drift. **Overwrite** with `latest[P]` silently (applies to all classes).                                                                                                                                                                 |
+| `adopter[P] != baseline[P]` AND `latest[P] == baseline[P]`                                       | Drift only from adopter. **Skip** — upstream made no change.                                                                                                                                                                                |
+| `adopter[P] != baseline[P]` AND `latest[P] != baseline[P]` AND class is `owned`                  | Show unified diff (`latest[P]` vs `adopter[P]`). Prompt: `skip` (default) / `overwrite` (copy latest, back up adopter to `.gaia-backup/`) / `backup-and-overwrite` (same as overwrite but retains adopter's content as `<path>.local` too). |
+| `adopter[P] != baseline[P]` AND `latest[P] != baseline[P]` AND class is `shared` or `wiki-owned` | Do **not** auto-modify. Write `.gaia-merge/<path>.patch` containing a three-way diff (baseline / latest / adopter) so the user can resolve manually. Record the conflict in the summary.                                                    |
 
 Files present in `baseline` but **absent** in `latest` (upstream deleted/renamed):
 
-| Condition | Action |
-|---|---|
-| `adopter[P]` does not exist | Already gone. Skip. |
+| Condition                   | Action                                                                           |
+| --------------------------- | -------------------------------------------------------------------------------- |
+| `adopter[P]` does not exist | Already gone. Skip.                                                              |
 | `adopter[P] == baseline[P]` | Upstream removed it; your copy is pristine. Prompt: `delete` (default) / `keep`. |
-| `adopter[P] != baseline[P]` | You customized it; upstream removed it. Prompt: `keep` (default) / `delete`. |
+| `adopter[P] != baseline[P]` | You customized it; upstream removed it. Prompt: `keep` (default) / `delete`.     |
 
 File equality comparison: byte-for-byte (`cmp -s`). No line-ending normalization — the template is LF throughout.
 

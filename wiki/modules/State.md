@@ -42,12 +42,12 @@ XProvider.displayName = 'XProvider';
 
 ## Naming Conventions
 
-| Piece | Convention |
-| --- | --- |
-| Provider | `XProvider` |
-| Required hook | `useX()` — throws outside Provider |
+| Piece         | Convention                                   |
+| ------------- | -------------------------------------------- |
+| Provider      | `XProvider`                                  |
+| Required hook | `useX()` — throws outside Provider           |
 | Optional hook | `useMaybeX()` — returns `Maybe<T>`, no throw |
-| Context | `XContext` — **never exported** |
+| Context       | `XContext` — **never exported**              |
 
 ## Initial State from the Loader
 

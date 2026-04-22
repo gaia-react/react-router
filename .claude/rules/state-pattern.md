@@ -19,14 +19,14 @@ Each state slice lives in `app/state/{name}.tsx`. The barrel `app/state/index.ts
 
 ## Naming Conventions
 
-| Piece | Convention | Example |
-|---|---|---|
-| Provider component | `XProvider` | `ThingsProvider` |
-| Required read hook | `useX()` — throws if outside Provider | `useThings()` |
-| Optional read hook | `useMaybeX()` — returns `Maybe<T>` | `useMaybeThings()` |
-| Context variable | `XContext` (unexported) | `ThingsContext` |
-| Context type | `XContextValue` | `ThingsContextValue` |
-| Provider props type | `XProviderProps` | `ThingsProviderProps` |
+| Piece               | Convention                            | Example               |
+| ------------------- | ------------------------------------- | --------------------- |
+| Provider component  | `XProvider`                           | `ThingsProvider`      |
+| Required read hook  | `useX()` — throws if outside Provider | `useThings()`         |
+| Optional read hook  | `useMaybeX()` — returns `Maybe<T>`    | `useMaybeThings()`    |
+| Context variable    | `XContext` (unexported)               | `ThingsContext`       |
+| Context type        | `XContextValue`                       | `ThingsContextValue`  |
+| Provider props type | `XProviderProps`                      | `ThingsProviderProps` |
 
 ## Two Variants
 
@@ -39,7 +39,8 @@ const ThingsContext = createContext<Maybe<Things>>(undefined);
 
 export const useThings = (): Things => {
   const context = useContext(ThingsContext) as Maybe<Things>;
-  if (!context) throw new Error('useThings must be used within a ThingsProvider');
+  if (!context)
+    throw new Error('useThings must be used within a ThingsProvider');
   return context;
 };
 

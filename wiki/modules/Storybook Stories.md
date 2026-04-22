@@ -17,26 +17,26 @@ Storybook v10 with the `@storybook/react-vite` framework. Configured to discover
 
 ## Setup files
 
-| File                | Purpose                                                        |
-| ------------------- | -------------------------------------------------------------- |
-| `main.ts`           | Stories glob, addons, viteFinal env injection                  |
-| `preview.ts`        | Decorators (Wrap, Chromatic), darkMode config, initialGlobals  |
-| `preview-head.html` | Google Fonts preload, `window.process` shim                    |
-| `i18next.ts`        | Imports project i18n config for `storybook-react-i18next`      |
-| `env.ts`            | Copies `import.meta.env.*` values onto `window.process.env`    |
+| File                | Purpose                                                          |
+| ------------------- | ---------------------------------------------------------------- |
+| `main.ts`           | Stories glob, addons, viteFinal env injection                    |
+| `preview.ts`        | Decorators (Wrap, Chromatic), darkMode config, initialGlobals    |
+| `preview-head.html` | Google Fonts preload, `window.process` shim                      |
+| `i18next.ts`        | Imports project i18n config for `storybook-react-i18next`        |
+| `env.ts`            | Copies `import.meta.env.*` values onto `window.process.env`      |
 | `viewport.ts`       | Viewport presets (landscape, portrait, mobileLarge, mobileSmall) |
-| `decorators/`       | `WrapDecorator`, `ToastDecorator`                              |
-| `chromatic/`        | `ChromaticDecorator` + decorator export logic                  |
-| `vite.config.ts`    | Storybook-specific Vite overrides                              |
-| `static/`           | Static assets served by Storybook (brand image, etc.)          |
+| `decorators/`       | `WrapDecorator`, `ToastDecorator`                                |
+| `chromatic/`        | `ChromaticDecorator` + decorator export logic                    |
+| `vite.config.ts`    | Storybook-specific Vite overrides                                |
+| `static/`           | Static assets served by Storybook (brand image, etc.)            |
 
 ## Addons
 
-| Addon                        | Role                            |
-| ---------------------------- | ------------------------------- |
-| `storybook-react-i18next`    | Language switcher in the toolbar |
-| `@vueless/storybook-dark-mode` | Light/dark toggle              |
-| `@storybook/addon-links`     | Story cross-linking             |
+| Addon                          | Role                             |
+| ------------------------------ | -------------------------------- |
+| `storybook-react-i18next`      | Language switcher in the toolbar |
+| `@vueless/storybook-dark-mode` | Light/dark toggle                |
+| `@storybook/addon-links`       | Story cross-linking              |
 
 `backgrounds`, `measure`, and `outline` addons are disabled via `features`.
 
@@ -46,11 +46,11 @@ Storybook v10 with the `@storybook/react-vite` framework. Configured to discover
 
 ## Decorator stack
 
-| Decorator | When active | What it does |
-|---|---|---|
-| `WrapDecorator` | Always (outermost) | Reads `parameters.wrap` class and wraps story — use `parameters: {wrap: 'p-4'}` for padding instead of hardcoding divs |
-| `ChromaticDecorator` | Chromatic snapshots only | Renders story twice: light + dark (`50vh` each); `excludeDark: true` suppresses dark render |
-| `ToastDecorator` | Always (innermost) | Appends `<Toast />` after every story |
+| Decorator            | When active              | What it does                                                                                                           |
+| -------------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| `WrapDecorator`      | Always (outermost)       | Reads `parameters.wrap` class and wraps story — use `parameters: {wrap: 'p-4'}` for padding instead of hardcoding divs |
+| `ChromaticDecorator` | Chromatic snapshots only | Renders story twice: light + dark (`50vh` each); `excludeDark: true` suppresses dark render                            |
+| `ToastDecorator`     | Always (innermost)       | Appends `<Toast />` after every story                                                                                  |
 
 Chromatic chain: `WrapDecorator → ChromaticDecorator → ToastDecorator`. Interactive: `WrapDecorator → ToastDecorator`.
 
