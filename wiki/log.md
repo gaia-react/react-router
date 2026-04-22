@@ -3,13 +3,26 @@ type: meta
 title: Log
 status: active
 created: 2026-04-20
-updated: 2026-04-21
+updated: 2026-04-22
 tags: [meta, log]
 ---
 
 # Log
 
 Append-only. New entries at the TOP.
+
+## [2026-04-22] feat | release infrastructure — /gaia-release, /gaia-update, create-gaia, tarball scrubbing
+
+- Added tag-triggered `.github/workflows/release.yml` (extracts CHANGELOG section, builds scrubbed tarball via `git ls-files` + `.gaia/release-exclude`, `gh release create`). Seeded `CHANGELOG.md` with v1.0.0 entry from the 109 commits since `v1.0.0-beta`.
+- Added `.gaia/` directory: `VERSION` (adopter baseline marker), `manifest.json` (349 files classified as `owned`/`shared`/`wiki-owned`), `release-exclude` (tar-exclude list of maintainer-only paths), `scripts/generate-manifest.mjs` (classifier).
+- Added `/gaia-release` — maintainer-only (stripped from tarball via release-exclude). 12-step orchestrator: verify clean, bump, audit, graduate CHANGELOG, scrub `wiki/hot.md` + `wiki/log.md`, regenerate manifest, commit, tag, confirm, push.
+- Added `/gaia-update` — adopter-facing. GSD-inspired three-way diff per file; drifted `owned` prompts, drifted `shared`/`wiki-owned` emits `.gaia-merge/<path>.patch`, atomic version-marker bump.
+- Separate `create-gaia` npm package scaffolded at `../create-gaia/` — zero-dep Node CLI that downloads the release tarball from GitHub, extracts, `git init`, `npm install`. Replaces `npx create-react-router --template gaia-react/react-router` in the README quick-start (old command preserved under an "Alternative" fold).
+- CI made fork-safe: `tests.yml` + `chromatic.yml` fall back secrets to placeholders so forks pass lint/typecheck/unit. Chromatic split into a `has-chromatic-token` check job so it skips cleanly when the token is absent.
+- PR/issue templates added (`.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/{bug_report,feature_request,config}.yml`).
+- Pages created: [[Release Workflow]], [[Update Workflow]].
+- Pages updated: [[Claude Integration]] (commands table), [[index]], [[hot]].
+- Key insight: the manifest's implicit-adopter-owned category (anything NOT listed) is what makes `/gaia-update` drift-safe — adopter-created wiki pages, `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, and any file outside GAIA's shipped surface are invisible to the update walk. Sentinel sentinels can't be accidentally re-added by the classifier regenerating the manifest.
 
 ## [2026-04-21] chore | Claude hooks governance — rules migrated to machine-enforced hooks
 
