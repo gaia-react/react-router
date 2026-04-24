@@ -43,6 +43,7 @@ coverage
 .claude/audit/
 .claude/worktrees/
 .claude/handoff/
+.claude/plans/
 .claude/scheduled_tasks.lock
 
 # GAIA release/update working directories

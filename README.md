@@ -1,7 +1,5 @@
 # GAIA React
 
-Docs & marketing: <https://gaia-react.github.io/>
-
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
 [![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](https://claude.com/claude-code)
@@ -32,18 +30,7 @@ npx create-gaia my-app
 
 This pulls the latest tagged release (scrubbed of dev notes), sets up `.gaia/VERSION` for later `/gaia-update` runs, and `git init`s your project. Then open Claude Code in the project and run `/gaia-init` to configure i18n, strip GAIA branding, and install Claude plugins.
 
-<details>
-<summary>Alternative: pin to <code>main</code> or a specific commit</summary>
-
-If you want today's unreleased `main` (carries in-flight dev context in the wiki), use the upstream React Router template flow:
-
-```bash
-npx create-react-router@latest --template gaia-react/react-router
-```
-
-Then run `/gaia-init` as above. You may want to reset `wiki/hot.md` and `wiki/log.md` manually since they carry our session-in-progress cache on `main`.
-
-</details>
+[Documentation](https://gaia-react.github.io/)
 
 ## The two problems GAIA solves
 
