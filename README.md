@@ -1,5 +1,7 @@
 # GAIA React
 
+Docs & marketing: <https://gaia-react.github.io/>
+
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
 [![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](https://claude.com/claude-code)
