@@ -38,7 +38,7 @@ tags: [source, initial]
   - TypeScript language files instead of JSON. ([[TypeScript Language Files]])
   - Husky runs tests on commit, not just lint. ([[Pre-commit Hooks]])
   - Form components are the headline feature. ([[Form Components]])
-- **Claude integration is first-class**: 8 commands, 10 rules, 4 hooks, 1 review agent + 3 specialists, 4 skills. ([[Claude Integration]])
+- **Claude integration is first-class**: commands, rules, hooks, a review agent + specialists, and skills — see [[Claude Integration]] for the current inventory.
 
 ## Pages created
 
