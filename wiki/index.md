@@ -91,6 +91,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 ## Concepts
 
+- [[Agentic Design]] — how GAIA implements the canonical agentic patterns and principles
 - [[GAIA Philosophy]]
 - [[Coding Guidelines]]
 - [[Component Testing]]
