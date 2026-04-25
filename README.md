@@ -99,6 +99,19 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 
 Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA adds 15 path-scoped rules, 7 enforcement hooks, 11 Claude Code commands, 6 bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
 
+## Agentic Design
+
+Agentic design is the discipline of building AI systems that act autonomously toward goals rather than passively responding to prompts. The canonical patterns — Reflection, ReAct, Planning, and Multi-Agent collaboration — are all first-class in GAIA.
+
+| Pattern | How GAIA implements it                                                                                                                                                                            |
+| ------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| **Reflection** | Code-review audit evaluates every branch diff for security, performance, and antipatterns; quality gate enforces clean output before every commit                                                 |
+| **ReAct** | Claude consults the Obsidian wiki before acting, uses ESLint / Vitest / Playwright as observation tools, and iterates until gates pass                                                            |
+| **Planning** | For multi-file features, Claude proposes a task graph and orchestrator, waits for approval, then executes — no runaway agents                                                                     |
+| **Multi-Agent** | Code-review audit spawns three specialist subagents in parallel (React Patterns, TypeScript & Architecture, Translation); the orchestrator pattern dispatches implementation agents across phases |
+
+Principles including Autonomy, Tool Use, Memory & Context, and Exception Handling & Recovery are each enforced structurally. Scoped rules bound Claude's decision space; ESLint, Vitest, Playwright, and MSW are Claude's tool layer; the Obsidian wiki and `/handoff` + `/pickup` provide persistent memory; and the quality gate plus code-review audit are mandatory checkpoints before commits and merges.
+
 ## One-Command Initialization
 
 The template ships clean. `/init` finishes the last-mile setup:

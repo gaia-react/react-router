@@ -34,8 +34,12 @@ if [ "$current_branch" = "main" ]; then
 
   # Reset local main back to origin so it never advances ahead of remote main.
   # The commit is safe on the wiki branch.
+  # --mixed preserves any non-wiki working-tree changes (e.g. README edits);
+  # we then discard only wiki/ and .raw/ so they don't linger as unstaged files.
   git fetch origin main >/dev/null 2>&1
-  git reset --hard origin/main >/dev/null 2>&1 || true
+  git reset --mixed origin/main >/dev/null 2>&1 || true
+  git checkout -- wiki/ .raw/ 2>/dev/null || true
+  git clean -fd wiki/ .raw/ >/dev/null 2>&1 || true
 
   if command -v gh >/dev/null 2>&1; then
     gh pr create \
