@@ -97,7 +97,7 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 
 ### Claude-native
 
-Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA adds 15 path-scoped rules, 7 enforcement hooks, 11 Claude Code commands, 6 bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
+Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA adds path-scoped rules, enforcement hooks, Claude Code commands, bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
 
 ## Agentic Design
 
@@ -141,9 +141,9 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Rules, hooks, skills
 
-- **15 path-scoped rules** cover TypeScript, React, Tailwind, testing, i18n, accessibility, and state management. Ask Claude about any of them — they're in `.claude/rules/`.
-- **7 hooks** guard the quality gate and keep the wiki fresh. Ask Claude what they do.
-- **6 bundled skills** (`typescript`, `react-code`, `tailwind`, `skeleton-loaders`, `tdd`, `playwright-cli`) auto-load for matching tasks.
+- **Path-scoped rules** cover TypeScript, React, Tailwind, testing, i18n, accessibility, and state management. Ask Claude about any of them — they're in `.claude/rules/`.
+- **Hooks** guard the quality gate and keep the wiki fresh. Ask Claude what they do.
+- **Bundled skills** (`typescript`, `react-code`, `tailwind`, `skeleton-loaders`, `tdd`, `playwright-cli`) autoload for matching tasks.
 
 ### Code review before merge
 
