@@ -120,7 +120,6 @@ The template ships clean. `/init` finishes the last-mile setup:
 - **Installs dependencies** — bootstraps pnpm via `corepack` and runs `pnpm install` for you
 - **Configures i18n** — prompts for your language set, scaffolds the matching language files, and updates the component and Storybook wiring
 - **Installs Claude skills and plugins** — [React Doctor](https://github.com/millionco/react-doctor), [Playwright CLI](https://github.com/microsoft/playwright-cli), `typescript-lsp`, and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
-- **Offers Chromatic MCP setup** — opts you in to the Storybook MCP server if you want it
 
 After `/init` finishes, you have a clean app shell **and** a fully-configured Claude workflow ready to use.
 
@@ -153,10 +152,6 @@ Every merge runs through a code-review pass against the branch diff — security
 ### Wiki
 
 GAIA ships with an [Obsidian](https://obsidian.md) wiki knowledge base — architecture, modules, dependencies, decisions, flows, concepts — committed to git and shared across the team. The [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian) plugin (installed by `/init`) adds `/wiki-ingest`, `/wiki-query`, `/wiki-lint`, `/autoresearch`, and `/save` for working with the vault. Open `wiki/` in Obsidian for graph view, backlinks, and search.
-
-### Chromatic MCP
-
-Storybook 10.3+ ships support for `@storybook/addon-mcp`, which pairs with the [Chromatic MCP](https://www.chromatic.com/docs/mcp/) server to let Claude query components, props, and visual-regression diffs directly. `/init` offers to set it up; otherwise run `/setup-chromatic-mcp` any time — it's idempotent.
 
 ## Development
 

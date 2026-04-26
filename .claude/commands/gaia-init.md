@@ -117,14 +117,6 @@ GAIA bundles `tdd` and `playwright-cli` skills at `.claude/skills/` — they shi
 - `claude plugin marketplace add AgriciDaniel/claude-obsidian`
 - `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
-### Chromatic MCP (optional but recommended)
-
-Lets Claude query Storybook components, props, and visual-regression diffs directly.
-
-Ask the user: "Set up Chromatic MCP now?" — if **yes**, invoke the `/setup-chromatic-mcp` command. If **no**, tell them they can run `/setup-chromatic-mcp` any time later; it's idempotent and handles both first-time install and re-registration.
-
-The setup flow prompts the user for scope (project vs user) and URL, installs the Storybook addon, and registers the MCP. Requires a Chromatic account (free for open source): https://www.chromatic.com/start.
-
 ## Step 10: Refresh the wiki
 
 The template ships with a wiki shaped for the upstream GAIA project. Refresh the two files that encode "where we are right now" so the new project starts with a clean context:

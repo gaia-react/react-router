@@ -131,7 +131,7 @@ Prepared the template to delete example code and VitePress docs without losing t
 - Pages updated: [[Claude Integration]] (commands table), [[index]], [[hot]]
 - Key insight: Session continuity loop — `/handoff` writes a synthesized end-of-session doc to `.claude/handoff/`, `/pickup` reads the latest one at session start, archives it once work resumes. `wiki/hot.md` is the fallback.
 
-## [2026-04-20] ingest | Initial Ingest of GAIA React Router
+## [2026-04-20] ingest | Initial Ingest of GAIA React
 
 - Source: project codebase + docs + .claude/
 - Summary: [[Initial Ingest]]

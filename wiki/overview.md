@@ -1,13 +1,13 @@
 ---
 type: overview
-title: GAIA React Router Overview
+title: GAIA React Overview
 status: mature
 created: 2026-04-20
 updated: 2026-04-20
 tags: [overview, gaia]
 ---
 
-# GAIA React Router
+# GAIA React
 
 GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
 
