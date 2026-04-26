@@ -56,7 +56,7 @@ Rules activate automatically based on file paths — no need to invoke them.
 | [[Git Workflow]]                       | All `git` commands (hook-enforced)                      |
 | [[Quality Gate]]                       | Commits (source + gate-affecting config only)           |
 | [[PR Merge Workflow]]                  | PR merges                                               |
-| [[Task Orchestration]]                 | Multi-file work (~5+ files)                             |
+| [[Task Orchestration]]                 | Multi-file work                                         |
 
 ## Hooks
 

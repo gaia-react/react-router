@@ -103,11 +103,11 @@ Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA 
 
 Agentic design is the discipline of building AI systems that act autonomously toward goals rather than passively responding to prompts. The canonical patterns — Reflection, ReAct, Planning, and Multi-Agent collaboration — are all first-class in GAIA.
 
-| Pattern | How GAIA implements it                                                                                                                                                                            |
-| ------- |---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **Reflection** | Code-review audit evaluates every branch diff for security, performance, and antipatterns; quality gate enforces clean output before every commit                                                 |
-| **ReAct** | Claude consults the Obsidian wiki before acting, uses ESLint / Vitest / Playwright as observation tools, and iterates until gates pass                                                            |
-| **Planning** | For multi-file features, Claude proposes a task graph and orchestrator, waits for approval, then executes — no runaway agents                                                                     |
+| Pattern         | How GAIA implements it                                                                                                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Reflection**  | Code-review audit evaluates every branch diff for security, performance, and antipatterns; quality gate enforces clean output before every commit                                                 |
+| **ReAct**       | Claude consults the Obsidian wiki before acting, uses ESLint / Vitest / Playwright as observation tools, and iterates until gates pass                                                            |
+| **Planning**    | For complex features, Claude plans before it codes — then an orchestrator drives focused subagents through each phase, keeping context tight and nothing running without your sign-off            |
 | **Multi-Agent** | Code-review audit spawns three specialist subagents in parallel (React Patterns, TypeScript & Architecture, Translation); the orchestrator pattern dispatches implementation agents across phases |
 
 Principles including Autonomy, Tool Use, Memory & Context, and Exception Handling & Recovery are each enforced structurally. Scoped rules bound Claude's decision space; ESLint, Vitest, Playwright, and MSW are Claude's tool layer; the Obsidian wiki and `/handoff` + `/pickup` provide persistent memory; and the quality gate plus code-review audit are mandatory checkpoints before commits and merges.
@@ -133,6 +133,7 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 | Command            | What it does                                                                                  |
 | ------------------ | --------------------------------------------------------------------------------------------- |
 | `/init`            | Full template initialization (see above)                                                      |
+| `/orchestrate`     | Plan a multi-file feature — task graph, per-task docs, orchestrator prompt, kickoff script    |
 | `/gaia-update`     | Pull the latest GAIA release into your project — three-way diff, respects your customizations |
 | `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate                         |
 | `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat                           |

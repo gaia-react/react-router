@@ -18,7 +18,7 @@ Always work on a feature branch. If HEAD is on `main`/`master`, create one first
 git switch -c <type>/<short-description>
 ```
 
-Conventional prefixes in this repo: `feat/`, `fix/`, `chore/`, `refactor/`, `docs/`, `test/`.
+Conventional prefixes in this repo: `feat/`, `fix/`, `chore/`, `refactor/`, `test/`, `wiki/`
 
 ## 2. Never force-push to `main` or `master`
 

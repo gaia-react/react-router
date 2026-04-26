@@ -82,16 +82,16 @@ Agents interface with external systems — APIs, file systems, test runners — 
 
 **GAIA's tool layer for Claude:**
 
-| Tool | Purpose |
-| ---- | ------- |
-| ESLint | Static analysis feedback after every code write |
-| Vitest | Unit/integration test execution |
-| Playwright | E2E test execution and browser observation |
-| Storybook + Chromatic | Component isolation and visual regression detection |
-| MSW | API mock layer for tests and Storybook |
-| Obsidian wiki | Persistent project knowledge retrieval |
-| `gh` CLI | PR creation, merge, and CI status |
-| Chromatic MCP | Direct component and visual-diff queries from Claude |
+| Tool                  | Purpose                                              |
+| --------------------- | ---------------------------------------------------- |
+| ESLint                | Static analysis feedback after every code write      |
+| Vitest                | Unit/integration test execution                      |
+| Playwright            | E2E test execution and browser observation           |
+| Storybook + Chromatic | Component isolation and visual regression detection  |
+| MSW                   | API mock layer for tests and Storybook               |
+| Obsidian wiki         | Persistent project knowledge retrieval               |
+| `gh` CLI              | PR creation, merge, and CI status                    |
+| Chromatic MCP         | Direct component and visual-diff queries from Claude |
 
 ### Memory & Context
 
@@ -111,13 +111,13 @@ Incorporating human oversight at key decision points to ensure safety, quality, 
 
 **GAIA's checkpoints:**
 
-| Checkpoint | When | What it guards |
-| ---------- | ---- | -------------- |
-| Quality gate | Pre-commit | No broken types, lint errors, failing tests, or build failures reach the repo |
-| Code-review audit | Pre-merge | No security, performance, or code-quality issues reach `main` |
-| Task Orchestration approval | Pre-execution | No large multi-file plan executes without explicit user sign-off |
-| Orchestrator phase gates | Between phases | No phase begins if the prior phase's build + lint fails |
-| Destructive git hook | Always | Claude cannot commit to `main` or force-push — human must act |
+| Checkpoint                  | When           | What it guards                                                                |
+| --------------------------- | -------------- | ----------------------------------------------------------------------------- |
+| Quality gate                | Pre-commit     | No broken types, lint errors, failing tests, or build failures reach the repo |
+| Code-review audit           | Pre-merge      | No security, performance, or code-quality issues reach `main`                 |
+| Task Orchestration approval | Pre-execution  | No large multi-file plan executes without explicit user sign-off              |
+| Orchestrator phase gates    | Between phases | No phase begins if the prior phase's build + lint fails                       |
+| Destructive git hook        | Always         | Claude cannot commit to `main` or force-push — human must act                 |
 
 Human-in-the-Loop in GAIA is not advisory — it is enforced. Hooks block the operations that bypass it.
 

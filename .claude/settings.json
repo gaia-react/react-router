@@ -91,6 +91,34 @@
       }
     ]
   },
+  "permissions": {
+    "allow": [
+      "Bash(mkdir -p .claude/plans)",
+      "Bash(mkdir -p .claude/handoff/archive)",
+      "Bash(npm install:*)",
+      "Bash(npm ls:*)",
+      "Bash(npm outdated:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run pw:*)",
+      "Bash(npm run test:ci:*)",
+      "Bash(npm run typecheck:*)",
+      "Bash(npm uninstall:*)",
+      "Write(.claude/plans/**)",
+      "Edit(.claude/plans/**)",
+      "Edit(/app/**)",
+      "Edit(/public/**)",
+      "Edit(/test/**)",
+      "Edit(/.playwright/**)",
+      "Edit(/.storybook/**)"
+    ],
+    "deny": [
+      "Read(.env)",
+      "Read(**/secrets/*)",
+      "Read(**/*credential*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)"
+    ]
+  },
   "enabledPlugins": {
     "typescript-lsp@claude-plugins-official": true
   }
