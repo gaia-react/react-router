@@ -1,6 +1,6 @@
 ---
 type: meta
-title: "Lint Report 2026-04-26"
+title: 'Lint Report 2026-04-26'
 created: 2026-04-26
 updated: 2026-04-26
 tags: [meta, lint]

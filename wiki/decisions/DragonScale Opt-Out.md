@@ -29,12 +29,12 @@ GAIA does not adopt DragonScale. We do not vendor `bin/setup-dragonscale.sh`, do
 
 ## Rationale (per mechanism)
 
-| Mechanism                   | Value to GAIA                                                                                              | Cost                                                                                               |
-| --------------------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| Fold operator               | Near zero. `wiki/log.md` rarely exceeds 100 lines per project; the squash-autocommit hook already handles bloat. | Adds `wiki/folds/` clutter; another concept to teach adopters.                                |
-| Deterministic addresses     | Low. We already use stable wikilink slugs (`[[Form Field]]`). Renames are rare and tracked by git.         | Frontmatter noise on every new page; `.vault-meta/` becomes another committed artifact.            |
-| Semantic tiling lint        | Low. Vaults are small (~50 pages); duplicates surface in code review. Real value emerges at 200+ pages.    | **Hard dependency on local `ollama` + `nomic-embed-text`.** Friction for every adopter; CI implications. |
-| Boundary-first autoresearch | Near zero. GAIA users don't run `/autoresearch` on codebase wikis; they ingest known sources.              | `python3` dep; another script in `bin/`.                                                            |
+| Mechanism                   | Value to GAIA                                                                                                    | Cost                                                                                                     |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Fold operator               | Near zero. `wiki/log.md` rarely exceeds 100 lines per project; the squash-autocommit hook already handles bloat. | Adds `wiki/folds/` clutter; another concept to teach adopters.                                           |
+| Deterministic addresses     | Low. We already use stable wikilink slugs (`[[Form Field]]`). Renames are rare and tracked by git.               | Frontmatter noise on every new page; `.vault-meta/` becomes another committed artifact.                  |
+| Semantic tiling lint        | Low. Vaults are small (~50 pages); duplicates surface in code review. Real value emerges at 200+ pages.          | **Hard dependency on local `ollama` + `nomic-embed-text`.** Friction for every adopter; CI implications. |
+| Boundary-first autoresearch | Near zero. GAIA users don't run `/autoresearch` on codebase wikis; they ingest known sources.                    | `python3` dep; another script in `bin/`.                                                                 |
 
 DragonScale is engineered for **large, evolving, long-horizon knowledge vaults** (the upstream guide explicitly calls these out: "research vaults", "large evolving wikis", "log-heavy vaults"). GAIA's wikis are **small, scoped, codebase-bound, per-fork**. The `ollama` dependency alone is a non-starter for a template repo — we'd be telling every adopter to install and run a local LLM service to satisfy a lint check that finds problems they don't have.
 

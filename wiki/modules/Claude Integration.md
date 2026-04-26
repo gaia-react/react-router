@@ -18,21 +18,21 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 
 ## Commands (slash)
 
-| Command                | What it does                                                                                                                       |
-| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `/gaia-init`           | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                           |
-| `/gaia-update`         | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                |
-| `/gaia-release`        | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]]) |
-| `/new-route`           | Scaffold a route + page + tests + i18n                                                                                             |
-| `/new-component`       | Scaffold a component with optional test + story                                                                                    |
-| `/new-service`         | Scaffold an API service + Zod + URL constants + MSW mocks                                                                          |
-| `/new-hook`            | Scaffold a custom hook + test                                                                                                      |
-| `/audit-code`          | Run the full [[Quality Gate]]                                                                                                      |
-| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                          |
+| Command                | What it does                                                                                                                                |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/gaia-init`           | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                                    |
+| `/gaia-update`         | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                         |
+| `/gaia-release`        | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]])          |
+| `/new-route`           | Scaffold a route + page + tests + i18n                                                                                                      |
+| `/new-component`       | Scaffold a component with optional test + story                                                                                             |
+| `/new-service`         | Scaffold an API service + Zod + URL constants + MSW mocks                                                                                   |
+| `/new-hook`            | Scaffold a custom hook + test                                                                                                               |
+| `/audit-code`          | Run the full [[Quality Gate]]                                                                                                               |
+| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                                   |
 | `/migrate`             | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
-| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                 |
-| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                   |
-| `/setup-chromatic-mcp` | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs                                       |
+| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
+| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
+| `/setup-chromatic-mcp` | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs                                                |
 
 See individual rules for the patterns each command produces.
 
@@ -75,12 +75,12 @@ Bash hooks wired through `.claude/settings.json`. Mixed event types.
 
 Each entry uses an `if:` pattern so the hook only runs for the matching command shape.
 
-| Hook                            | `if` pattern          | Type         | Behavior                                                                                                                   |
-| ------------------------------- | --------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `block-bare-test.sh`            | `Bash(pnpm *)` and `Bash(npm *)` | **Blocking** | Denies bare `pnpm test` / `npm test` (watch mode). Requires `--run` for a one-shot pass.                        |
-| `block-main-destructive-git.sh` | `Bash(git *)`         | **Blocking** | Denies `git commit` while HEAD is `main`/`master`, and denies force-push to `main`/`master`. See [[Git Workflow]].         |
-| `pr-merge-audit-check.sh`       | `Bash(gh pr merge:*)` | Advisory     | Reminds to run `code-review-audit` before merging. See [[PR Merge Workflow]].                                              |
-| `wiki-maintenance-check.sh`     | `Bash(git commit:*)`  | Advisory     | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc. |
+| Hook                            | `if` pattern                     | Type         | Behavior                                                                                                                   |
+| ------------------------------- | -------------------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| `block-bare-test.sh`            | `Bash(pnpm *)` and `Bash(npm *)` | **Blocking** | Denies bare `pnpm test` / `npm test` (watch mode). Requires `--run` for a one-shot pass.                                   |
+| `block-main-destructive-git.sh` | `Bash(git *)`                    | **Blocking** | Denies `git commit` while HEAD is `main`/`master`, and denies force-push to `main`/`master`. See [[Git Workflow]].         |
+| `pr-merge-audit-check.sh`       | `Bash(gh pr merge:*)`            | Advisory     | Reminds to run `code-review-audit` before merging. See [[PR Merge Workflow]].                                              |
+| `wiki-maintenance-check.sh`     | `Bash(git commit:*)`             | Advisory     | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc. |
 
 ### UserPromptSubmit
 
@@ -92,11 +92,11 @@ Each entry uses an `if:` pattern so the hook only runs for the matching command 
 
 Pair of hooks that compensates for a gap in the `claude-obsidian` plugin: its `PostToolUse` hook auto-commits `wiki/` changes, so by Stop time the plugin's own diff-check against HEAD is always empty and its `wiki/hot.md` refresh prompt never fires.
 
-| Hook                    | Event        | Behavior                                                                                                                                                            |
-| ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wiki-session-start.sh`     | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
-| `wiki-session-stop.sh`      | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
-| `wiki-squash-autocommits.sh`| Stop         | Squashes the chain of `claude-obsidian` PostToolUse auto-commits made during the session into a single `wiki:` commit. Keeps git history clean.                     |
+| Hook                         | Event        | Behavior                                                                                                                                                            |
+| ---------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wiki-session-start.sh`      | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
+| `wiki-session-stop.sh`       | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
+| `wiki-squash-autocommits.sh` | Stop         | Squashes the chain of `claude-obsidian` PostToolUse auto-commits made during the session into a single `wiki:` commit. Keeps git history clean.                     |
 
 ## Agents
 
@@ -123,12 +123,12 @@ After its own review, it spawns 3 parallel specialist subagents to audit changed
 
 `.claude/skills/`:
 
-| Skill              | Use                                                                                                |
-| ------------------ | -------------------------------------------------------------------------------------------------- |
-| `react-code`       | React component/hook patterns                                                                      |
-| `typescript`       | TypeScript conventions                                                                             |
-| `tailwind`         | Tailwind class conventions                                                                         |
-| `skeleton-loaders` | Pixel-perfect loading states                                                                       |
+| Skill              | Use                                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------- |
+| `react-code`       | React component/hook patterns                                                                        |
+| `typescript`       | TypeScript conventions                                                                               |
+| `tailwind`         | Tailwind class conventions                                                                           |
+| `skeleton-loaders` | Pixel-perfect loading states                                                                         |
 | `tdd`              | Red-green-refactor TDD workflow with a `references/tests-react.md` companion ([[Component Testing]]) |
 
 These activate automatically based on context.
