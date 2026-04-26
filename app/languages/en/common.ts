@@ -42,5 +42,6 @@ export default {
     enableDarkMode: 'Enable dark mode',
     enableLightMode: 'Enable light mode',
     light: 'Light mode',
+    useSystemTheme: 'Use system theme',
   },
 };

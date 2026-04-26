@@ -95,11 +95,11 @@ The service function and the MSW handler both import `GAIA_URLS`. If the URL con
 
 ## 4. Three modes
 
-| Mode                   | How it's wired                                                                                      | Entry point                                                                                                              | Config                                                                                   |
-| ---------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------- |
-| **Dev**                | Browser Service Worker (client) + Node `SetupServer` (SSR) run simultaneously                       | `app/entry.client.tsx` starts `test/worker.ts`; `app/entry.server.tsx` calls `startApiMocks()` from `test/msw.server.ts` | Set `MSW_ENABLED=true` in `.env`; SW file at `public/mockServiceWorker.js`               |
+| Mode                   | How it's wired                                                                                      | Entry point                                                                                                              | Config                                                                             |
+| ---------------------- | --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **Dev**                | Browser Service Worker (client) + Node `SetupServer` (SSR) run simultaneously                       | `app/entry.client.tsx` starts `test/worker.ts`; `app/entry.server.tsx` calls `startApiMocks()` from `test/msw.server.ts` | Set `MSW_ENABLED=true` in `.env`; SW file at `public/mockServiceWorker.js`         |
 | **Vitest**             | Node `setupServer` via `test/test.server.ts`, registered in `test/setup.ts` as a `setupFiles` entry | `beforeAll → listen`, `afterEach → resetHandlers`, `afterAll → close`                                                    | `vitest.config.ts` → `setupFiles: ['./test/setup.ts']`; run with `pnpm test --run` |
-| **CI/CD (Playwright)** | MSW is **not** wired automatically; tests run against a real API or the dev server                  | Start `pnpm dev` with `MSW_ENABLED=true` and point Playwright's `baseURL` at it                                       | `test:ci` script: `vitest --run --passWithNoTests --coverage --bail 1`                   |
+| **CI/CD (Playwright)** | MSW is **not** wired automatically; tests run against a real API or the dev server                  | Start `pnpm dev` with `MSW_ENABLED=true` and point Playwright's `baseURL` at it                                          | `test:ci` script: `vitest --run --passWithNoTests --coverage --bail 1`             |
 
 ---
 

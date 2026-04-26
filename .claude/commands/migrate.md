@@ -19,6 +19,7 @@ pnpm outdated --json
 ```
 
 Parse the JSON. For each entry record:
+
 - `name`
 - `current` version
 - `latest` version
@@ -33,25 +34,25 @@ If nothing is outdated after this filtering, print `All packages are up to date.
 
 Map each outdated package into its group. **When any member of a group is outdated, include all members present in `package.json`** in the update — even ones not flagged outdated — so the group moves together.
 
-| Group | Members |
-|-------|---------|
-| `react-router` | `react-router`, `react-router-dom`, `@react-router/dev`, `@react-router/node`, `@react-router/serve`, `@react-router/fs-routes`, `@react-router/remix-routes-option-adapter` |
-| `react` | `react`, `react-dom`, `@types/react`, `@types/react-dom` |
-| `tailwindcss` | `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/forms`, `@tailwindcss/typography`, `prettier-plugin-tailwindcss` |
-| `storybook` | `storybook`, `@storybook/*`, `eslint-plugin-storybook`, `msw-storybook-addon`, `storybook-react-i18next`, `@vueless/storybook-dark-mode` |
-| `vitest` | `vitest`, `@vitest/coverage-v8`, `@vitest/ui`, `@vitest/eslint-plugin` |
-| `playwright` | `@playwright/test`, `@playwright-testing-library/test` |
-| `eslint` | `eslint`, `@eslint/js`, `@eslint/compat`, `eslint-config-*`, `eslint-plugin-*` (9.x cap applies) |
-| `testing-library` | `@testing-library/dom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` |
-| `typescript` | `typescript`, `@types/node` |
-| `i18next` | `i18next`, `react-i18next`, `remix-i18next`, `i18next-browser-languagedetector` |
-| `msw` | `msw`, `msw-storybook-addon` |
-| `vite` | `vite`, `@vitejs/plugin-react` |
-| `zod-conform` | `zod`, `@conform-to/react`, `@conform-to/zod` |
-| `fontawesome` | `@fortawesome/*` |
-| `stylelint` | `stylelint`, `stylelint-config-*`, `stylelint-order` |
-| `prettier` | `prettier`, `eslint-config-prettier`, `eslint-plugin-prettier` |
-| `husky` | `husky`, `lint-staged` |
+| Group             | Members                                                                                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `react-router`    | `react-router`, `react-router-dom`, `@react-router/dev`, `@react-router/node`, `@react-router/serve`, `@react-router/fs-routes`, `@react-router/remix-routes-option-adapter` |
+| `react`           | `react`, `react-dom`, `@types/react`, `@types/react-dom`                                                                                                                     |
+| `tailwindcss`     | `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/forms`, `@tailwindcss/typography`, `prettier-plugin-tailwindcss`                                                           |
+| `storybook`       | `storybook`, `@storybook/*`, `eslint-plugin-storybook`, `msw-storybook-addon`, `storybook-react-i18next`, `@vueless/storybook-dark-mode`                                     |
+| `vitest`          | `vitest`, `@vitest/coverage-v8`, `@vitest/ui`, `@vitest/eslint-plugin`                                                                                                       |
+| `playwright`      | `@playwright/test`, `@playwright-testing-library/test`                                                                                                                       |
+| `eslint`          | `eslint`, `@eslint/js`, `@eslint/compat`, `eslint-config-*`, `eslint-plugin-*` (9.x cap applies)                                                                             |
+| `testing-library` | `@testing-library/dom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event`                                                                 |
+| `typescript`      | `typescript`, `@types/node`                                                                                                                                                  |
+| `i18next`         | `i18next`, `react-i18next`, `remix-i18next`, `i18next-browser-languagedetector`                                                                                              |
+| `msw`             | `msw`, `msw-storybook-addon`                                                                                                                                                 |
+| `vite`            | `vite`, `@vitejs/plugin-react`                                                                                                                                               |
+| `zod-conform`     | `zod`, `@conform-to/react`, `@conform-to/zod`                                                                                                                                |
+| `fontawesome`     | `@fortawesome/*`                                                                                                                                                             |
+| `stylelint`       | `stylelint`, `stylelint-config-*`, `stylelint-order`                                                                                                                         |
+| `prettier`        | `prettier`, `eslint-config-prettier`, `eslint-plugin-prettier`                                                                                                               |
+| `husky`           | `husky`, `lint-staged`                                                                                                                                                       |
 
 Packages not matched form singleton groups.
 
@@ -83,18 +84,18 @@ For each Wave B group, in the order from Phase 3:
 
 Migration guide URLs:
 
-| Group | URL |
-|-------|-----|
-| react-router | `https://reactrouter.com/upgrading/v7` |
-| react | `https://react.dev/blog` (find the major-version post) |
-| tailwindcss | `https://tailwindcss.com/docs/upgrade-guide` |
-| storybook | `https://storybook.js.org/docs/migration-guide` |
-| vitest | `https://vitest.dev/guide/migration` |
-| playwright | `https://playwright.dev/docs/release-notes` |
-| eslint | `https://eslint.org/docs/latest/use/migrate-to-9` (or relevant X) |
-| typescript | `https://www.typescriptlang.org/docs/handbook/release-notes/overview.html` |
-| msw | `https://mswjs.io/docs/migrations` |
-| vite | `https://vite.dev/guide/migration` |
+| Group        | URL                                                                        |
+| ------------ | -------------------------------------------------------------------------- |
+| react-router | `https://reactrouter.com/upgrading/v7`                                     |
+| react        | `https://react.dev/blog` (find the major-version post)                     |
+| tailwindcss  | `https://tailwindcss.com/docs/upgrade-guide`                               |
+| storybook    | `https://storybook.js.org/docs/migration-guide`                            |
+| vitest       | `https://vitest.dev/guide/migration`                                       |
+| playwright   | `https://playwright.dev/docs/release-notes`                                |
+| eslint       | `https://eslint.org/docs/latest/use/migrate-to-9` (or relevant X)          |
+| typescript   | `https://www.typescriptlang.org/docs/handbook/release-notes/overview.html` |
+| msw          | `https://mswjs.io/docs/migrations`                                         |
+| vite         | `https://vite.dev/guide/migration`                                         |
 
 ## Phase 6: Post-update override audit
 

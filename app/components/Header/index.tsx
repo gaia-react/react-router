@@ -4,7 +4,8 @@ import {Link} from 'react-router';
 import {twMerge} from 'tailwind-merge';
 import GaiaLogo from '~/components/GaiaLogo';
 import LanguageSelect from '~/components/LanguageSelect';
-import ThemeSwitcher from '~/components/ThemeSwitcher';
+import {ThemeSwitch} from '~/routes/resources+/theme-switch';
+import {useRequestInfo} from '~/utils/request-info';
 
 type HeaderProps = {
   className?: string;
@@ -12,6 +13,7 @@ type HeaderProps = {
 
 const Header: FC<HeaderProps> = ({className}) => {
   const {t} = useTranslation('common');
+  const requestInfo = useRequestInfo();
 
   return (
     <header
@@ -23,7 +25,7 @@ const Header: FC<HeaderProps> = ({className}) => {
         </Link>
         <div className="flex items-center gap-6">
           <LanguageSelect />
-          <ThemeSwitcher />
+          <ThemeSwitch userPreference={requestInfo.userPrefs.theme} />
         </div>
       </div>
     </header>

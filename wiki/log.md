@@ -11,6 +11,18 @@ tags: [meta, log]
 
 Append-only. New entries at the TOP.
 
+## [2026-04-26] feat | dark mode rewrite — cookie + client hints (Epic Stack pattern)
+
+- Replaced the 2022-era `ThemeProvider` + `localStorage` + inline-script implementation with the Epic Stack pattern: cookie-as-truth + `@epic-web/client-hints` + optimistic `useFetchers()` UI. Net: −272 LOC removed across 4 files, +180 LOC added across 4 new files.
+- Added `app/utils/theme.server.ts` (plain `cookie` parse/serialize on `__theme`), `app/utils/client-hints.tsx` (wraps `@epic-web/client-hints` with `getHints` + `<ClientHintCheck/>` that subscribes to scheme changes via `useRevalidator`), `app/utils/request-info.ts` (`useOptionalRequestInfo` reads `useRouteLoaderData('root')`), `app/routes/resources+/theme-switch.tsx` (action + `ThemeFormSchema` Zod + `useOptionalTheme`/`useOptimisticThemeMode` + `ThemeSwitch` UI).
+- Removed `app/state/theme.tsx`, `app/sessions.server/theme.ts`, `app/routes/actions+/set-theme.ts`, `app/components/ThemeSwitcher/` — `app/state/index.tsx` becomes a passthrough.
+- Cycle is 3-state (`system → light → dark → system`) with distinct desktop / sun / moon icons. Added `theme.useSystemTheme` i18n key (en + ja).
+- Cookie name `__theme` preserved so existing user preferences survive deploy.
+- Browser smoke test (Playwright): toggle flips `<html className>` optimistically, reload SSRs `class="dark"` from cookie, OS scheme flip via `emulateMedia` revalidates loader without manual reload, no console errors.
+- New ADR: [[Dark Mode Modernization]]. Updated: [[Theme Flow]], [[Styles]], [[Sessions]], [[State]], [[Components]], [[index]], [[hot]]. New deps: `@epic-web/client-hints@1.3.9`, `cookie@1.1.1`.
+- PR #34 open. Bugs the migration fixes: toggle-not-persisted (mount-only `useEffect`), state-sync drift (4 sources of truth), inline blocking script for FOUC.
+- Key insight: with the cookie as truth and SSR rendering `<html class={theme}>` directly, the inline blocking `clientThemeCode` script becomes unnecessary — and React state for theme becomes pure overhead. The Epic Stack pattern eliminates an entire class of state-sync bugs by construction.
+
 ## [2026-04-26] feat | npm → pnpm migration + autonomous /migrate command
 
 - Switched package manager from npm to pnpm. `package.json` adds `"packageManager": "pnpm@10.33.0"` and moves `overrides` → `pnpm.overrides` using parent-child syntax (`remix-i18next>i18next`). `.npmrc` becomes `strict-peer-dependencies=false` + `minimumReleaseAge=10080` (7-day supply-chain quarantine). `package-lock.json` deleted; `pnpm-lock.yaml` committed (9.7k lines). Scripts: `npm run X` → `pnpm X`, `npx <bin>` → `pnpm exec <bin>`.

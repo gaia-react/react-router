@@ -86,6 +86,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Thin Routes]]
 - [[Co-located Tests Folder]]
 - [[composeStory Pattern]]
+- [[Dark Mode Modernization]]
 - [[Quality Gate]]
 - [[pnpm]]
 - [[DragonScale Opt-Out]]

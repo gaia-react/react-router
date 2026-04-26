@@ -10,10 +10,10 @@ import Toast, {notify} from '~/components/Toast';
 import {getLanguage, i18nextMiddleware} from '~/middleware/i18next';
 import {setApiLanguage} from '~/services/api';
 import {languageCookie} from '~/sessions.server/language';
-import {getThemeSession} from '~/sessions.server/theme';
 import State from '~/state';
-import {useTheme} from '~/state/theme';
+import {getHints} from '~/utils/client-hints';
 import {isProductionHost} from '~/utils/http.server';
+import {getTheme} from '~/utils/theme.server';
 import type {Route} from './+types/root';
 import {env, envClient} from './env.server';
 import './styles/tailwind.css';
@@ -29,8 +29,6 @@ export const loader = async ({context, request}: Route.LoaderArgs) => {
 
   setApiLanguage(language);
 
-  const themeSession = await getThemeSession(request);
-
   setToastCookieOptions({secrets: [env.SESSION_SECRET]});
 
   const {headers, toast} = await getToast(request);
@@ -39,12 +37,19 @@ export const loader = async ({context, request}: Route.LoaderArgs) => {
 
   headers.set('Vary', 'Cookie');
 
+  const url = new URL(request.url);
+
   return data(
     {
       ENV: envClient,
       language,
       noIndex: !isProduction,
-      theme: themeSession.getTheme(),
+      requestInfo: {
+        hints: getHints(request),
+        origin: url.origin,
+        path: url.pathname,
+        userPrefs: {theme: getTheme(request)},
+      },
       toast,
     },
     {headers}
@@ -53,7 +58,6 @@ export const loader = async ({context, request}: Route.LoaderArgs) => {
 
 const App: FC = () => {
   const loaderData = useLoaderData<typeof loader>();
-  const [theme] = useTheme();
   const {i18n} = useTranslation();
 
   const {ENV, language, noIndex, toast} = loaderData;
@@ -71,10 +75,8 @@ const App: FC = () => {
   return (
     <Document
       dir={i18n.dir(i18n.language)}
-      isSsrTheme={!!loaderData.theme}
       lang={i18n.language}
       noIndex={noIndex}
-      theme={theme}
     >
       <script
         dangerouslySetInnerHTML={{
@@ -89,15 +91,11 @@ const App: FC = () => {
   );
 };
 
-const AppWithState: FC = () => {
-  const {theme} = useLoaderData<typeof loader>();
-
-  return (
-    <State theme={theme}>
-      <App />
-    </State>
-  );
-};
+const AppWithState: FC = () => (
+  <State>
+    <App />
+  </State>
+);
 
 export default AppWithState;
 
