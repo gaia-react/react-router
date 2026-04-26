@@ -10,4 +10,4 @@ tags: [concept, ci, quality]
 
 GAIA runs ESLint, Prettier, Stylelint, and Vitest on staged files before every commit via [[Husky]] + `lint-staged`. Full setup details in [[Husky]].
 
-See [[Quality Gate]], [[test-runner]].
+See [[Quality Gate]], [[Test Runner]].

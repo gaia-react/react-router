@@ -98,7 +98,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[API Service Pattern]]
 - [[Accessibility]]
 - [[ESLint Fixes]]
-- [[test-runner]]
+- [[Test Runner]]
 - [[Pre-commit Hooks]]
 - [[Git Workflow]]
 - [[PR Merge Workflow]]
@@ -109,9 +109,9 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Claude Skills]]
 - [[Release Workflow]] — Maintainer flow: `/gaia-release`, `release.yml`, tarball scrubbing, `create-gaia` bootstrapper.
 - [[Update Workflow]] — Adopter flow: `/gaia-update` three-way diff, manifest classes (`owned` / `shared` / `wiki-owned`), `.gaia-merge` sidecar patches.
-- [[handoff command]]
-- [[pickup command]]
-- [[audit-knowledge command]]
+- [[Handoff Command]]
+- [[Pickup Command]]
+- [[Audit-Knowledge Command]]
 - [[Chromatic Opt-Out]]
 
 ## Sources
@@ -120,4 +120,6 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 ## Meta
 
+- [[dashboard]]
+- [[lint-report-2026-04-26]]
 - [[lint-report-2026-04-21]]

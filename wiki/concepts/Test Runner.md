@@ -6,7 +6,7 @@ updated: 2026-04-21
 tags: [concept, testing]
 ---
 
-# test-runner Rule
+# Test Runner Rule
 
 Never run bare `npm test` or `npm run test` — it starts vitest in watch mode. Use `npm run test -- --run` for a single CI-style pass.
 

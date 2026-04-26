@@ -28,10 +28,10 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | `/new-service`         | Scaffold an API service + Zod + URL constants + MSW mocks                                                                          |
 | `/new-hook`            | Scaffold a custom hook + test                                                                                                      |
 | `/audit-code`          | Run the full [[Quality Gate]]                                                                                                      |
-| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[audit-knowledge command]])                          |
+| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                          |
 | `/migrate`             | Upgrade a package to latest, apply breaking changes, run audit                                                                     |
-| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[handoff command]])                                 |
-| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[pickup command]])                                                   |
+| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                 |
+| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                   |
 | `/setup-chromatic-mcp` | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs                                       |
 
 See individual rules for the patterns each command produces.
@@ -94,8 +94,9 @@ Pair of hooks that compensates for a gap in the `claude-obsidian` plugin: its `P
 
 | Hook                    | Event        | Behavior                                                                                                                                                            |
 | ----------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `wiki-session-start.sh` | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
-| `wiki-session-stop.sh`  | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
+| `wiki-session-start.sh`     | SessionStart | Writes current HEAD SHA to `.git/claude-session-start` as a session marker.                                                                                         |
+| `wiki-session-stop.sh`      | Stop         | If commits between the marker and HEAD touched `wiki/`, emits a `WIKI_CHANGED:` prompt and advances the marker. Silently resets on unreachable SHAs (rebase/reset). |
+| `wiki-squash-autocommits.sh`| Stop         | Squashes the chain of `claude-obsidian` PostToolUse auto-commits made during the session into a single `wiki:` commit. Keeps git history clean.                     |
 
 ## Agents
 
@@ -122,12 +123,13 @@ After its own review, it spawns 3 parallel specialist subagents to audit changed
 
 `.claude/skills/`:
 
-| Skill              | Use                           |
-| ------------------ | ----------------------------- |
-| `react-code`       | React component/hook patterns |
-| `typescript`       | TypeScript conventions        |
-| `tailwind`         | Tailwind class conventions    |
-| `skeleton-loaders` | Pixel-perfect loading states  |
+| Skill              | Use                                                                                                |
+| ------------------ | -------------------------------------------------------------------------------------------------- |
+| `react-code`       | React component/hook patterns                                                                      |
+| `typescript`       | TypeScript conventions                                                                             |
+| `tailwind`         | Tailwind class conventions                                                                         |
+| `skeleton-loaders` | Pixel-perfect loading states                                                                       |
+| `tdd`              | Red-green-refactor TDD workflow with a `references/tests-react.md` companion ([[Component Testing]]) |
 
 These activate automatically based on context.
 

@@ -17,7 +17,7 @@ GAIA uses [[MSW]] + `@mswjs/data` (npm package — no wiki page) as the **single
 > [!key-insight] One mock set, three environments
 > The same handlers and in-memory database serve Vitest (CI/local), the dev server (MSW_ENABLED=true), and Playwright runs. You define a mock once; every surface sees the same fake API.
 
-See also: [[API Service Pattern]], [[Services]], [[Testing]], [[test-runner]].
+See also: [[API Service Pattern]], [[Services]], [[Testing]], [[Test Runner]].
 
 ---
 

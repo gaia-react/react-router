@@ -27,6 +27,6 @@ Test runner for unit + integration tests. Paired with `happy-dom` and [[React Te
 ## Run rules
 
 > [!warning] Never run bare `npm test` in CI
-> Bare `npm test` starts watch mode. Use `npm run test -- --run` for CI-style. See [[test-runner]] rule.
+> Bare `npm test` starts watch mode. Use `npm run test -- --run` for CI-style. See [[Test Runner]] rule.
 
 See [[Testing]], [[Component Testing]].

@@ -12,4 +12,4 @@ Source: `.claude/commands/pickup.md`. Restores "where did we leave off" at sessi
 
 Falls back to `wiki/hot.md` if no handoff exists. Archives the handoff only after work has actually begun.
 
-Pairs with [[handoff command]].
+Pairs with [[Handoff Command]].

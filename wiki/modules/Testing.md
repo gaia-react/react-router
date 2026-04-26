@@ -26,7 +26,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]]
 - `vitest.config.ts` at root
 - Looks for `*.test.{ts,tsx}` anywhere in `app/`
 - Runs against `happy-dom`
-- See [[test-runner]] rule: never run bare `npm test` in CI; use `npm run test -- --run`
+- See [[Test Runner]] rule: never run bare `npm test` in CI; use `npm run test -- --run`
 
 ## test/ folder
 
