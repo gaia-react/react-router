@@ -42,7 +42,7 @@
     "cookie": "^1.1.1",
     "date-fns": "4.1.0",
     "dotenv": "17.4.2",
-    "i18next": "26.0.6",
+    "i18next": "26.0.8",
     "i18next-browser-languagedetector": "8.2.1",
     "isbot": "5.1.39",
     "ky": "2.0.2",
@@ -65,7 +65,7 @@
   },
   "devDependencies": {
     "@eslint/compat": "2.0.5",
-    "@eslint/js": "9.39.2",
+    "@eslint/js": "9.39.4",
     "@faker-js/faker": "10.4.0",
     "@mswjs/data": "0.16.2",
     "@playwright-testing-library/test": "4.5.0",
@@ -94,8 +94,8 @@
     "@vitest/eslint-plugin": "1.6.16",
     "@vueless/storybook-dark-mode": "10.0.7",
     "accept-language-parser": "1.5.0",
-    "chromatic": "16.5.0",
-    "eslint": "9.39.2",
+    "chromatic": "16.6.0",
+    "eslint": "9.39.4",
     "eslint-config-airbnb-extended": "3.1.0",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-better-tailwindcss": "4.4.1",
@@ -121,29 +121,25 @@
     "husky": "9.1.7",
     "is-ci": "4.1.0",
     "lint-staged": "16.4.0",
-    "msw": "2.13.4",
+    "msw": "2.13.6",
     "msw-storybook-addon": "2.0.7",
     "prettier": "3.8.3",
-    "prettier-plugin-tailwindcss": "0.7.2",
+    "prettier-plugin-tailwindcss": "0.7.3",
     "remix-flat-routes": "0.8.5",
     "storybook": "10.3.5",
     "storybook-react-i18next": "10.1.2",
-    "stylelint": "17.8.0",
+    "stylelint": "17.9.0",
     "stylelint-config-clean-order": "8.0.1",
     "stylelint-config-standard": "40.0.0",
     "stylelint-config-tailwindcss": "1.0.1",
     "stylelint-order": "8.1.1",
     "tailwindcss": "4.2.4",
     "typescript": "6.0.3",
-    "vite": "8.0.9",
+    "vite": "8.0.10",
     "vitest": "4.1.5"
   },
   "pnpm": {
-    "overrides": {
-      "remix-i18next>i18next": "$i18next",
-      "remix-i18next>react-i18next": "$react-i18next",
-      "vite-node": "^6.0.0"
-    }
+    "overrides": {}
   },
   "msw": {
     "workerDirectory": "public"
