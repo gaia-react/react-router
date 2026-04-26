@@ -27,6 +27,17 @@ Conventions for GAIA's Claude Code config surface: extension points, monorepo re
 
 See [[modules/Claude Integration|the modules page]] for the inventory of current commands, rules, hooks, and skills.
 
+### Wiki vendor relationship
+
+GAIA does **not** vendor the `claude-obsidian` plugin into the repo. The plugin is installed **globally** via the Claude Code plugin marketplace (`~/.claude/plugins/marketplaces/claude-obsidian-marketplace/`) at the v1.6.0 baseline. Adopters get it the moment they have Claude Code installed; nothing under `wiki/` or `.claude/` in this repo carries plugin source code.
+
+What this means in practice:
+
+- **Wiki mode** is declared as `Mode: B (Codebase) + E (Research)` in `wiki/README.md`. The string matches upstream's `skills/wiki/references/modes.md` catalog so any agent reading the upstream skill picks the right scaffolding rules. Mode is a documentation contract — there is no runtime toggle in the plugin.
+- **Wiki hooks are GAIA-owned** (in `.claude/hooks/wiki-*.sh`), not delegated to the upstream plugin's `hooks.json`. Reasons: upstream auto-commits on every Write/Edit; GAIA squashes those via `wiki-squash-autocommits.sh` for cleaner git history. Upstream's Stop-hook prompt assumes a 500-word hot cache; GAIA enforces ~200 words.
+- **DragonScale is opt-out.** The v1.6.0 release adds an optional memory layer (fold operator, deterministic addresses, semantic tiling, boundary-first autoresearch). GAIA declines all four. See [[DragonScale Opt-Out]] for the per-mechanism reasoning and the reversal path for any adopter who wants it.
+- **Plugin upgrades require uninstall + install.** A plain `claude plugin marketplace update` does not re-pin the cache. Use `claude plugin uninstall claude-obsidian@claude-obsidian-marketplace` followed by `claude plugin install claude-obsidian@claude-obsidian-marketplace` to flip `installPath` to the new version. This is a Claude Code plugin CLI quirk worth remembering when bumping the baseline.
+
 ## 2. Agent extensions (review-type agents only)
 
 Review-type agents — agents that spawn multiple specialist subagents — support a directory-based extension mechanism. Single-subagent agents do not need it.
@@ -151,4 +162,4 @@ npx -y react-doctor@latest . --verbose --diff
 
 ## Cross-links
 
-[[Code Review Audit Agent]] · [[Claude Skills]] · [[Claude Hooks]] · [[Quality Gate]] · [[Pre-commit Hooks]]
+[[Code Review Audit Agent]] · [[Claude Skills]] · [[Claude Hooks]] · [[Quality Gate]] · [[Pre-commit Hooks]] · [[DragonScale Opt-Out]]

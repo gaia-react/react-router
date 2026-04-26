@@ -16,9 +16,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 ## Top-level
 
 - [[overview]] — executive summary
-- [[hot]] — recent context cache (~500 words)
+- [[hot]] — recent context cache (~200 words)
 - [[log]] — chronological ingest log
-- [[CLAUDE]] — vault schema and conventions
 
 ## Modules (architecture)
 
@@ -88,6 +87,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Co-located Tests Folder]]
 - [[composeStory Pattern]]
 - [[Quality Gate]]
+- [[DragonScale Opt-Out]]
 
 ## Concepts
 

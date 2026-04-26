@@ -12,6 +12,15 @@ Run `/gaia-update` inside your project to pull GAIA changes without clobbering y
 
 ## [Unreleased]
 
+### Changed
+
+- Bump claude-obsidian plugin baseline to v1.6.0.
+- Formalize wiki Mode B (Codebase) + E (Research) per upstream `references/modes.md`.
+
+### Added
+
+- `wiki/decisions/DragonScale Opt-Out.md` — ADR documenting why GAIA does not adopt the DragonScale memory layer.
+
 ## [1.0.0] — 2026-04-22
 
 First public release. The template pivots from an example-app starter to a Claude-native foundation: skills, commands, hooks, and a wiki are first-class, and the example-code/auth/docs surface area has been removed so the clone is an empty canvas rather than something to delete.

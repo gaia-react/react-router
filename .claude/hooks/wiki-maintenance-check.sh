@@ -1,4 +1,9 @@
 #!/bin/bash
+# GAIA-owned wiki hook. Upstream contract: none (no equivalent in claude-obsidian/hooks/hooks.json).
+# Why GAIA owns it: upstream has no PreToolUse Bash gate; GAIA layers this
+# advisory reminder on top of the wiki contract so authors evaluate a wiki
+# update at commit time.
+#
 # Advisory reminder fired before `git commit`:
 # evaluate whether the commit warrants a wiki update.
 # Exit 0 always (non-blocking).
@@ -35,7 +40,8 @@ existing wiki content.
 
 Process: scan wiki/index.md → use /save, /wiki-ingest, or direct
 edit → prepend one-line entry to wiki/log.md (newest on top). The
-claude-obsidian Stop hook refreshes wiki/hot.md automatically.
+GAIA wiki-session-stop hook will prompt a wiki/hot.md refresh
+(200-word cap) at session end if wiki/ changed.
 
 Periodic drift cleanup: /audit-knowledge every few weeks.
 EOF
