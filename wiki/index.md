@@ -3,7 +3,7 @@ type: meta
 title: Index
 status: active
 created: 2026-04-20
-updated: 2026-04-21
+updated: 2026-04-26
 tags: [meta]
 ---
 
@@ -87,6 +87,7 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 - [[Co-located Tests Folder]]
 - [[composeStory Pattern]]
 - [[Quality Gate]]
+- [[pnpm]]
 - [[DragonScale Opt-Out]]
 
 ## Concepts

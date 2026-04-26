@@ -1,4 +1,3 @@
-import type {RouterContextProvider} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {useLoaderData} from 'react-router';
 import Layout from '~/components/Layout';
@@ -6,7 +5,7 @@ import {getInstance} from '~/middleware/i18next';
 import type {Route} from './+types/privacy';
 
 export const loader = async ({context}: Route.LoaderArgs) => {
-  const i18next = getInstance(context as RouterContextProvider);
+  const i18next = getInstance(context);
   const title = i18next.t('legal.privacy.title', {ns: 'pages'});
   const description = i18next.t('legal.privacy.description', {ns: 'pages'});
 

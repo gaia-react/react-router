@@ -30,7 +30,7 @@ Exit code semantics:
 
 ### Blocking (Bash)
 
-- **`block-bare-npm-test.sh`** (`if: Bash(npm *)`) — denies bare `npm test` / `npm run test`; they start vitest watch mode. Requires `--run` for a one-shot pass. Replaces the former `.claude/rules/test-runner.md`.
+- **`block-bare-test.sh`** (`if: Bash(pnpm *)` and `if: Bash(npm *)`) — denies bare `pnpm test` / `npm test` (and `run test` variants); they start vitest watch mode. Requires `--run` for a one-shot pass. Replaces the former `.claude/rules/test-runner.md`.
 - **`block-main-destructive-git.sh`** (`if: Bash(git *)`) — denies `git commit` while HEAD is `main`/`master`, and denies force-push to `main`/`master`. Authoritative rule: [[Git Workflow]].
 
 ### Advisory (Bash)

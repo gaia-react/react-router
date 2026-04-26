@@ -62,7 +62,7 @@ Use the template below. **Omit any section with no real content** — don't leav
 ## Environment State
 
 - **Branch:** `{branch}` — {pushed/dirty}
-- **Background processes:** {e.g. `npm run functions:serve` still running}
+- **Background processes:** {e.g. `pnpm dev` still running}
 - **Devices / simulators:** {physical device IDs, sim names, build installed}
 - **Test user / data:** {relevant fixtures}
 

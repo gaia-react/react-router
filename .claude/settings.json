@@ -67,7 +67,12 @@
         "hooks": [
           {
             "type": "command",
-            "command": ".claude/hooks/block-bare-npm-test.sh",
+            "command": ".claude/hooks/block-bare-test.sh",
+            "if": "Bash(pnpm *)"
+          },
+          {
+            "type": "command",
+            "command": ".claude/hooks/block-bare-test.sh",
             "if": "Bash(npm *)"
           },
           {
@@ -95,14 +100,17 @@
     "allow": [
       "Bash(mkdir -p .claude/plans)",
       "Bash(mkdir -p .claude/handoff/archive)",
-      "Bash(npm install:*)",
-      "Bash(npm ls:*)",
-      "Bash(npm outdated:*)",
-      "Bash(npm run lint)",
-      "Bash(npm run pw:*)",
-      "Bash(npm run test:ci:*)",
-      "Bash(npm run typecheck:*)",
-      "Bash(npm uninstall:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm add:*)",
+      "Bash(pnpm ls:*)",
+      "Bash(pnpm outdated:*)",
+      "Bash(pnpm lint)",
+      "Bash(pnpm pw:*)",
+      "Bash(pnpm test:ci:*)",
+      "Bash(pnpm typecheck:*)",
+      "Bash(pnpm remove:*)",
+      "Bash(pnpm dlx:*)",
+      "Bash(corepack enable pnpm)",
       "Write(.claude/plans/**)",
       "Edit(.claude/plans/**)",
       "Edit(/app/**)",

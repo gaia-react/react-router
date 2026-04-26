@@ -72,7 +72,7 @@ Separate repo, separate npm package (`create-gaia`). Zero runtime deps. When an 
 2. Downloads the release tarball from `github.com/gaia-react/react-router/releases/download/vX.Y.Z/gaia-vX.Y.Z.tar.gz`.
 3. Extracts into `my-app/`.
 4. `git init` + initial commit (unless `--no-git`).
-5. `npm install` (unless `--no-install`).
+5. `pnpm install` (after `corepack enable pnpm`), unless `--no-install`. The scaffolded project pins pnpm via `packageManager` in `package.json`; corepack provisions the matching version transparently.
 6. Prints welcome pointing at `/gaia-init`.
 
 The CLI is deliberately thin — heavy lifting (i18n, branding strip, plugin install) happens inside Claude Code via `/gaia-init`. See the `create-gaia` repo for the implementation.

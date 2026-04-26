@@ -11,7 +11,7 @@ tags: [dependency, ci]
 
 # Husky + lint-staged
 
-Pre-commit hooks. Configured by `npm run prepare` (skipped in CI via `is-ci`).
+Pre-commit hooks. Configured by `pnpm prepare` (skipped in CI via `is-ci`).
 
 `.lintstagedrc` runs `typecheck`, `lint`, and `vitest --run --changed --bail 1` against staged files.
 

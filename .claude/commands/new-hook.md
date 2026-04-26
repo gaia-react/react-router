@@ -62,7 +62,7 @@ describe('{hookName}', () => {
 Run these commands sequentially, stopping if any fails:
 
 ```bash
-npm run typecheck && npm run lint && npm run test -- --run
+pnpm typecheck && pnpm lint && pnpm test --run
 ```
 
 Fix any issues before reporting to the user.

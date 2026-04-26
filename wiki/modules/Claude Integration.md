@@ -29,7 +29,7 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | `/new-hook`            | Scaffold a custom hook + test                                                                                                      |
 | `/audit-code`          | Run the full [[Quality Gate]]                                                                                                      |
 | `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                          |
-| `/migrate`             | Upgrade a package to latest, apply breaking changes, run audit                                                                     |
+| `/migrate`             | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
 | `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                 |
 | `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                   |
 | `/setup-chromatic-mcp` | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs                                       |
@@ -77,7 +77,7 @@ Each entry uses an `if:` pattern so the hook only runs for the matching command 
 
 | Hook                            | `if` pattern          | Type         | Behavior                                                                                                                   |
 | ------------------------------- | --------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------- |
-| `block-bare-npm-test.sh`        | `Bash(npm *)`         | **Blocking** | Denies bare `npm test` / `npm run test` (watch mode). Requires `--run` for a one-shot pass.                                |
+| `block-bare-test.sh`            | `Bash(pnpm *)` and `Bash(npm *)` | **Blocking** | Denies bare `pnpm test` / `npm test` (watch mode). Requires `--run` for a one-shot pass.                        |
 | `block-main-destructive-git.sh` | `Bash(git *)`         | **Blocking** | Denies `git commit` while HEAD is `main`/`master`, and denies force-push to `main`/`master`. See [[Git Workflow]].         |
 | `pr-merge-audit-check.sh`       | `Bash(gh pr merge:*)` | Advisory     | Reminds to run `code-review-audit` before merging. See [[PR Merge Workflow]].                                              |
 | `wiki-maintenance-check.sh`     | `Bash(git commit:*)`  | Advisory     | On `git commit`, emits the wiki-update checklist (when to file, when to skip, process). Criteria live in the hook heredoc. |
