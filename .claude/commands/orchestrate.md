@@ -55,12 +55,18 @@ Then create the following in `.claude/plans/{slug}/` where `{slug}` is a short k
    - **Stop conditions.** On any sub-agent failure or quality-gate failure: STOP and surface to the user. Do not "fix and continue", do not commit, do not push.
    - **Final self-cleanup phase (last step before merge).** After all implementation phases pass and the user has reviewed the PR and confirmed it is ready to merge, the orchestrator deletes its own plan folder (`rm -rf .claude/plans/{slug}/`, absolute path), then commits and pushes that deletion as the final commit on the PR. The plan folder is scaffolding and must NOT persist into `main`. If the user explicitly asks to keep the plan folder for archival, the orchestrator skips the deletion and reports.
 
-4. **`KICKOFF.md`** — a single prompt the user can paste to start the orchestrator cold. Must be fully self-contained with no assumed context.
+4. **`KICKOFF.md`** — the orchestrator's kickoff prompt itself, ready to be read and executed verbatim. The file is the prompt — no preamble, no "copy and paste below" instruction, no surrounding commentary, no `---` separators framing the prompt as a quoted block. The opening line addresses the orchestrator directly (e.g. "You are the orchestrator for the {feature} plan…"). Must be fully self-contained with no assumed context: absolute paths to `README.md` and `ORCHESTRATOR.md`, the goal, hard rules, and the execution outline.
 
-Report the files created and the path to `KICKOFF.md`.
+Report the files created and the absolute path to `KICKOFF.md`.
 
 ---
 
 ### 4. Report to user
 
-Tell the user what's in `.claude/plans/{slug}/` and that they can review the plan then paste `KICKOFF.md` to start execution.
+Output a short summary of what's in `.claude/plans/{slug}/`, then emit the copy-paste prompt the user drops into a fresh Claude Code session to start the orchestrator cold. The prompt is a single fenced code block containing exactly:
+
+```
+Read /Users/.../absolute/path/to/.claude/plans/{slug}/KICKOFF.md and execute it.
+```
+
+Use the absolute path to the `KICKOFF.md` you just created. Do not include any other instruction in the code block — the orchestrator's behavior lives in `KICKOFF.md`.
