@@ -10,7 +10,7 @@
 
 **Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
-Built on React Router 7, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured _and_ documented for Claude in a way that keeps per-request costs down and output quality up.
+Built on React Router, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured _and_ documented for Claude in a way that keeps per-request costs down and output quality up.
 
 ## Who it's for
 
@@ -77,7 +77,7 @@ GAIA bundles the traditional stack Claude's output rests on. Every piece is pre-
 
 ## How GAIA Compares
 
-Opinionated starter templates solve different slices of the "day-zero engineering setup" problem. GAIA focuses on making Claude a first-class collaborator; the alternatives don't.
+Opinionated starter templates solve different slices of the "day-zero engineering setup" problem. GAIA focuses on making Claude a first-class collaborator.
 
 ### Foundation
 
@@ -97,7 +97,7 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 
 ### Claude-native
 
-Epic Stack, create-t3-app, and RedwoodJS don't ship Claude tooling at all. GAIA adds path-scoped rules, enforcement hooks, Claude Code commands, bundled skills, a code-review audit agent, Obsidian wiki integration, and MCP integrations out of the box.
+Only GAIA comes with Claude tooling built-in. It includes path-scoped rules, enforcement hooks, useful commands and skills, a code-review audit agent, and Obsidian wiki integration.
 
 ## Agentic Design
 
@@ -129,15 +129,15 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Commands
 
-| Command            | What it does                                                                                  |
-| ------------------ | --------------------------------------------------------------------------------------------- |
-| `/init`            | Full template initialization (see above)                                                      |
-| `/orchestrate`     | Plan a multi-file feature — task graph, per-task docs, orchestrator prompt, kickoff script    |
-| `/gaia-update`     | Pull the latest GAIA release into your project — three-way diff, respects your customizations |
-| `/migrate`         | Upgrade a package to latest, apply breaking changes, run quality gate                         |
-| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication and bloat                           |
-| `/handoff`         | Save a session handoff doc so the next session can resume cold                                |
-| `/pickup`          | Resume from the latest handoff — reports state, drift, and next action                        |
+| Command            | What it does                                                                                                                     |
+| ------------------ |----------------------------------------------------------------------------------------------------------------------------------|
+| `/init`            | Full template initialization (see above)                                                                                         |
+| `/orchestrate`     | Plan a complex feature. Claude structures the work, you approve, then an orchestrator drives focused subagents through execution |
+| `/gaia-update`     | Merges the latest GAIA release without overwriting your customizations                                                           |
+| `/migrate`         | Upgrades outdated packages and handles any necessary code changes - a superpowered Dependabot                                    |
+| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication, conflicting instructions, and bloat                                   |
+| `/handoff`         | Generate a comprehensive session handoff document so you can clear the context with confidence that nothing will get lost                                                                   |
+| `/pickup`          | Restore context from handoff and continue work                                                           |
 
 ### Rules, hooks, skills
 
@@ -179,7 +179,7 @@ Ask Claude to run, add, or debug tests — Vitest, Storybook + Chromatic, and Pl
 
 ## Deployment
 
-GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for the target you want — Vercel, Cloudflare, Fly, AWS, a bare Node host, a Docker container, anywhere React Router 7 can run. Claude will wire up the build, environment variables, and any CI/CD you need.
+GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for the target you want — Vercel, Cloudflare, Fly, AWS, a bare Node host, a Docker container, anywhere React Router can run. Claude will wire up the build, environment variables, and any CI/CD you need.
 
 ## History
 
