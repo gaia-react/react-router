@@ -1,8 +1,9 @@
 #!/bin/bash
-# Record HEAD at session start so the Stop hook can detect wiki changes
-# committed during this session (by claude-obsidian's PostToolUse auto-commit
-# or by the user). Without this marker, the plugin's own Stop diff check
-# misses auto-committed changes because the working tree equals HEAD.
+# GAIA-owned wiki hook. Upstream contract: claude-obsidian/hooks/hooks.json::SessionStart
+# Why GAIA overrides: upstream cats wiki/hot.md and prompts a silent re-read; we
+# instead record HEAD so the Stop hook can detect wiki commits (the plugin's own
+# Stop diff misses changes already auto-committed by its PostToolUse hook).
+# Hot-cache restoration is left to the model + claude-obsidian:wiki skill.
 
 GIT_DIR=$(git rev-parse --git-dir 2>/dev/null) || exit 0
 git rev-parse HEAD > "$GIT_DIR/claude-session-start" 2>/dev/null || true

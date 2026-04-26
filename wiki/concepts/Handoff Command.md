@@ -12,4 +12,4 @@ Source: `.claude/commands/handoff.md`. Generates a self-contained session handof
 
 Writes to `.claude/handoff/HANDOFF-{YYYY-MM-DD}-{slug}.md`. Synthesizes accomplishments, decisions, gaps, open questions, and concrete next actions — never dumps the transcript raw.
 
-Pairs with [[pickup command]].
+Pairs with [[Pickup Command]].

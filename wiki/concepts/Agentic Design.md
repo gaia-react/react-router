@@ -48,7 +48,7 @@ Agents decompose large goals into smaller, executable steps — a task graph —
 
 [[Task Orchestration]] is GAIA's planning layer. For features spanning 5+ files or multiple subsystems:
 
-1. Claude authors per-task docs in `docs/<feature>/` — each self-contained for a fresh-context sub-agent.
+1. Claude authors per-task docs in `.claude/plans/<feature>/` — each self-contained for a fresh-context sub-agent.
 2. A `README.md` records the full task graph: phases, parallelism, and frozen interface contracts.
 3. An `ORCHESTRATOR.md` prompt specifies phase execution, per-phase quality gates, and stop conditions.
 4. Claude does **not** execute the plan until the user explicitly approves it.
@@ -100,9 +100,9 @@ Agents retain and retrieve relevant knowledge across sessions to avoid re-derivi
 **GAIA's implementation:**
 
 - **Obsidian wiki** — the primary persistent knowledge store. Architecture decisions, module maps, flows, dependency choices, and concepts are authored once and retrieved on demand. Claude fetches the one page it needs rather than loading the entire knowledge base.
-- **`/handoff` + `/pickup`** — explicit session continuity protocol. `/handoff` writes a structured synthesis of accomplishments, decisions, gaps, and next actions. `/pickup` reads it and reconstitutes working context cold. See [[handoff command]] and [[pickup command]].
+- **`/handoff` + `/pickup`** — explicit session continuity protocol. `/handoff` writes a structured synthesis of accomplishments, decisions, gaps, and next actions. `/pickup` reads it and reconstitutes working context cold. See [[Handoff Command]] and [[Pickup Command]].
 - **Code Review Audit memory** — `.claude/agent-memory/code-review-audit/MEMORY.md` accumulates patterns and recurring issues across reviews. The agent learns from prior reviews.
-- **`/audit-knowledge`** — periodic maintenance to sweep memory, wiki, and autoloaded files for duplication, conflicts, and stale instructions. See [[audit-knowledge command]].
+- **`/audit-knowledge`** — periodic maintenance to sweep memory, wiki, and autoloaded files for duplication, conflicts, and stale instructions. See [[Audit-Knowledge Command]].
 - **Scoped rules** — rules activate only for the files Claude is currently editing. Relevant constraints load automatically; irrelevant ones stay out of the context window.
 
 ### Human-in-the-Loop
@@ -133,8 +133,8 @@ The result is a system where Claude's autonomy is bounded, its quality is enforc
 - [[Task Orchestration]]
 - [[Code Review Audit Agent]]
 - [[Claude Hooks]]
-- [[handoff command]]
-- [[pickup command]]
-- [[audit-knowledge command]]
+- [[Handoff Command]]
+- [[Pickup Command]]
+- [[Audit-Knowledge Command]]
 - [[Quality Gate]]
 - [[PR Merge Workflow]]

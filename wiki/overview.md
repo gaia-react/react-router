@@ -72,7 +72,7 @@ Every change passes through [[Quality Gate]]: typecheck → lint → unit test �
 
 ## Knowledge Hygiene
 
-`/audit-knowledge` runs a two-stage audit (Opus researches → Sonnet applies) over memory, wiki, auto-loaded `CLAUDE.md` files, and `.claude/rules/`. Flags duplication, stale entries, broken wikilinks, and auto-load bloat — with wiki as the source of truth. See [[audit-knowledge command]].
+`/audit-knowledge` runs a two-stage audit (Opus researches → Sonnet applies) over memory, wiki, auto-loaded `CLAUDE.md` files, and `.claude/rules/`. Flags duplication, stale entries, broken wikilinks, and auto-load bloat — with wiki as the source of truth. See [[Audit-Knowledge Command]].
 
 ## What's Different vs. Other Templates
 

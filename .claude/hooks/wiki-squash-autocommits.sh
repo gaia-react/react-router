@@ -1,8 +1,10 @@
 #!/bin/bash
-# Collapse consecutive `wiki: auto-commit ...` commits at HEAD into one.
-# The claude-obsidian plugin's PostToolUse hook commits after every Write/Edit,
-# which produces N commits per turn when the wiki sees multiple edits. This
-# hook runs on Stop and squashes the trailing run back into a single commit.
+# GAIA-owned wiki hook. Upstream contract: claude-obsidian/hooks/hooks.json::PostToolUse (auto-commit per Write|Edit)
+# Why GAIA overrides: per-edit commits clutter history; we let the upstream
+# PostToolUse fire as-is and then squash the trailing run of `wiki: auto-commit`
+# commits into one at Stop. We do NOT mirror upstream's v1.6.0 addition of
+# `.vault-meta/` to the staged paths — that directory is DragonScale-only and
+# GAIA does not ship it.
 #
 # If on main, the squashed commit is pushed to a wiki/* branch and merged via
 # PR rather than landing directly on main.

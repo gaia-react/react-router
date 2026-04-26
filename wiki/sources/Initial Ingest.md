@@ -28,7 +28,7 @@ tags: [source, initial]
 
 ## Key takeaways
 
-- **Mode**: Codebase wiki (Mode B) — modules, components, decisions, dependencies, flows
+- **Mode**: B (Codebase) + E (Research) — modules, components, decisions, dependencies, flows; concepts/sources for research-style notes
 - **Big ideas**:
   - Pre-configured but removable. No component library. ([[GAIA Philosophy]])
   - Thin routes, fat pages. ([[Thin Routes]])

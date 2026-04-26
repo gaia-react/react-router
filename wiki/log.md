@@ -31,7 +31,7 @@ Append-only. New entries at the TOP.
 - Added `.claude/rules/git-workflow.md` (referenced by `block-main-destructive-git.sh`) and `.claude/rules/task-orchestration.md`.
 - Added `paths:` frontmatter to `storybook.md` and `tailwind.md` for scope-based auto-loading, matching the other scoped rules.
 - `settings.json`: `PreToolUse Edit|Write` → `Edit|Write|MultiEdit`; `UserPromptSubmit` matcher normalized `"All"` → `""`.
-- Wiki: rewrote [[Claude Hooks]] and [[Claude Integration]] to reflect the new hook set + matcher changes; updated [[test-runner]] to point at the hook; added [[Git Workflow]] and [[Task Orchestration]] concept pages.
+- Wiki: rewrote [[Claude Hooks]] and [[Claude Integration]] to reflect the new hook set + matcher changes; updated [[Test Runner]] to point at the hook; added [[Git Workflow]] and [[Task Orchestration]] concept pages.
 
 ## [2026-04-21] feat | Claude Integration Conventions concept page + skill references convention + TDD skill restructure
 
@@ -91,9 +91,8 @@ Prepared the template to delete example code and VitePress docs without losing t
 ## [2026-04-20] update | /audit-knowledge command added
 
 - Adapted `.claude/commands/audit-knowledge.md` from another project; portable path resolution (no hardcoded user paths); `.claude/audit/` gitignored
-- Pages created: [[audit-knowledge command]]
+- Pages created: [[Audit-Knowledge Command]]
 - Pages updated: [[Claude Integration]] (commands table), [[overview]] (Knowledge Hygiene section), [[index]]
-- Also referenced in `README.md` and `docs/general/claude.md` commands tables
 
 ## [2026-04-20] ingest | Form components deep dive + things service
 
@@ -105,7 +104,7 @@ Prepared the template to delete example code and VitePress docs without losing t
 ## [2026-04-20] ingest | Claude commands handoff + pickup
 
 - Sources: `.claude/commands/handoff.md`, `.claude/commands/pickup.md`
-- Pages created: [[handoff command]], [[pickup command]]
+- Pages created: [[Handoff Command]], [[Pickup Command]]
 - Pages updated: [[Claude Integration]] (commands table), [[index]], [[hot]]
 - Key insight: Session continuity loop — `/handoff` writes a synthesized end-of-session doc to `.claude/handoff/`, `/pickup` reads the latest one at session start, archives it once work resumes. `wiki/hot.md` is the fallback.
 
@@ -114,12 +113,12 @@ Prepared the template to delete example code and VitePress docs without losing t
 - Source: project codebase + docs + .claude/
 - Summary: [[Initial Ingest]]
 - Pages created:
-  - Top-level: [[overview]], [[index]], [[hot]], [[CLAUDE]]
+  - Top-level: [[overview]], [[index]], [[hot]], CLAUDE (later renamed to [[README]])
   - Modules: [[Folder Structure]], [[Routing]], [[Pages]], [[Components]], [[Form Components]], [[Services]], [[Sessions]], [[State]], [[Middleware]], [[Hooks]], [[Utils]], [[Styles]], [[i18n]], [[Testing]], [[Storybook]], [[MSW]], [[Claude Integration]]
   - Flows: `Auth Flow` (deleted Phase D), [[Theme Flow]], [[Language Flow]], [[Form Submit Flow]]
   - Entities: [[GAIA]], [[Steven Sacks]]
   - Dependencies: [[React Router 7]], [[remix-flat-routes]], `remix-auth` (deleted Phase D), [[remix-i18next]], [[remix-toast]], [[Conform]], [[Zod]], [[Ky]], [[i18next]], [[Tailwind]], [[FontAwesome]], [[Vitest]], [[React Testing Library]], [[Playwright]], [[Chromatic]], [[Storybook]], [[MSW]], [[Husky]], `VitePress` (deleted Phase D)
   - Decisions: [[No Component Library]], [[TypeScript Language Files]], [[Thin Routes]], [[Co-located Tests Folder]], [[composeStory Pattern]], [[Quality Gate]]
-  - Concepts: [[GAIA Philosophy]], [[Coding Guidelines]], [[Component Testing]], [[API Service Pattern]], [[Accessibility]], [[ESLint Fixes]], [[test-runner]], [[Pre-commit Hooks]], [[PR Merge Workflow]], [[Code Review Audit Agent]], [[Claude Hooks]], [[Claude Skills]], [[Chromatic Opt-Out]]
+  - Concepts: [[GAIA Philosophy]], [[Coding Guidelines]], [[Component Testing]], [[API Service Pattern]], [[Accessibility]], [[ESLint Fixes]], [[Test Runner]], [[Pre-commit Hooks]], [[PR Merge Workflow]], [[Code Review Audit Agent]], [[Claude Hooks]], [[Claude Skills]], [[Chromatic Opt-Out]]
 - Pages updated: n/a (vault was empty)
 - Key insight: GAIA's value is the **integration**, not any single tool — 20+ ESLint plugins, pre-commit hooks, four-layer testing, MSW everywhere, Storybook + Chromatic, end-to-end dark mode + i18n + auth, plus Claude Code tooling, all wired together and working out of the box.

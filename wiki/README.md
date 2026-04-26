@@ -8,7 +8,8 @@ tags: [meta, schema]
 
 # GAIA React Router: LLM Wiki
 
-Mode: B (Codebase) + sprinkles of E (Decisions/ADRs)
+Mode: B (Codebase) + E (Research)
+Plugin baseline: claude-obsidian v1.6.0 (DragonScale features intentionally not adopted — see [[DragonScale Opt-Out]])
 Purpose: Persistent knowledge base for the GAIA React Router 7 template — architecture, conventions, decisions, Claude integration.
 Owner: Steven Sacks
 Created: 2026-04-20

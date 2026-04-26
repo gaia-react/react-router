@@ -13,7 +13,7 @@ type: meta
 title: Hot Cache
 status: active
 created: 2026-04-20
-updated: 2026-04-22
+updated: 2026-04-26
 tags: [meta]
 
 ---
@@ -22,22 +22,19 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-22. Branch `feat/release-infrastructure` → PR #26 open, auto-merge armed (squash), awaiting review + CI.
+2026-04-26. Branch `chore/update-claude-obsidian` — claude-obsidian v1.4.3 → v1.6.0 sync; Mode B+E formalized; DragonScale declined.
 
 ## Key Facts
 
-- First public release infrastructure landed: `CHANGELOG.md`, `.github/workflows/release.yml` (tag-triggered), `.gaia/{VERSION,manifest.json,release-exclude}`, `.gaia/scripts/generate-manifest.mjs`.
-- Two new commands: `/gaia-release` (maintainer, stripped from tarball) and `/gaia-update` (adopter-facing, three-way diff).
-- File classes in `.gaia/manifest.json`: `owned` / `shared` / `wiki-owned`; implicit adopter-owned sentinels = `wiki/hot.md`, `wiki/log.md`, `CHANGELOG.md`, `.gaia/VERSION`, `.gaia/manifest.json`.
-- Separate `create-gaia` package scaffolded at `../create-gaia/` (zero-dep npm CLI). Not yet a git repo or published.
-- CI made fork-safe: secrets fall back to placeholders; Chromatic skips when its token is absent.
+- Plugin baseline pinned to claude-obsidian v1.6.0 (global install, not vendored). Upgrade requires `claude plugin uninstall` + `install` to flip the cache pin.
+- Wiki mode declared formally in `wiki/README.md`: `Mode: B (Codebase) + E (Research)`, matching upstream `references/modes.md`.
+- DragonScale (4 mechanisms — fold, addresses, tiling, boundary autoresearch) explicitly opt-out for GAIA. `address: c-NNNNNN` frontmatter forbidden. Adopters can opt in per fork.
+- Wiki hooks remain GAIA-owned in `.claude/hooks/`; not delegated to plugin `hooks.json`.
 
 ## Recent Changes
 
-- New concept pages: [[Release Workflow]], [[Update Workflow]]. [[Claude Integration]] commands table extended. Index updated.
+- New ADR: [[DragonScale Opt-Out]]. Updated [[Claude Integration Conventions]] (Wiki vendor relationship), [[Claude Skills]] (Plugin skills), [[index]], `wiki/README.md`, `CHANGELOG.md`.
 
 ## Active Threads
 
-- PR #26 `feat/release-infrastructure` → `main`: auto-merge pending review + CI green.
-- Post-merge: publish `create-gaia@0.1.0` once v1.0.0 is tagged.
-- User may want more improvements before first `/gaia-release` tags v1.0.0.
+- Docs pass complete; no commit yet — awaiting review.
