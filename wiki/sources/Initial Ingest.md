@@ -8,7 +8,7 @@ updated: 2026-04-20
 tags: [source, initial]
 ---
 
-# Source: Initial Ingest of GAIA React Router
+# Source: Initial Ingest of GAIA React
 
 ## What was read
 
