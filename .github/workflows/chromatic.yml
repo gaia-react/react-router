@@ -28,18 +28,32 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
-      - name: Setup Node
+      # Doc-only pushes report this required check green without running Chromatic.
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            code:
+              - '!**/*.md'
+              - '!wiki/**'
+              - '!.claude/**'
+      - if: steps.filter.outputs.code == 'true'
+        uses: pnpm/action-setup@v4
+      - if: steps.filter.outputs.code == 'true'
+        name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version-file: '.node-version'
           cache: 'pnpm'
-      - name: Install dependencies
+      - if: steps.filter.outputs.code == 'true'
+        name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: get-npm-version
+      - if: steps.filter.outputs.code == 'true'
+        name: get-npm-version
         id: package-version
         uses: martinbeentjes/npm-get-version-action@v1.3.1
-      - name: Run Chromatic
+      - if: steps.filter.outputs.code == 'true'
+        name: Run Chromatic
         uses: chromaui/action@latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
