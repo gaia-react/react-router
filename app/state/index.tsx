@@ -1,14 +1,10 @@
 /* eslint-disable canonical/filename-match-exported */
 import type {FC, ReactNode} from 'react';
-import type {Theme} from '~/state/theme';
-import {ThemeProvider} from '~/state/theme';
 
 type StateProps = {
-  theme?: Theme;
+  children: ReactNode;
 };
 
-const State: FC<StateProps & {children: ReactNode}> = ({children, theme}) => (
-  <ThemeProvider initialState={theme}>{children}</ThemeProvider>
-);
+const State: FC<StateProps> = ({children}) => <>{children}</>;
 
 export default State;

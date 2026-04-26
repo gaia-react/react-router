@@ -36,12 +36,12 @@ Component-specific CSS lives in `app/components/{Name}/styles.module.css` (CSS M
 
 ## Dark mode
 
-Dark mode is wired end-to-end through:
+Dark mode is wired through cookie + client hints (no React state). The pipeline:
 
-- The `ThemeProvider` in `app/state/theme.tsx`
-- The `__theme` cookie via `app/sessions.server/theme.ts`
-- The `actions+/set-theme.ts` action
-- Tailwind's `dark:` variant
-- Storybook's `@vueless/storybook-dark-mode` addon
+- `app/utils/theme.server.ts` — reads/writes the `__theme` cookie.
+- `app/utils/client-hints.tsx` — exposes `getHints` and `<ClientHintCheck/>`; subscribes to OS `prefers-color-scheme` changes and revalidates the loader.
+- `app/routes/resources+/theme-switch.tsx` — action + `ThemeSwitch` UI + `useOptionalTheme` hook.
+- Tailwind's `dark:` variant via `@custom-variant dark` in `tailwind.css`.
+- Storybook's `@vueless/storybook-dark-mode` addon (unchanged).
 
 See [[Theme Flow]].

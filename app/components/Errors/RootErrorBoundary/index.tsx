@@ -2,7 +2,6 @@
 import {isRouteErrorResponse} from 'react-router';
 import Document from '~/components/Document';
 import ErrorStack from '~/components/Errors/ErrorStack';
-import {getPreferredTheme} from '~/state/theme';
 import {canUseDOM} from '~/utils/dom';
 import type {Route} from '../../../../.react-router/types/app/+types/root';
 
@@ -12,11 +11,9 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
     console.log(error);
   }
 
-  const theme = getPreferredTheme();
-
   if (isRouteErrorResponse(error)) {
     return (
-      <Document lang="en" noIndex={true} theme={theme} title={error.statusText}>
+      <Document lang="en" noIndex={true} title={error.statusText}>
         <main className="absolute inset-0 flex items-center justify-center p-4">
           <div className="flex flex-col items-center gap-5 text-center">
             <h1 className="flex items-center gap-4 text-2xl tracking-wide">
@@ -44,7 +41,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
 
   if (error instanceof Error) {
     return (
-      <Document lang="en" noIndex={true} theme={theme} title="Error">
+      <Document lang="en" noIndex={true} title="Error">
         <main className="space-y-4 p-4">
           <h1 className="text-2xl">Error</h1>
           <p>{error.message}</p>
@@ -55,7 +52,7 @@ const RootErrorBoundary = ({error}: Route.ErrorBoundaryProps) => {
   }
 
   return (
-    <Document lang="en" noIndex={true} theme={theme} title="Unexpected error">
+    <Document lang="en" noIndex={true} title="Unexpected error">
       <main className="p-4">
         <h1 className="text-2xl">An unexpected error occurred</h1>
       </main>

@@ -41,5 +41,6 @@ export default {
     enableDarkMode: 'ダークモードの有効化',
     enableLightMode: 'ライトモードを有効にする',
     light: 'ライトモード',
+    useSystemTheme: 'システムのテーマを使用する',
   },
 };

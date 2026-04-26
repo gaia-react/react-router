@@ -86,7 +86,7 @@ Opinionated starter templates solve different slices of the "day-zero engineerin
 | TypeScript               |          ✅           |       ✅       |      ✅       |        ✅         |
 | Routing                  |    React Router 7     | React Router 7 |    Next.js    | @redwoodjs/router |
 | Tailwind                 |          ✅           |       ✅       |      ✅       |        ❌         |
-| Dark mode                |          ✅           |       ❌       |      ❌       |        ❌         |
+| Dark mode                |          ✅           |       ✅       |      ❌       |        ❌         |
 | i18n                     |          ✅           |       ❌       |      ❌       |        ❌         |
 | Unit / integration tests |        Vitest         |     Vitest     |      ❌       |       Jest        |
 | Component testing        | Storybook + Chromatic |       ❌       |      ❌       |     Storybook     |
