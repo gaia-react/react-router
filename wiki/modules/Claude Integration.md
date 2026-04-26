@@ -32,7 +32,6 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 | `/migrate`             | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
 | `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
 | `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
-| `/setup-chromatic-mcp` | Install + register the Chromatic MCP so Claude can query Storybook + visual-regression diffs                                                |
 
 See individual rules for the patterns each command produces.
 

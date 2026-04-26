@@ -91,7 +91,6 @@ Agents interface with external systems — APIs, file systems, test runners — 
 | MSW                   | API mock layer for tests and Storybook               |
 | Obsidian wiki         | Persistent project knowledge retrieval               |
 | `gh` CLI              | PR creation, merge, and CI status                    |
-| Chromatic MCP         | Direct component and visual-diff queries from Claude |
 
 ### Memory & Context
 

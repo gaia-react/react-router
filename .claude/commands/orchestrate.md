@@ -47,7 +47,13 @@ Then create the following in `.claude/plans/{slug}/` where `{slug}` is a short k
 
 2. **`README.md`** — task graph showing phases, which tasks run in parallel within each phase, and the frozen interface contracts shared across tasks.
 
-3. **`ORCHESTRATOR.md`** — instructions for running the plan: phase order, how to invoke each task agent, per-phase quality gates (`pnpm typecheck && pnpm lint`), and stop conditions (what to do when a gate fails).
+3. **`ORCHESTRATOR.md`** — instructions for running the plan. Must cover:
+   - **Pre-flight branch policy.** Check the current branch. If HEAD is on `main`/`master`, the orchestrator ASKS the user whether to (a) create a feature branch in place or (b) create a git worktree, then acts on the answer. If HEAD is on any other branch, assume it is the work branch and proceed.
+   - **Phase order** with per-phase quality gates (`pnpm typecheck && pnpm lint`).
+   - **Sub-agent invocation:** the verbatim prompt template for each task sub-agent. Sub-agents do NOT commit, push, or open/update the PR — they only edit files and report. The orchestrator owns all git operations.
+   - **Orchestrator-owned git flow.** After each phase that produces changes (and only once the quality gate is clean), the orchestrator stages, commits with a meaningful message, and pushes. The orchestrator opens the PR after the first phase's commit lands on the remote (using `gh pr create`) and updates it with subsequent commits. Never commit a broken state.
+   - **Stop conditions.** On any sub-agent failure or quality-gate failure: STOP and surface to the user. Do not "fix and continue", do not commit, do not push.
+   - **Final self-cleanup phase (last step before merge).** After all implementation phases pass and the user has reviewed the PR and confirmed it is ready to merge, the orchestrator deletes its own plan folder (`rm -rf .claude/plans/{slug}/`, absolute path), then commits and pushes that deletion as the final commit on the PR. The plan folder is scaffolding and must NOT persist into `main`. If the user explicitly asks to keep the plan folder for archival, the orchestrator skips the deletion and reports.
 
 4. **`KICKOFF.md`** — a single prompt the user can paste to start the orchestrator cold. Must be fully self-contained with no assumed context.
 

@@ -26,6 +26,10 @@ Run `/gaia-update` inside your project to pull GAIA changes without clobbering y
 - `wiki/decisions/pnpm.md` — ADR documenting the pnpm migration, supply-chain quarantine rationale, and override audit flow.
 - `wiki/decisions/DragonScale Opt-Out.md` — ADR documenting why GAIA does not adopt the DragonScale memory layer.
 
+### Removed
+
+- **`/setup-chromatic-mcp` command and Chromatic MCP integration.** GAIA is an app template, not a component library, so the Chromatic MCP isn't appropriate to ship here (per Chromatic's CTO). The Storybook MCP isn't ready for primetime, so we're not adding it either. Visual regression via the Chromatic SaaS (`chromatic` package, `.github/workflows/chromatic.yml`, `chromatic.config.json`, `.storybook/chromatic/`) stays unchanged. The `storybook` rule (`.claude/rules/storybook.md`) stays. Removed: `.claude/commands/setup-chromatic-mcp.md`, the Chromatic MCP step in `/gaia-init`, MCP subsections in `wiki/dependencies/Chromatic.md` + `wiki/modules/Claude Integration.md` + `wiki/concepts/Agentic Design.md`, the `/setup-chromatic-mcp` reference in `wiki/concepts/Chromatic Opt-Out.md`, and the README "Chromatic MCP" section + `/init` bullet.
+
 ## [1.0.0] — 2026-04-22
 
 First public release. The template pivots from an example-app starter to a Claude-native foundation: skills, commands, hooks, and a wiki are first-class, and the example-code/auth/docs surface area has been removed so the clone is an empty canvas rather than something to delete.
@@ -33,7 +37,7 @@ First public release. The template pivots from an example-app starter to a Claud
 ### Added
 
 - **Claude integration surface** — `.claude/` ships with rules, settings, hooks, a skills bundle, and an agent commands catalog. `claude.md` is curated for context economy and left intact by `/gaia-init`.
-- **Commands** — `/gaia-init` (project scaffolding), `/audit-code` (quality gate), `/audit-knowledge` (wiki/memory audit), `/handoff` + `/pickup` (session continuity), `/migrate` (dep upgrade workflow), `/new-route`, `/new-component`, `/new-hook`, `/new-service`, `/setup-chromatic-mcp`.
+- **Commands** — `/gaia-init` (project scaffolding), `/audit-code` (quality gate), `/audit-knowledge` (wiki/memory audit), `/handoff` + `/pickup` (session continuity), `/migrate` (dep upgrade workflow), `/new-route`, `/new-component`, `/new-hook`, `/new-service`.
 - **Bundled skills** — `typescript`, `react-code`, `tailwind`, `tdd`, `skeleton-loaders`, `playwright-cli`. Each scoped to the directories it governs.
 - **Hooks governance** — PreToolUse hooks guard destructive git on `main`, block bare `npm test`, advise on PR merge + wiki maintenance. Stop hooks auto-commit wiki and maintain the hot cache.
 - **Wiki vault** — architecture overview, decisions (Quality Gate), modules (Routing, Styling, i18n, Form Components), concepts (API Service Pattern, Component Testing, Task Orchestration), and a log/hot-cache pair for session continuity.
