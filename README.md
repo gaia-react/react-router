@@ -117,7 +117,7 @@ Principles including Autonomy, Tool Use, Memory & Context, and Exception Handlin
 The template ships clean. `/init` finishes the last-mile setup:
 
 - **Configures your project** — prompts for a title, sets the package name, docs title, CODEOWNERS, and localized site titles
-- **Installs dependencies** — runs `npm install` for you
+- **Installs dependencies** — bootstraps pnpm via `corepack` and runs `pnpm install` for you
 - **Configures i18n** — prompts for your language set, scaffolds the matching language files, and updates the component and Storybook wiring
 - **Installs Claude skills and plugins** — [React Doctor](https://github.com/millionco/react-doctor), [Playwright CLI](https://github.com/microsoft/playwright-cli), `typescript-lsp`, and [`claude-obsidian`](https://github.com/AgriciDaniel/claude-obsidian)
 - **Offers Chromatic MCP setup** — opts you in to the Storybook MCP server if you want it

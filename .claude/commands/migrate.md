@@ -1,100 +1,142 @@
-Upgrade a supported package to its latest version, apply breaking changes, and run the quality gate.
+Autonomous superpowered Dependabot. Auto-discover all outdated packages, audit overrides, apply codebase migrations for major bumps, resolve dependency conflicts, and run the quality gate. No user prompts — just execute.
 
-## Step 1: Gather user input
+## Phase 0: Override audit
 
-Ask the user using AskUserQuestion:
+For each key in `pnpm.overrides` (in `package.json`):
 
-- Which package(s) to upgrade? (options: `react-router`, `tailwindcss`, `storybook`, `vitest`, `playwright`, `eslint`, or a comma-separated list)
+1. Temporarily remove that single key from `pnpm.overrides`.
+2. Run `pnpm install`.
+3. Run `pnpm ls 2>&1` and scan for peer-dep errors.
+4. If no errors → override is obsolete. Leave it removed. Note as **removed** in final report.
+5. If errors → restore that key. Note as **retained** in final report.
 
-IMPORTANT!!! Eslint 10.x is incompatible with some of the installed eslint plugins. Stay on 9.x for now. Do not offer or attempt to upgrade `eslint` or `@eslint/js`.
+Operate on one key at a time. Always `pnpm install` after each toggle.
 
-## Step 2: For each selected package
-
-### 2a: Check current and latest versions
-
-```bash
-npm outdated {packageName}
-```
-
-If already on latest, report and skip. Record the current version and the latest version.
-
-### 2b: Determine if major bump
-
-Compare major versions. If major bump detected, fetch the changelog/migration guide.
-
-Use the following sources per package:
-
-| Package      | Migration guide source                                                   | Changelog (authoritative for unstable/breaking changes)            |
-| ------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------------ |
-| react-router | `https://reactrouter.com/upgrading/v7` or relevant version path          | `https://github.com/remix-run/react-router/blob/main/CHANGELOG.md` |
-| tailwindcss  | `https://tailwindcss.com/docs/upgrade-guide`                             | `https://github.com/tailwindlabs/tailwindcss/releases`             |
-| storybook    | `https://storybook.js.org/docs/migration-guide`                          | `https://github.com/storybookjs/storybook/blob/next/CHANGELOG.md`  |
-| vitest       | `https://vitest.dev/guide/migration`                                     | `https://github.com/vitest-dev/vitest/releases`                    |
-| playwright   | `https://playwright.dev/docs/release-notes`                              | `https://github.com/microsoft/playwright/releases`                 |
-| eslint       | `https://eslint.org/docs/latest/use/migrate-to-X` (replace X with major) | `https://github.com/eslint/eslint/blob/main/CHANGELOG.md`          |
-
-Fetch the migration guide AND scan the changelog for the bumped version. The changelog catches unstable or breaking changes in a point release that the migration guide may not yet reflect. Use `WebFetch` for both, or summarize known breaking changes from your training data.
-
-### 2c: Update package.json
+## Phase 1: Discover outdated packages
 
 ```bash
-npm install {packageName}@latest
+pnpm outdated --json
 ```
 
-For packages with companion packages (e.g. `@storybook/*`, `@playwright/test`, `@vitest/*`), update all related packages together.
+Parse the JSON. For each entry record:
+- `name`
+- `current` version
+- `latest` version
+- `is_major_bump` (compare leading integers)
+- `is_pinned` (no `^` or `~` prefix in the spec found in `package.json`)
 
-Known companion packages:
+**ESLint cap:** if `eslint` or `@eslint/js` show a `latest` whose major is `>= 10`, find the highest available `9.x` (`pnpm view eslint versions --json` and pick the highest `9.x.y`) and treat that as the target. If already on the latest `9.x`, drop the entry.
 
-- **react-router**: also check `react-router-dom`, `@react-router/dev`, `@react-router/node`, `@react-router/serve`, `@react-router/fs-routes`, `@react-router/remix-routes-option-adapter`
-- **storybook**: run `npx storybook@latest upgrade` instead of manual npm install
-- **vitest**: also update `@vitest/coverage-v8`, `@vitest/ui` if present
-- **playwright**: also update `@playwright/test`
-- **tailwindcss**: also check `@tailwindcss/vite` if present
-- **eslint**: also check all `eslint-plugin-*` and `eslint-config-*` packages
+If nothing is outdated after this filtering, print `All packages are up to date.` and exit.
 
-### 2d: Clean install
+## Phase 2: Resolve companion groups
+
+Map each outdated package into its group. **When any member of a group is outdated, include all members present in `package.json`** in the update — even ones not flagged outdated — so the group moves together.
+
+| Group | Members |
+|-------|---------|
+| `react-router` | `react-router`, `react-router-dom`, `@react-router/dev`, `@react-router/node`, `@react-router/serve`, `@react-router/fs-routes`, `@react-router/remix-routes-option-adapter` |
+| `react` | `react`, `react-dom`, `@types/react`, `@types/react-dom` |
+| `tailwindcss` | `tailwindcss`, `@tailwindcss/vite`, `@tailwindcss/forms`, `@tailwindcss/typography`, `prettier-plugin-tailwindcss` |
+| `storybook` | `storybook`, `@storybook/*`, `eslint-plugin-storybook`, `msw-storybook-addon`, `storybook-react-i18next`, `@vueless/storybook-dark-mode` |
+| `vitest` | `vitest`, `@vitest/coverage-v8`, `@vitest/ui`, `@vitest/eslint-plugin` |
+| `playwright` | `@playwright/test`, `@playwright-testing-library/test` |
+| `eslint` | `eslint`, `@eslint/js`, `@eslint/compat`, `eslint-config-*`, `eslint-plugin-*` (9.x cap applies) |
+| `testing-library` | `@testing-library/dom`, `@testing-library/react`, `@testing-library/jest-dom`, `@testing-library/user-event` |
+| `typescript` | `typescript`, `@types/node` |
+| `i18next` | `i18next`, `react-i18next`, `remix-i18next`, `i18next-browser-languagedetector` |
+| `msw` | `msw`, `msw-storybook-addon` |
+| `vite` | `vite`, `@vitejs/plugin-react` |
+| `zod-conform` | `zod`, `@conform-to/react`, `@conform-to/zod` |
+| `fontawesome` | `@fortawesome/*` |
+| `stylelint` | `stylelint`, `stylelint-config-*`, `stylelint-order` |
+| `prettier` | `prettier`, `eslint-config-prettier`, `eslint-plugin-prettier` |
+| `husky` | `husky`, `lint-staged` |
+
+Packages not matched form singleton groups.
+
+## Phase 3: Classify into waves
+
+- **Wave A** — groups whose members all have minor or patch bumps only. Batched into one install.
+- **Wave B** — groups containing at least one major bump. Processed individually, ordered: `react-router`, `react`, `tailwindcss`, `storybook`, `vitest`, `playwright`, `eslint`, then remaining alphabetically.
+
+## Phase 4: Wave A (batch minor/patch)
+
+1. Build install args. For each package: if `is_pinned` use exact target, else use `^<latest>`. Example: `pnpm add foo@1.2.3 bar@^4.5.0 ...`.
+2. Run the single `pnpm add` command.
+3. Run `pnpm ls 2>&1`. Scan for peer-dep errors.
+4. On error: try one targeted `pnpm.overrides` fix (e.g. add a `parent>child` pin), then `pnpm install` again.
+5. If still failing: revert the offending packages (`pnpm add <pkg>@<previous>`) and log them as **skipped** with the reason.
+6. Run quality gate (Phase 7). If it fails, revert the entire Wave A batch.
+
+## Phase 5: Wave B (per-group major bumps)
+
+For each Wave B group, in the order from Phase 3:
+
+1. **Fetch migration guide** via WebFetch using the table below. If no URL applies, scan the GitHub release notes.
+2. **Install** the group:
+   - `storybook` group: run `pnpm dlx storybook@latest upgrade` (Storybook's own upgrade tool migrates config alongside the version bump).
+   - All others: `pnpm add <pkg1>@<latest> <pkg2>@<latest> ...` for every group member present in `package.json`.
+3. **Conflict check**: `pnpm ls 2>&1`. On peer-dep error, attempt one `pnpm.overrides` fix. If still failing, revert the group and skip with reason.
+4. **Apply breaking changes**: from the migration guide, identify code-affecting changes (renamed APIs, removed exports, config schema changes). `grep` the codebase for affected patterns and edit the matching files.
+5. **Quality gate** (Phase 7). On failure, attempt fixes inferred from the migration guide. If unfixable after a reasonable attempt, revert the entire group and log as skipped.
+
+Migration guide URLs:
+
+| Group | URL |
+|-------|-----|
+| react-router | `https://reactrouter.com/upgrading/v7` |
+| react | `https://react.dev/blog` (find the major-version post) |
+| tailwindcss | `https://tailwindcss.com/docs/upgrade-guide` |
+| storybook | `https://storybook.js.org/docs/migration-guide` |
+| vitest | `https://vitest.dev/guide/migration` |
+| playwright | `https://playwright.dev/docs/release-notes` |
+| eslint | `https://eslint.org/docs/latest/use/migrate-to-9` (or relevant X) |
+| typescript | `https://www.typescriptlang.org/docs/handbook/release-notes/overview.html` |
+| msw | `https://mswjs.io/docs/migrations` |
+| vite | `https://vite.dev/guide/migration` |
+
+## Phase 6: Post-update override audit
+
+For every override that was **retained** in Phase 0, repeat the Phase 0 toggle test now that surrounding packages have moved. New versions may have resolved the original conflict.
+
+## Phase 7: Quality gate
 
 ```bash
-rm -rf node_modules && npm install
+pnpm typecheck
+pnpm lint
+pnpm test --run
+pnpm pw
+pnpm build
 ```
 
-### 2e: Apply breaking changes
+Run after Wave A completes, then once per Wave B group. Stop on first failure within a wave/group and follow the revert rules above.
 
-If a major bump was detected, apply known breaking changes:
+## Phase 8: Final report
 
-1. Read the migration guide from step 2b
-2. Search the codebase for affected patterns using Grep
-3. Apply necessary code changes
-4. Document what was changed
+Print this report. Do not commit.
 
-### 2f: Run quality gate
+```
+## Migration Report
 
-Run each step sequentially, stopping on failure:
+### Updated packages
+| Group | Package | From | To | Type |
+| --- | --- | --- | --- | --- |
 
-```bash
-npm run typecheck
-npm run lint
-npm run test -- --run
-npm run pw
-npm run build
+### Breaking changes applied
+- [group] description
+
+### Overrides audited
+- Removed: <key> — <reason>
+- Retained: <key> — <reason>
+
+### Skipped packages
+| Package | Reason |
+| --- | --- |
+
+### Quality gate
+| Step | Result |
+| --- | --- |
 ```
 
-If any step fails, analyze the error and attempt to fix it. Common post-upgrade fixes:
-
-- Updated import paths
-- Renamed/removed APIs
-- Changed configuration format
-- New required fields
-
-After fixing, re-run the failing step. Repeat until all pass or the issue requires user input.
-
-## Step 3: Report summary
-
-Present results per package:
-
-| Package      | From  | To    | Breaking changes | Quality gate |
-| ------------ | ----- | ----- | ---------------- | ------------ |
-| react-router | 7.1.0 | 7.2.0 | None             | PASS         |
-| storybook    | 8.5.0 | 9.0.0 | 3 applied        | PASS         |
-
-List any breaking changes that were applied and any issues that need manual attention.
+Stop and wait for user review.

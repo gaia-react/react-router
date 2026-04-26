@@ -16,8 +16,8 @@ paths:
 ## Scripts
 
 ```
-npm run pw         # run all e2e tests (headless)
-npm run pw-ui      # run with Playwright UI (interactive)
+pnpm pw         # run all e2e tests (headless)
+pnpm pw-ui      # run with Playwright UI (interactive)
 ```
 
 ## Spec file naming
@@ -62,7 +62,7 @@ await hydration(page); // waits for <meta name="hydrated" content="true">
 
 ## MSW + real dev server
 
-E2E tests run against `npm run dev` (localhost:5173). MSW browser worker is
+E2E tests run against `pnpm dev` (localhost:5173). MSW browser worker is
 active in dev, so tests exercise the real route/loader/action stack with MSW
 intercepting API calls. No separate mock server is needed for e2e.
 

@@ -44,7 +44,7 @@ const getDateFromNumericYMD = ({date, month, year}: NumericYMD) =>
 const getNumericYMDFromISO8601Date = (value: string) => {
   const [year, month, date] = value.split('-').map(Number);
 
-  return {date, month: +month - 1, year} as NumericYMD;
+  return {date, month: +month - 1, year};
 };
 
 // ensure date is valid (i.e. no June 31, Feb 30, Feb 29 on non-leap years, etc.)

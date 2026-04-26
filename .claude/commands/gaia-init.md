@@ -1,5 +1,19 @@
 Initialize a new project from the GAIA React template. The template already ships clean (no example code, no docs site, no auth). This command renames, strips GAIA-specific branding, configures i18n, installs Claude skills/plugins, and hands you a ready-to-build project.
 
+## Step 0: Ensure pnpm is available
+
+Tell the user: "Checking for pnpm…" then run:
+
+```bash
+if command -v corepack &>/dev/null; then
+  corepack enable pnpm
+else
+  npm install -g pnpm
+fi
+```
+
+If this fails, stop and report the error. `corepack enable pnpm` installs the pnpm version pinned in the `packageManager` field of `package.json`. If corepack is unavailable, fall back to a global npm install.
+
 ## Step 1: Install dependencies
 
 The project was just created from the template — `node_modules/` does not exist yet. Install before doing anything else so later steps (typecheck, tests, build) can run.
@@ -7,7 +21,7 @@ The project was just created from the template — `node_modules/` does not exis
 Tell the user: "Installing dependencies — this may take a minute…" then run:
 
 ```bash
-npm install
+pnpm install
 ```
 
 If install fails, stop and report the error. Do not continue.
@@ -79,7 +93,7 @@ If a `.env` file does not exist, rename `.env.example` to `.env`. If `.env` alre
 Run sequentially, stopping at the first failure:
 
 ```bash
-npm run typecheck && npm run lint && npm run test:ci && npm run build
+pnpm typecheck && pnpm lint && pnpm test:ci && pnpm build
 ```
 
 Fix any issues before moving on.

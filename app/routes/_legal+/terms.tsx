@@ -1,4 +1,3 @@
-import type {RouterContextProvider} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {useLoaderData} from 'react-router';
 import Layout from '~/components/Layout';
@@ -6,7 +5,7 @@ import {getInstance} from '~/middleware/i18next';
 import type {Route} from './+types/terms';
 
 export const loader = async ({context}: Route.LoaderArgs) => {
-  const i18next = getInstance(context as RouterContextProvider);
+  const i18next = getInstance(context);
   const title = i18next.t('legal.terms.title', {ns: 'pages'});
   const description = i18next.t('legal.terms.description', {ns: 'pages'});
 

@@ -25,7 +25,7 @@ Also check if `.mcp.json` already has a `storybook` / `chromatic` MCP entry — 
 Run:
 
 ```bash
-npx storybook add @storybook/addon-mcp
+pnpm dlx storybook add @storybook/addon-mcp
 ```
 
 This adds `@storybook/addon-mcp` to `devDependencies`, updates `.storybook/main.ts`, and installs dependencies. If it fails, print the command so the user can run it manually.
@@ -40,7 +40,7 @@ Ask the user using AskUserQuestion:
 Then run:
 
 ```bash
-npx mcp-add --type http --url "<URL>" \
+pnpm dlx mcp-add --type http --url "<URL>" \
   --client-id "cdf3737dff9d485485968e50b63fd8b4" \
   --scope <SCOPE>
 ```
@@ -56,7 +56,7 @@ If the MCP registered successfully, `.mcp.json` (project scope) or `~/.claude/mc
 Tell the user:
 
 - "Chromatic MCP is registered at <SCOPE> scope against <URL>."
-- "Start Storybook with `npm run storybook` and restart Claude Code to activate the MCP."
+- "Start Storybook with `pnpm storybook` and restart Claude Code to activate the MCP."
 - "Claude can now query `list-all-documentation`, fetch component docs, and inspect visual-regression diffs once Storybook is running."
 
 ## Step 5: Team-wide tip (optional nudge)
@@ -67,6 +67,6 @@ If the user chose `project` scope with the default `localhost` URL, mention once
 
 ## Troubleshooting
 
-- **`npx storybook add` fails**: run `npx storybook upgrade` first, then retry.
-- **`npx mcp-add` "command not found"**: the `mcp-add` CLI ships via Chromatic's npm package; `npx` fetches it on demand — no global install needed. Confirm network access + npm registry reachability.
+- **`pnpm dlx storybook add` fails**: run `pnpm dlx storybook upgrade` first, then retry.
+- **`pnpm dlx mcp-add` "command not found"**: the `mcp-add` CLI ships via Chromatic's npm package; `pnpm dlx` fetches it on demand — no global install needed. Confirm network access + npm registry reachability.
 - **MCP not appearing in Claude Code after restart**: verify the MCP entry in `.mcp.json` / `~/.claude/mcp.json` and check Claude Code's MCP connection log (`/mcp` in Claude Code).

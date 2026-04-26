@@ -22,19 +22,20 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-26. Branch `chore/update-claude-obsidian` — claude-obsidian v1.4.3 → v1.6.0 sync; Mode B+E formalized; DragonScale declined.
+2026-04-26. Branch `feat/improved-migration-command` — migrated npm → pnpm across template + CI; rewrote `/migrate` as autonomous Dependabot.
 
 ## Key Facts
 
-- Plugin baseline pinned to claude-obsidian v1.6.0 (global install, not vendored). Upgrade requires `claude plugin uninstall` + `install` to flip the cache pin.
-- Wiki mode declared formally in `wiki/README.md`: `Mode: B (Codebase) + E (Research)`, matching upstream `references/modes.md`.
-- DragonScale (4 mechanisms — fold, addresses, tiling, boundary autoresearch) explicitly opt-out for GAIA. `address: c-NNNNNN` frontmatter forbidden. Adopters can opt in per fork.
-- Wiki hooks remain GAIA-owned in `.claude/hooks/`; not delegated to plugin `hooks.json`.
+- pnpm pinned via `packageManager: pnpm@10.33.0`. `pnpm-lock.yaml` committed; `package-lock.json` deleted. `.npmrc`: `strict-peer-dependencies=false` + `minimumReleaseAge=10080` (7-day quarantine).
+- `pnpm.overrides` uses `parent>child` syntax (`remix-i18next>i18next`); npm's nested-object form removed.
+- `/migrate` is now autonomous: Phase 0 override audit → discover via `pnpm outdated --json` → group → wave A batch (minor/patch) / wave B per-group (major) with migration-guide fetches → Phase 6 re-audit → quality gate → report.
+- ESLint 9.x cap retained inside the new flow. Storybook group uses `pnpm dlx storybook@latest upgrade`.
+- Test-watch hook renamed `block-bare-test.sh`; matches both `pnpm *` and `npm *`.
 
 ## Recent Changes
 
-- New ADR: [[DragonScale Opt-Out]]. Updated [[Claude Integration Conventions]] (Wiki vendor relationship), [[Claude Skills]] (Plugin skills), [[index]], `wiki/README.md`, `CHANGELOG.md`.
+- New ADR: [[pnpm]]. Updated [[Quality Gate]], [[Husky]], [[Chromatic]], [[Playwright]], [[Vitest]], [[Test Runner]], [[Claude Hooks]], [[Claude Integration]] (commands + hooks tables), [[remix-i18next]], [[i18next]], [[MSW Handlers]], [[Testing]], [[Release Workflow]]. CI workflows + `.claude/settings.json` permissions/hooks rewired.
 
 ## Active Threads
 
-- Docs pass complete; no commit yet — awaiting review.
+- Migration complete; no commit yet — awaiting user review.

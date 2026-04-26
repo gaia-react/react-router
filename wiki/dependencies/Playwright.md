@@ -15,7 +15,7 @@ End-to-end testing. Tests live in `.playwright/e2e/*.spec.ts`. Config in `playwr
 
 ## Architecture
 
-E2E tests run against `npm run dev` (localhost:5173). MSW's browser service worker is active in dev, so tests exercise the full React Router loader/action stack with MSW intercepting API calls — no separate mock server required.
+E2E tests run against `pnpm dev` (localhost:5173). MSW's browser service worker is active in dev, so tests exercise the full React Router loader/action stack with MSW intercepting API calls — no separate mock server required.
 
 Tests that mutate MSW in-memory state call `resetTestData()` from `test/mocks/database.ts` in `test.afterEach` to restore seed data between tests.
 
@@ -49,17 +49,17 @@ When a project requires authentication, use a global setup file (`auth.setup.ts`
 
 ## Traces and screenshots
 
-`trace: 'retain-on-failure'` — traces saved to `.playwright/output/` on test failure. Use the Playwright trace viewer (`npx playwright show-trace`) to inspect. No manual screenshot calls in specs.
+`trace: 'retain-on-failure'` — traces saved to `.playwright/output/` on test failure. Use the Playwright trace viewer (`pnpm exec playwright show-trace`) to inspect. No manual screenshot calls in specs.
 
 ## Scripts
 
 ```
-npm run pw        # headless run
-npm run pw-ui     # interactive UI mode
+pnpm pw        # headless run
+pnpm pw-ui     # interactive UI mode
 ```
 
 ## Companion packages
 
 - `@playwright-testing-library/test`
 - `eslint-plugin-playwright`
-- `playwright install --with-deps` runs in `npm run prepare` (Husky)
+- `playwright install --with-deps` runs in `pnpm prepare` (Husky)

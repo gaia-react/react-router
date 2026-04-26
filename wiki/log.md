@@ -3,13 +3,24 @@ type: meta
 title: Log
 status: active
 created: 2026-04-20
-updated: 2026-04-22
+updated: 2026-04-26
 tags: [meta, log]
 ---
 
 # Log
 
 Append-only. New entries at the TOP.
+
+## [2026-04-26] feat | npm → pnpm migration + autonomous /migrate command
+
+- Switched package manager from npm to pnpm. `package.json` adds `"packageManager": "pnpm@10.33.0"` and moves `overrides` → `pnpm.overrides` using parent-child syntax (`remix-i18next>i18next`). `.npmrc` becomes `strict-peer-dependencies=false` + `minimumReleaseAge=10080` (7-day supply-chain quarantine). `package-lock.json` deleted; `pnpm-lock.yaml` committed (9.7k lines). Scripts: `npm run X` → `pnpm X`, `npx <bin>` → `pnpm exec <bin>`.
+- CI updated. `.github/workflows/tests.yml` + `chromatic.yml` add `pnpm/action-setup@v4` (reads `packageManager`), switch `cache: 'npm'` → `cache: 'pnpm'`, `npm ci` → `pnpm install --frozen-lockfile`, and re-script invocations.
+- `/gaia-init` Step 0 added: `corepack enable pnpm` (with `npm install -g pnpm` fallback) before Step 1 install.
+- `/migrate` rewritten as autonomous Dependabot. Phases: 0 override audit → 1 discover (`pnpm outdated --json`) → 2 companion-group resolve → 3 wave classify → 4 Wave A batch (minor/patch) → 5 Wave B per-group with WebFetch migration guides (storybook uses `pnpm dlx storybook@latest upgrade`) → 6 post-update override re-audit → 7 quality gate → 8 final report. ESLint 9.x cap retained inside the new flow.
+- `block-bare-npm-test.sh` renamed `block-bare-test.sh`; matches both `pnpm *` and `npm *`. `.claude/settings.json` permissions rewired to `pnpm` shapes; `corepack enable pnpm` allow-listed.
+- New ADR: [[pnpm]]. Updated: [[Quality Gate]], [[Husky]], [[Chromatic]], [[Playwright]], [[Vitest]], [[Test Runner]], [[Claude Hooks]], [[Claude Integration]] (commands + hooks tables), [[remix-i18next]], [[i18next]], [[MSW Handlers]], [[Testing]], [[Release Workflow]] (`create-gaia` step 5), [[index]], [[hot]].
+- Quality gate ✅ typecheck, lint, vitest 46/46, build all green on the new lockfile.
+- Key insight: `minimumReleaseAge=10080` is one config line that closes the dominant npm-supply-chain attack window (publish → detection/yank). No infra. No subscription.
 
 ## [2026-04-22] feat | release infrastructure — /gaia-release, /gaia-update, create-gaia, tarball scrubbing
 

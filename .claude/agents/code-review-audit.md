@@ -151,7 +151,7 @@ Rule-based line-level checks are done by specialist subagents in parallel with `
    - No files with `useTranslation` or `t(` references → skip Subagent 3 (Translation)
 3. **Dispatch in parallel, in one tool-call message**:
    - 1 × `Agent` call per surviving subagent (foreground — results merge on return)
-   - 1 × `Bash` call for `npx -y react-doctor@latest . --verbose --diff` (also foreground, runs alongside)
+   - 1 × `Bash` call for `pnpm dlx react-doctor@latest . --verbose --diff` (also foreground, runs alongside)
 4. **Merge findings** into your report under Critical/Important/Suggestions. Deduplicate against your own findings, keeping the more detailed version. Many react-doctor barrel-import and multiple-useState warnings are false positives in this codebase — cross-reference against project conventions before including them.
 
 ### Subagent 1: React Patterns & Accessibility Audit

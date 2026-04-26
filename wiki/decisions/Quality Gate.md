@@ -16,12 +16,12 @@ Every change must pass the Quality Gate. Pre-commit hooks enforce a subset; the 
 
 1. **Simplify** — run `simplify` skill; apply all endorsed changes.
 2. **Localization check** — no hardcoded user-facing strings or unfilled keys.
-3. `npm run typecheck` — zero errors.
-4. `npm run lint` — zero errors, zero warnings.
-5. `npm run test -- --run` — all tests pass with **zero console warnings** (missing keys, HydrateFallback, etc. count as failures).
-6. `npm run pw` — all Playwright E2E tests pass.
-7. **Dev smoke test** — start `npm run dev`, curl a route, verify HTTP 200.
-8. `npm run build` — confirms production build.
+3. `pnpm typecheck` — zero errors.
+4. `pnpm lint` — zero errors, zero warnings.
+5. `pnpm test --run` — all tests pass with **zero console warnings** (missing keys, HydrateFallback, etc. count as failures).
+6. `pnpm pw` — all Playwright E2E tests pass.
+7. **Dev smoke test** — start `pnpm dev`, curl a route, verify HTTP 200.
+8. `pnpm build` — confirms production build.
 9. **Fix all warnings before reporting** — never hand off with known warnings.
 10. **Stop and report** — wait for user approval.
 
@@ -41,14 +41,14 @@ Every change must pass the Quality Gate. Pre-commit hooks enforce a subset; the 
 Skip the gate entirely if no staged file is something typecheck / lint / tests / build can inspect. The gate runs only when at least one staged file matches:
 
 - **Source**: `*.ts`, `*.tsx`, `*.js`, `*.jsx`, `*.mjs`, `*.cjs`, `*.css`
-- **Gate-affecting config**: `package.json`, `package-lock.json`, `tsconfig*.json`, `vite.config.*`, `vitest.config.*`, `playwright.config.*`, `eslint.config.*`
+- **Gate-affecting config**: `package.json`, `pnpm-lock.yaml`, `tsconfig*.json`, `vite.config.*`, `vitest.config.*`, `playwright.config.*`, `eslint.config.*`
 
 Pure markdown, `.claude/**`, `wiki/**`, image, or other non-source-affecting commits skip straight to the commit step.
 
 Quick check:
 
 ```bash
-git diff --cached --name-only | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|css)$|^(package(-lock)?\.json|tsconfig.*\.json|vite\.config\.|vitest\.config\.|playwright\.config\.|eslint\.config\.)'
+git diff --cached --name-only | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|css)$|^(package\.json|pnpm-lock\.yaml|tsconfig.*\.json|vite\.config\.|vitest\.config\.|playwright\.config\.|eslint\.config\.)'
 ```
 
 If the grep returns nothing, skip the gate.

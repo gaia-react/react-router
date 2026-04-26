@@ -14,11 +14,15 @@ Run `/gaia-update` inside your project to pull GAIA changes without clobbering y
 
 ### Changed
 
+- **Package manager: npm → pnpm.** `package.json` pins via `packageManager: pnpm@10.33.0`; `overrides` moves to `pnpm.overrides` with `parent>child` syntax. `.npmrc` rewritten with `strict-peer-dependencies=false` and `minimumReleaseAge=10080` (7-day supply-chain quarantine). `package-lock.json` deleted; `pnpm-lock.yaml` is the lockfile. CI workflows use `pnpm/action-setup@v4` + `pnpm install --frozen-lockfile`. `/gaia-init` adds Step 0 to bootstrap pnpm via corepack (with `npm install -g pnpm` fallback).
+- **`/migrate` rewritten as autonomous Dependabot.** No prompts. Discovers all outdated packages via `pnpm outdated --json`, audits `pnpm.overrides` for obsolete entries, batches minor/patch into one wave, processes major bumps per-group with WebFetch migration guides (Storybook uses `pnpm dlx storybook@latest upgrade`), re-audits overrides post-update, runs the quality gate. ESLint 9.x cap retained.
+- `block-bare-npm-test.sh` renamed `block-bare-test.sh`; matches both `pnpm *` and `npm *`. Test-runner messaging updated.
 - Bump claude-obsidian plugin baseline to v1.6.0.
 - Formalize wiki Mode B (Codebase) + E (Research) per upstream `references/modes.md`.
 
 ### Added
 
+- `wiki/decisions/pnpm.md` — ADR documenting the pnpm migration, supply-chain quarantine rationale, and override audit flow.
 - `wiki/decisions/DragonScale Opt-Out.md` — ADR documenting why GAIA does not adopt the DragonScale memory layer.
 
 ## [1.0.0] — 2026-04-22

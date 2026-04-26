@@ -21,7 +21,7 @@ i18n integration built on `i18next` for Remix / React Router 7. GAIA wires it th
 - `accept-language-parser` 1.5.0
 - `storybook-react-i18next` 10.1.2
 
-> [!note] `overrides` block in package.json
-> The package.json `overrides` block forces `remix-i18next` to use the same `i18next` and `react-i18next` versions as the rest of the project to avoid duplicate copies.
+> [!note] `pnpm.overrides` block in package.json
+> The `pnpm.overrides` block forces `remix-i18next` to use the same `i18next` and `react-i18next` versions as the rest of the project to avoid duplicate copies. Uses pnpm's `parent>child` syntax: `"remix-i18next>i18next": "$i18next"`. See [[pnpm]] for the override audit flow that keeps this list lean.
 
 See [[i18n]], [[Language Flow]].

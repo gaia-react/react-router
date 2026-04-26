@@ -47,7 +47,7 @@ Then create the following in `.claude/plans/{slug}/` where `{slug}` is a short k
 
 2. **`README.md`** — task graph showing phases, which tasks run in parallel within each phase, and the frozen interface contracts shared across tasks.
 
-3. **`ORCHESTRATOR.md`** — instructions for running the plan: phase order, how to invoke each task agent, per-phase quality gates (`npm run typecheck && npm run lint`), and stop conditions (what to do when a gate fails).
+3. **`ORCHESTRATOR.md`** — instructions for running the plan: phase order, how to invoke each task agent, per-phase quality gates (`pnpm typecheck && pnpm lint`), and stop conditions (what to do when a gate fails).
 
 4. **`KICKOFF.md`** — a single prompt the user can paste to start the orchestrator cold. Must be fully self-contained with no assumed context.
 

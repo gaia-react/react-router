@@ -26,7 +26,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]]
 - `vitest.config.ts` at root
 - Looks for `*.test.{ts,tsx}` anywhere in `app/`
 - Runs against `happy-dom`
-- See [[Test Runner]] rule: never run bare `npm test` in CI; use `npm run test -- --run`
+- See [[Test Runner]] rule: never run bare `pnpm test` in CI; use `pnpm test --run`
 
 ## test/ folder
 
@@ -55,7 +55,7 @@ Always use Storybook stories with `composeStory`. Never manually mock framework 
 ## Chromatic
 
 - Visual regression on every PR
-- `npm run chromatic` (run in CI)
+- `pnpm chromatic` (run in CI)
 - `CHROMATIC_PROJECT_TOKEN` env var on CI
 - See [[Chromatic Opt-Out]] if you want to remove it
 

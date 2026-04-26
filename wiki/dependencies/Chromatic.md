@@ -13,7 +13,7 @@ tags: [dependency, testing, visual, mcp]
 
 Visual regression service that consumes Storybook stories. Runs in CI via `.github/workflows/chromatic.yml`.
 
-- `npm run chromatic` — uploads stories
+- `pnpm chromatic` — uploads stories
 - `CHROMATIC_PROJECT_TOKEN` — env var on CI
 - `--auto-accept-changes 'main'` — auto-accept baseline shifts on `main`
 - `--only-changed`, `--exit-zero-on-changes` — efficient PR runs

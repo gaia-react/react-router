@@ -1,6 +1,5 @@
 import type {FC} from 'react';
 import {useEffect} from 'react';
-import type {RouterContextProvider} from 'react-router';
 import {useTranslation} from 'react-i18next';
 import {data, Outlet, useLoaderData} from 'react-router';
 import {config} from '@fortawesome/fontawesome-svg-core';
@@ -26,7 +25,7 @@ export const middleware = [i18nextMiddleware];
 export const loader = async ({context, request}: Route.LoaderArgs) => {
   const isProduction = isProductionHost(request);
 
-  const language = getLanguage(context as RouterContextProvider);
+  const language = getLanguage(context);
 
   setApiLanguage(language);
 
