@@ -5,7 +5,7 @@ status: active
 language: typescript
 purpose: Global React Context+Provider state
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-26
 tags: [module, state]
 ---
 
@@ -15,11 +15,9 @@ GAIA uses plain React Context+Provider for global state — no Redux, Zustand, e
 
 ## Bundled Providers
 
-| Provider        | Initial state from         | Purpose          |
-| --------------- | -------------------------- | ---------------- |
-| `ThemeProvider` | `getThemeSession(request)` | Light/dark theme |
+The template ships with **no global state slices** — `<State>` is currently a passthrough. It exists as the established hook point so consumers can register their own providers (auth, feature flags, etc.) without touching `root.tsx`.
 
-Each provider is registered in `app/state/index.tsx` and receives its initial value as a prop from the `root.tsx` loader.
+Theme used to live here as `ThemeProvider` but moved to a cookie + client-hint pipeline that derives the theme from the loader on every render — no React state needed. See [[Theme Flow]] and [[Dark Mode Modernization]].
 
 ## Canonical Pattern
 
@@ -52,10 +50,6 @@ XProvider.displayName = 'XProvider';
 ## Initial State from the Loader
 
 Providers receive SSR-safe initial state from `root.tsx` loader data, preventing hydration mismatches. See `app/root.tsx` for the live `AppWithState` implementation.
-
-## Theme State
-
-`ThemeProvider` is more complex than the standard pattern: it syncs with `localStorage`, responds to `prefers-color-scheme` media query changes, and persists the selection via a `useFetcher` POST to `actions/set-theme`. It also exports `ThemeHead` (injects a synchronous `<script>` to avoid flash-of-wrong-theme) and `getPreferredTheme()` / `isSupportedTheme()` utilities.
 
 ## When Not to Use Context
 

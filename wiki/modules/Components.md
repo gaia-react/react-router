@@ -48,8 +48,9 @@ Not strict, but a strong default. Refactoring is easier when the folder hierarch
 | `Form/`                      | The headline feature — see [[Form Components]]    |
 | `LanguageSelect`             | Language switcher tied to `actions+/set-language` |
 | `Loaders/`                   | Loading spinners and placeholders                 |
-| `ThemeSwitcher`              | Light/dark switcher tied to `actions+/set-theme`  |
 | `Toast`                      | Wrapper around `sonner` + `remix-toast`           |
+
+The theme switcher (`ThemeSwitch`) is co-located with its action and hooks in `app/routes/resources+/theme-switch.tsx` rather than `app/components/`. See [[Theme Flow]].
 
 ## Naming conventions
 

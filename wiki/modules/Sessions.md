@@ -3,22 +3,21 @@ type: module
 path: app/sessions.server/
 status: active
 language: typescript
-purpose: Cookie session storage for theme and language preferences
+purpose: Cookie session storage for language preference
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-26
 tags: [module, sessions, cookies]
 ---
 
 # Sessions
 
-`app/sessions.server/` contains cookie management code. The `.server` suffix excludes these from the client bundle.
+`app/sessions.server/` contains cookie session-storage code that needs `SESSION_SECRET` for signing. The `.server` suffix excludes these from the client bundle.
 
-| File          | Cookie     | Purpose                                               |
-| ------------- | ---------- | ----------------------------------------------------- |
-| `language.ts` | `language` | i18n preference (`languageCookie`)                    |
-| `theme.ts`    | theme      | Light/dark preference; also exposes `getThemeSession` |
+| File          | Cookie     | Purpose                            |
+| ------------- | ---------- | ---------------------------------- |
+| `language.ts` | `language` | i18n preference (`languageCookie`) |
 
-Both use React Router 7's `createCookieSessionStorage`. Secrets come from `env.SESSION_SECRET` (Zod-validated).
+Uses React Router 7's `createCookieSessionStorage`. Secret comes from `env.SESSION_SECRET` (Zod-validated).
 
 ## Language cookie
 
@@ -26,7 +25,7 @@ Both use React Router 7's `createCookieSessionStorage`. Secrets come from `env.S
 
 ## Theme cookie
 
-`app/sessions.server/theme.ts` exposes `getThemeSession(request)` which returns a session with a `getTheme()` getter (`'light' | 'dark' | undefined`). The root loader passes this to `<ThemeProvider>` for SSR-safe hydration. The `actions+/set-theme.ts` route mutates it on toggle.
+The `__theme` cookie is not session-storage — it's read/written as a plain cookie via `app/utils/theme.server.ts` (using the `cookie` package directly). See [[Theme Flow]] and [[Dark Mode Modernization]] for the full pipeline.
 
 ## Adding auth sessions
 

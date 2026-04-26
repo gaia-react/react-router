@@ -22,20 +22,21 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-26. Branch `feat/improved-migration-command` — migrated npm → pnpm across template + CI; rewrote `/migrate` as autonomous Dependabot.
+2026-04-26. Branch `feat/dark-mode-update` — rewrote dark mode using the Epic Stack pattern (cookie + client hints + optimistic fetcher). PR #34 open.
 
 ## Key Facts
 
-- pnpm pinned via `packageManager: pnpm@10.33.0`. `pnpm-lock.yaml` committed; `package-lock.json` deleted. `.npmrc`: `strict-peer-dependencies=false` + `minimumReleaseAge=10080` (7-day quarantine).
-- `pnpm.overrides` uses `parent>child` syntax (`remix-i18next>i18next`); npm's nested-object form removed.
-- `/migrate` is now autonomous: Phase 0 override audit → discover via `pnpm outdated --json` → group → wave A batch (minor/patch) / wave B per-group (major) with migration-guide fetches → Phase 6 re-audit → quality gate → report.
-- ESLint 9.x cap retained inside the new flow. Storybook group uses `pnpm dlx storybook@latest upgrade`.
-- Test-watch hook renamed `block-bare-test.sh`; matches both `pnpm *` and `npm *`.
+- Dark-mode source of truth is the `__theme` cookie (read via `app/utils/theme.server.ts`, the plain `cookie` package). React no longer holds theme state.
+- `app/utils/client-hints.tsx` wraps `@epic-web/client-hints`; `<ClientHintCheck/>` in `<head>` subscribes to `prefers-color-scheme` changes and calls `useRevalidator().revalidate()`.
+- `app/routes/resources+/theme-switch.tsx` is the action + `useOptionalTheme`/`useOptimisticThemeMode` hooks + `ThemeSwitch` UI, co-located.
+- Cycle is 3-state (`system → light → dark → system`) with distinct desktop/sun/moon icons.
+- `app/state/index.tsx` is now a passthrough — no global state slices ship.
+- Removed: `app/state/theme.tsx`, `app/sessions.server/theme.ts`, `app/routes/actions+/set-theme.ts`, `app/components/ThemeSwitcher/`.
 
 ## Recent Changes
 
-- New ADR: [[pnpm]]. Updated [[Quality Gate]], [[Husky]], [[Chromatic]], [[Playwright]], [[Vitest]], [[Test Runner]], [[Claude Hooks]], [[Claude Integration]] (commands + hooks tables), [[remix-i18next]], [[i18next]], [[MSW Handlers]], [[Testing]], [[Release Workflow]]. CI workflows + `.claude/settings.json` permissions/hooks rewired.
+- New ADR: [[Dark Mode Modernization]]. Updated: [[Theme Flow]], [[Styles]], [[Sessions]], [[State]], [[Components]], [[index]], [[hot]], [[log]]. New deps: `@epic-web/client-hints@1.3.9`, `cookie@1.1.1`.
 
 ## Active Threads
 
-- Migration complete; no commit yet — awaiting user review.
+- PR #34 open with 2 commits (dark-mode rewrite + chore wiki/migrate prettier reformat). Awaiting review/merge.
