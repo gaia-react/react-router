@@ -18,7 +18,7 @@ export default defineConfig({
       '@fortawesome/fontawesome-svg-core',
       '@fortawesome/free-solid-svg-icons',
       '@fortawesome/react-fontawesome',
-      '@mswjs/data',
+      '@msw/data',
       'accept-language-parser',
       'date-fns',
       'i18next',

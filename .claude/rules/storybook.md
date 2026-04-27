@@ -109,14 +109,14 @@ content by locale (`i18n.language`).
 
 ## Test data
 
-No `msw-storybook-addon` is configured. Pull seed data from the `@mswjs/data` factory:
+No `msw-storybook-addon` is configured. Pull seed data from the `@msw/data` collections via `test/mocks/database`. Reads on a `Collection` are sync, so stories can call them inline:
 
 ```tsx
 import database from 'test/mocks/database';
 import {toCamelCase} from '~/utils/object';
 
 export const Default: StoryFn = () => {
-  const things = database.things.getAll().map(toCamelCase) as Things;
+  const things = database.things.findMany(undefined).map(toCamelCase) as Things;
   return <ThingsGrid things={things} />;
 };
 ```

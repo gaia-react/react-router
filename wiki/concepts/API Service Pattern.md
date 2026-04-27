@@ -56,10 +56,10 @@ Add `state.tsx` when a route loader fetches data that deeply nested client compo
 
 ## Mocking with MSW
 
-Every service has a matching mock layer in `test/mocks/{domain}/`. The folder structure mirrors the service: `get.ts`, `post.ts`, `put.ts`, `delete.ts` (one file per HTTP method), `data.ts` (seed data + `@mswjs/data` factory schema), and `index.ts` (barrel combining all handlers).
+Every service has a matching mock layer in `test/mocks/{domain}/`. The folder structure mirrors the service: `get.ts`, `post.ts`, `put.ts`, `delete.ts` (one file per HTTP method), `data.ts` (server-shape Zod schema + `@msw/data` `Collection` + seed records + reset), and `index.ts` (barrel combining all handlers).
 
-Note: MSW mock data uses snake_case field names (matching the real API wire format). The Ky wrapper converts to camelCase before the Zod schemas see it, so `data.ts` schemas should reflect the raw server shape.
+Note: MSW mock data uses snake_case field names (matching the real API wire format). The Ky wrapper converts to camelCase before the Zod schemas see it, so the server schema in `data.ts` reflects the raw server shape — and the `Collection` consumes that schema directly via Standard Schema.
 
-Register handlers in `test/mocks/index.ts` and add the factory schema to `test/mocks/database.ts`. See [[MSW Handlers]] for full setup details.
+Register handlers in `test/mocks/index.ts` and re-export the new collection (plus its reset) from `test/mocks/database.ts`. See [[MSW Handlers]] for full setup details.
 
 `/new-service` scaffolds all of the above.

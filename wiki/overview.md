@@ -28,7 +28,7 @@ See [[GAIA Philosophy]] for the long version.
 - **i18n**: [[remix-i18next]] with TypeScript language files (not JSON)
 - **State**: Plain React Context+Provider (Theme)
 - **Testing**: [[Vitest]] + [[React Testing Library]] + [[Playwright]] + [[Chromatic]] — all sharing one MSW mocking layer
-- **Mocking**: [[MSW]] + `@mswjs/data` for tests, Storybook, and dev
+- **Mocking**: [[MSW]] + `@msw/data` for tests, Storybook, and dev
 - **Storybook** v10 with React Router, i18n, dark mode, MSW addons
 - **Quality**: 20+ ESLint plugins, Prettier, Stylelint, [[Husky]] pre-commit hooks
 - **Claude Code**: [[Claude Integration]] with commands, rules, hooks, agents
