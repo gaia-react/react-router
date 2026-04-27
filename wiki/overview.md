@@ -9,13 +9,13 @@ tags: [overview, gaia]
 
 # GAIA React
 
-GAIA React is the most thoroughly configured [React Router 7](https://reactrouter.com/) template available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
+GAIA React is the most thoroughly configured React workflow for Claude available. It exists to eliminate the multi-day setup tax on new projects: linting, testing, i18n, CI, pre-commit hooks, dark mode, Storybook, MSW, and Claude Code integration are all wired together and working — not just installed.
 
 It is the spiritual successor to the **GAIA Flash Framework**, the most popular Flash framework in the world (used to build 100K+ Flash sites). GAIA React has been refined over 4+ years across multiple production teams.
 
 ## Philosophy
 
-> [!key-insight] Base template, not full-stack kit
+> [!key-insight] Complete workflow, not full-stack kit
 > GAIA deliberately ships **no component library**. You choose what fits. The value is in infrastructure and developer experience that every project needs but nobody wants to set up twice. Every tool is pre-configured but **removable**.
 
 See [[GAIA Philosophy]] for the long version.

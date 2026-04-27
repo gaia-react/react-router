@@ -8,9 +8,9 @@
 [![Node](https://img.shields.io/badge/node-%3E%3D22.19.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-**Claude as your lead engineer.** GAIA is the React Router template that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
+**Claude as your senior engineer.** GAIA is the React workflow for Claude that makes Claude trustworthy enough to own features end-to-end, token-efficient enough to do it at scale, and grounded enough in the stack to answer how-do-I questions without re-reading the codebase.
 
-Built on React Router, Tailwind v4, Vitest, Playwright, Chromatic, Storybook, i18n, Conform + Zod forms, dark mode, MSW, and 20+ ESLint plugins. Every piece is pre-configured _and_ documented for Claude in a way that keeps per-request costs down and output quality up.
+Everything is configured _and_ documented for Claude in a way that keeps per-request costs down and output quality up.
 
 ## Who it's for
 
@@ -34,7 +34,7 @@ This pulls the latest tagged release (scrubbed of dev notes), sets up `.gaia/VER
 
 ## The two problems GAIA solves
 
-Most templates treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the root and hope the model figures out the rest. GAIA treats Claude as an engineer you _manage_. That shift exposes two failure modes the bolt-on approach papers over.
+Most React setups treat Claude as a tool you hold — bolt a `CLAUDE.md` onto the root and hope the model figures out the rest. GAIA treats Claude as an engineer you _manage_. That shift exposes two failure modes the bolt-on approach papers over.
 
 ### Trust
 
@@ -46,8 +46,10 @@ Context bloat isn't just `CLAUDE.md` sprawl. Instructions get dropped into globa
 
 ## How GAIA makes Claude trustworthy
 
-- **Best practices are baked in, not pattern-matched.** Rules encode the conventions directly instead of hoping Claude infers them from whatever's already in the repo.
+- **Coding principles.** GAIA's coding rules embed [Karpathy's four coding principles](https://github.com/forrestchang/andrej-karpathy-skills/blob/main/CLAUDE.md) — Think Before Coding, Simplicity First, Surgical Changes, and Goal-Driven Execution — plus two of GAIA's own: Always Use TDD and Always Verify Your Work.
+- **Best practices baked in.** Rules encode the conventions directly instead of hoping Claude infers them from whatever's already in the repo.
 - **Guardrails against technical debt.** Rules block debt-accumulating patterns from being written in the first place — untyped exports, untested components, hardcoded strings, a11y gaps.
+- **Consistently clean code.** 20+ ESLint plugins, strict TypeScript, and Prettier enforce style and correctness on every file Claude touches — no negotiation, no drift.
 - **Test-driven development** via the bundled `tdd` skill. Red-green-refactor loop, tests before code — tailored for Vitest, React Testing Library, Storybook `composeStory`, and MSW.
 - **Code-review audit before every merge.** A Claude subagent scans the branch diff for security, performance, code smells, and antipatterns — and blocks the merge until the issues are fixed and committed.
 - **Quality gate before commit** — typecheck, lint, tests, and build must all pass. Not "mostly clean" — actually clean.
@@ -60,20 +62,20 @@ Context bloat isn't just `CLAUDE.md` sprawl. Instructions get dropped into globa
 - **Periodic knowledge audit** sweeps memory, wiki, and autoloaded files for duplication, conflicts, and stale instructions before they start costing tokens.
 - **Session continuity.** `/handoff` + `/pickup` replace re-briefing Claude from scratch at every session start.
 
-## What Claude rides on (the foundation)
+## Tech Stack
 
-GAIA bundles the traditional stack Claude's output rests on. Every piece is pre-configured and wired into the Claude layer.
+Every piece of GAIA's [tech stack](https://gaia-react.github.io/#stack) is pre-configured and wired into the Claude layer.
 
-- **20+ ESLint plugins** with [Prettier](https://prettier.io/) and [Stylelint](https://stylelint.io/) for consistent code from the first commit
+- **20+ ESLint plugins** with [Prettier](https://prettier.io/) and [Stylelint](https://stylelint.io/) for clean, consistent code from the first commit
 - **Pre-commit hooks** ([Husky](https://typicode.github.io/husky/) + [lint-staged](https://github.com/lint-staged/lint-staged)) — typecheck, lint, and test before CI
 - **Four testing layers sharing one mock layer** — [Vitest](https://vitest.dev) + [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/) for unit/integration, [Playwright](https://playwright.dev/docs/intro) for E2E, [Chromatic](https://chromatic.com/) for visual regression
-- **i18n in 2 languages** via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with working examples
+- **Internationalization** via [remix-i18next](https://github.com/sergiodxa/remix-i18next) with working examples
 - **Form components with validation** using [Conform](https://conform.guide/) + [Zod](https://zod.dev/)
 - **Dark mode end-to-end** — context, session, CSS, and Storybook all in sync
 - **[Storybook](https://storybook.js.org/)** with React Router + i18n + dark mode + [MSW](https://mswjs.io/) integration
 - **API mocking** with [Mock Service Worker](https://mswjs.io/) and [msw/data](https://github.com/mswjs/data), working handlers for tests and Storybook
 - **Toast notifications** with [remix-toast](https://remix.run/resources/remix-toast) and [Sonner](https://sonner.emilkowal.ski/)
-- Built on [React Router 7](https://reactrouter.com/), [Tailwind v4](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
+- Built on [React Router 7](https://reactrouter.com/), [Tailwind](https://tailwindcss.com/), and [FontAwesome](https://fontawesome.com/) icons
 
 ## How GAIA Compares
 
@@ -114,7 +116,7 @@ Principles including Autonomy, Tool Use, Memory & Context, and Exception Handlin
 
 ## One-Command Initialization
 
-The template ships clean. `/init` finishes the last-mile setup:
+GAIA ships clean. `/init` finishes the last-mile setup:
 
 - **Configures your project** — prompts for a title, sets the package name, docs title, CODEOWNERS, and localized site titles
 - **Installs dependencies** — bootstraps pnpm via `corepack` and runs `pnpm install` for you
@@ -129,15 +131,18 @@ GAIA ships a complete, opinionated Claude Code workflow. Everything is wired in 
 
 ### Commands
 
-| Command            | What it does                                                                                                                     |
-| ------------------ |----------------------------------------------------------------------------------------------------------------------------------|
-| `/init`            | Full template initialization (see above)                                                                                         |
-| `/orchestrate`     | Plan a complex feature. Claude structures the work, you approve, then an orchestrator drives focused subagents through execution |
-| `/gaia-update`     | Merges the latest GAIA release without overwriting your customizations                                                           |
-| `/migrate`         | Upgrades outdated packages and handles any necessary code changes - a superpowered Dependabot                                    |
-| `/audit-knowledge` | Audit memory, wiki, and auto-loaded files for duplication, conflicting instructions, and bloat                                   |
-| `/handoff`         | Generate a comprehensive session handoff document so you can clear the context with confidence that nothing will get lost                                                                   |
-| `/pickup`          | Restore context from handoff and continue work                                                           |
+<table>
+<thead><tr><th nowrap>Command</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>/init</code></td><td>Full project initialization (see above)</td></tr>
+<tr><td><code>/orchestrate</code></td><td>Plan a complex feature. Claude structures the work, you approve, then an orchestrator drives focused subagents through execution</td></tr>
+<tr><td><code>/gaia-update</code></td><td>Merges the latest GAIA release without overwriting your customizations</td></tr>
+<tr><td><code>/migrate</code></td><td>Upgrades outdated packages and handles any necessary code changes - a superpowered Dependabot</td></tr>
+<tr><td><code>/audit-knowledge</code></td><td>Audit memory, wiki, and auto-loaded files for duplication, conflicting instructions, and bloat</td></tr>
+<tr><td><code>/handoff</code></td><td>Generate a comprehensive session handoff document so you can clear the context with confidence that nothing will get lost</td></tr>
+<tr><td><code>/pickup</code></td><td>Restore context from handoff and continue work</td></tr>
+</tbody>
+</table>
 
 ### Rules, hooks, skills
 
@@ -185,4 +190,4 @@ GAIA isn't prescriptive about hosting. Ask Claude to set up your deployment for 
 
 The GAIA Flash Framework was Flash's most popular framework — **its killer feature was automation**. It collapsed repetitive Flash plumbing into a few declarative patterns so engineers could focus on the product, and was used on over 100,000 sites at every major digital agency worldwide.
 
-GAIA React carries that automation philosophy into the AI-native era. Where the original automated Flash boilerplate, this template automates the Claude workflow — conventions, rules, hooks, gates, wiki — so you can ship features end-to-end without wiring the scaffolding every time.
+GAIA React carries that automation philosophy into the AI-native era. Where the original automated Flash boilerplate, GAIA automates the Claude workflow — conventions, rules, hooks, gates, wiki — so you can ship features end-to-end without wiring the scaffolding every time.

@@ -8,7 +8,7 @@ tags: [concept, philosophy]
 
 # GAIA Philosophy
 
-> [!key-insight] Base template, not full-stack kit
+> [!key-insight] Complete workflow, not full-stack kit
 > GAIA is the infrastructure that every React project needs but nobody wants to set up twice. It deliberately ships **no component library** — you choose what fits.
 
 ## Core tenets

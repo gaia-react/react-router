@@ -26,6 +26,8 @@ pnpm install
 
 If install fails, stop and report the error. Do not continue.
 
+Then run `/migrate` to bring all packages to their latest compatible versions before continuing. If `/migrate` reports anything as **skipped** with a reason, surface it so the user can investigate, but proceed. Note `/migrate` runs its own quality gate at the end — if it halts on a quality-gate failure or peer-dep error, stop here and surface the report to the user; do not silently continue.
+
 ## Step 2: Gather user input
 
 Ask the user using AskUserQuestion (multiSelect where appropriate):
@@ -41,6 +43,15 @@ Run in one shell:
 ```bash
 rm -rf .github/FUNDING.yml .storybook/static/gaia-logo.png app/assets/images/gaia-logo.svg app/components/GaiaLogo
 ```
+
+Replace the root `README.md` with the project-agnostic template and substitute the project title (use the value collected in Step 2; use Title Case):
+
+```bash
+cp .gaia/templates/README.md README.md
+sed -i.bak 's/{{PROJECT_TITLE}}/<Project Title>/g' README.md && rm README.md.bak
+```
+
+The `{{PROJECT_TITLE}}` placeholder is the exact token in the template; the `sed -i.bak … && rm …bak` form is BSD/macOS-compatible and works on GNU sed as well.
 
 Then edit `app/components/Header/index.tsx`:
 
@@ -117,6 +128,70 @@ GAIA bundles `tdd` and `playwright-cli` skills at `.claude/skills/` — they shi
 - `claude plugin marketplace add AgriciDaniel/claude-obsidian`
 - `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
+### Wire the GAIA statusline
+
+Add the project-scoped GAIA statusline to **project** `.claude/settings.json` so the user gets `/migrate` and `/gaia-update` hints automatically. The wrapper at `.gaia/statusline/gaia-statusline.sh` delegates the left-side render and only appends GAIA addons inside this project.
+
+Make `.gaia/statusline/*.sh` executable: `chmod +x .gaia/statusline/*.sh` (idempotent — safe to run regardless).
+
+Inspect `~/.claude/settings.json` for a top-level `statusLine` key, then branch:
+
+#### Branch A — adopter has a custom global statusline (`statusLine` exists in `~/.claude/settings.json`)
+
+Show the user a colored preview of the wrapped result by running:
+
+```bash
+GAIA_PREVIEW_TMP="$(mktemp -d)/gaia-example"
+mkdir -p "$GAIA_PREVIEW_TMP" && git -C "$GAIA_PREVIEW_TMP" init -q -b feat/example-name \
+  && git -C "$GAIA_PREVIEW_TMP" -c user.email=x@x -c user.name=x commit -q --allow-empty -m preview
+mkdir -p .gaia/cache
+cat > .gaia/cache/statusline-update-check.json <<'JSON'
+{"checkedAt":9999999999,"outdatedCount":3,"gaiaCurrent":"1.0.0","gaiaLatest":"1.2.0","gaiaHasUpdate":true}
+JSON
+echo '{"workspace":{"current_dir":"'"$GAIA_PREVIEW_TMP"'"},"model":{"display_name":"Claude Opus 4.7"},"context_window":{"used_percentage":42}}' \
+  | bash .gaia/statusline/gaia-statusline.sh; echo
+rm -rf "$(dirname "$GAIA_PREVIEW_TMP")"
+rm -f .gaia/cache/statusline-update-check.json
+```
+
+The Bash output renders with ANSI colors in the chat. The `gaia-example` / `feat/example-name` placeholders keep the preview stable regardless of the adopter's real cwd or branch — once wired, the live statusline reflects their actual project + branch. Tell the user: "GAIA addons will append to your existing global statusline only when Claude is launched in this project." Then write the project-level wrapper into `.claude/settings.json` (insert alphabetically):
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "bash .gaia/statusline/gaia-statusline.sh"
+}
+```
+
+#### Branch B — adopter is on the default Claude statusline (no global `statusLine`)
+
+Render the same colored preview as Branch A. Then `AskUserQuestion`:
+
+> Install GAIA's recommended statusline (project + branch + model + context bar)?
+>
+> - **Globally** — show this layout in every project, plus GAIA addons inside GAIA projects (Recommended).
+> - **Only in this GAIA project** — show only when Claude is launched here.
+> - **Skip** — keep Claude's default; GAIA addons still append in this project.
+
+Apply the answer:
+
+- **Globally** → copy `.gaia/statusline/preferred-base.sh` to `~/.claude/preferred-base.sh`, `chmod +x` it, and write into `~/.claude/settings.json`:
+
+  ```json
+  "statusLine": {
+    "type": "command",
+    "command": "bash ~/.claude/preferred-base.sh"
+  }
+  ```
+
+  (Insert alphabetically into the user-level JSON. Preserve any existing keys.)
+
+- **Only in this GAIA project** → `touch .gaia/statusline/.use-vendored-base`. The sentinel is gitignored; the wrapper detects it and routes to the vendored base.
+
+- **Skip** → no extra action.
+
+In all three sub-cases, write the project-level wrapper into `.claude/settings.json` exactly as in Branch A.
+
 ## Step 10: Refresh the wiki
 
 The template ships with a wiki shaped for the upstream GAIA project. Refresh the two files that encode "where we are right now" so the new project starts with a clean context:
@@ -143,11 +218,24 @@ updated: <TODAY_ISO>
 - None.
 ```
 
-### 9b. Prepend an entry to `wiki/log.md`
+### 9b. Overwrite `wiki/log.md`
 
-Insert directly below the `# Log` heading (log is append-only, newest on top):
+Replace the entire `wiki/log.md` file with the following content (the GAIA development log is irrelevant to the new project):
 
 ```md
+---
+type: meta
+title: Log
+status: active
+created: <TODAY_ISO>
+updated: <TODAY_ISO>
+tags: [meta, log]
+---
+
+# Log
+
+Append-only. New entries at the TOP.
+
 ## [<TODAY>] /gaia-init | project initialized
 
 - Project name: <PROJECT_TITLE>

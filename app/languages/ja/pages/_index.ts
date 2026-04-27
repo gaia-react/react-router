@@ -17,7 +17,7 @@ export default {
     title: 'インデックスページ',
   },
   stylingLabel: 'スタイリング',
-  stylingValue: 'Tailwind v4',
+  stylingValue: 'Tailwind',
   testingLabel: 'テスト',
   testingValue: 'Vitest + Playwright',
 };

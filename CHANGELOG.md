@@ -25,6 +25,10 @@ Run `/gaia-update` inside your project to pull GAIA changes without clobbering y
 
 - `wiki/decisions/pnpm.md` — ADR documenting the pnpm migration, supply-chain quarantine rationale, and override audit flow.
 - `wiki/decisions/DragonScale Opt-Out.md` — ADR documenting why GAIA does not adopt the DragonScale memory layer.
+- **`/gaia-init` README replacement.** New `.gaia/templates/README.md` template is copied to the project root with `{{PROJECT_TITLE}}` substituted, replacing GAIA's own marketing README so adopters start with a project-focused readme.
+- **`/gaia-init` runs `/migrate` after install** so new projects start on the freshest compatible package versions.
+- **`/gaia-init` resets `wiki/log.md`** to a single seed entry instead of prepending to GAIA's development log — adopters' logs are about their project only.
+- **GAIA statusline (default, opt-out).** `.gaia/statusline/gaia-statusline.sh` ships a project-scoped wrapper that renders project, branch, model, and context bar (left) plus right-aligned hints when `pnpm` packages are outdated (`Run /migrate (N outdated)`) or a new GAIA release is available (`Run /gaia-update (GAIA <ver> available)`). The left side is delegated: a sentinel `.gaia/statusline/.use-vendored-base` (gitignored) routes to the vendored renderer at `.gaia/statusline/preferred-base.sh`; otherwise the wrapper invokes the adopter's existing `~/.claude/settings.json` `statusLine.command` so their custom statusline shows through unchanged. Final fallback is the vendored base. Update checks are TTL-cached (6 hours) in `.gaia/cache/statusline-update-check.json` so the hot-path stays fast. `/gaia-init` shows a colored preview and asks adopters on Claude's default statusline whether they want the GAIA layout installed globally, project-only (sentinel), or skipped.
 
 ### Removed
 

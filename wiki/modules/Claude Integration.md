@@ -18,20 +18,20 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 
 ## Commands (slash)
 
-| Command                | What it does                                                                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/gaia-init`           | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                                    |
-| `/gaia-update`         | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                         |
-| `/gaia-release`        | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]])          |
-| `/new-route`           | Scaffold a route + page + tests + i18n                                                                                                      |
-| `/new-component`       | Scaffold a component with optional test + story                                                                                             |
-| `/new-service`         | Scaffold an API service + Zod + URL constants + MSW mocks                                                                                   |
-| `/new-hook`            | Scaffold a custom hook + test                                                                                                               |
-| `/audit-code`          | Run the full [[Quality Gate]]                                                                                                               |
-| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                                   |
-| `/migrate`             | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
-| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
-| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
+| Command            | What it does                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/gaia-init`       | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                                    |
+| `/gaia-update`     | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                         |
+| `/gaia-release`    | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]])          |
+| `/new-route`       | Scaffold a route + page + tests + i18n                                                                                                      |
+| `/new-component`   | Scaffold a component with optional test + story                                                                                             |
+| `/new-service`     | Scaffold an API service + Zod + URL constants + MSW mocks                                                                                   |
+| `/new-hook`        | Scaffold a custom hook + test                                                                                                               |
+| `/audit-code`      | Run the full [[Quality Gate]]                                                                                                               |
+| `/audit-knowledge` | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                                   |
+| `/migrate`         | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
+| `/handoff`         | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
+| `/pickup`          | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
 
 See individual rules for the patterns each command produces.
 
@@ -131,6 +131,16 @@ After its own review, it spawns 3 parallel specialist subagents to audit changed
 | `tdd`              | Red-green-refactor TDD workflow with a `references/tests-react.md` companion ([[Component Testing]]) |
 
 These activate automatically based on context.
+
+### Statusline
+
+GAIA ships a project-scoped statusline wrapper at `.gaia/statusline/gaia-statusline.sh`, wired by `/gaia-init`. The wrapper appends right-aligned hints (`Run /migrate (N outdated)`, `Run /gaia-update (GAIA <ver> available)`) and delegates the left side in this priority order:
+
+1. Sentinel file `.gaia/statusline/.use-vendored-base` (gitignored) → run the vendored renderer `.gaia/statusline/preferred-base.sh`. Project-only mode, no global install.
+2. `~/.claude/settings.json` `statusLine.command` → run that. Adopter's custom statusline appears unchanged inside the GAIA project.
+3. Fallback → run `.gaia/statusline/preferred-base.sh` directly.
+
+`/gaia-init` shows a colored preview and asks adopters on Claude's default statusline whether to install the GAIA layout globally, project-only (writes the sentinel), or skip. Update checks are TTL-cached (6h) in `.gaia/cache/statusline-update-check.json`. Opt-out entirely by removing the `statusLine` key from `.claude/settings.json`.
 
 ## settings.json
 

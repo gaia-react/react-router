@@ -82,15 +82,15 @@ Agents interface with external systems — APIs, file systems, test runners — 
 
 **GAIA's tool layer for Claude:**
 
-| Tool                  | Purpose                                              |
-| --------------------- | ---------------------------------------------------- |
-| ESLint                | Static analysis feedback after every code write      |
-| Vitest                | Unit/integration test execution                      |
-| Playwright            | E2E test execution and browser observation           |
-| Storybook + Chromatic | Component isolation and visual regression detection  |
-| MSW                   | API mock layer for tests and Storybook               |
-| Obsidian wiki         | Persistent project knowledge retrieval               |
-| `gh` CLI              | PR creation, merge, and CI status                    |
+| Tool                  | Purpose                                             |
+| --------------------- | --------------------------------------------------- |
+| ESLint                | Static analysis feedback after every code write     |
+| Vitest                | Unit/integration test execution                     |
+| Playwright            | E2E test execution and browser observation          |
+| Storybook + Chromatic | Component isolation and visual regression detection |
+| MSW                   | API mock layer for tests and Storybook              |
+| Obsidian wiki         | Persistent project knowledge retrieval              |
+| `gh` CLI              | PR creation, merge, and CI status                   |
 
 ### Memory & Context
 
