@@ -40,7 +40,7 @@ Append-only. New entries at the TOP.
 - Added `.gaia/` directory: `VERSION` (adopter baseline marker), `manifest.json` (349 files classified as `owned`/`shared`/`wiki-owned`), `release-exclude` (tar-exclude list of maintainer-only paths), `scripts/generate-manifest.mjs` (classifier).
 - Added `/gaia-release` — maintainer-only (stripped from tarball via release-exclude). 12-step orchestrator: verify clean, bump, audit, graduate CHANGELOG, scrub `wiki/hot.md` + `wiki/log.md`, regenerate manifest, commit, tag, confirm, push.
 - Added `/gaia-update` — adopter-facing. GSD-inspired three-way diff per file; drifted `owned` prompts, drifted `shared`/`wiki-owned` emits `.gaia-merge/<path>.patch`, atomic version-marker bump.
-- Separate `create-gaia` npm package scaffolded at `../create-gaia/` — zero-dep Node CLI that downloads the release tarball from GitHub, extracts, `git init`, `npm install`. Replaces `npx create-react-router --template gaia-react/react-router` in the README quick-start (old command preserved under an "Alternative" fold).
+- Separate `create-gaia` npm package scaffolded at `../create-gaia/` — zero-dep Node CLI that downloads the release tarball from GitHub, extracts, `git init`, `npm install`. Replaces `npx create-react-router --template gaia-react/gaia` in the README quick-start (old command preserved under an "Alternative" fold).
 - CI made fork-safe: `tests.yml` + `chromatic.yml` fall back secrets to placeholders so forks pass lint/typecheck/unit. Chromatic split into a `has-chromatic-token` check job so it skips cleanly when the token is absent.
 - PR/issue templates added (`.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/{bug_report,feature_request,config}.yml`).
 - Pages created: [[Release Workflow]], [[Update Workflow]].

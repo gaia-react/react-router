@@ -1,6 +1,6 @@
 # Changelog
 
-All notable changes to the GAIA React Template are documented here.
+All notable changes to GAIA React are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
@@ -70,5 +70,5 @@ First public release. The template pivots from an example-app starter to a Claud
 - `tsconfig` paths and import resolution cleanup.
 - Login redirect issues uncovered during the auth removal.
 
-[Unreleased]: https://github.com/gaia-react/react-router/compare/v1.0.0...HEAD
-[1.0.0]: https://github.com/gaia-react/react-router/releases/tag/v1.0.0
+[Unreleased]: https://github.com/gaia-react/gaia/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/gaia-react/gaia/releases/tag/v1.0.0

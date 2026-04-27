@@ -9,7 +9,7 @@ tags: [release, claude, maintainer, versioning]
 
 # Release Workflow
 
-How GAIA cuts a public release. Two surfaces — the template repo (`gaia-react/react-router`) and the bootstrapper (`gaia-react/create-gaia`) — ship on independent cadences.
+How GAIA cuts a public release. Two surfaces — the template repo (`gaia-react/gaia`) and the bootstrapper (`gaia-react/create-gaia`) — ship on independent cadences.
 
 > [!note] Audience
 > The `/gaia-release` command is **maintainer-only** and stripped from distribution tarballs by `.gaia/release-exclude`. Adopters never see it. This page documents the flow so adopters understand what each GAIA release contains and why `/gaia-update` behaves the way it does.
@@ -69,7 +69,7 @@ Adopters who download the v1.0.0 tarball get 348 files, ~550 KB. The scrubbed `w
 Separate repo, separate npm package (`create-gaia`). Zero runtime deps. When an adopter runs `npx create-gaia my-app`:
 
 1. Resolves the target version (flag, or latest GitHub release).
-2. Downloads the release tarball from `github.com/gaia-react/react-router/releases/download/vX.Y.Z/gaia-vX.Y.Z.tar.gz`.
+2. Downloads the release tarball from `github.com/gaia-react/gaia/releases/download/vX.Y.Z/gaia-vX.Y.Z.tar.gz`.
 3. Extracts into `my-app/`.
 4. `git init` + initial commit (unless `--no-git`).
 5. `pnpm install` (after `corepack enable pnpm`), unless `--no-install`. The scaffolded project pins pnpm via `packageManager` in `package.json`; corepack provisions the matching version transparently.

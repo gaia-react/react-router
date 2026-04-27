@@ -1,5 +1,5 @@
 {
-  "name": "gaia-react-template",
+  "name": "gaia-react",
   "version": "1.0.0",
   "description": "Claude-native React Router template with TypeScript, Tailwind v4, Vitest, Playwright, and Storybook pre-configured.",
   "author": "Steven Sacks <stevensacks@gmail.com>",

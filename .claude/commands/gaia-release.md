@@ -39,7 +39,7 @@ In `CHANGELOG.md`:
 2. If the section below it is empty (no Added/Changed/Fixed bullets), stop and ask the maintainer to write release notes first.
 3. Replace `## [Unreleased]` with `## [NEW_VERSION] — YYYY-MM-DD` (today's ISO date).
 4. Insert a fresh `## [Unreleased]` section (empty) above the newly-dated section.
-5. Update the comparison link footer at the bottom of the file — add a line like `[NEW_VERSION]: https://github.com/gaia-react/react-router/releases/tag/vNEW_VERSION` and update the `[Unreleased]` link to compare from the new tag.
+5. Update the comparison link footer at the bottom of the file — add a line like `[NEW_VERSION]: https://github.com/gaia-react/gaia/releases/tag/vNEW_VERSION` and update the `[Unreleased]` link to compare from the new tag.
 
 ## Step 6: Scrub `wiki/hot.md`
 
@@ -177,5 +177,5 @@ The tag push triggers `.github/workflows/release.yml`, which builds the scrubbed
 Print:
 
 - Tag name and short SHA of the release commit.
-- Expected GitHub Release URL: `https://github.com/gaia-react/react-router/releases/tag/v<NEW_VERSION>` — workflow takes ~1 minute.
+- Expected GitHub Release URL: `https://github.com/gaia-react/gaia/releases/tag/v<NEW_VERSION>` — workflow takes ~1 minute.
 - Reminder: if publishing `create-gaia` as well, bump its pinned default version to `v<NEW_VERSION>` and publish.

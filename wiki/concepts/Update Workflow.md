@@ -37,7 +37,7 @@ Sentinel paths (always adopter-owned regardless of what GAIA ships): `wiki/hot.m
 ## Flow
 
 1. Read `.gaia/VERSION`. Missing → tell user to run `/gaia-init` on a fresh `create-gaia` scaffold.
-2. Resolve latest release via `gh release list --repo gaia-react/react-router` (or GitHub API fallback).
+2. Resolve latest release via `gh release list --repo gaia-react/gaia` (or GitHub API fallback).
 3. Compare to baseline. Same or older → exit. Never downgrade.
 4. Show the adopter the release notes and **confirm** before touching anything.
 5. Download baseline + latest tarballs to `.gaia/cache/`.
@@ -76,7 +76,7 @@ Files deleted upstream (in baseline, not in latest):
 
 ## When to run
 
-After a new GAIA release is announced (watch releases on `gaia-react/react-router`). Cadence is fully at the adopter's discretion — skipping versions is fine; the three-way diff works with any gap.
+After a new GAIA release is announced (watch releases on `gaia-react/gaia`). Cadence is fully at the adopter's discretion — skipping versions is fine; the three-way diff works with any gap.
 
 ## See also
 

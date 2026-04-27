@@ -2,7 +2,7 @@ export default {
   componentsLabel: 'コンポーネントテスト',
   componentsValue: 'Storybook + Chromatic',
   cta: 'GitHubで見る',
-  eyebrow: 'GAIA Reactテンプレート',
+  eyebrow: 'GAIA React',
   formsLabel: 'フォーム',
   formsValue: 'Conform + Zod',
   frameworkLabel: 'フレームワーク',

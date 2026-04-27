@@ -20,7 +20,7 @@ const Footer: FC<FooterProps> = ({className}) => {
         <span>&copy;2026 GAIA Framework</span>
         <a
           className="hover:text-body transition-colors"
-          href="https://github.com/gaia-react/react-router?tab=MIT-1-ov-file#readme"
+          href="https://github.com/gaia-react/gaia?tab=MIT-1-ov-file#readme"
           rel="noreferrer"
           target="_blank"
         >

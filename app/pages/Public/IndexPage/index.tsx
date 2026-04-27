@@ -58,7 +58,7 @@ const IndexPage: FC = () => {
               className="border-claude-500 text-claude-500 hover:bg-claude-500/10 dark:border-claude-400 dark:text-claude-300 dark:hover:bg-claude-500/15"
               icon={faGithub}
               size="lg"
-              to="https://github.com/gaia-react/react-router"
+              to="https://github.com/gaia-react/gaia"
               variant="secondary"
             >
               {t('cta')}
