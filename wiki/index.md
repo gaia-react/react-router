@@ -3,7 +3,7 @@ type: meta
 title: Index
 status: active
 created: 2026-04-20
-updated: 2026-04-26
+updated: 2026-04-27
 tags: [meta]
 ---
 
@@ -122,6 +122,8 @@ Master catalog of every page in the wiki. Newly created pages must be added here
 
 ## Meta
 
+- [[README]] — vault schema, mode declaration, conventions
 - [[dashboard]]
+- [[lint-report-2026-04-27]]
 - [[lint-report-2026-04-26]]
 - [[lint-report-2026-04-21]]

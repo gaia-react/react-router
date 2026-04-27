@@ -5,7 +5,7 @@ package: msw
 version: ^2.13.4
 role: api-mocking
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [dependency, testing, mocking]
 ---
 

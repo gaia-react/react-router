@@ -113,13 +113,13 @@ The tracer bullet for services: the happy-path request returns a Zod-parsed resu
 
 Mock at **system boundaries** only:
 
-| Boundary                | Mock via                             | Example                                 |
-| ----------------------- | ------------------------------------ | --------------------------------------- |
-| HTTP / external APIs    | MSW handlers in `test/mocks/`        | REST calls made by `app/services/`      |
+| Boundary                | Mock via                               | Example                                       |
+| ----------------------- | -------------------------------------- | --------------------------------------------- |
+| HTTP / external APIs    | MSW handlers in `test/mocks/`          | REST calls made by `app/services/`            |
 | Database read/write     | `@msw/data` collections via `database` | `await database.things.create(...)` in a test |
-| Time                    | `vi.useFakeTimers()`                 | Debounced handlers, TTL expiry          |
-| Randomness              | `vi.spyOn` at boundary               | IDs, crypto                             |
-| Navigation (unit scope) | `stubs.reactRouter({routes})`        | Buttons that push to `/done`            |
+| Time                    | `vi.useFakeTimers()`                   | Debounced handlers, TTL expiry                |
+| Randomness              | `vi.spyOn` at boundary                 | IDs, crypto                                   |
+| Navigation (unit scope) | `stubs.reactRouter({routes})`          | Buttons that push to `/done`                  |
 
 **Never mock:**
 

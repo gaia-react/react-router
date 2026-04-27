@@ -6,7 +6,7 @@ language: typescript
 purpose: Storybook setup with React Router, i18n, dark mode, and Chromatic snapshots
 depends_on: [[Storybook]], [[MSW]]
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [module, storybook, testing]
 ---
 

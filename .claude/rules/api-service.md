@@ -83,10 +83,14 @@ import {things} from './data';
 import {url} from '../url';
 
 export default [
-  http.get(url(GAIA_URLS.things), () => HttpResponse.json(things.findMany(undefined))),
+  http.get(url(GAIA_URLS.things), () =>
+    HttpResponse.json(things.findMany(undefined))
+  ),
   http.get(url(GAIA_URLS.thingsId), ({params}) => {
     const record = things.findFirst((q) => q.where({id: params.id}));
-    return record ? HttpResponse.json(record) : new HttpResponse(null, {status: 404});
+    return record ?
+        HttpResponse.json(record)
+      : new HttpResponse(null, {status: 404});
   }),
 ];
 ```

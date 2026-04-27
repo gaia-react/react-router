@@ -6,7 +6,7 @@ language: typescript
 purpose: API mocking layer shared across Vitest, Storybook, and dev
 depends_on: [[MSW]]
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [module, msw, testing, mocking]
 ---
 
@@ -31,16 +31,16 @@ This means tests exercise the full request path: route loader → service functi
 
 ## 2. Folder structure
 
-| Path                                                                | Role                                         |
-| ------------------------------------------------------------------- | -------------------------------------------- |
+| Path                                                                | Role                                                  |
+| ------------------------------------------------------------------- | ----------------------------------------------------- |
 | `test/mocks/{resource}/data.ts`                                     | Server-shape Zod schema + `Collection` + seed + reset |
-| `test/mocks/{resource}/get.ts` / `post.ts` / `put.ts` / `delete.ts` | HTTP handlers                                |
-| `test/mocks/{resource}/index.ts`                                    | Barrel — re-exports all handlers as an array |
-| `test/mocks/database.ts`                                            | Collection registry + `resetTestData()`      |
-| `test/mocks/faker.ts`                                               | Seeded faker instance (consistent test data) |
-| `test/mocks/ping.ts`                                                | Passthrough for Remix dev ping               |
-| `test/mocks/url.ts`                                                 | URL helper — mirrors ky prefix-join logic    |
-| `test/mocks/index.ts`                                               | Registry — combines all resource handlers    |
+| `test/mocks/{resource}/get.ts` / `post.ts` / `put.ts` / `delete.ts` | HTTP handlers                                         |
+| `test/mocks/{resource}/index.ts`                                    | Barrel — re-exports all handlers as an array          |
+| `test/mocks/database.ts`                                            | Collection registry + `resetTestData()`               |
+| `test/mocks/faker.ts`                                               | Seeded faker instance (consistent test data)          |
+| `test/mocks/ping.ts`                                                | Passthrough for Remix dev ping                        |
+| `test/mocks/url.ts`                                                 | URL helper — mirrors ky prefix-join logic             |
+| `test/mocks/index.ts`                                               | Registry — combines all resource handlers             |
 
 Support files:
 
@@ -109,14 +109,14 @@ The service function and the MSW handler both import `GAIA_URLS`. If the URL con
 
 `/new-service` produces:
 
-| File                                                                | Contents                                                                 |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
+| File                                                                | Contents                                                                                                       |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | `test/mocks/{resource}/data.ts`                                     | Server-shape Zod schema, `new Collection({schema})`, seed records (snake_case), and `reset*()` for that domain |
-| `test/mocks/{resource}/get.ts` + `post.ts` / `put.ts` / `delete.ts` | HTTP handlers using `url(GAIA_URLS.key)` — never a hardcoded string      |
-| `test/mocks/{resource}/index.ts`                                    | Barrel combining handlers into an array                                  |
-| `test/mocks/index.ts`                                               | Registry updated to include the new barrel                               |
-| `test/mocks/database.ts`                                            | Re-exports the new `Collection` and adds its `reset*()` to `resetTestData()` |
-| `app/services/gaia/urls.ts`                                         | URL constants added (and shared with the service)                        |
+| `test/mocks/{resource}/get.ts` + `post.ts` / `put.ts` / `delete.ts` | HTTP handlers using `url(GAIA_URLS.key)` — never a hardcoded string                                            |
+| `test/mocks/{resource}/index.ts`                                    | Barrel combining handlers into an array                                                                        |
+| `test/mocks/index.ts`                                               | Registry updated to include the new barrel                                                                     |
+| `test/mocks/database.ts`                                            | Re-exports the new `Collection` and adds its `reset*()` to `resetTestData()`                                   |
+| `app/services/gaia/urls.ts`                                         | URL constants added (and shared with the service)                                                              |
 
 If you're editing an existing mock by hand instead of scaffolding, the invariants you must preserve are covered in [Section 3 — Service-layer contract](#3-service-layer-contract) (handlers use `url(GAIA_URLS.key)`, data stays snake_case, factory + `resetTestData()` stay in sync). See the `api-service` rule (`.claude/rules/api-service.md`) for the full contract and [[API Service Pattern]] for the service side.
 
@@ -130,9 +130,13 @@ Reads on a `Collection` are sync (`findFirst`, `findMany`); mutations are async 
 
 ```ts
 things.findFirst((q) => q.where({id: 'abc'}));
-things.findMany(undefined);                  // all
+things.findMany(undefined); // all
 things.findMany((q) => q.where({active: true}));
-await things.update((q) => q.where({id: 'abc'}), {data(t) { t.name = 'new'; }});
+await things.update((q) => q.where({id: 'abc'}), {
+  data(t) {
+    t.name = 'new';
+  },
+});
 ```
 
 `resetTestData()` is async; it's called:

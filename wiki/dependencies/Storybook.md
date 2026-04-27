@@ -5,7 +5,7 @@ package: storybook
 version: 10.3.5
 role: component-development-and-visual-testing
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [dependency, storybook]
 ---
 

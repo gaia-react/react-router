@@ -30,3 +30,7 @@ Decades of greenfield projects, learning the hard way what works, what breaks at
 - A specific deployment target — uses default React Router deploy, you pick the host
 - Heavy state management (no Redux, Zustand) — Context+Provider is enough
 - Backend assumptions (no Prisma, Drizzle, etc.) — your services layer talks to your API
+
+## See also
+
+[[Agentic Design]] — how GAIA structures the Claude Code workflow for agentic tasks.

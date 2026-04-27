@@ -3,7 +3,7 @@ type: overview
 title: GAIA React Overview
 status: mature
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [overview, gaia]
 ---
 
@@ -26,7 +26,7 @@ See [[GAIA Philosophy]] for the long version.
 - **Forms**: [[Conform]] + [[Zod]] — the star of the template, see [[Form Components]]
 - **Styling**: [[Tailwind]] v4 with `tailwind-merge`, plus [[FontAwesome]] icons
 - **i18n**: [[remix-i18next]] with TypeScript language files (not JSON)
-- **State**: Plain React Context+Provider (Theme)
+- **State**: minimal — `app/state/index.tsx` is a passthrough; theme is cookie-based (no React state for theme)
 - **Testing**: [[Vitest]] + [[React Testing Library]] + [[Playwright]] + [[Chromatic]] — all sharing one MSW mocking layer
 - **Mocking**: [[MSW]] + `@msw/data` for tests, Storybook, and dev
 - **Storybook** v10 with React Router, i18n, dark mode, MSW addons
@@ -42,7 +42,7 @@ app/
 ├── hooks/            useBreakpoint, useComponentRect, useTimeout
 ├── languages/        TS-based i18n (en, ja by default)
 ├── middleware/       i18next middleware
-├── pages/            page-specific UI (Auth, Public, Session)
+├── pages/            page-specific UI
 ├── routes/           thin route files (loader/action only)
 ├── services/         api wrapper (Ky) + gaia/* domain services
 ├── sessions.server/  cookie sessions (language, theme)
