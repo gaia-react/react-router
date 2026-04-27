@@ -134,7 +134,13 @@ These activate automatically based on context.
 
 ### Statusline
 
-GAIA ships a default project-scoped statusline at `.gaia/statusline/gaia-statusline.sh`, wired by `/gaia-init`. Renders project / branch / model / context bar, plus right-aligned hints when `pnpm` packages are outdated or a new GAIA release is available. Update checks are TTL-cached (6h) in `.gaia/cache/statusline-update-check.json`. Opt-out by removing the `statusLine` key from `.claude/settings.json`.
+GAIA ships a project-scoped statusline wrapper at `.gaia/statusline/gaia-statusline.sh`, wired by `/gaia-init`. The wrapper appends right-aligned hints (`Run /migrate (N outdated)`, `Run /gaia-update (GAIA <ver> available)`) and delegates the left side in this priority order:
+
+1. Sentinel file `.gaia/statusline/.use-vendored-base` (gitignored) → run the vendored renderer `.gaia/statusline/preferred-base.sh`. Project-only mode, no global install.
+2. `~/.claude/settings.json` `statusLine.command` → run that. Adopter's custom statusline appears unchanged inside the GAIA project.
+3. Fallback → run `.gaia/statusline/preferred-base.sh` directly.
+
+`/gaia-init` shows a colored preview and asks adopters on Claude's default statusline whether to install the GAIA layout globally, project-only (writes the sentinel), or skip. Update checks are TTL-cached (6h) in `.gaia/cache/statusline-update-check.json`. Opt-out entirely by removing the `statusLine` key from `.claude/settings.json`.
 
 ## settings.json
 

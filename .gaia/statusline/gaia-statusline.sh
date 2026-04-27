@@ -1,10 +1,16 @@
 #!/bin/bash
 # GAIA project-scoped statusline.
 #
-# Reads JSON from stdin (Claude Code convention), prints a single line with
-# left segments (project | branch | model | context-bar) and right-aligned
-# hints (outdated packages, GAIA release available) when the cache file
-# indicates either condition.
+# Reads JSON from stdin (Claude Code convention), prints a single line.
+# Left side is delegated; right side is the GAIA addons (outdated packages,
+# GAIA release available) read from the TTL-cached refresher.
+#
+# Left-side resolution (first match wins):
+#   1. Project sentinel `.gaia/statusline/.use-vendored-base` exists →
+#      run `.gaia/statusline/preferred-base.sh` (project-only mode).
+#   2. User has `statusLine.command` in `~/.claude/settings.json` → run that
+#      (so the adopter's existing global statusline appears unchanged).
+#   3. Fallback → `.gaia/statusline/preferred-base.sh` directly.
 #
 # The hot path stays fast (target <50ms): no network calls, no `pnpm` calls.
 # A background refresher (.gaia/statusline/check-updates.sh) writes the cache.
@@ -17,71 +23,36 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GAIA_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 CACHE_FILE="$GAIA_DIR/cache/statusline-update-check.json"
 CHECK_SCRIPT="$SCRIPT_DIR/check-updates.sh"
+SENTINEL="$SCRIPT_DIR/.use-vendored-base"
+PREFERRED_BASE="$SCRIPT_DIR/preferred-base.sh"
 
 # Read JSON input once.
 input=$(cat)
 
-# ---------- Left side ----------
-# Resolve cwd from the Claude payload (workspace.current_dir, then cwd).
-if command -v jq >/dev/null 2>&1; then
-  cwd=$(printf '%s' "$input" | jq -r '.workspace.current_dir // empty' 2>/dev/null)
-  [ -z "$cwd" ] && cwd=$(printf '%s' "$input" | jq -r '.cwd // empty' 2>/dev/null)
-  model=$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null | sed 's/^Claude //')
-  effort=$(printf '%s' "$input" | jq -r '.effortLevel // empty' 2>/dev/null)
-  used_pct=$(printf '%s' "$input" | jq -r '.context_window.used_percentage // empty' 2>/dev/null)
-else
-  cwd=""
-  model=""
-  effort=""
-  used_pct=""
-fi
-[ -z "$cwd" ] && cwd="$PWD"
-
-# Project name + branch from git, fallback to cwd basename.
-if git -C "$cwd" rev-parse --git-dir >/dev/null 2>&1; then
-  git_root=$(git -C "$cwd" --no-optional-locks rev-parse --show-toplevel 2>/dev/null)
-  project=$(basename "$git_root")
-  branch=$(git -C "$cwd" --no-optional-locks rev-parse --abbrev-ref HEAD 2>/dev/null)
-  git_info=$(printf '\033[01;34m%s\033[00m | \033[01;32m%s\033[00m' "$project" "$branch")
-else
-  project=$(basename "$cwd")
-  git_info=$(printf '\033[01;34m%s\033[00m' "$project")
-fi
-
-# Effort suffix on the model.
-if [ -n "$effort" ]; then
-  effort_cap=$(printf '%s' "$effort" | awk '{print toupper(substr($0,1,1)) tolower(substr($0,2))}')
-  model="${model} (${effort_cap})"
-fi
-
-# Context bar.
-context_bar=""
-if [ -n "$used_pct" ]; then
-  filled=$(printf '%s' "$used_pct" | awk '{printf "%d", ($1 / 10 + 0.5)}')
-  [ -z "$filled" ] && filled=0
-  [ "$filled" -gt 10 ] && filled=10
-  empty=$((10 - filled))
-  bar=""
-  for i in $(seq 1 "$filled" 2>/dev/null); do bar="${bar}▓"; done
-  for i in $(seq 1 "$empty" 2>/dev/null); do bar="${bar}░"; done
-  pct_int=$(printf '%.0f' "$used_pct" 2>/dev/null)
-  [ -z "$pct_int" ] && pct_int=0
-  if [ "$pct_int" -ge 80 ]; then
-    color="\033[01;31m"
-  elif [ "$pct_int" -ge 50 ]; then
-    color="\033[01;33m"
-  else
-    color="\033[01;32m"
-  fi
-  context_bar=$(printf "${color}%s\033[00m %d%%" "$bar" "$pct_int")
-fi
-
-# Assemble left.
+# ---------- Left side (delegated) ----------
 left=""
-sep=""
-[ -n "$git_info" ] && { left="${left}${sep}${git_info}"; sep=" | "; }
-[ -n "$model" ] && { left="${left}${sep}\033[01;36m${model}\033[00m"; sep=" | "; }
-[ -n "$context_bar" ] && { left="${left}${sep}${context_bar}"; sep=" | "; }
+if [ -f "$SENTINEL" ] && [ -r "$PREFERRED_BASE" ]; then
+  left=$(printf '%s' "$input" | bash "$PREFERRED_BASE" 2>/dev/null)
+fi
+
+if [ -z "$left" ] && [ "$GAIA_STATUSLINE_NESTED" != "1" ]; then
+  user_cmd=""
+  if [ -f "$HOME/.claude/settings.json" ] && command -v jq >/dev/null 2>&1; then
+    user_cmd=$(jq -r '.statusLine.command // empty' "$HOME/.claude/settings.json" 2>/dev/null)
+  fi
+  # Skip if it points back at this wrapper (avoid recursion).
+  case "$user_cmd" in
+    *gaia-statusline.sh*) user_cmd="" ;;
+  esac
+  if [ -n "$user_cmd" ]; then
+    left=$(printf '%s' "$input" | GAIA_STATUSLINE_NESTED=1 bash -c "$user_cmd" 2>/dev/null)
+  fi
+fi
+
+if [ -z "$left" ] && [ -r "$PREFERRED_BASE" ]; then
+  left=$(printf '%s' "$input" | bash "$PREFERRED_BASE" 2>/dev/null)
+fi
+
 [ -z "$left" ] && left="Claude Code"
 
 # ---------- Right side from cache ----------

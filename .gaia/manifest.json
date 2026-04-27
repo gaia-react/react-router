@@ -69,6 +69,7 @@
     ".env.example": "owned",
     ".gaia/statusline/check-updates.sh": "owned",
     ".gaia/statusline/gaia-statusline.sh": "owned",
+    ".gaia/statusline/preferred-base.sh": "owned",
     ".gaia/templates/README.md": "owned",
     ".github/CODEOWNERS": "shared",
     ".github/FUNDING.yml": "shared",
@@ -352,6 +353,6 @@
     "wiki/README.md": "wiki-owned",
     "wiki/sources/Initial Ingest.md": "wiki-owned"
   },
-  "generated": "2026-04-27T08:55:24.266Z",
+  "generated": "2026-04-27T09:27:44.698Z",
   "version": "1.0.0"
 }
