@@ -11,7 +11,7 @@ tags: [entity, project]
 
 ## What it is
 
-GAIA React is a thoroughly-configured React Router 7 starter template. The current iteration (`gaia-react`, version `1.0.0`) is a spiritual successor to the original GAIA Flash Framework.
+GAIA React is a thoroughly-configured React workflow for Claude. The current iteration (`gaia-react`, version `1.0.0`) is a spiritual successor to the original GAIA Flash Framework.
 
 ## Authors / maintainers
 

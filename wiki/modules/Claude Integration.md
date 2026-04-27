@@ -18,20 +18,20 @@ GAIA ships with [Claude Code](https://claude.ai/) support out of the box. Everyt
 
 ## Commands (slash)
 
-| Command                | What it does                                                                                                                                |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| `/gaia-init`           | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                                    |
-| `/gaia-update`         | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                         |
-| `/gaia-release`        | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]])          |
-| `/new-route`           | Scaffold a route + page + tests + i18n                                                                                                      |
-| `/new-component`       | Scaffold a component with optional test + story                                                                                             |
-| `/new-service`         | Scaffold an API service + Zod + URL constants + MSW mocks                                                                                   |
-| `/new-hook`            | Scaffold a custom hook + test                                                                                                               |
-| `/audit-code`          | Run the full [[Quality Gate]]                                                                                                               |
-| `/audit-knowledge`     | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                                   |
-| `/migrate`             | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
-| `/handoff`             | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
-| `/pickup`              | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
+| Command            | What it does                                                                                                                                |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/gaia-init`       | Rename + strip GAIA branding + configure languages + install Claude toolchain (run once)                                                    |
+| `/gaia-update`     | Pull a later GAIA release into the project — three-way diff, drift-safe merge ([[Update Workflow]])                                         |
+| `/gaia-release`    | **Maintainer-only, stripped from tarball.** Cut a GAIA release — bump, audit, scrub wiki, commit, tag, push ([[Release Workflow]])          |
+| `/new-route`       | Scaffold a route + page + tests + i18n                                                                                                      |
+| `/new-component`   | Scaffold a component with optional test + story                                                                                             |
+| `/new-service`     | Scaffold an API service + Zod + URL constants + MSW mocks                                                                                   |
+| `/new-hook`        | Scaffold a custom hook + test                                                                                                               |
+| `/audit-code`      | Run the full [[Quality Gate]]                                                                                                               |
+| `/audit-knowledge` | Audit memory + wiki + auto-loaded files for dupes, stale entries, and bloat ([[Audit-Knowledge Command]])                                   |
+| `/migrate`         | Autonomous Dependabot — discover all outdated packages, audit `pnpm.overrides`, apply codebase migrations for major bumps, run quality gate |
+| `/handoff`         | Generate a session handoff doc at `.claude/handoff/HANDOFF-{date}-{slug}.md` ([[Handoff Command]])                                          |
+| `/pickup`          | Resume from the latest handoff; falls back to `wiki/hot.md` ([[Pickup Command]])                                                            |
 
 See individual rules for the patterns each command produces.
 

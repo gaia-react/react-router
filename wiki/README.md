@@ -10,7 +10,7 @@ tags: [meta, schema]
 
 Mode: B (Codebase) + E (Research)
 Plugin baseline: claude-obsidian v1.6.0 (DragonScale features intentionally not adopted — see [[DragonScale Opt-Out]])
-Purpose: Persistent knowledge base for the GAIA React template — architecture, conventions, decisions, Claude integration.
+Purpose: Persistent knowledge base for the GAIA React workflow — architecture, conventions, decisions, Claude integration.
 Owner: Steven Sacks
 Created: 2026-04-20
 
