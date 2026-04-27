@@ -26,6 +26,8 @@ pnpm install
 
 If install fails, stop and report the error. Do not continue.
 
+Then run `/migrate` to bring all packages to their latest compatible versions before continuing. If `/migrate` reports anything as **skipped** with a reason, surface it so the user can investigate, but proceed. Note `/migrate` runs its own quality gate at the end — if it halts on a quality-gate failure or peer-dep error, stop here and surface the report to the user; do not silently continue.
+
 ## Step 2: Gather user input
 
 Ask the user using AskUserQuestion (multiSelect where appropriate):
@@ -41,6 +43,15 @@ Run in one shell:
 ```bash
 rm -rf .github/FUNDING.yml .storybook/static/gaia-logo.png app/assets/images/gaia-logo.svg app/components/GaiaLogo
 ```
+
+Replace the root `README.md` with the project-agnostic template and substitute the project title (use the value collected in Step 2; use Title Case):
+
+```bash
+cp .gaia/templates/README.md README.md
+sed -i.bak 's/{{PROJECT_TITLE}}/<Project Title>/g' README.md && rm README.md.bak
+```
+
+The `{{PROJECT_TITLE}}` placeholder is the exact token in the template; the `sed -i.bak … && rm …bak` form is BSD/macOS-compatible and works on GNU sed as well.
 
 Then edit `app/components/Header/index.tsx`:
 
@@ -117,6 +128,21 @@ GAIA bundles `tdd` and `playwright-cli` skills at `.claude/skills/` — they shi
 - `claude plugin marketplace add AgriciDaniel/claude-obsidian`
 - `claude plugin install claude-obsidian@claude-obsidian-marketplace`
 
+### Wire the GAIA statusline
+
+Add the project-scoped GAIA statusline to `.claude/settings.json` so the user gets `/migrate` and `/gaia-update` hints automatically.
+
+Read `.claude/settings.json`. If the JSON contains a top-level `statusLine` key, **skip** this step and tell the user: "You already have a statusLine configured — the GAIA statusline is at `.gaia/statusline/gaia-statusline.sh` if you want to wire it manually." Otherwise, insert the following key alphabetically into the top-level object:
+
+```json
+"statusLine": {
+  "type": "command",
+  "command": "bash .gaia/statusline/gaia-statusline.sh"
+}
+```
+
+Make `.gaia/statusline/*.sh` executable: `chmod +x .gaia/statusline/*.sh` (idempotent — safe to run regardless).
+
 ## Step 10: Refresh the wiki
 
 The template ships with a wiki shaped for the upstream GAIA project. Refresh the two files that encode "where we are right now" so the new project starts with a clean context:
@@ -143,11 +169,24 @@ updated: <TODAY_ISO>
 - None.
 ```
 
-### 9b. Prepend an entry to `wiki/log.md`
+### 9b. Overwrite `wiki/log.md`
 
-Insert directly below the `# Log` heading (log is append-only, newest on top):
+Replace the entire `wiki/log.md` file with the following content (the GAIA development log is irrelevant to the new project):
 
 ```md
+---
+type: meta
+title: Log
+status: active
+created: <TODAY_ISO>
+updated: <TODAY_ISO>
+tags: [meta, log]
+---
+
+# Log
+
+Append-only. New entries at the TOP.
+
 ## [<TODAY>] /gaia-init | project initialized
 
 - Project name: <PROJECT_TITLE>
