@@ -3,8 +3,8 @@ import {afterEach} from 'vitest';
 import {resetTestData} from './mocks/database';
 import '../.storybook/i18next';
 
-afterEach(() => {
-  resetTestData();
+afterEach(async () => {
+  await resetTestData();
   cleanup();
 });
 

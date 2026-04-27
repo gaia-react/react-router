@@ -13,7 +13,7 @@ type: meta
 title: Hot Cache
 status: active
 created: 2026-04-20
-updated: 2026-04-26
+updated: 2026-04-27
 tags: [meta]
 
 ---
@@ -22,21 +22,18 @@ tags: [meta]
 
 ## Last Updated
 
-2026-04-26. Branch `feat/dark-mode-update` — rewrote dark mode using the Epic Stack pattern (cookie + client hints + optimistic fetcher). PR #34 open.
+2026-04-27. Branch `feat/update-msw-data-and-eslint`.
 
 ## Key Facts
 
-- Dark-mode source of truth is the `__theme` cookie (read via `app/utils/theme.server.ts`, the plain `cookie` package). React no longer holds theme state.
-- `app/utils/client-hints.tsx` wraps `@epic-web/client-hints`; `<ClientHintCheck/>` in `<head>` subscribes to `prefers-color-scheme` changes and calls `useRevalidator().revalidate()`.
-- `app/routes/resources+/theme-switch.tsx` is the action + `useOptionalTheme`/`useOptimisticThemeMode` hooks + `ThemeSwitch` UI, co-located.
-- Cycle is 3-state (`system → light → dark → system`) with distinct desktop/sun/moon icons.
-- `app/state/index.tsx` is now a passthrough — no global state slices ship.
-- Removed: `app/state/theme.tsx`, `app/sessions.server/theme.ts`, `app/routes/actions+/set-theme.ts`, `app/components/ThemeSwitcher/`.
+- `@mswjs/data` replaced by `@msw/data@1.1.5`. `database.ts` is now a `Collection` re-export barrel with async `resetTestData()`.
+- ESLint overhaul: inlined `eslint-plugin-typescript-enum` + `eslint-plugin-no-switch-statements` as local plugins; replaced `eslint-plugin-eslint-comments` with `@eslint-community` fork; dropped `eslint-plugin-jest-formatting`; wired `eslint-plugin-testing-library` (flat/react, 22 rules on test files); activated `eslint-plugin-jest-dom` (flat/recommended); enabled `eslint-plugin-you-dont-need-lodash-underscore` compatible config (73 rules).
+- Theme state fully removed — `app/state/index.tsx` is a passthrough. Theme is cookie-based (Epic Stack pattern, landed 2026-04-26).
 
 ## Recent Changes
 
-- New ADR: [[Dark Mode Modernization]]. Updated: [[Theme Flow]], [[Styles]], [[Sessions]], [[State]], [[Components]], [[index]], [[hot]], [[log]]. New deps: `@epic-web/client-hints@1.3.9`, `cookie@1.1.1`.
+- Updated: [[MSW Handlers]], [[MSW]], [[Storybook Stories]], [[Testing]], [[ESLint Fixes]], [[API Service Pattern]], [[overview]], [[log]]. New rule patterns: `you-dont-need-lodash-underscore`, `testing-library`, `jest-dom`.
 
 ## Active Threads
 
-- PR #34 open with 2 commits (dark-mode rewrite + chore wiki/migrate prettier reformat). Awaiting review/merge.
+- Wiki lint run 2026-04-27 complete; all issues fixed.

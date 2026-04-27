@@ -2,7 +2,7 @@
 
 ## Testing Layers
 
-Four layers share one mocking foundation (`msw` + `@mswjs/data`). Write tests at the **lowest layer that can verify the behavior** — a button's disabled state is a component test, not E2E; a route's redirect is E2E, a loader's parsing is a service test.
+Four layers share one mocking foundation (`msw` + `@msw/data`). Write tests at the **lowest layer that can verify the behavior** — a button's disabled state is a component test, not E2E; a route's redirect is E2E, a loader's parsing is a service test.
 
 | Layer       | Tool                           | Runner     | File location                  | What to assert                                      |
 | ----------- | ------------------------------ | ---------- | ------------------------------ | --------------------------------------------------- |
@@ -101,7 +101,7 @@ describe('getThings', () => {
   });
 
   test('throws on malformed response', async () => {
-    database.things.create({id: 'x', name: null as unknown as string});
+    await database.things.create({id: 'x', name: null as unknown as string});
     await expect(getThings()).rejects.toThrow();
   });
 });
@@ -113,13 +113,13 @@ The tracer bullet for services: the happy-path request returns a Zod-parsed resu
 
 Mock at **system boundaries** only:
 
-| Boundary                | Mock via                             | Example                                 |
-| ----------------------- | ------------------------------------ | --------------------------------------- |
-| HTTP / external APIs    | MSW handlers in `test/mocks/`        | REST calls made by `app/services/`      |
-| Database read/write     | `@mswjs/data` factory via `database` | `database.things.create(...)` in a test |
-| Time                    | `vi.useFakeTimers()`                 | Debounced handlers, TTL expiry          |
-| Randomness              | `vi.spyOn` at boundary               | IDs, crypto                             |
-| Navigation (unit scope) | `stubs.reactRouter({routes})`        | Buttons that push to `/done`            |
+| Boundary                | Mock via                               | Example                                       |
+| ----------------------- | -------------------------------------- | --------------------------------------------- |
+| HTTP / external APIs    | MSW handlers in `test/mocks/`          | REST calls made by `app/services/`            |
+| Database read/write     | `@msw/data` collections via `database` | `await database.things.create(...)` in a test |
+| Time                    | `vi.useFakeTimers()`                   | Debounced handlers, TTL expiry                |
+| Randomness              | `vi.spyOn` at boundary                 | IDs, crypto                                   |
+| Navigation (unit scope) | `stubs.reactRouter({routes})`          | Buttons that push to `/done`                  |
 
 **Never mock:**
 

@@ -5,7 +5,7 @@ package: msw
 version: ^2.13.4
 role: api-mocking
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [dependency, testing, mocking]
 ---
 
@@ -15,6 +15,6 @@ tags: [dependency, testing, mocking]
 
 ## Companion packages
 
-`@mswjs/data` (in-memory DB), `public/mockServiceWorker.js` (worker via `msw.workerDirectory` in `package.json`). `msw-storybook-addon` is installed but deliberately unused — stories seed from `@mswjs/data` directly. See [[Storybook Stories]] for rationale.
+`@msw/data` (in-memory DB), `public/mockServiceWorker.js` (worker via `msw.workerDirectory` in `package.json`). `msw-storybook-addon` is installed but deliberately unused — stories seed from `@msw/data` directly. See [[Storybook Stories]] for rationale.
 
 See [[MSW Handlers]] for handler structure.

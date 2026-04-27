@@ -3,13 +3,27 @@ type: meta
 title: Log
 status: active
 created: 2026-04-20
-updated: 2026-04-26
+updated: 2026-04-27
 tags: [meta, log]
 ---
 
 # Log
 
 Append-only. New entries at the TOP.
+
+## [2026-04-27] feat | @msw/data migration + ESLint overhaul
+
+- Replaced `@mswjs/data@0.16.2` with `@msw/data@1.1.5`. Rewrote `test/mocks/database.ts` as a `Collection` re-export barrel; `resetTestData()` is now async (`await` required in `beforeEach`). Read operations (`findFirst`, `findMany`) remain sync; mutations (`create`, `update`, `delete`, `deleteMany`) are async.
+- Inlined two unmaintained ESLint plugins as local configs: `eslint-plugin-typescript-enum` → `noEnumPlugin`, `eslint-plugin-no-switch-statements` → `noSwitchPlugin`. Removed from `package.json`.
+- Replaced `eslint-plugin-eslint-comments` with `@eslint-community/eslint-plugin-eslint-comments` (actively maintained, drop-in replacement).
+- Dropped `eslint-plugin-jest-formatting` (never wired, Vitest project — was dead weight).
+- Wired `eslint-plugin-testing-library` (`flat/react` config, 22 rules) on all test files. Wired `eslint-plugin-jest-dom` (`flat/recommended`, 11 rules) on all test files.
+- Enabled `eslint-plugin-you-dont-need-lodash-underscore` compatible config (73 rules) across the codebase.
+- Added fix patterns for all three new active rule groups to `.claude/rules/eslint-fixes.md` and [[ESLint Fixes]].
+- Restored `block-eslint-config-edit.sh` hook registration in `settings.json` (had been dropped during a prior merge).
+- Wired statusline cache-bust into `/migrate` and `/gaia-update` commands.
+- Updated: [[MSW Handlers]], [[MSW]], [[Storybook Stories]], [[Testing]], [[ESLint Fixes]], [[API Service Pattern]], `.claude/rules/api-service.md`, `.claude/skills/tdd/references/tests-react.md`.
+- Quality gate ✅ typecheck, lint, vitest all green.
 
 ## [2026-04-26] feat | dark mode rewrite — cookie + client hints (Epic Stack pattern)
 

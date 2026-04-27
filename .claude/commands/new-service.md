@@ -90,12 +90,11 @@ import * as {serviceName} from './{serviceName}/requests.server';
 
 ### 8a: Create mock data
 
-Create `test/mocks/{serviceName}/data.ts` per [[MSW]]:
+Create `test/mocks/{serviceName}/data.ts` per [[MSW]]. The `Collection` takes a Standard Schema (Zod) directly — there is no parallel `@msw/data` schema to maintain.
 
 ```ts
-import {nullable, primaryKey} from '@mswjs/data';
+import {Collection} from '@msw/data';
 import {z} from 'zod';
-import {date} from 'test/utils';
 
 export const server{TypeName}Schema = z.object({
   // snake_case server versions of the schema fields
@@ -103,25 +102,34 @@ export const server{TypeName}Schema = z.object({
 
 export type Server{TypeName} = z.infer<typeof server{TypeName}Schema>;
 
-const schema = {
-  // @mswjs/data schema using primaryKey(String), String, Number, nullable(String), etc.
-};
+export const {serviceName} = new Collection({schema: server{TypeName}Schema});
 
-const data: Server{TypeName}[] = [
+const seed: Server{TypeName}[] = [
   // 2 sample records
 ];
 
-export default {data, schema};
+export const reset{PluralTypeName} = async (): Promise<void> => {
+  await {serviceName}.deleteMany((q) => q);
+  for (const record of seed) {
+    await {serviceName}.create(record);
+  }
+};
 ```
 
 ### 8b: Create mock handlers
 
-Create one file per HTTP method in `test/mocks/{serviceName}/`:
+Create one file per HTTP method in `test/mocks/{serviceName}/`. Reads on a `Collection` are sync; mutations are async.
 
-- `get.ts` — GET handlers using `http.get` and `database.{serviceName}.getAll()` / `findFirst()`
-- `post.ts` — POST handler using `http.post`, `request.formData()`, `database.{serviceName}.create()`
-- `put.ts` — PUT handler using `http.put`, `request.formData()`, `database.{serviceName}.update()`
-- `delete.ts` — DELETE handler using `http.delete`, `database.{serviceName}.delete()`
+- `get.ts` — `http.get` + `{serviceName}.findMany(undefined)` (list) or `{serviceName}.findFirst((q) => q.where({id: params.id}))` (single)
+- `post.ts` — `http.post`, `request.formData()`, `await {serviceName}.create({...})`
+- `put.ts` — `http.put`, `request.formData()`, `await {serviceName}.update((q) => q.where({id: params.id}), {data(rec) { rec.field = value; }})`
+- `delete.ts` — `http.delete`, `await {serviceName}.delete((q) => q.where({id: params.id}))`
+
+Import the collection from the domain's data file:
+
+```ts
+import {{serviceName}} from './data';
+```
 
 Each handler uses `${process.env.API_URL}${GAIA_URLS.{urlKey}}` for the URL.
 
@@ -144,9 +152,21 @@ Only include the methods that match the user's requested endpoints.
 
 Edit `test/mocks/database.ts`:
 
-- Add import for the new mock data
-- Add schema to the factory
-- Add cleanup to `resetTestData` (deleteMany + forEach create)
+- Import the new collection and its `reset*` from `./{serviceName}/data`
+- Add the collection to the default-export object so `database.{serviceName}` resolves
+- Await `reset*` inside `resetTestData` so every collection wipes and re-seeds together
+
+Example after adding `things`:
+
+```ts
+import {things, resetThings} from './things/data';
+
+export const resetTestData = async (): Promise<void> => {
+  await Promise.all([resetThings()]);
+};
+
+export default {things};
+```
 
 ### 8e: Update mock barrel
 

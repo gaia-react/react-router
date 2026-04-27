@@ -6,7 +6,7 @@ language: typescript
 purpose: Four-layer testing setup — unit, integration, E2E, visual regression
 depends_on: [[Vitest]], [[React Testing Library]], [[Playwright]], [[Chromatic]], [[MSW]]
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [module, testing]
 ---
 
@@ -32,7 +32,7 @@ GAIA ships **four layers** of testing, all sharing a common [[MSW Handlers|MSW]]
 
 | File             | Purpose                                                                          |
 | ---------------- | -------------------------------------------------------------------------------- |
-| `mocks/`         | MSW handlers + `@mswjs/data` factories — see [[MSW Handlers]] for full structure |
+| `mocks/`         | MSW handlers + `@msw/data` collections — see [[MSW Handlers]] for full structure |
 | `stubs/`         | Storybook decorators (`reactRouter()`, `state()`)                                |
 | `msw.server.ts`  | MSW server entry used by `entry.server.tsx` when `MSW_ENABLED=true`              |
 | `rtl.tsx`        | RTL setup with i18n strings + auto-cleanup                                       |
@@ -58,6 +58,17 @@ Always use Storybook stories with `composeStory`. Never manually mock framework 
 - `pnpm chromatic` (run in CI)
 - `CHROMATIC_PROJECT_TOKEN` env var on CI
 - See [[Chromatic Opt-Out]] if you want to remove it
+
+## ESLint rules on test files
+
+Test files (`**/*.test.ts?(x)`) enforce two additional plugin configs:
+
+| Plugin | Config | Rules |
+| --- | --- | --- |
+| `eslint-plugin-testing-library` | `flat/react` | 22 rules — prefer `screen` queries, `await` all `userEvent` calls, no `act()` wrappers, no manual cleanup, etc. |
+| `eslint-plugin-jest-dom` | `flat/recommended` | 11 rules — prefer jest-dom matchers (`toHaveValue`, `toBeChecked`, `toHaveTextContent`, etc.) over raw DOM property checks |
+
+See [[ESLint Fixes]] for fix patterns.
 
 ## Pre-commit
 

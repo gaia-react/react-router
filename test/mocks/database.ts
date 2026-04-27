@@ -1,9 +1,13 @@
-import {factory} from '@mswjs/data';
+// Barrel for `@msw/data` collections.
+//
+// Each `/new-service` adds two things to this file:
+//   1. A re-export of the domain's `Collection` (so handlers and stories can
+//      `import database from 'test/mocks/database'` and reach `database.things`).
+//   2. A call to the domain's `reset*` in `resetTestData` so test setup wipes
+//      and re-seeds every collection between cases.
+//
+// Empty until the first `/new-service` is run.
 
-const database = factory({});
+export const resetTestData = async (): Promise<void> => {};
 
-// No-op while the template has no factories. When a service scaffolds a
-// factory (e.g. via /new-service), re-seed it here so tests start clean.
-export const resetTestData = () => {};
-
-export default database;
+export default {} as Record<string, never>;

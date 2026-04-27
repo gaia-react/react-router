@@ -2,7 +2,7 @@
 type: meta
 title: 'Dashboard'
 created: 2026-04-26
-updated: 2026-04-26
+updated: 2026-04-27
 tags: [meta, dashboard]
 status: active
 ---
@@ -21,20 +21,20 @@ TABLE type, status, updated FROM "wiki" SORT updated DESC LIMIT 15
 LIST FROM "wiki" WHERE status = "seed" SORT updated ASC
 ```
 
-## Entities Missing Sources
+## Pages Not Updated in 30+ Days
 
 ```dataview
-LIST FROM "wiki/entities" WHERE !sources OR length(sources) = 0
-```
-
-## Open Questions
-
-```dataview
-LIST FROM "wiki/questions" WHERE answer_quality = "draft" SORT created DESC
+TABLE updated, type FROM "wiki" WHERE date(updated) <= date(today) - dur(30 days) SORT updated ASC LIMIT 20
 ```
 
 ## Pages by Domain
 
 ```dataview
 TABLE length(rows) AS "Count" FROM "wiki" GROUP BY type SORT length(rows) DESC
+```
+
+## Large Pages (over 100 lines)
+
+```dataview
+TABLE type, updated FROM "wiki" WHERE file.size > 5000 SORT file.size DESC
 ```

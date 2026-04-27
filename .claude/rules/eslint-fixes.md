@@ -56,3 +56,60 @@ email: z.string().email(),
 // GOOD — use the non-deprecated API
 email: z.email(),
 ```
+
+## you-dont-need-lodash-underscore/*
+
+Use native JavaScript instead of lodash/underscore equivalents.
+
+```tsx
+// BAD
+import _ from 'lodash';
+const first = _.find(items, item => item.active);
+const names = _.map(items, item => item.name);
+
+// GOOD
+const first = items.find(item => item.active);
+const names = items.map(item => item.name);
+```
+
+## testing-library/prefer-screen-queries
+
+Use `screen` queries instead of destructuring from `render()`.
+
+```tsx
+// BAD
+const {getByText, getByRole} = render(<MyComponent />);
+
+// GOOD
+render(<MyComponent />);
+screen.getByText('...');
+screen.getByRole('button');
+```
+
+## testing-library/await-async-events
+
+`userEvent` methods are async — always `await` them.
+
+```tsx
+// BAD
+userEvent.click(button);
+
+// GOOD
+await userEvent.click(button);
+```
+
+## jest-dom/prefer-*
+
+Use jest-dom matchers instead of raw DOM property checks.
+
+```tsx
+// BAD
+expect(input.value).toBe('hello');
+expect(checkbox.checked).toBe(true);
+expect(el.textContent).toBe('Hello');
+
+// GOOD
+expect(input).toHaveValue('hello');
+expect(checkbox).toBeChecked();
+expect(el).toHaveTextContent('Hello');
+```

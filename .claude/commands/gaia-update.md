@@ -146,6 +146,14 @@ GAIA update: v$BASELINE → $LATEST_TAG
   Backed up:    <n>  (see .gaia-backup/<timestamp>/)
 ```
 
+Then bust the statusline cache so the "Run /gaia-update (GAIA $LATEST available)" hint doesn't linger from the pre-update snapshot:
+
+```bash
+rm -f .gaia/cache/statusline-update-check.json
+```
+
+The next statusline render fires the background refresher; the render after that reflects the post-update state.
+
 ## Step 10: Next steps for the user
 
 Tell the user:

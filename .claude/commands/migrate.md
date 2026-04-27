@@ -140,4 +140,12 @@ Print this report. Do not commit.
 | --- | --- |
 ```
 
+After printing the report, bust the statusline cache so the "Run /migrate (N outdated)" hint doesn't linger from the pre-migrate snapshot:
+
+```bash
+rm -f .gaia/cache/statusline-update-check.json
+```
+
+The next statusline render fires the background refresher; the render after that reflects the post-migrate state.
+
 Stop and wait for user review.

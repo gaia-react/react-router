@@ -1,3 +1,4 @@
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import {includeIgnoreFile} from '@eslint/compat';
 import js from '@eslint/js';
 import vitest from '@vitest/eslint-plugin';
@@ -6,17 +7,15 @@ import {rules as prettierConfigRules} from 'eslint-config-prettier';
 import betterTailwind from 'eslint-plugin-better-tailwindcss';
 import canonical from 'eslint-plugin-canonical';
 import checkFile from 'eslint-plugin-check-file';
-import eslintComments from 'eslint-plugin-eslint-comments';
 import jestDom from 'eslint-plugin-jest-dom';
 import noRelativeImportPaths from 'eslint-plugin-no-relative-import-paths';
-import noSwitchStatements from 'eslint-plugin-no-switch-statements';
 import perfectionist from 'eslint-plugin-perfectionist';
 import playwright from 'eslint-plugin-playwright';
 import preferArrowFunctions from 'eslint-plugin-prefer-arrow-functions';
 import prettier from 'eslint-plugin-prettier';
 import sonarjs from 'eslint-plugin-sonarjs';
 import storybook from 'eslint-plugin-storybook';
-import tsEnum from 'eslint-plugin-typescript-enum';
+import testingLibrary from 'eslint-plugin-testing-library';
 import unicorn from 'eslint-plugin-unicorn';
 import unusedImports from 'eslint-plugin-unused-imports';
 import lodashUnderscore from 'eslint-plugin-you-dont-need-lodash-underscore';
@@ -43,10 +42,7 @@ const jsConfig = defineConfig([
 
 const jsCustomConfig = [
   {
-    name: 'you-dont-need-lodash-underscore',
-    plugins: {
-      'you-dont-need-lodash-underscore': lodashUnderscore,
-    },
+    name: 'js-custom',
     rules: {
       'consistent-return': 'off',
       curly: ['error', 'all'],
@@ -245,15 +241,34 @@ const tsEslintConfig = [
   },
 ];
 
-const tsEnumConfig = [
+const noEnumPlugin = {
+  rules: {
+    'no-enum': {
+      create: (context) => ({
+        TSEnumDeclaration: (node) => {
+          context.report({messageId: 'noEnum', node});
+        },
+      }),
+      meta: {
+        docs: {description: 'Disallow TypeScript enums'},
+        messages: {
+          noEnum:
+            'Do not use TypeScript enums. Use an object with `as const` instead.',
+        },
+        schema: [],
+        type: 'problem',
+      },
+    },
+  },
+};
+
+const noEnumConfig = [
   {
     files: ['**/*.ts?(x)'],
-    name: 'typescript-enum',
-    plugins: {
-      'typescript-enum': tsEnum,
-    },
+    name: 'no-enum',
+    plugins: {'no-enum': noEnumPlugin},
     rules: {
-      ...tsEnum.configs.recommended.rules,
+      'no-enum/no-enum': 'error',
     },
   },
 ];
@@ -522,13 +537,43 @@ const noRelativeImportPathsConfig = [
   },
 ];
 
-const noSwitchStatementsConfig = [
-  {
-    name: 'no-switch-statements',
-    plugins: {
-      'no-switch-statements': noSwitchStatements,
+const noSwitchPlugin = {
+  rules: {
+    'no-switch': {
+      create: (context) => ({
+        SwitchStatement: (node) => {
+          context.report({messageId: 'noSwitch', node});
+        },
+      }),
+      meta: {
+        docs: {description: 'Disallow switch statements'},
+        messages: {
+          noSwitch:
+            'Do not use switch statements. Use an object map or if/else instead.',
+        },
+        schema: [],
+        type: 'problem',
+      },
     },
-    ...noSwitchStatements.configs.recommended,
+  },
+};
+
+const noSwitchConfig = [
+  {
+    files: ['**/*.ts?(x)', '**/*.js?(x)'],
+    name: 'no-switch',
+    plugins: {'no-switch': noSwitchPlugin},
+    rules: {'no-switch/no-switch': 'error'},
+  },
+];
+
+const lodashUnderscoreConfig = [
+  {
+    name: 'you-dont-need-lodash-underscore',
+    plugins: {'you-dont-need-lodash-underscore': lodashUnderscore},
+    rules: {
+      ...lodashUnderscore.configs.compatible.rules,
+    },
   },
 ];
 
@@ -676,8 +721,17 @@ const testHarnessConfig = [
       vitest,
     },
     rules: {
+      ...jestDom.configs['flat/recommended'].rules,
       ...vitest.configs.recommended.rules,
     },
+  },
+];
+
+const testingLibraryConfig = [
+  {
+    ...testingLibrary.configs['flat/react'],
+    files: ['**/*.test.ts?(x)'],
+    name: 'testing-library',
   },
 ];
 
@@ -797,7 +851,7 @@ export default [
   // TypeScript config
   ...typescriptConfig,
   ...tsEslintConfig,
-  ...tsEnumConfig,
+  ...noEnumConfig,
   // Prettier config
   ...prettierConfig,
   // Extended configs
@@ -806,14 +860,16 @@ export default [
   ...checkFileConfig,
   ...eslintCommentsConfig,
   ...importXConfig,
+  ...lodashUnderscoreConfig,
   ...noRelativeImportPathsConfig,
-  ...noSwitchStatementsConfig,
+  ...noSwitchConfig,
   ...perfectionistConfig,
   ...playwrightConfig,
   ...preferArrowFunctionsConfig,
   ...sonarConfig,
   ...storybookConfig,
   ...testHarnessConfig,
+  ...testingLibraryConfig,
   ...unicornConfig,
   ...unusedImportsConfig,
 ];

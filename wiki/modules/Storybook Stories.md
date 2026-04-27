@@ -6,7 +6,7 @@ language: typescript
 purpose: Storybook setup with React Router, i18n, dark mode, and Chromatic snapshots
 depends_on: [[Storybook]], [[MSW]]
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [module, storybook, testing]
 ---
 
@@ -76,7 +76,7 @@ handled inside the story function by reading `i18n.language`.
 
 ## Test data / MSW
 
-No `msw-storybook-addon` — API-level mocking is not used in stories. Pull seed data from `@mswjs/data` factories in `test/mocks/database` instead. See `.claude/rules/storybook.md` for the usage pattern.
+No `msw-storybook-addon` — API-level mocking is not used in stories. Pull seed data from the `@msw/data` collections in `test/mocks/database` instead. See `.claude/rules/storybook.md` for the usage pattern.
 
 ## Why Storybook is also the test driver
 

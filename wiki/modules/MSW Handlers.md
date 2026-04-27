@@ -6,13 +6,13 @@ language: typescript
 purpose: API mocking layer shared across Vitest, Storybook, and dev
 depends_on: [[MSW]]
 created: 2026-04-20
-updated: 2026-04-20
+updated: 2026-04-27
 tags: [module, msw, testing, mocking]
 ---
 
 # MSW (Mock Service Worker)
 
-GAIA uses [[MSW]] + `@mswjs/data` (npm package — no wiki page) as the **single mocking layer** for unit tests, Playwright E2E, Storybook stories, and optional dev mode.
+GAIA uses [[MSW]] + `@msw/data` (npm package — no wiki page) as the **single mocking layer** for unit tests, Playwright E2E, Storybook stories, and optional dev mode.
 
 > [!key-insight] One mock set, three environments
 > The same handlers and in-memory database serve Vitest (CI/local), the dev server (MSW_ENABLED=true), and Playwright runs. You define a mock once; every surface sees the same fake API.
@@ -31,16 +31,16 @@ This means tests exercise the full request path: route loader → service functi
 
 ## 2. Folder structure
 
-| Path                                                                | Role                                         |
-| ------------------------------------------------------------------- | -------------------------------------------- |
-| `test/mocks/{resource}/data.ts`                                     | `@mswjs/data` schema + seed records          |
-| `test/mocks/{resource}/get.ts` / `post.ts` / `put.ts` / `delete.ts` | HTTP handlers                                |
-| `test/mocks/{resource}/index.ts`                                    | Barrel — re-exports all handlers as an array |
-| `test/mocks/database.ts`                                            | Factory composition + `resetTestData()`      |
-| `test/mocks/faker.ts`                                               | Seeded faker instance (consistent test data) |
-| `test/mocks/ping.ts`                                                | Passthrough for Remix dev ping               |
-| `test/mocks/url.ts`                                                 | URL helper — mirrors ky prefix-join logic    |
-| `test/mocks/index.ts`                                               | Registry — combines all resource handlers    |
+| Path                                                                | Role                                                  |
+| ------------------------------------------------------------------- | ----------------------------------------------------- |
+| `test/mocks/{resource}/data.ts`                                     | Server-shape Zod schema + `Collection` + seed + reset |
+| `test/mocks/{resource}/get.ts` / `post.ts` / `put.ts` / `delete.ts` | HTTP handlers                                         |
+| `test/mocks/{resource}/index.ts`                                    | Barrel — re-exports all handlers as an array          |
+| `test/mocks/database.ts`                                            | Collection registry + `resetTestData()`               |
+| `test/mocks/faker.ts`                                               | Seeded faker instance (consistent test data)          |
+| `test/mocks/ping.ts`                                                | Passthrough for Remix dev ping                        |
+| `test/mocks/url.ts`                                                 | URL helper — mirrors ky prefix-join logic             |
+| `test/mocks/index.ts`                                               | Registry — combines all resource handlers             |
 
 Support files:
 
@@ -109,37 +109,50 @@ The service function and the MSW handler both import `GAIA_URLS`. If the URL con
 
 `/new-service` produces:
 
-| File                                                                | Contents                                                                 |
-| ------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| `test/mocks/{resource}/data.ts`                                     | `@mswjs/data` schema + seed records in the raw server (snake_case) shape |
-| `test/mocks/{resource}/get.ts` + `post.ts` / `put.ts` / `delete.ts` | HTTP handlers using `url(GAIA_URLS.key)` — never a hardcoded string      |
-| `test/mocks/{resource}/index.ts`                                    | Barrel combining handlers into an array                                  |
-| `test/mocks/index.ts`                                               | Registry updated to include the new barrel                               |
-| `test/mocks/database.ts`                                            | Factory schema added + `resetTestData()` updated to reseed the new table |
-| `app/services/gaia/urls.ts`                                         | URL constants added (and shared with the service)                        |
+| File                                                                | Contents                                                                                                       |
+| ------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| `test/mocks/{resource}/data.ts`                                     | Server-shape Zod schema, `new Collection({schema})`, seed records (snake_case), and `reset*()` for that domain |
+| `test/mocks/{resource}/get.ts` + `post.ts` / `put.ts` / `delete.ts` | HTTP handlers using `url(GAIA_URLS.key)` — never a hardcoded string                                            |
+| `test/mocks/{resource}/index.ts`                                    | Barrel combining handlers into an array                                                                        |
+| `test/mocks/index.ts`                                               | Registry updated to include the new barrel                                                                     |
+| `test/mocks/database.ts`                                            | Re-exports the new `Collection` and adds its `reset*()` to `resetTestData()`                                   |
+| `app/services/gaia/urls.ts`                                         | URL constants added (and shared with the service)                                                              |
 
 If you're editing an existing mock by hand instead of scaffolding, the invariants you must preserve are covered in [Section 3 — Service-layer contract](#3-service-layer-contract) (handlers use `url(GAIA_URLS.key)`, data stays snake_case, factory + `resetTestData()` stay in sync). See the `api-service` rule (`.claude/rules/api-service.md`) for the full contract and [[API Service Pattern]] for the service side.
 
 ---
 
-## 6. Database factory pattern
+## 6. Database collection pattern
 
-`test/mocks/database.ts` composes all resource schemas into a single `@mswjs/data` factory. The factory provides typed in-memory CRUD: `create`, `findFirst`, `findMany`, `getAll`, `update`, `delete`, `deleteMany`.
+Each resource owns its `@msw/data` `Collection` in `test/mocks/{resource}/data.ts`. `test/mocks/database.ts` re-exports those collections so handlers and stories use a single import (`import database from 'test/mocks/database'` → `database.things`), and aggregates each domain's `reset*()` into one `resetTestData()`.
 
-`resetTestData()` is called:
+Reads on a `Collection` are sync (`findFirst`, `findMany`); mutations are async (`await create()`, `await update()`, `await delete()`, `await deleteMany()`). The query API is predicate-based:
+
+```ts
+things.findFirst((q) => q.where({id: 'abc'}));
+things.findMany(undefined); // all
+things.findMany((q) => q.where({active: true}));
+await things.update((q) => q.where({id: 'abc'}), {
+  data(t) {
+    t.name = 'new';
+  },
+});
+```
+
+`resetTestData()` is async; it's called:
 
 - **Once on module load** — seeds the database for the first test in a file.
-- **Explicitly in test files** — call it in `beforeEach` when a test mutates data and the next test must start clean.
+- **Explicitly in test files** — `await` it in `beforeEach` when a test mutates data and the next test must start clean.
 
 ```ts
 import {resetTestData} from 'test/mocks/database';
 
-beforeEach(() => {
-  resetTestData();
+beforeEach(async () => {
+  await resetTestData();
 });
 ```
 
-`test/test.server.ts` calls `server.resetHandlers()` in `afterEach` — this resets runtime handler overrides but **not** the database. Always call `resetTestData()` explicitly in tests that write, update, or delete records.
+`test/test.server.ts` calls `server.resetHandlers()` in `afterEach` — this resets runtime handler overrides but **not** the database. Always `await resetTestData()` explicitly in tests that write, update, or delete records.
 
 `test/mocks/faker.ts` exports a seeded `faker` instance (seed `7`) so generated values are deterministic across runs.
 
