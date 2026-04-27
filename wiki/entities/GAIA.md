@@ -11,7 +11,7 @@ tags: [entity, project]
 
 ## What it is
 
-GAIA React is a thoroughly-configured React Router 7 starter template. The current iteration (`gaia-template-react-router`, version `1.0.0-beta`) is a spiritual successor to the original GAIA Flash Framework.
+GAIA React is a thoroughly-configured React Router 7 starter template. The current iteration (`gaia-react`, version `1.0.0`) is a spiritual successor to the original GAIA Flash Framework.
 
 ## Authors / maintainers
 
@@ -19,7 +19,7 @@ GAIA React is a thoroughly-configured React Router 7 starter template. The curre
 
 ## Repos & resources
 
-- npm template: `npx create-react-router@latest --template gaia-react/react-router`
+- npm template: `npx create-react-router@latest --template gaia-react/gaia`
 - Background article on the philosophy: [react-japan.dev: ESLint fix-on-save](https://react-japan.dev/en/blog/eslint-fix-on-save)
 
 ## History
@@ -28,6 +28,6 @@ The original GAIA was a Flash framework — the most popular Flash framework wor
 
 ## Naming convention
 
-The package name in `package.json` is `gaia-template-react-router`. Code/wiki refer to it as **GAIA** (the brand) or **GAIA React** (the React iteration).
+The package name in `package.json` is `gaia-react`. Code/wiki refer to it as **GAIA** (the brand) or **GAIA React** (the React iteration).
 
 See [[GAIA Philosophy]].

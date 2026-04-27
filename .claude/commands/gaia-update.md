@@ -22,7 +22,7 @@ Persist the trimmed version as `BASELINE` (e.g., `1.0.0`).
 ## Step 2: Resolve latest release
 
 ```bash
-gh release list --repo gaia-react/react-router --limit 1 --json tagName --jq '.[0].tagName'
+gh release list --repo gaia-react/gaia --limit 1 --json tagName --jq '.[0].tagName'
 ```
 
 Persist as `LATEST_TAG` (e.g., `v1.0.1`) and `LATEST` (strip leading `v`).
@@ -30,7 +30,7 @@ Persist as `LATEST_TAG` (e.g., `v1.0.1`) and `LATEST` (strip leading `v`).
 If `gh` is unavailable, fall back to:
 
 ```bash
-curl -fsSL https://api.github.com/repos/gaia-react/react-router/releases/latest | jq -r .tag_name
+curl -fsSL https://api.github.com/repos/gaia-react/gaia/releases/latest | jq -r .tag_name
 ```
 
 If both fail, stop and ask the user to supply the target version explicitly.
@@ -45,7 +45,7 @@ If both fail, stop and ask the user to supply the target version explicitly.
 Fetch the release body for `LATEST_TAG`:
 
 ```bash
-gh release view "$LATEST_TAG" --repo gaia-react/react-router --json body --jq .body
+gh release view "$LATEST_TAG" --repo gaia-react/gaia --json body --jq .body
 ```
 
 Print the notes to the user. Then use `AskUserQuestion`:
@@ -66,7 +66,7 @@ for tag in "v$BASELINE" "$LATEST_TAG"; do
   if [ ! -d "$dir" ]; then
     mkdir -p "$dir"
     gh release download "$tag" \
-      --repo gaia-react/react-router \
+      --repo gaia-react/gaia \
       --pattern "gaia-${tag}.tar.gz" \
       --dir "$dir"
     tar -xzf "$dir/gaia-${tag}.tar.gz" -C "$dir" --strip-components=1

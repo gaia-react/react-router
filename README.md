@@ -3,8 +3,8 @@
 <img src="./app/assets/images/gaia-logo.svg" height="100" alt="GAIA"/>
 
 [![Claude](https://img.shields.io/badge/Claude-D97757?logo=claude&logoColor=fff)](https://claude.com/claude-code)
-[![Tests](https://img.shields.io/github/actions/workflow/status/gaia-react/react-router/tests.yml?event=pull_request&label=tests)](https://github.com/gaia-react/react-router/actions/workflows/tests.yml)
-[![License: MIT](https://img.shields.io/github/license/gaia-react/react-router)](./LICENSE)
+[![Tests](https://img.shields.io/github/actions/workflow/status/gaia-react/gaia/tests.yml?event=pull_request&label=tests)](https://github.com/gaia-react/gaia/actions/workflows/tests.yml)
+[![License: MIT](https://img.shields.io/github/license/gaia-react/gaia)](./LICENSE)
 [![Node](https://img.shields.io/badge/node-%3E%3D22.19.0-brightgreen)](https://nodejs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6-blue?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 

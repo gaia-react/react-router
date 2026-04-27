@@ -79,7 +79,7 @@ Note: by default only `en` and `ja` folders exist in `app/languages/`.
 Use the project title from Step 2.
 
 - `package.json` `"name"` field → kebab-case of project title (e.g. `"hello-world"`)
-- `CLAUDE.md` — replace the `# GAIA React Template` heading with `# <Project Title>` (Title Case, e.g. `# Hello World`)
+- `CLAUDE.md` — replace the `# GAIA React` heading with `# <Project Title>` (Title Case, e.g. `# Hello World`)
 - `app/languages/en/pages/_index.ts` — update `meta.title`, `title`, and `heroTitle` to the project title
 - `app/languages/en/common.ts` — update `meta.siteName` to the project title
 - Do the same for every other `app/languages/<lang>/pages/_index.ts` and `common.ts` file (translate the title if appropriate, otherwise use the English project title)
