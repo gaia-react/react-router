@@ -132,6 +132,10 @@ After its own review, it spawns 3 parallel specialist subagents to audit changed
 
 These activate automatically based on context.
 
+### Statusline
+
+GAIA ships a default project-scoped statusline at `.gaia/statusline/gaia-statusline.sh`, wired by `/gaia-init`. Renders project / branch / model / context bar, plus right-aligned hints when `pnpm` packages are outdated or a new GAIA release is available. Update checks are TTL-cached (6h) in `.gaia/cache/statusline-update-check.json`. Opt-out by removing the `statusLine` key from `.claude/settings.json`.
+
 ## settings.json
 
 Registers the PreToolUse hooks on `Edit|Write|MultiEdit` and `Bash` matchers, the `intercept-init.sh` UserPromptSubmit hook, and the `SessionStart` / `Stop` wiki-coherence hooks. Enables the `typescript-lsp@claude-plugins-official` plugin.
