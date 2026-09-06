@@ -507,6 +507,39 @@ EOF
   grep -qF '.claude/agents/code-audit-maintainer-prose.md: earned call site missing --scope-digest' <<<"$output" || return 1
 }
 
+@test "assertion 4: a truncated definition scan names the definitions, not the settings file" {
+  local repo
+  repo="$(make_fixture_repo truncated-definition)"
+  # An unmatched backtick leaves the span parser accumulating to end of file,
+  # so the call-site set is truncated and assertion 4 cannot answer. The
+  # finding has to name where the truncation IS. settings.json is JSON and
+  # cannot hold a markdown inline span, so naming it would send the operator
+  # to a file that structurally cannot carry the defect.
+  printf '\nA stray `backtick opens a span that never closes.\n' \
+    >>"$repo/.claude/agents/code-audit-maintainer-node.md"
+  write_settings "$repo" 'Bash(bash .gaia/scripts/audit-write-clearance.sh:*)'
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/agents/: unmatched backtick truncated the scan; the grant for audit-write-clearance.sh cannot be checked' <<<"$output" || return 1
+  grep -qF '.claude/settings.json: unmatched backtick' <<<"$output" && return 1
+  return 0
+}
+
+@test "assertion 4: a truncated workflow scan names that workflow file" {
+  local repo
+  repo="$(make_fixture_repo truncated-workflow)"
+  # The same arm on the other surface, where the grant and the call sites do
+  # live in one file, so the label is the workflow's own path.
+  printf '          # a stray ` backtick\n' >>"$repo/.github/workflows/fake-audit.yml"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.github/workflows/fake-audit.yml: unmatched backtick truncated the scan' <<<"$output" || return 1
+}
+
 @test "usage: a fixture with no scan surface exits 2 rather than passing vacuously" {
   local dir="$BATS_TEST_TMPDIR/no-scan-surface"
   mkdir -p "$dir"

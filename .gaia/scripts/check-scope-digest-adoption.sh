@@ -66,12 +66,21 @@
 #   when all four hold, 1 when any does not, 2 on the check's own failure.
 #   The 2 cases: an unresolvable root, a repo_root with no `.claude/agents/`
 #   directory at all (nothing to scan, not a vacuous pass), and assertion
-#   4's `jq` being absent. The last of those is reported as 2 only when no
-#   assertion also found a defect; a run that found one exits 1 and names
-#   it, so an environment note never hides a finding behind a status that
-#   reads as "fix your toolchain and re-run". <repo_root> is a required
-#   parameter -- this check never derives it itself, so a bats fixture can
-#   drive it against a throwaway repo.
+#   4's `jq` being absent. The last of those is reported as 2 only when
+#   assertions 1-3 found nothing; when one of them did, the run exits 1 and
+#   names it, so an environment note never hides those findings behind a
+#   status that reads as "fix your toolchain and re-run".
+#
+#   What a missing `jq` still costs, and it is not hidden: assertion 4
+#   returns at its own settings arm, so its WORKFLOW half does not run
+#   either, even though that half needs no `jq`. A grant-versus-call-site
+#   drift inside a workflow file is therefore neither found nor named on a
+#   `jq`-less machine. Nothing merges on it -- exit 2 is non-zero and
+#   `.gaia/tests/whole-tree-invariants.sh` fails on any non-zero -- so this
+#   is a coverage gap behind a blocking status, not a fail-open.
+#
+#   <repo_root> is a required parameter -- this check never derives it
+#   itself, so a bats fixture can drive it against a throwaway repo.
 
 # The Code Audit Team members this check reasons about, and assertion 3's
 # per-member region anchor beside each. Both are DISCOVERED by
@@ -448,7 +457,7 @@ EOF
 }
 
 # _gaia_sda_grant_verdict <label> <script> <grant_state> <matchable>
-#                         <scope_plural> <scope_singular>
+#                         <scope_plural> <scope_singular> <callsite_label>
 #   The grant-versus-call-site rule, held in one place so the two surfaces
 #   below cannot come to disagree about it. The surfaces differ only in where
 #   they look for a call site, which is what the two scope phrases carry;
@@ -456,12 +465,21 @@ EOF
 #   shape this whole check exists to catch, so it does not get one.
 #   Prints one finding line and returns 1 when the pair does not hold,
 #   returns 0 silently when it does.
+#
+#   <callsite_label> is separate from <label> because the two name different
+#   files on the settings surface, and only one of them can be right. A
+#   truncation is a property of the file the CALL SITES were read from, and
+#   for the settings surface that is an agent definition, never the JSON the
+#   grant lives in: settings.json cannot carry a markdown inline span, so
+#   naming it there sends the operator to a file that structurally cannot
+#   hold the defect. On the workflow surface the two labels coincide, since
+#   one file carries both the grant and the call sites.
 _gaia_sda_grant_verdict() {
   local label="$1" script="$2" grant_state="$3" matchable="$4"
-  local scope_plural="$5" scope_singular="$6"
+  local scope_plural="$5" scope_singular="$6" callsite_label="$7"
   if [ "$matchable" = untrusted ]; then
     printf '%s: unmatched backtick truncated the scan; the grant for %s cannot be checked\n' \
-      "$label" "$script"
+      "$callsite_label" "$script"
     return 1
   fi
   if [ "$grant_state" = granted ] && [ "$matchable" = none ]; then
@@ -537,7 +555,7 @@ _gaia_sda_assert4() {
       done
       _gaia_sda_grant_verdict '.claude/settings.json' "$script" \
         "$grant_state" "$matchable" \
-        'the agent definitions' 'an agent definition' || failed=1
+        'the agent definitions' 'an agent definition' '.claude/agents/' || failed=1
     done
   fi
 
@@ -572,7 +590,7 @@ _gaia_sda_assert4() {
         esac
         _gaia_sda_grant_verdict "$rel" "$script" \
           "$grant_state" "$matchable" \
-          'this file' 'this file' || failed=1
+          'this file' 'this file' "$rel" || failed=1
       done
     done < <(find "$repo_root/$wdir" -type f -print0 2>/dev/null)
   done
