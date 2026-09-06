@@ -151,6 +151,43 @@ printf "%s" "$b" | grep --silent two'
   grep -qF -- "check.sh:4:" <<<"$output"
 }
 
+# A count-limited reader closes the pipe at the Nth match exactly as a quiet one
+# closes it at the first, so the pipeline status inverts identically. The class
+# is the short circuit, not the flag spelling.
+@test "flags a count-limited reader in each of its spellings" {
+  fixture_repo
+  fixture_script 'printf "%s" "$a" | grep -m1 one >/dev/null
+printf "%s" "$b" | grep -m 1 two >/dev/null
+printf "%s" "$c" | grep --max-count=1 three >/dev/null
+printf "%s" "$d" | grep --max-count 1 four >/dev/null'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output" || return 1
+  grep -qF -- "check.sh:4:" <<<"$output" || return 1
+  grep -qF -- "check.sh:5:" <<<"$output" || return 1
+  grep -qF -- "check.sh:6:" <<<"$output"
+}
+
+# The wrapper rather than the reader occupies the segment head here, so a
+# detector reading the head alone grades the segment as some other command.
+@test "flags a reader inside a downstream brace group" {
+  fixture_repo
+  fixture_script 'some_command | { grep -q needle; }'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+@test "flags a reader inside a downstream subshell, spaced and fused" {
+  fixture_repo
+  fixture_script 'some_command | ( grep -q needle )
+some_command | (grep -q needle)'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output" || return 1
+  grep -qF -- "check.sh:4:" <<<"$output"
+}
+
 @test "flags rg as well as grep" {
   fixture_repo
   fixture_script 'printf "%s" "$a" | rg -q needle'
@@ -315,6 +352,27 @@ printf "%s" "$a" | grep -q needle'
 # caller armed. Grading each file by its own `set` line alone would report every
 # library clean, and .claude/hooks/lib/ is where three of the four historical
 # occurrences lived.
+
+# The library sits in a SUBDIRECTORY deliberately, and this is the only closure
+# fixture that does. An edge resolves through a basename-to-path index, and at
+# the fixture repo root the basename and the path are the same string, so every
+# root-level fixture agrees under either keying and the index is never
+# discriminated. The tree's own libraries live in subdirectories
+# (.claude/hooks/lib/), which the gate's header names as the family three of the
+# four historical occurrences lived in, so this relocation is what puts the
+# index key under test at all: re-key it by path and this test, alone, reds.
+@test "flags a nested library with no pipefail of its own that an armed file sources" {
+  fixture_repo
+  fixture_file lib/probe-lib.sh '#!/usr/bin/env bash
+probe() { printf "%s" "$1" | grep -q needle; }'
+  fixture_file caller.sh '#!/usr/bin/env bash
+set -uo pipefail
+. "$(dirname "$0")/lib/probe-lib.sh"
+probe "$1"'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "lib/probe-lib.sh:2:" <<<"$output"
+}
 
 @test "flags a library with no pipefail of its own that an armed file sources" {
   fixture_repo

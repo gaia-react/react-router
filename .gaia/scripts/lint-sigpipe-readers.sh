@@ -4,11 +4,11 @@
 # than being expanded by this shell first.
 # shellcheck disable=SC2016
 #
-# lint-sigpipe-readers.sh: flag a short-circuiting reader -- `grep` or `rg`
-# carrying a `-q`-bearing flag cluster, `--quiet`, or `--silent` -- standing
-# downstream of a `|` in a tracked shell script that runs under `pipefail`. Run
-# it directly from the repo root:
-# `bash .gaia/scripts/lint-sigpipe-readers.sh`.
+# lint-sigpipe-readers.sh: flag a short-circuiting reader -- `grep` or `rg` told
+# to stop early, whether by a `-q`-bearing flag cluster, `--quiet`, `--silent`,
+# or a match count (`-m`, `--max-count`) -- standing downstream of a `|` in a
+# tracked shell script that runs under `pipefail`. Run it directly from the repo
+# root: `bash .gaia/scripts/lint-sigpipe-readers.sh`.
 #
 # Exit 0 when clean, and 1 either with a file:line report on any hit or on a
 # scan surface that came back empty. Two statuses say the gate never ran at
@@ -175,12 +175,23 @@ gaia_guard_scan_files "$PROG" shell || exit $?
 # Single-quoted, so every literal single quote inside is spelled \047 and no
 # comment in it may carry an apostrophe.
 readonly SCAN_AWK='
-# A token that turns a reader into a short-circuiting one. The cluster form is
-# what makes a plain substring test wrong: -qF, -qxF, -qvF, -nq and --quiet all
-# short-circuit, while -e, -F and -v alone do not.
+# A token that turns a reader into a short-circuiting one. TWO families, and
+# both belong here because the class is the short circuit rather than the flag:
+#
+#   the quiet family  -q and every cluster carrying it (-qF, -qxF, -qvF, -nq),
+#                     plus --quiet and --silent. The cluster form is what makes
+#                     a plain substring test wrong.
+#   the count family  -m and --max-count. A reader told to stop after N matches
+#                     closes the pipe at the Nth exactly as a quiet one closes
+#                     it at the first, so the upstream takes SIGPIPE and the
+#                     pipeline status inverts identically. The count rides
+#                     either inside the token (-m1, -nm1) or as the next
+#                     argument (-m 1), and both spellings are the same defect.
 function is_qflag(t) {
-  if (t == "--quiet" || t == "--silent") return 1
+  if (t == "--quiet" || t == "--silent" || t == "--max-count") return 1
+  if (t ~ /^--max-count=/) return 1
   if (t ~ /^-[A-Za-z]+$/ && t ~ /q/) return 1
+  if (t ~ /^-[A-Za-z]*m[0-9]*$/) return 1
   return 0
 }
 
@@ -194,12 +205,19 @@ function segment_reader(s,   toks, m, j, t, w) {
   # Everything a reader can hide behind and still be the command that runs.
   # The assignment arm is the one that matters most in this tree: a locale or
   # encoding prefix is the ordinary spelling here, and without it the command
-  # word reads as LC_ALL=C and the segment is graded as some other command.
+  # word reads as LC_ALL=C and the segment is graded as some other command. The
+  # brace and paren arms cover a downstream compound command, where the wrapper
+  # rather than the reader occupies the head: a pipeline into a brace group or
+  # a subshell carries the class exactly as the bare form does.
   while (j <= m && (toks[j] == "" || toks[j] == "!" || toks[j] == "&" ||
+                    toks[j] == "{" || toks[j] == "(" ||
                     toks[j] == "command" || toks[j] == "env" ||
                     toks[j] ~ /^[A-Za-z_][A-Za-z0-9_]*=/)) j++
   if (j > m) return ""
   w = toks[j]
+  # A subshell may open with no space after the paren, so the wrapper arrives
+  # fused to the command word rather than as a token of its own.
+  sub(/^\(+/, "", w)
   sub(/^.*\//, "", w)
   if (w != "grep" && w != "rg") return ""
   for (t = j + 1; t <= m; t++)

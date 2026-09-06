@@ -32,7 +32,7 @@ Add the new agent file's path to `AUDIT_MACHINERY_PATHS` in `.claude/hooks/lib/a
 
 ### 5. Declare a scope-resolution anchor, only if the fence is not where the checker looks
 
-`.gaia/scripts/check-scope-digest-adoption.sh` discovers members rather than carrying a list of them, so a new definition joins its scanned set with nothing to register: it verifies that every earned clearance-write call site passes `--scope-digest`, that the frozen obligation literal is present byte-identical, and that the capture sits inside the member's own scope-resolution region. Only the last of those depends on where that region starts, and the checker assumes `## Remit and self-skip`, which is where nearly every member resolves `KEY_BASE`/`BASE_SHA` and captures.
+`.gaia/scripts/check-scope-digest-adoption.sh` discovers members rather than carrying a list of them, so a new definition joins its scanned set with nothing to register. Its own header owns the list of what it verifies; exactly one of those assertions depends on a member telling it anything, the one placing the capture inside the member's own scope-resolution region. The checker assumes that region starts at `## Remit and self-skip`, which is where nearly every member resolves `KEY_BASE`/`BASE_SHA` and captures.
 
 A member whose fence lives elsewhere needs one line: add `member|^<its heading regex>` to `GAIA_SDA_ANCHOR_OVERRIDES` in that script. `code-audit-frontend` is the standing example, whose fence sits under `### How to run`. Skipping this on a member that needs it does not fail open, the region extraction finds nothing and the check exits non-zero naming the member and the anchor that matched nothing.
 

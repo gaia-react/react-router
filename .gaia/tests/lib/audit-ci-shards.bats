@@ -2,10 +2,12 @@
 
 # Structural guard for .github/workflows/audit-ci-tests.yml's fan-out shape:
 # a matrix job (`shards`) plus a thin aggregator (`audit-ci-tests`) that
-# carries the declared-required check name. This is C3 in
-# .gaia/local/plans/PLAN-014/README.md; the W-numbered checks below each guard
-# one of the constraints that page's task doc lays out for this workflow,
-# since breaking any one of them wedges every pull request. The range is
+# carries the declared-required check name. This is the workflow-shape half of
+# what .gaia/local/plans/PLAN-014/SUMMARY.md's `## Guards` section describes;
+# most of the W-numbered checks below guard a constraint that page lays out for
+# this workflow, since breaking any one of them wedges every pull request. That
+# page is under `.gaia/local/`, which is gitignored, so it is absent on a fresh
+# clone and this pointer resolves only where the plan was run. The range is
 # deliberately unbounded here: several checks postdate that page and guard
 # surfaces it never named, so a bounded list would be a count this file has to
 # keep in step with itself. Each check's own header says what it guards.
@@ -354,10 +356,16 @@ elif mode == 'setupnodecaps':
             # (`gaia-setup-node-foo`) is a DIFFERENT action, and a substring
             # test would report it under this check's name while missing that
             # the real one had been renamed away. Normalized first because
-            # `uses:` legally spells the same local action several ways.
+            # `uses:` legally spells the same local action several ways, and
+            # the normalization has to reach every one of them: a spelling it
+            # misses is SKIPPED rather than reported, which is a short read
+            # rather than an empty one, so the sites spelled the expected way
+            # keep `setup_node_cap_gaps` out of its empty-set arm and the check
+            # reports clean over a step it never opened.
             used = str(step.get('uses', '')).strip().split('@', 1)[0]
             if used.startswith('./'):
                 used = used[2:]
+            used = used.rstrip('/')
             if used != '.github/actions/gaia-setup-node':
                 continue
             name = str(step.get('name', '')) or str(step.get('uses', ''))
@@ -2002,22 +2010,39 @@ concurrency_tree_needs_packages() {
 # the job's can never fire first, so it reads as a bound while buying none of
 # the attribution that is the whole point.
 #
-# Each adversarial fixture below doctors by full-line equality on
+# The step-cap fixtures below doctor by full-line equality on
 # `        timeout-minutes: 5`, which every one of these steps carries at the
-# same indentation, so each fixture breaks all of them at once. That is W5's
-# own fixture style and it is sufficient here: the check reports the whole set
-# and reds on any member, so breaking the set proves the same branch a single
-# member would. The eight-space indent is what keeps the pattern off the
-# four-space job-level `timeout-minutes: 5`, which belongs to
+# same indentation, so each of those fixtures breaks all of them at once. That
+# is W5's own fixture style and it is sufficient here: the check reports the
+# whole set and reds on any member, so breaking the set proves the same branch
+# a single member would. The eight-space indent is what keeps the pattern off
+# the four-space job-level `timeout-minutes: 5`, which belongs to
 # `hook-capabilities-live-tree` rather than to any step.
+#
+# The rest of the fixtures pin other literals, because the arms they drive are
+# not about a step's own cap: the owning-job fixture deletes the four-space
+# `    timeout-minutes: 13` the steps' own job declares, and the empty-set and
+# normalization fixtures rewrite the `uses:` line. A maintainer repairing stale
+# pins after the workflow moves owes every one of those literals, not the step
+# cap alone.
+#
+# A stale pin fails closed, by two different routes. A fixture asserting a gap
+# gets it structurally: a no-op `delete_line` / `replace_line` leaves the
+# doctored copy equal to the original, so the predicate answers for the healthy
+# file and the arm the fixture asserts never fires. The normalization fixture
+# asserts the HEALTHY outcome, which a no-op doctoring also produces, so it
+# cannot get that for free and compares the two files itself.
 #
 # Every fixture drives `setup_node_cap_gaps`, the same predicate the check
 # itself calls, rather than re-reading `setupnodecaps` and re-deciding in its
-# own body, and there is one fixture per outcome that predicate can produce,
-# each greping the gap string only its own arm emits. That is this file's own header rule at the top, and the reason for
-# it is exact here: a predicate written inline in the `@test` body runs only
-# against the healthy workflow, where every branch it takes is the passing one,
-# so weakening the comparison or gutting an arm leaves the whole set green.
+# own body. There is one adversarial fixture per gap outcome that predicate can
+# produce, each grepping the gap string only its own arm emits; the
+# normalization fixture drives the same predicate and asserts the clean outcome
+# instead, so it greps nothing. That is this file's own header rule at the top,
+# and the reason for it is exact here: a predicate
+# written inline in the `@test` body runs only against the healthy workflow,
+# where every branch it takes is the passing one, so weakening the comparison
+# or gutting an arm leaves the whole set green.
 # `workflow_timeout_gaps` in .gaia/scripts/tests/retrigger-reachability.bats is
 # the shape being copied.
 
@@ -2150,4 +2175,28 @@ setup_node_cap_gaps() {
     echo "an empty enumeration was not reported as reaching nothing: ${gaps}" >&2
     return 1
   }
+}
+
+# The fixture below inverts the adversarial ones above: it doctors a LEGAL
+# alternate spelling and asserts the check still reads the steps. `uses:`
+# accepts more than one spelling of the same local action, and a spelling the
+# normalization misses is SKIPPED rather than reported, so on a real workflow
+# the miss surfaces as a short read that the surviving call sites keep out of
+# the empty-set arm. Doctoring every call site at once is what turns that short
+# read into an empty one this assertion can see.
+@test "W12 normalization: a trailing slash on the uses: path still reads the steps" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w12f.yml" gaps
+  replace_line "$WORKFLOW" "        uses: ./.github/actions/gaia-setup-node" \
+    "        uses: ./.github/actions/gaia-setup-node/" "$doctored"
+  cmp -s "$WORKFLOW" "$doctored" && {
+    echo "the uses: pin is stale, so doctoring changed nothing and this fixture proves nothing" >&2
+    return 1
+  }
+
+  gaps="$(setup_node_cap_gaps "$doctored")" || {
+    echo "a trailing-slash spelling left the check reaching nothing: ${gaps}" >&2
+    return 1
+  }
+  [ -z "$gaps" ] || { echo "$gaps" >&2; return 1; }
 }
