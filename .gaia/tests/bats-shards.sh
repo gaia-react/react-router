@@ -21,10 +21,11 @@
 # Exit codes:
 #   0  success (shards/files listed, or run's bats invocation passed)
 #   1  run's bats invocation failed
-#   2  usage error, unknown shard id, a shard resolving zero files, a pinned
-#      hook not found in HOOKS_DIR, a SCRIPTS_COST_OUTLIERS entry not found in
-#      the resolved SCRIPTS_TESTS_DIR, or more anchored files than the group
-#      has shards
+#   2  a usage error, or any refusal to answer: every one prints a
+#      `bats-shards:` line to stderr naming its own cause. Stated as a pointer
+#      rather than a list because the list is what went wrong twice: it was
+#      written as exhaustive, fell behind the code as arms were added, and
+#      completing it only restarts the same decay from a fresher number.
 #
 # Why discovery over a checked-in file manifest: a manifest goes stale the
 # moment a .bats file is added, and it fails SILENTLY -- the new file runs in
