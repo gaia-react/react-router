@@ -2,10 +2,12 @@
 
 # Structural guard for .github/workflows/audit-ci-tests.yml's fan-out shape:
 # a matrix job (`shards`) plus a thin aggregator (`audit-ci-tests`) that
-# carries the declared-required check name. This is C3 in
-# .gaia/local/plans/PLAN-014/SUMMARY.md; most of the W-numbered checks below
-# guard a constraint that page's task doc lays out for this workflow, since
-# breaking any one of them wedges every pull request. The range is
+# carries the declared-required check name. This is the workflow-shape half of
+# what .gaia/local/plans/PLAN-014/SUMMARY.md's `## Guards` section describes;
+# most of the W-numbered checks below guard a constraint that page lays out for
+# this workflow, since breaking any one of them wedges every pull request. That
+# page is under `.gaia/local/`, which is gitignored, so it is absent on a fresh
+# clone and this pointer resolves only where the plan was run. The range is
 # deliberately unbounded here: several checks postdate that page and guard
 # surfaces it never named, so a bounded list would be a count this file has to
 # keep in step with itself. Each check's own header says what it guards.
@@ -2033,9 +2035,11 @@ concurrency_tree_needs_packages() {
 #
 # Every fixture drives `setup_node_cap_gaps`, the same predicate the check
 # itself calls, rather than re-reading `setupnodecaps` and re-deciding in its
-# own body, and there is one fixture per outcome that predicate can produce,
-# each grepping the gap string only its own arm emits. That is this file's own
-# header rule at the top, and the reason for it is exact here: a predicate
+# own body. There is one adversarial fixture per gap outcome that predicate can
+# produce, each grepping the gap string only its own arm emits; the
+# normalization fixture drives the same predicate and asserts the clean outcome
+# instead, so it greps nothing. That is this file's own header rule at the top,
+# and the reason for it is exact here: a predicate
 # written inline in the `@test` body runs only against the healthy workflow,
 # where every branch it takes is the passing one, so weakening the comparison
 # or gutting an arm leaves the whole set green.
