@@ -1441,10 +1441,12 @@ STUB
   grep -qF -- 'contradicts --no-audit' <<<"$output"
 }
 
-@test "--advisory-strict decides nothing when the arm could not run at all" {
-  # pnpm absent is a skip, not a finding and not an unread report: the arm never
-  # reached the registry to have an opinion. Reporting 4 here would send the
-  # scheduled lane into a retry loop over a condition no retry changes.
+@test "--advisory-strict refuses to report clean when the arm could not run at all" {
+  # NOT 0, which is the point. A caller passing this flag has said its exit
+  # status is its only channel, so 0 on a skipped arm hands it the clean answer
+  # over a closure the arm never opened. 2 rather than 4 because no retry
+  # recovers a missing binary, and 2 already means the check could not do what it
+  # was asked.
   write_workspace "  fast-uri: 3.1.6"
   write_lock "  fast-uri: 3.1.6"
   mkdir -p "$TMP/emptybin"
@@ -1453,6 +1455,78 @@ STUB
     ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
   done
   PATH="$TMP/emptybin" run /bin/bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 2 ]
+  grep -qF -- 'advisory arm skipped' <<<"$output"
+}
+
+@test "a skipped arm without the flag still decides nothing" {
+  # The regression pin for the arm above: raising a status on a skip is scoped
+  # to --advisory-strict, so an ordinary caller keeps the reporting-not-deciding
+  # posture the rest of this repository's local audits take.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/emptybin"
+  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
+    command -v "$tool" >/dev/null 2>&1 || continue
+    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
+  done
+  PATH="$TMP/emptybin" run /bin/bash "$CHECK" "$WS"
   [ "$status" -eq 0 ]
   grep -qF -- 'advisory arm skipped' <<<"$output"
+}
+
+@test "an unapplied floor outranks a skipped arm under --advisory-strict too" {
+  # The same precedence the advisory statuses obey, on the status the skip path
+  # raises: a floor drift is the actionable, offline verdict and must not be
+  # relabelled as an environment problem.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.4"
+  mkdir -p "$TMP/emptybin"
+  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
+    command -v "$tool" >/dev/null 2>&1 || continue
+    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
+  done
+  PATH="$TMP/emptybin" run /bin/bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 1 ]
+  grep -qF -- 'FLOOR NOT APPLIED' <<<"$output"
+}
+
+@test "the advisory line calls itself fatal only when it is what decides the status" {
+  # The label is guarded on the raise's own condition, rc included. Keyed to the
+  # flag alone it reads `fatal` on a run whose status came from a failed floor,
+  # where this advisory decided nothing, and sends the reader to the registry for
+  # a cause sitting in the lockfile.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.4"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{"1098765":{"id":1098765,"module_name":"fast-uri","severity":"high","title":"host confusion via a backslash authority introducer"}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 1 ]
+  grep -qF -- 'ADVISORY (high, not fatal here)' <<<"$output"
+  grep -qF -- 'fatal under --advisory-strict' <<<"$output" && return 1
+  true
+}
+
+@test "the advisory line does call itself fatal when it is the deciding status" {
+  # The other direction, so the label is pinned as a discriminator rather than as
+  # a constant that happens to read correctly in one case.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{"1098765":{"id":1098765,"module_name":"fast-uri","severity":"high","title":"host confusion via a backslash authority introducer"}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 3 ]
+  grep -qF -- 'ADVISORY (high, fatal under --advisory-strict)' <<<"$output"
 }

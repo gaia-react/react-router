@@ -70,10 +70,12 @@
 # that they are still needed.
 #
 # Exit status: 0 nothing to report, 1 a floor is not applied as configured,
-# 2 the root could not be read or the arguments were wrong. Under
-# --advisory-strict only, and only when the parity arm found nothing: 3 the
-# advisory arm found a high or critical advisory, 4 the advisory arm could not
-# read a report and this closure was therefore not audited.
+# 2 the check could not do what it was asked -- the root could not be read, the
+# arguments were wrong, or, under --advisory-strict, a tool the advisory arm
+# needs is absent from PATH so that arm never ran. Under --advisory-strict only,
+# and only when the parity arm found nothing: 3 the advisory arm found a high or
+# critical advisory, 4 the advisory arm could not read a report and this closure
+# was therefore not audited. 3 and 4 are the pair a caller retries; 2 is not.
 
 set -uo pipefail
 
@@ -412,12 +414,27 @@ gaia_cwf_main() {
     done <<<"$report"
   fi
 
+  # A SKIPPED ARM IS NOT A CLEAN ONE, and under --advisory-strict that
+  # distinction is the whole contract. A caller passing the flag has said its
+  # exit status is its only channel, so leaving these arms at 0 hands it the one
+  # answer it must never get: the lane prints its clean line over a closure the
+  # arm never opened, forever, with nothing else watching that closure. The
+  # `--no-audit` arm is exempt by construction rather than by choice, because
+  # the two flags are refused together.
+  #
+  # 2 rather than 3 or 4, and the exit-status block above carries this as one of
+  # that code's causes. 2 already means the check could not do what it was asked
+  # to; a tool absent from PATH is exactly that, and it is not an advisory
+  # finding (3) nor a report that could not be read (4), which is the pair the
+  # caller retries. No retry recovers a missing binary.
   if [ "$run_audit" -eq 0 ]; then
     printf 'advisory arm skipped: --no-audit\n'
   elif ! command -v pnpm >/dev/null 2>&1; then
     printf 'advisory arm skipped: pnpm is not on PATH\n'
+    [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=2
   elif ! command -v jq >/dev/null 2>&1; then
     printf 'advisory arm skipped: jq is not on PATH\n'
+    [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=2
   else
     local audit_json advisories declared
     audit_json="$(pnpm -C "$root" audit --json 2>/dev/null || true)"
@@ -502,11 +519,15 @@ gaia_cwf_main() {
         ;;
       esac
     else
-      # Reported, and fatal only under --advisory-strict: see the posture note
-      # in this file's header. The line's own wording stays keyed to the flag so
-      # a log never claims a status the run did not take.
+      # Reported, and fatal only when this advisory is what decides the status:
+      # see the posture note in this file's header. The label is guarded on the
+      # SAME condition as the raise below, `rc` included, rather than on the
+      # flag alone. Keyed to the flag it would read `fatal` on a run whose status
+      # came from a failed floor, where the advisory decided nothing, and send
+      # the reader to the registry for a cause sitting in the lockfile, which is
+      # the direction the header names as the wrong one.
       local fatality='not fatal here'
-      [ "$advisory_strict" -eq 1 ] && fatality='fatal under --advisory-strict'
+      [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && fatality='fatal under --advisory-strict'
       printf '%s\n' "$advisories" | while IFS="$(printf '\t')" read -r sev mod title; do
         printf 'ADVISORY (%s, %s): %s -- %s\n' "$sev" "$fatality" "$mod" "$title"
       done

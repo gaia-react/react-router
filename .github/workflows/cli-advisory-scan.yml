@@ -49,7 +49,15 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}
+  # Keyed by ref as well as workflow, the same construct cli-tests.yml uses, and
+  # here the ref half is load-bearing rather than conventional. GitHub allows a
+  # workflow_dispatch from any branch carrying this file, so on a workflow-only
+  # key a hand dispatch from a feature branch would cancel an in-flight scheduled
+  # run on the default branch. The cancelled run yields no conclusion and no
+  # failure notification, and the branch run that replaces it scans that branch's
+  # own lockfile, so the default branch's closure goes unscanned that day with
+  # nothing anywhere saying so.
+  group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 # Default-deny, so a job added later inherits no scope rather than the
@@ -107,9 +115,23 @@ jobs:
       # The per-attempt bound is deliberately well clear of the slowest call
       # observed, because duration says nothing about whether a call worked: a
       # bound sized near the observed range kills successes and reports them as
-      # registry failures. Ten minutes bounds a genuine stall and clears the
-      # observed ceiling several times over.
+      # registry failures. Ten minutes clears the observed ceiling several times
+      # over.
+      #
+      # WHAT THAT BOUND ACTUALLY COVERS, stated narrowly because the honest
+      # scope is narrower than "bounds a stall": `timeout` signals the process it
+      # spawns, not the process group, so it bounds the direct `bash` child. A
+      # grandchild that ignores the signal, a wedged node under `pnpm audit`,
+      # can outlive it and hold the step's stdout pipe open. `-k 30` escalates to
+      # KILL for a child that ignores TERM, and the step's own `timeout-minutes`
+      # below is the backstop for a descendant that holds the pipe anyway: it
+      # bounds every attempt and every wait between them, so a run that gets
+      # there reds as this step rather than as an unattributed job timeout.
       - name: Scan the CLI workspace's dependency closure for advisories
+        # Four attempts at ten minutes plus three one-minute waits is 43; this
+        # is that plus slack, and under the job's own cap so a step that hangs
+        # is named by its own bound rather than by the job's.
+        timeout-minutes: 46
         run: |
           set -uo pipefail
           attempts=4
@@ -117,7 +139,7 @@ jobs:
           while :; do
             echo "::group::advisory scan, attempt $attempt of $attempts"
             status=0
-            timeout 600 bash .gaia/scripts/check-cli-workspace-floors.sh --advisory-strict || status=$?
+            timeout -k 30 600 bash .gaia/scripts/check-cli-workspace-floors.sh --advisory-strict || status=$?
             echo '::endgroup::'
             case "$status" in
               0)
@@ -129,7 +151,13 @@ jobs:
                 exit 1
                 ;;
               2)
-                echo '::error::the check could not read the CLI workspace; see its diagnostic above'
+                # Two causes reach this arm and the repairs differ, so it names
+                # both rather than the one that prompted it: the check could not
+                # read the workspace, or a tool the advisory arm needs was absent
+                # so that arm never ran. The check's own diagnostic is what
+                # separates them, which is why this line sends the reader to it
+                # rather than asserting either.
+                echo '::error::the check could not do what it was asked: either the CLI workspace could not be read, or a tool the advisory arm needs is absent so the closure was never audited; its diagnostic above says which'
                 exit 1
                 ;;
               3)
@@ -137,7 +165,14 @@ jobs:
                 exit 1
                 ;;
               4|124)
-                echo "attempt $attempt reached no readable report; retrying"
+                # Announced only when a retry actually follows. Said
+                # unconditionally, the final attempt claims a retry that never
+                # happens and the exhaustion error one line below contradicts it,
+                # so a maintainer reading the tail of a failed run gets two
+                # statements that disagree about whether the lane gave up.
+                if [ "$attempt" -lt "$attempts" ]; then
+                  echo "attempt $attempt reached no readable report; retrying"
+                fi
                 ;;
               *)
                 echo "::error::the check exited $status, which this lane does not know how to read"

@@ -140,8 +140,9 @@ const templatePins = collectPins(
 // otherwise sit outside every comparison below: the agreement test would not
 // see it drift from the workflows, and a template pinning the same action
 // would be compared against a live set that does not contain it.
-// Kept separate from the workflow pins because the SHA-shape test below asserts
-// over these too. A composite action pinned to a moving major tag and used by no
+// Collected separately so the recursion into `.github/actions/` is expressed
+// once; the SHA-shape test below asserts over the whole live set, workflows
+// included. A composite action pinned to a moving major tag and used by no
 // workflow would otherwise pass every test here: it agrees with itself, and no
 // template pins it, so neither comparison reaches it.
 const liveActionPins =
@@ -166,8 +167,18 @@ for (const pin of liveWorkflowPins) {
 }
 
 describe('adopter CI action pins', () => {
+  // `liveWorkflowPins` rather than `liveActionPins`, so this reaches the
+  // workflows too. The other two tests below are both comparisons, and a pin
+  // with no counterpart escapes each of them: the agreement test only compares
+  // an action against other sites pinning the same action, and the parity test
+  // only reaches actions a template pins. So a workflow that is the SOLE live
+  // user of an action could pin it to a moving tag, or drop its resolved-tag
+  // comment, and pass every assertion here. That is a live shape rather than a
+  // hypothetical one, since a new workflow bringing its own action arrives that
+  // way; the checkout pin is covered today only by the accident of fifteen
+  // workflows sharing it.
   test('every third-party action is pinned to a full commit SHA with its resolved tag', () => {
-    const unpinned = [...templatePins, ...liveActionPins]
+    const unpinned = [...templatePins, ...liveWorkflowPins]
       .filter((pin) => !SHA_PATTERN.test(pin.ref) || pin.tag === '')
       .map(describePin);
 
