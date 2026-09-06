@@ -124,6 +124,12 @@ EOF
 # no backslash continuation anywhere. This is the shape a naive line-at-a-
 # time grep cannot see: the script name, --provenance earned, and
 # --scope-digest each sit on their own physical line.
+#
+# The --allowedTools line is here for assertion 4, and it is part of the
+# healthy shape rather than decoration: the real workflow grants both
+# scripts and invokes both in the relative spelling that grant matches, so
+# a fixture that dropped the line would model a workflow whose own prompt
+# runs unattended by accident.
 write_healthy_workflow() {
   local dir="$1"
   mkdir -p "$dir/.github/workflows"
@@ -142,7 +148,31 @@ jobs:
             --root "$(git rev-parse --show-toplevel)" --member
             code-audit-frontend --provenance earned --scope-digest
             <the digest you just read back>`, which resolves the digest.
+          --allowedTools "Edit,Write,Bash(bash .gaia/scripts/audit-write-clearance.sh:*),Bash(bash .gaia/scripts/audit-scope-digest.sh:*)"
 EOF
+}
+
+# write_settings <dir> <allow-entry>...: a .claude/settings.json carrying
+# exactly the permission grants named, plus one unrelated grant so the
+# reader is never handed an empty allow list in the healthy case. The
+# baseline passes none: every call site write_member_def and
+# write_frontend_def spell is either interpolated-root or assignment-
+# wrapped, so no `Bash(bash .gaia/scripts/...)` rule reaches any of them
+# and the correct grant set really is empty.
+write_settings() {
+  local dir="$1"
+  shift
+  local entry
+  mkdir -p "$dir/.claude"
+  {
+    printf '{\n  "permissions": {\n    "allow": [\n'
+    printf '      "Bash(git status:*)"'
+    for entry in "$@"; do
+      printf ',\n      "%s"' "$entry"
+    done
+    printf '\n    ]\n  }\n}\n'
+  } >"$dir/.claude/settings.json"
+  return 0
 }
 
 # write_baseline <dir>: a healthy tree -- all five member definitions
@@ -171,6 +201,7 @@ write_baseline() {
   write_member_def "$dir" code-audit-maintainer-prose
   write_member_def "$dir" code-audit-maintainer-shell
   write_healthy_workflow "$dir"
+  write_settings "$dir"
   write_roster "$dir" code-audit-frontend code-audit-github-workflows \
     code-audit-maintainer-node code-audit-maintainer-prose \
     code-audit-maintainer-shell
@@ -210,12 +241,13 @@ make_fixture_repo() {
   [ "$status" -eq 0 ]
 }
 
-@test "real repo: exits 0 with all three assertions satisfied" {
+@test "real repo: exits 0 with all four assertions satisfied" {
   run gaia_check_scope_digest_adoption "$REPO_ROOT"
   [ "$status" -eq 0 ]
   grep -qF "earned call-site --scope-digest coverage: all pass" <<<"$output" || return 1
   grep -qF "obligation literal: byte-identical across every definition" <<<"$output" || return 1
   grep -qF "scope-resolution capture placement: every definition in region" <<<"$output" || return 1
+  grep -qF "permission-grant spelling: every grant matches a call site" <<<"$output" || return 1
 }
 
 @test "fixture: one earned call site dropping --scope-digest fails and names the file" {
@@ -349,6 +381,98 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 0 ]
+}
+
+@test "assertion 4: a settings grant no definition call site can match fails and names the script" {
+  local repo
+  repo="$(make_fixture_repo grant-unmatched)"
+  # audit-scope-digest.sh on purpose: every definition carries the frozen
+  # obligation literal, which names `.gaia/scripts/audit-scope-digest.sh
+  # --capture` in prose. If the assertion accepted a bare mention rather
+  # than a statement that BEGINS with the granted text, that prose alone
+  # would answer for a real call site and this grant would pass while
+  # matching nothing -- the exact vacuous pass assertion 3 guards against
+  # one region over.
+  write_settings "$repo" 'Bash(bash .gaia/scripts/audit-scope-digest.sh:*)'
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but no agent definition spells a call site that rule can match' <<<"$output" || return 1
+}
+
+@test "assertion 4: a matchable definition call site with no settings grant fails" {
+  local repo
+  repo="$(make_fixture_repo callsite-ungranted)"
+  # The other direction, and the one the tree would take if the invocation
+  # spelling were ever settled back on the relative form without the grant
+  # following it: the call site is now spelled exactly as a rule could match,
+  # and no rule does.
+  perl -0pi -e 's/marker="\$\(bash \.gaia\/scripts\/audit-write-clearance\.sh/bash .gaia\/scripts\/audit-write-clearance.sh/' \
+    "$repo/.claude/agents/code-audit-maintainer-node.md"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/settings.json: an agent definition spells "bash .gaia/scripts/audit-write-clearance.sh ..." but no grant covers it' <<<"$output" || return 1
+}
+
+@test "assertion 4: a matchable call site WITH its grant passes (the assertion is not merely always-red)" {
+  local repo
+  repo="$(make_fixture_repo callsite-granted)"
+  perl -0pi -e 's/marker="\$\(bash \.gaia\/scripts\/audit-write-clearance\.sh/bash .gaia\/scripts\/audit-write-clearance.sh/' \
+    "$repo/.claude/agents/code-audit-maintainer-node.md"
+  write_settings "$repo" 'Bash(bash .gaia/scripts/audit-write-clearance.sh:*)'
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 0 ]
+  grep -qF "permission-grant spelling: every grant matches a call site" <<<"$output" || return 1
+}
+
+@test "assertion 4: a workflow whose --allowedTools drops a grant it still invokes fails and names the file" {
+  local repo
+  repo="$(make_fixture_repo workflow-ungranted)"
+  # The settings surface and the workflow surface are judged separately, so
+  # this must fail on the workflow's own allowedTools even though the
+  # definitions and settings.json are untouched and healthy.
+  perl -0pi -e 's/,Bash\(bash \.gaia\/scripts\/audit-scope-digest\.sh:\*\)//' \
+    "$repo/.github/workflows/fake-audit.yml"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.github/workflows/fake-audit.yml: spells "bash .gaia/scripts/audit-scope-digest.sh ..." but its --allowedTools grants no rule that matches it' <<<"$output" || return 1
+}
+
+@test "assertion 4: a workflow granting a script it never invokes fails and names the file" {
+  local repo
+  repo="$(make_fixture_repo workflow-dead-grant)"
+  perl -0pi -e 's/`bash \.gaia\/scripts\/audit-scope-digest\.sh --capture --root/`true --capture --root/' \
+    "$repo/.github/workflows/fake-audit.yml"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.github/workflows/fake-audit.yml: --allowedTools grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but this file spells no call site that rule can match' <<<"$output" || return 1
+}
+
+@test "assertion 4: an interpolated-root call site does not count as matchable" {
+  local repo
+  repo="$(make_fixture_repo interpolated-root)"
+  # The spelling the real definitions use today. It names the script and
+  # runs it under `bash`, but the literal text a permission rule would have
+  # to match begins with an interpolated root, so no rule reaches it. A
+  # check that matched on the script name anywhere in the statement would
+  # call this granted and go green on the live defect.
+  perl -0pi -e 's/marker="\$\(bash \.gaia\/scripts\/audit-write-clearance\.sh/bash "\$AUDIT_ROOT\/.gaia\/scripts\/audit-write-clearance.sh"/' \
+    "$repo/.claude/agents/code-audit-maintainer-node.md"
+  write_settings "$repo" 'Bash(bash .gaia/scripts/audit-write-clearance.sh:*)'
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-write-clearance.sh:*)" but no agent definition spells a call site that rule can match' <<<"$output" || return 1
 }
 
 @test "usage: a fixture with no scan surface exits 2 rather than passing vacuously" {
