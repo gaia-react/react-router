@@ -11,6 +11,19 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-06 b7bca55e SKIP - wiki edit landed in-commit (wiki/decisions/Sharded CI Test Matrix.md updated for the SIGPIPE-reader class); new lint-sigpipe-readers.sh joins a shell-lint custom-pattern-lint enumeration in Release Workflow.md that was already stale before this range, out of scope for this sync
+- 2026-09-06 d5d235f6 SKIP - wiki edit landed in-commit (wiki/decisions/Sharded CI Test Matrix.md updated for the scripts-group anchoring fix)
+- 2026-09-06 00896f0b SKIP - wiki edit landed in-commit (wiki/decisions/pnpm.md updated for the CLI workspace's new scheduled advisory scan)
+- 2026-09-06 11417156 SKIP - wiki edit landed in-commit (wiki/decisions/Registering a Code Audit Team Member.md updated for the permission-grant spelling fix)
+- 2026-09-06 49fe30b2 SKIP - test-only fix for a trailing-slash edge case in W12's uses: normalization, no wiki-relevant surface
+- 2026-09-06 e3e15a18 SKIP - wiki edits landed in-commit (descriptive-wiki accuracy sweep across wiki/dependencies, wiki/modules, wiki/components, wiki/flows, wiki/concepts, plus two new mechanical-check lint scripts)
+- 2026-09-06 05ccc60d SKIP - test-only fix pinning a bats acting tree, no wiki-relevant surface
+- 2026-09-06 af852a18 SKIP - wiki edit landed in-commit (wiki/concepts/Issue Claim.md updated for the re-read-before-release fix)
+- 2026-09-06 32a13065 SKIP - dropped /distribution-audit's main-only worktree refusal; no wiki page asserted that restriction (Worktrees.md deliberately doesn't enumerate the main-only-lib.sh roster), nothing to correct
+- 2026-09-06 9fb5f176 SKIP - one-line shellcheck directive correction (SC1091->source=/dev/null) in local-janitor.sh, no architectural or documented-claim impact
+- 2026-09-06 f6225c61 SKIP - this is the prior wiki-sync run's own landing commit, not a source change
+- 2026-09-06 d6b8952f SKIP - wiki edits landed in-commit (wiki/concepts/Claude Hooks.md bundled-hooks inventory completed, wiki/concepts/PR Merge Workflow.md guarantees scoped)
+- 2026-09-06 27950828 SKIP - gaia-setup-node install steps got a 5-min timeout cap in audit-ci-tests.yml, strictly under the job's own cap; self-documented by the yaml + audit-ci-shards.bats W12, no change to the shard-level ceiling in Sharded CI Test Matrix.md
 - 2026-09-05 cfec387e SKIP - tests-only comment cardinal removal
 - 2026-09-05 315594fd SKIP - OS Sandbox two-spelling scoping already corrected in the commit
 - 2026-09-05 2e1dab5d SKIP - three-round audit session cap already documented in the commit (wiki/concepts/PR Merge Workflow.md, wiki/concepts/Claude Hooks.md)
