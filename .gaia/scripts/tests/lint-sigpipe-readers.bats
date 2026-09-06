@@ -260,6 +260,45 @@ printf "%s" "$a" | grep -q needle'
   grep -qF -- "check.sh:3:" <<<"$output"
 }
 
+# The long-form option spelling, which a flag-token-only run breaks on: the
+# option NAME after a leading -o is not a flag token, so a pattern that admits
+# only flag tokens never reaches the -o that carries pipefail, and every
+# candidate in the file is dropped. The sibling errexit status-read gate already
+# treats this spelling as live for its own armedness.
+@test "a long-form option ahead of -o pipefail still arms the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set -o errexit -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+@test "two long-form options ahead of -o pipefail still arm the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set -o errexit -o nounset -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+# The opposite direction, and the reason the option name is admitted only
+# DIRECTLY after a flag token rather than anywhere in the run. `set` stops
+# parsing options at its first non-option word, so this line sets positional
+# parameters and arms nothing; a pattern admitting a bare word anywhere would
+# grade the file armed and report a site in a file that never runs armed.
+@test "a set line whose words are positional parameters arms nothing" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set alpha beta -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
 @test "the bare spelling set -o pipefail arms the file" {
   fixture_repo
   fixture_file check.sh '#!/usr/bin/env bash

@@ -217,9 +217,14 @@ function segment_reader(s,   toks, m, j, t, w) {
   # a trailing pipe and the command that follows it, so the carry is left alone.
   if (bare ~ /^#/) next
 
-  # The flag run before -o is optional and unbounded: set -o pipefail,
-  # set -euo pipefail and set -e -o pipefail all arm it.
-  if (bare ~ /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
+  # The option run before the -o that carries pipefail is optional and
+  # unbounded, and it admits both spellings a set line uses: a short flag
+  # cluster, and a long-form -o followed by its option NAME. So set -o pipefail,
+  # set -euo pipefail, set -e -o pipefail and set -o errexit -o pipefail all arm
+  # it. The bare option name is admitted only directly after a flag token, never
+  # on its own: set stops parsing options at its first non-option word, so
+  # set a b -o pipefail arms nothing and must not read as if it did.
+  if (bare ~ /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
     armed = 1
 
   # A source edge. The load token is recognized anywhere a command may start,
@@ -268,19 +273,24 @@ trap 'rm -rf "$WORK_DIR"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
+# The basename-to-path record is emitted here rather than by the awk pass,
+# because awk is handed the file CONTENT and this is a fact about its name. It
+# rides the same stream as the awk records, so the loop opens one output file
+# and forks nothing per file: `${f##*/}` is what `basename` would have returned.
 for f in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
   [ -f "$f" ] || continue
+  printf '#file\t%s\t%s\n' "${f##*/}" "$f"
   awk -v file="$f" "$SCAN_AWK" "$f"
-  printf '%s\t%s\n' "$(basename -- "$f")" "$f" >> "$WORK_DIR/index"
 done > "$WORK_DIR/records"
 
-# `|| true` on each: grep exits 1 on no match, and an absent record kind is an
-# ordinary tree rather than a failure.
+# Split the one record stream into the three inputs the closure needs. No `||`
+# guard is owed on any of them: awk exits 0 over a file holding no matching
+# record, so a record kind the tree never produced yields an empty file rather
+# than a failure under this script's own errexit.
 awk -F'\t' '$1 == "#armed"  { print $2 }' "$WORK_DIR/records" | LC_ALL=C sort -u > "$WORK_DIR/closure"
 awk -F'\t' '$1 == "#source" { printf "%s\t%s\n", $2, $3 }' "$WORK_DIR/records" > "$WORK_DIR/edges"
 awk -F'\t' '$1 == "#hit"    { print }' "$WORK_DIR/records" > "$WORK_DIR/hits"
-[ -f "$WORK_DIR/index" ] || : > "$WORK_DIR/index"
-LC_ALL=C sort -u "$WORK_DIR/index" -o "$WORK_DIR/index"
+awk -F'\t' '$1 == "#file"   { printf "%s\t%s\n", $2, $3 }' "$WORK_DIR/records" | LC_ALL=C sort -u > "$WORK_DIR/index"
 
 # Transitive closure over the source edges. A fixed-point loop rather than a
 # recursive walk, because bash 3.2 has no associative array to memoize with and
