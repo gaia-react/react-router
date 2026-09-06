@@ -21,8 +21,10 @@
 # Exit codes:
 #   0  success (shards/files listed, or run's bats invocation passed)
 #   1  run's bats invocation failed
-#   2  usage error, unknown shard id, a shard resolving zero files, or a
-#      pinned hook not found in HOOKS_DIR
+#   2  usage error, unknown shard id, a shard resolving zero files, a pinned
+#      hook not found in HOOKS_DIR, a SCRIPTS_COST_OUTLIERS entry not found in
+#      the resolved SCRIPTS_TESTS_DIR, or more anchored files than the group
+#      has shards
 #
 # Why discovery over a checked-in file manifest: a manifest goes stale the
 # moment a .bats file is added, and it fails SILENTLY -- the new file runs in

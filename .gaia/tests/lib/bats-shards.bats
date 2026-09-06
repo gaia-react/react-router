@@ -15,7 +15,10 @@
 # following the discipline .gaia/tests/lib/run-bats-parallel.bats sets for its
 # own F1/F2 fixtures. S9 and A4 cover the second invariant the partition has to
 # hold: the weighted groups are split by weight, not by file count, and the
-# partition checks are blind to that on their own.
+# partition checks are blind to that on their own. S16, with A6, A7 and A8,
+# covers the third: no two suites the sharder declares cost outliers share a
+# scripts shard, which the weight checks are equally blind to, since those
+# suites are unremarkable by the weight being balanced.
 #
 # Assertion style per .claude/rules/bats-assertions.md: no bare mid-test
 # [[ ... ]], POSIX [ ] and grep only, so a broken assertion still fails on
@@ -539,10 +542,16 @@ cost_outliers() {
 # compares against: it is the one mutation that turns the mechanism off
 # without touching the assignment walk the A1/A2 fixtures splice into.
 doctor_outliers() {
-  local name="$1" list="$2" dest
+  local name="$1" list="$2" dest anchor
   dest="$(copy_sharder "$name")"
-  awk -v list="$list" '
-    /^SCRIPTS_COST_OUTLIERS=\(/ { print "SCRIPTS_COST_OUTLIERS=(" list ")"; next }
+  # Resolved and checked before splicing, for the reason greedy_walk_line
+  # gives: an awk program that matches nothing rewrites nothing and hands back
+  # an undoctored copy, which proves whatever the caller assumed rather than
+  # what it meant to test.
+  anchor="$(grep -nE '^SCRIPTS_COST_OUTLIERS=\(' "$dest" | head -1 | cut -d: -f1)"
+  [ -n "$anchor" ] || return 1
+  awk -v a="$anchor" -v list="$list" '
+    NR == a { print "SCRIPTS_COST_OUTLIERS=(" list ")"; next }
     { print }
   ' "$dest" >"$dest.new"
   mv "$dest.new" "$dest"
@@ -671,7 +680,10 @@ seed_anchor_tree() {
     'fill-a.bats fill-b.bats fill-c.bats heavy-x.bats')"
   SCRIPTS_TESTS_DIR="$dir" run bash "$copy" files scripts-1
   [ "$status" -eq 2 ]
-  grep -qF -- 'over' <<<"$output"
+  # The phrase, not a word inside it: this script prints several exit-2
+  # diagnostics, and pinning a substring short enough to appear in another one
+  # would let a differently-caused exit 2 satisfy the test.
+  grep -qF -- 'anchored files over' <<<"$output"
 }
 
 @test "S11: a pinned hook missing from discovery is a fail-closed error" {
