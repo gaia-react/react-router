@@ -127,10 +127,12 @@ PINNED_HOOKS=(local-janitor.bats)
 #
 # The drift is measured, not asserted. Timed one file at a time across the
 # whole group, a file's size predicts its runtime at r=0.43 with these two in
-# and at r=0.73 with them out, so the proxy is sound for the other 108 suites
-# and wrong for exactly these. They also dominate: two of 110 files carry 37
-# percent of the group's wall clock, and the next suite behind them costs less
-# than a quarter of either.
+# and at r=0.73 with them out, so the proxy is sound for the group's other
+# members and wrong for exactly these. They also dominate: between them they
+# carry better than a third of the group's wall clock, and the next suite
+# behind them costs under a quarter of either. Those are shares rather than
+# counts on purpose, since the group gains suites and a count taken once goes
+# quietly wrong; `wiki/decisions/Sharded CI Test Matrix.md` carries the run.
 #
 # What that combination breaks is the partition, not the estimate. Weighed by
 # bytes these two are unremarkable, so which bucket each lands in is decided by

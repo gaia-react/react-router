@@ -561,9 +561,17 @@ doctor_outliers() {
 # Which scripts shard of script $1, under seam $3, holds basename $2. An empty
 # $3 leaves the seam at its default, since the script resolves an empty
 # SCRIPTS_TESTS_DIR through the same `:-` as an unset one.
+#
+# The group's ids are asked for, not spelled out, on the same reasoning S9
+# gives for the pinned set and cost_outliers gives for the anchor list. The
+# script builds SCRIPTS_IDS as the one place a scripts shard is added, so a
+# literal list here would stop covering the group the moment a fourth is added:
+# S16 and A6 would fail to find an outliers on the new shard and abort on an
+# empty variable, which reads as a confusing red rather than as a statement
+# about the anchoring property they exist to assert.
 scripts_shard_of() {
   local script="$1" base="$2" dir="$3" id
-  for id in scripts-1 scripts-2 scripts-3; do
+  for id in $(bash "$script" group scripts-1); do
     if SCRIPTS_TESTS_DIR="$dir" bash "$script" files "$id" 2>/dev/null \
       | grep -qF -- "/$base"; then
       printf '%s\n' "$id"
