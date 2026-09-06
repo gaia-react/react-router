@@ -21,8 +21,11 @@
 # Exit codes:
 #   0  success (shards/files listed, or run's bats invocation passed)
 #   1  run's bats invocation failed
-#   2  usage error, unknown shard id, a shard resolving zero files, or a
-#      pinned hook not found in HOOKS_DIR
+#   2  a usage error, or any refusal to answer: every one prints a
+#      `bats-shards:` line to stderr naming its own cause. Stated as a pointer
+#      rather than a list because the list is what went wrong twice: it was
+#      written as exhaustive, fell behind the code as arms were added, and
+#      completing it only restarts the same decay from a fresher number.
 #
 # Why discovery over a checked-in file manifest: a manifest goes stale the
 # moment a .bats file is added, and it fails SILENTLY -- the new file runs in
@@ -48,16 +51,26 @@
 # Why weight rather than count. A shard's cost is the sum of its files'
 # runtimes, and file COUNT is a poor proxy for that: per-file setup dominates
 # per-test work here, so one 22-second file holds 185 @test and another holds
-# 1. Against a per-file timing of the whole suite, a file's SIZE IN BYTES
-# correlates with its runtime at r=0.80 where its @test count manages r=0.42.
-# Counting files therefore leaves shards that are even in files and lopsided in
-# minutes, and the local wall clock is the slowest shard.
+# 1. Counting files therefore leaves shards that are even in files and lopsided
+# in minutes, and the local wall clock is the slowest shard.
+#
+# SIZE IN BYTES is the better proxy a pure discovery pass can compute, and it
+# is a proxy rather than an identity. Timed one file at a time across
+# SCRIPTS_TESTS_DIR it predicts runtime at r=0.43 over that group as it stands
+# and at r=0.73 with SCRIPTS_COST_OUTLIERS set aside, so it is sound for the
+# ordinary members and blind to exactly the files that list names. Anchoring
+# those is what covers the gap; the weight itself stays bytes for every file.
 #
 # Size is read from the tree at discovery time, which is what keeps this pure
 # discovery. A checked-in table of per-file runtimes would be a better proxy
 # still, and it would reintroduce exactly the stale-manifest hazard this
 # script's whole design rejects: a new file would weigh nothing, and nothing
-# would say so.
+# would say so. SCRIPTS_COST_OUTLIERS is not that table and does not reopen the
+# hazard: it carries no runtimes and changes no file's weight, it decides which
+# BUCKET a named file takes, and a file it does not name weighs its bytes as
+# before rather than weighing nothing. A name it carries that discovery does
+# not return is an error rather than a silent no-op, which is the half the
+# rejected table could not offer.
 #
 # Directory seam: six variables below, each independently overridable from
 # the environment. A value beginning with `/` is used AS-IS; any other value
@@ -81,7 +94,11 @@
 set -euo pipefail
 
 HOOKS_DIR="${HOOKS_DIR:-.gaia/tests/hooks}"
-SCRIPTS_TESTS_DIR="${SCRIPTS_TESTS_DIR:-.gaia/scripts/tests}"
+# Named as a constant as well as a default because SCRIPTS_COST_OUTLIERS below
+# describes THIS directory's contents: comparing the resolved seam against it
+# is what tells a stale entry apart from a seam a caller has pointed elsewhere.
+SCRIPTS_TESTS_DIR_DEFAULT='.gaia/scripts/tests'
+SCRIPTS_TESTS_DIR="${SCRIPTS_TESTS_DIR:-$SCRIPTS_TESTS_DIR_DEFAULT}"
 AUDIT_TESTS_DIR="${AUDIT_TESTS_DIR:-.github/audit/tests}"
 LIB_DIR="${LIB_DIR:-.gaia/tests/lib}"
 FORENSICS_DIR="${FORENSICS_DIR:-.gaia/tests/forensics}"
@@ -101,6 +118,38 @@ STATUSLINE_DIR="${STATUSLINE_DIR:-.gaia/tests/statusline}"
 # against each other; `wiki/decisions/Sharded CI Test Matrix.md` carries the
 # measurements and why the groups stop where they do.
 PINNED_HOOKS=(local-janitor.bats)
+
+# The scripts group's cost outliers: suites whose runtime lives in what they
+# INVOKE rather than in what they contain, which is the one thing a byte weight
+# cannot see. Each of these drives a whole-tree gate per assertion, so its cost
+# tracks the size of the tree it sweeps and not the size of its own text, and
+# the weight below reads it as an ordinary file of that many bytes.
+#
+# The drift is measured, not asserted. Timed one file at a time across the
+# whole group, a file's size predicts its runtime at r=0.43 with these two in
+# and at r=0.73 with them out, so the proxy is sound for the other 108 suites
+# and wrong for exactly these. They also dominate: two of 110 files carry 37
+# percent of the group's wall clock, and the next suite behind them costs less
+# than a quarter of either.
+#
+# What that combination breaks is the partition, not the estimate. Weighed by
+# bytes these two are unremarkable, so which bucket each lands in is decided by
+# the packing of everything around them, and a tree change anywhere in the
+# group can move them together. That draw is what reds the leg: co-located they
+# exceed .github/workflows/audit-ci-tests.yml's per-shard cap and the job is
+# cancelled with no failing assertion. Naming them here holds them in distinct
+# buckets so no draw can produce it, which is what splitting one of them into
+# halves could not do on its own -- a split divides the text, and the cost
+# stayed with the half that kept the whole-tree runs.
+#
+# Membership rule for a future maintainer: a suite belongs here when its cost
+# is dominated by an external command it runs per test, and it does NOT belong
+# here merely for being slow or large. A suite left out weighs its bytes, which
+# is today's behaviour and degrades no further; the ordering below decides
+# which bucket each named suite anchors, so keep the list shorter than
+# SCRIPTS_IDS. `wiki/decisions/Sharded CI Test Matrix.md` carries the
+# measurements.
+SCRIPTS_COST_OUTLIERS=(shell-lint.bats check-script-capabilities.bats)
 
 # The two weighted groups, each listed once and in matrix order. Adding a shard
 # to a group is a one-word edit here: SHARD_IDS is built from these rather than
@@ -245,20 +294,47 @@ weighted_list() {
 }
 
 # Greedy longest-processing-time assignment of directory $1's discovered files
-# across the shard ids from $4 on, printing the ones that land on target id $2.
-# $3 is `pinned` or `all`, forwarded to weighted_list.
+# across the shard ids from $5 on, printing the ones that land on target id $2.
+# $3 is `pinned` or `all`, forwarded to weighted_list. $4 is a space-separated
+# list of anchored basenames, empty for a group that names none.
 #
 # Walk the files heaviest first and give each to the lightest bucket so far,
 # ties to the lowest-numbered shard. LPT is not optimal, but the arrangement it
 # misses by is far inside the run-to-run noise of the runtimes it approximates,
 # and it needs no search, so the assignment stays a single pass a reader can
 # follow.
+#
+# An ANCHORED file skips that choice and takes the bucket its position in $4
+# names, the first to the first shard, the second to the second, so two of them
+# can never share a leg however the rest of the group packs. Its own weight
+# still joins that bucket's load, so every later choice is made against what
+# the bucket really holds. Anchoring decides a file's bucket, never whether it
+# is assigned at all: an anchored file is walked, printed and counted exactly
+# like any other, so the partition stays whole by construction rather than by
+# the caller remembering to hold the set out and put it back.
 greedy_bucket() {
-  local dir="$1" target="$2" mode="$3"
-  shift 3
-  local ids n i best target_idx id size p loads
+  local dir="$1" target="$2" mode="$3" anchors="$4"
+  shift 4
+  local ids n i best target_idx id size p loads base
+  local anchor_names anchor_idx a_n
   ids=("$@")
   n=$#
+
+  # Anchors, in listed order, one per shard from the first. Read into parallel
+  # indexed arrays rather than one associative array, which bash 3.2 lacks.
+  anchor_names=()
+  anchor_idx=()
+  a_n=0
+  for base in ${anchors}; do
+    anchor_names+=("$base")
+    anchor_idx+=("$a_n")
+    a_n=$((a_n + 1))
+  done
+  if [ "$a_n" -gt "$n" ]; then
+    printf 'bats-shards: %s anchored files over %s shards in %s\n' \
+      "$a_n" "$n" "$dir" >&2
+    exit 2
+  fi
 
   target_idx=-1
   i=0
@@ -282,14 +358,26 @@ greedy_bucket() {
 
   while IFS="$TAB" read -r size p || [ -n "$p" ]; do
     [ -n "$p" ] || continue
-    best=0
-    i=1
-    while [ "$i" -lt "$n" ]; do
-      if [ "${loads[$i]}" -lt "${loads[$best]}" ]; then
-        best=$i
+    base="${p##*/}"
+    best=-1
+    i=0
+    while [ "$i" -lt "$a_n" ]; do
+      if [ "$base" = "${anchor_names[$i]}" ]; then
+        best="${anchor_idx[$i]}"
+        break
       fi
       i=$((i + 1))
     done
+    if [ "$best" -lt 0 ]; then
+      best=0
+      i=1
+      while [ "$i" -lt "$n" ]; do
+        if [ "${loads[$i]}" -lt "${loads[$best]}" ]; then
+          best=$i
+        fi
+        i=$((i + 1))
+      done
+    fi
     if [ "$best" -eq "$target_idx" ]; then
       printf '%s\n' "$p"
     fi
@@ -297,15 +385,51 @@ greedy_bucket() {
   done < <(weighted_list "$dir" "$mode")
 }
 
+# Fail closed when SCRIPTS_COST_OUTLIERS names a file $1's discovery does not
+# return. A stale entry is silent everywhere else: the suite it meant to hold
+# apart is renamed or gone, anchoring quietly stops applying to it, every shard
+# still exits 0 with a whole partition, and the co-location it exists to
+# prevent is back with nothing saying so. That is the same silent-manifest
+# failure this script's discovery design rejects, so it is an error here rather
+# than a degraded arrangement.
+#
+# Checked at the configuration boundary rather than inside the assignment walk,
+# and only against the default seam. The list describes one real directory; a
+# caller that points SCRIPTS_TESTS_DIR at a fixture tree is not carrying a
+# stale list, it is asking about a directory the list was never about, and the
+# anchors are simply vacuous there. Reading a seam override as a stale list
+# would fail every seam-based test in this script's own guard suite.
+require_anchors_present() {
+  local dir="$1" base found p
+  for base in ${SCRIPTS_COST_OUTLIERS[@]+"${SCRIPTS_COST_OUTLIERS[@]}"}; do
+    found=0
+    while IFS= read -r p || [ -n "$p" ]; do
+      if [ "${p##*/}" = "$base" ]; then
+        found=1
+        break
+      fi
+    done < <(discover_bats "$dir")
+    if [ "$found" -eq 0 ]; then
+      printf 'bats-shards: cost-outlier file not found: %s (in %s)\n' \
+        "$base" "$dir" >&2
+      exit 2
+    fi
+  done
+}
+
 files_for_shard() {
   case "$1" in
     hooks-1) files_hooks1 ;;
     hooks-*)
-      greedy_bucket "$HOOKS_DIR" "$1" pinned \
+      greedy_bucket "$HOOKS_DIR" "$1" pinned "" \
         ${HOOKS_GREEDY_IDS[@]+"${HOOKS_GREEDY_IDS[@]}"}
       ;;
     scripts-*)
+      if [ "$SCRIPTS_TESTS_DIR" = "$SCRIPTS_TESTS_DIR_DEFAULT" ]; then
+        require_anchors_present "$SCRIPTS_TESTS_DIR"
+      fi
       greedy_bucket "$SCRIPTS_TESTS_DIR" "$1" all \
+        "${SCRIPTS_COST_OUTLIERS[*]+${SCRIPTS_COST_OUTLIERS[*]}}" \
         ${SCRIPTS_IDS[@]+"${SCRIPTS_IDS[@]}"}
       ;;
     audit) discover_bats "$AUDIT_TESTS_DIR" ;;

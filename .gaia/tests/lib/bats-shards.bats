@@ -15,7 +15,10 @@
 # following the discipline .gaia/tests/lib/run-bats-parallel.bats sets for its
 # own F1/F2 fixtures. S9 and A4 cover the second invariant the partition has to
 # hold: the weighted groups are split by weight, not by file count, and the
-# partition checks are blind to that on their own.
+# partition checks are blind to that on their own. S16, with A6, A7 and A8,
+# covers the third: no two suites the sharder declares cost outliers share a
+# scripts shard, which the weight checks are equally blind to, since those
+# suites are unremarkable by the weight being balanced.
 #
 # Assertion style per .claude/rules/bats-assertions.md: no bare mid-test
 # [[ ... ]], POSIX [ ] and grep only, so a broken assertion still fails on
@@ -524,6 +527,163 @@ seed_lopsided_tree() {
   # ...and is still caught, because the two heavy files landed together.
   SCRIPTS_TESTS_DIR="$dir" run within_load_bound "$copy" "$total" "$largest" scripts-1 scripts-2 scripts-3
   [ "$status" -eq 1 ]
+}
+
+# The anchored basenames the script declares, asked for rather than spelled
+# out, on the same reasoning S9 gives for the pinned set: a literal here would
+# name today's two files and would keep passing once a third is added, which is
+# exactly the case S16 exists to cover.
+cost_outliers() {
+  sed -n 's/^SCRIPTS_COST_OUTLIERS=(\(.*\))$/\1/p' "$1" | tr ' ' '\n' | grep -v '^$'
+}
+
+# A copy of the script whose anchor list is replaced by $2 (space-separated,
+# possibly empty). Empty is the "anchoring disabled" arm every fixture below
+# compares against: it is the one mutation that turns the mechanism off
+# without touching the assignment walk the A1/A2 fixtures splice into.
+doctor_outliers() {
+  local name="$1" list="$2" dest anchor
+  dest="$(copy_sharder "$name")"
+  # Resolved and checked before splicing, for the reason greedy_walk_line
+  # gives: an awk program that matches nothing rewrites nothing and hands back
+  # an undoctored copy, which proves whatever the caller assumed rather than
+  # what it meant to test.
+  anchor="$(grep -nE '^SCRIPTS_COST_OUTLIERS=\(' "$dest" | head -1 | cut -d: -f1)"
+  [ -n "$anchor" ] || return 1
+  awk -v a="$anchor" -v list="$list" '
+    NR == a { print "SCRIPTS_COST_OUTLIERS=(" list ")"; next }
+    { print }
+  ' "$dest" >"$dest.new"
+  mv "$dest.new" "$dest"
+  printf '%s\n' "$dest"
+}
+
+# Which scripts shard of script $1, under seam $3, holds basename $2. An empty
+# $3 leaves the seam at its default, since the script resolves an empty
+# SCRIPTS_TESTS_DIR through the same `:-` as an unset one.
+scripts_shard_of() {
+  local script="$1" base="$2" dir="$3" id
+  for id in scripts-1 scripts-2 scripts-3; do
+    if SCRIPTS_TESTS_DIR="$dir" bash "$script" files "$id" 2>/dev/null \
+      | grep -qF -- "/$base"; then
+      printf '%s\n' "$id"
+      return 0
+    fi
+  done
+  return 1
+}
+
+# A seam whose pure lightest-bucket walk provably co-locates two files, so the
+# anchoring arm has something to separate. Three fillers take one bucket each
+# (1000, 1000, 300), which leaves the third bucket light enough to win the next
+# TWO picks: both trailing files land on it. The gap is what does the work, not
+# the file count, so this stays a fixture about the walk rather than about how
+# many files happen to be here.
+seed_anchor_tree() {
+  local dir="$1"
+  mkdir -p "$dir"
+  write_trivial_bats "$dir/fill-a.bats" "FILL-A"
+  head -c 1000 /dev/zero | tr '\0' '#' >>"$dir/fill-a.bats"
+  write_trivial_bats "$dir/fill-b.bats" "FILL-B"
+  head -c 1000 /dev/zero | tr '\0' '#' >>"$dir/fill-b.bats"
+  write_trivial_bats "$dir/fill-c.bats" "FILL-C"
+  head -c 300 /dev/zero | tr '\0' '#' >>"$dir/fill-c.bats"
+  write_trivial_bats "$dir/heavy-x.bats" "HEAVY-X"
+  write_trivial_bats "$dir/heavy-y.bats" "HEAVY-Y"
+}
+
+# S16. The property the anchor list exists to deliver, asserted over the real
+# tree rather than over a fixture: no two declared cost outliers share a leg.
+# Byte weight cannot see what these suites cost, so which bucket each lands in
+# is otherwise decided by the packing of every other file in the group, and a
+# tree change anywhere in it can put two together and red the leg on the cap.
+@test "S16: no two declared cost outliers share a scripts shard" {
+  local base shard seen
+  seen=""
+  while IFS= read -r base || [ -n "$base" ]; do
+    [ -n "$base" ] || continue
+    shard="$(scripts_shard_of "$SCRIPT" "$base" "")"
+    [ -n "$shard" ]
+    # Not already claimed by an earlier outlier.
+    printf '%s\n' "$seen" | grep -qxF -- "$shard" && return 1
+    seen="$(printf '%s\n%s' "$seen" "$shard")"
+  done < <(cost_outliers "$SCRIPT")
+  # Non-vacuity: a list that parsed to nothing would pass the loop above
+  # without asserting anything.
+  [ -n "$(cost_outliers "$SCRIPT")" ]
+}
+
+# A6. Proves S16's property comes from the anchoring and not from the byte
+# packing happening to separate the two files anyway. Both arms run over the
+# same seam, so the only difference between them is the list.
+@test "A6: anchoring separates two files the unweighted walk co-locates" {
+  local dir off on x_off y_off x_on y_on
+  dir="$BATS_TEST_TMPDIR/a6-scripts"
+  seed_anchor_tree "$dir"
+
+  # Anchoring off: the walk puts both trailing files on the same shard.
+  off="$(doctor_outliers a6-off.sh '')"
+  x_off="$(scripts_shard_of "$off" heavy-x.bats "$dir")"
+  y_off="$(scripts_shard_of "$off" heavy-y.bats "$dir")"
+  [ -n "$x_off" ]
+  [ "$x_off" = "$y_off" ]
+
+  # Anchoring on: the same two files take the first two shards instead.
+  on="$(doctor_outliers a6-on.sh 'heavy-x.bats heavy-y.bats')"
+  x_on="$(scripts_shard_of "$on" heavy-x.bats "$dir")"
+  y_on="$(scripts_shard_of "$on" heavy-y.bats "$dir")"
+  [ "$x_on" = "scripts-1" ]
+  [ "$y_on" = "scripts-2" ]
+
+  # And the partition is still whole, so the separation is a reassignment
+  # rather than a file quietly running twice or not at all.
+  SCRIPTS_TESTS_DIR="$dir" run check_no_duplicates "$on"
+  [ "$status" -eq 0 ]
+}
+
+# A7. The stale-list arm. An anchor naming a file discovery does not return is
+# the silent failure the whole check exists for: anchoring stops applying, every
+# shard still exits 0 with a whole partition, and nothing says the guarantee is
+# gone.
+@test "A7: an anchor naming a missing file is a fail-closed error" {
+  local copy
+  copy="$(doctor_outliers a7-stale.sh 'no-such-suite.bats')"
+  run bash "$copy" files scripts-1
+  [ "$status" -eq 2 ]
+  grep -qF -- 'no-such-suite.bats' <<<"$output"
+
+  # The healthy arm, so a check that passed everything could not pass this
+  # test: the real list against the real seam still resolves.
+  run bash "$SCRIPT" files scripts-1
+  [ "$status" -eq 0 ]
+}
+
+# A7 second arm: the check is scoped to the default seam deliberately, so a
+# caller pointing SCRIPTS_TESTS_DIR at a fixture tree is not read as carrying a
+# stale list. Without this scoping every seam-based test in this file reds.
+@test "A7: a seam override is not read as a stale anchor list" {
+  local dir
+  dir="$BATS_TEST_TMPDIR/a7-seam"
+  seed_anchor_tree "$dir"
+  SCRIPTS_TESTS_DIR="$dir" run bash "$SCRIPT" files scripts-1
+  [ "$status" -eq 0 ]
+}
+
+# A8. More anchors than buckets cannot be honoured, and honouring it partly
+# would silently put two of them together, which is the state the list exists
+# to forbid.
+@test "A8: more anchored files than shards is a fail-closed error" {
+  local dir copy
+  dir="$BATS_TEST_TMPDIR/a8-scripts"
+  seed_anchor_tree "$dir"
+  copy="$(doctor_outliers a8-over.sh \
+    'fill-a.bats fill-b.bats fill-c.bats heavy-x.bats')"
+  SCRIPTS_TESTS_DIR="$dir" run bash "$copy" files scripts-1
+  [ "$status" -eq 2 ]
+  # The phrase, not a word inside it: this script prints several exit-2
+  # diagnostics, and pinning a substring short enough to appear in another one
+  # would let a differently-caused exit 2 satisfy the test.
+  grep -qF -- 'anchored files over' <<<"$output"
 }
 
 @test "S11: a pinned hook missing from discovery is a fail-closed error" {
