@@ -90,7 +90,7 @@ drift=$(git rev-list --count "$state_sha"..HEAD)
 first_output=$(claude -p --model sonnet --permission-mode bypassPermissions \
   "What's the status of this repo?" 2>&1 || true)
 
-if ! echo "$first_output" | grep -qiE "drift|wiki sync|wiki state|commits ahead|behind"; then
+if ! grep -qiE "drift|wiki sync|wiki state|commits ahead|behind" <<<"$first_output"; then
   echo "FAIL: first prompt output did not surface drift/wiki sync. Output was:"
   echo "$first_output"
   exit 1

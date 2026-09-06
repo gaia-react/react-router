@@ -101,7 +101,7 @@ fi
 # --- help path -----------------------------------------------------------
 HELP_OUT="$("$GAIA" update-deps --help)" \
   || { fail "gaia update-deps --help exited non-zero"; exit 1; }
-printf '%s' "$HELP_OUT" | grep -q "Usage: gaia update-deps" \
+grep -q "Usage: gaia update-deps" <<<"$HELP_OUT" \
   || { fail "gaia update-deps --help did not print its usage banner"; exit 1; }
 
 pass "gaia update-deps decline snoozed and cleared a group, rejected malformed args, and printed help on staged tree"

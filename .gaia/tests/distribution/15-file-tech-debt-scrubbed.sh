@@ -126,9 +126,9 @@ PROMPT="Read the file ${SKILL_REL} in this repo. Do NOT run any commands or tool
 
 RESPONSE="$(docker_run_claude "$STAGING" --print "$PROMPT" 2>/dev/null || true)"
 
-if printf '%s' "$RESPONSE" | grep -qF 'gaia-debt-key: v1' \
-   && printf '%s' "$RESPONSE" | grep -qF 'path=app/foo.ts' \
-   && printf '%s' "$RESPONSE" | grep -qF 'line=42'; then
+if grep -qF 'gaia-debt-key: v1' <<<"$RESPONSE" \
+   && grep -qF 'path=app/foo.ts' <<<"$RESPONSE" \
+   && grep -qF 'line=42' <<<"$RESPONSE"; then
   log "advisory: model reproduced a well-formed dedup key from the scrubbed skill; post-scrub prose is followable"
 else
   log "advisory WARNING: model did not reproduce a well-formed dedup key from the scrubbed skill (free-form output; non-gating). Response follows:"

@@ -536,7 +536,7 @@ required_check_confirmed() {
   local contexts
   contexts=$(gh api "repos/${repo}/branches/${default_branch}/protection/required_status_checks" \
     --jq '.contexts[]?' 2>/dev/null || true)
-  if printf '%s\n' "$contexts" | grep -qx 'GAIA-Audit'; then
+  if grep -qx 'GAIA-Audit' <<<"$contexts"; then
     return 0
   fi
 
@@ -557,7 +557,7 @@ required_check_confirmed() {
   ruleset_contexts=$(gh api "repos/${repo}/rules/branches/${default_branch}" \
     --jq '.[] | select(.type == "required_status_checks") | .parameters.required_status_checks[]?.context' \
     2>/dev/null || true)
-  if printf '%s\n' "$ruleset_contexts" | grep -qx 'GAIA-Audit'; then
+  if grep -qx 'GAIA-Audit' <<<"$ruleset_contexts"; then
     return 0
   fi
 

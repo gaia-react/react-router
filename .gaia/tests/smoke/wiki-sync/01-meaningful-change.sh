@@ -110,7 +110,7 @@ output=$(claude -p --model sonnet --permission-mode bypassPermissions \
   "Run /gaia-wiki sync. Report what was done." 2>&1 | tee "$TMP/claude-sync.log")
 
 # Assertions
-echo "$output" | grep -q "Gemini" || { echo "FAIL: Gemini not mentioned in /gaia-wiki sync output"; exit 1; }
+grep -q "Gemini" <<<"$output" || { echo "FAIL: Gemini not mentioned in /gaia-wiki sync output"; exit 1; }
 [ -f wiki/services/Gemini.md ] || { echo "FAIL: wiki/services/Gemini.md not created"; exit 1; }
 
 # State should have advanced to the SHA we wanted evaluated

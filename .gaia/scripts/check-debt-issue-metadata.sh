@@ -155,7 +155,7 @@ check_ns_values() {
 check_labels() {
   local subject="$1" labels="$2" n v
 
-  if ! printf '%s\n' "$labels" | grep -qx 'tech-debt'; then
+  if ! grep -qx 'tech-debt' <<<"$labels"; then
     finding "$subject" "missing-tech-debt" "no \`tech-debt\` label"
   fi
 
@@ -354,7 +354,7 @@ run_pre_file() {
   # side fails carries a non-zero status, and under `set -e` that aborts the
   # script on the clean case. The same trap `.claude/rules/bats-assertions.md`
   # documents for test bodies applies to any `set -e` script.
-  if printf '%s\n' "$labels" | grep -qE '^(in-progress|debt:spec-pending|debt:spec-active)$'; then
+  if grep -qE '^(in-progress|debt:spec-pending|debt:spec-active)$' <<<"$labels"; then
     finding "pre-file" "drain-label-on-new-filing" "\`in-progress\` / \`debt:spec-pending\` / \`debt:spec-active\` are applied once work starts, never by a filing"
   fi
 

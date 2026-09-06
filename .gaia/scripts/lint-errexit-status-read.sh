@@ -1122,7 +1122,22 @@ if [ -n "$report" ]; then
   # The repair hint answers a status-read finding. A desync ERROR is a different
   # verdict with a different (and unknown) repair, so printing the hint under a
   # report carrying only those would name a fix the operator does not need.
-  if printf '%s' "$report" | grep -qv ': ERROR: the scan lost track of shell state'; then
+  # ONE awk pass, not a quiet grep downstream of a pipe. A quiet grep exits at
+  # its first match and closes the pipe; the upstream takes SIGPIPE and returns
+  # 141, and `pipefail` promotes that to the pipeline's status, so the test
+  # would answer FALSE on a report that does carry a status-read finding.
+  # .gaia/scripts/lint-sigpipe-readers.sh is the gate that keeps the shape out.
+  #
+  # `length($0) > 0` is what makes this equivalent to the pipeline it replaced
+  # rather than to a here-string of it. `<<<` appends a newline, and $report
+  # already ends with one, so the here-string carries a trailing EMPTY line that
+  # an inverted match would count as a non-matching line and succeed on
+  # unconditionally. Only a zero-length line is dropped: a whitespace-only line
+  # counted as non-matching before and still does.
+  if awk '
+      length($0) > 0 && $0 !~ /: ERROR: the scan lost track of shell state/ { found = 1 }
+      END { exit(found ? 0 : 1) }
+    ' <<<"$report"; then
     # printf, not echo: the hint carries `$` and backslashes that echo may expand
     # depending on the shell (SC2028). The format string is single-quoted so the
     # sample code inside stays literal -- it is being printed, not run.

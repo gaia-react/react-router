@@ -108,7 +108,7 @@ fi
 
 missing=()
 for ctx in ${REQUIRED_CONTEXTS[@]+"${REQUIRED_CONTEXTS[@]}"}; do
-  if ! printf '%s\n' "$ruleset_contexts" | grep -qxF -- "$ctx"; then
+  if ! grep -qxF -- "$ctx" <<<"$ruleset_contexts"; then
     missing+=("$ctx")
   fi
 done

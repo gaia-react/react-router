@@ -108,7 +108,7 @@ if [ "$staged_member_count" -ne 2 ]; then
   fail "staged roster has $staged_member_count member(s), expected 2 (adopter shape)"
   exit 1
 fi
-if printf '%s\n' "$staged_members" | grep -q '^code-audit-maintainer-'; then
+if grep -q '^code-audit-maintainer-' <<<"$staged_members"; then
   fail "staged roster still declares a code-audit-maintainer-* member, scrub did not strip it"
   exit 1
 fi
@@ -150,7 +150,7 @@ LEAKED_GLOBS=()
 for def in ${staged_agent_defs[@]+"${staged_agent_defs[@]}"}; do
   while IFS= read -r g; do
     [ -z "$g" ] && continue
-    if printf '%s\n' "$stripped_globs" | grep -qxF "$g"; then
+    if grep -qxF "$g" <<<"$stripped_globs"; then
       LEAKED_GLOBS+=("$(basename "$def"): $g")
     fi
   done < <(region_globs "$def")
@@ -187,7 +187,7 @@ if [ "$DRIFT_RC" -ne 1 ]; then
   exit 1
 fi
 for needle in "remit-glob-missing" "code-audit-github-workflows" "bash .gaia/scripts/write-audit-remits.sh"; do
-  if ! printf '%s\n' "$DRIFT_OUT" | grep -qF "$needle"; then
+  if ! grep -qF "$needle" <<<"$DRIFT_OUT"; then
     log "drifted-check output:"
     printf '%s\n' "$DRIFT_OUT" >&2
     fail "drifted-check output missing expected substring: $needle"

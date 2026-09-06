@@ -153,7 +153,7 @@ target_dir="$repo_root/.playwright/e2e/$spec_id_lc"
 cache_dir="$repo_root/.gaia/local/cache/uat-write"
 cache_file="$cache_dir/$spec_id.json"
 
-if [ -z "$uats_block" ] || ! printf '%s\n' "$uats_block" | grep -qE '^[[:space:]]*-[[:space:]]+uat_id:'; then
+if [ -z "$uats_block" ] || ! grep -qE '^[[:space:]]*-[[:space:]]+uat_id:' <<<"$uats_block"; then
   echo "uat-write.sh: no UATs in $spec_path; nothing to render" >&2
   # Even with no UATs, hard-delete any orphaned uat-*.spec.ts files in the
   # target dir (resolution README #3 is symmetric: SPEC truth wins).
@@ -300,10 +300,10 @@ while IFS=$'\t' read -r uat_id uat_given uat_when uat_then; do
   use_fixme=0
   has_quoted=0
   has_urlish=0
-  if printf '%s' "$uat_then" | grep -qE "['\"\`][^'\"\`]{2,}['\"\`]"; then
+  if grep -qE "['\"\`][^'\"\`]{2,}['\"\`]" <<<"$uat_then"; then
     has_quoted=1
   fi
-  if printf '%s' "$uat_then" | grep -qE '[/#?]'; then
+  if grep -qE '[/#?]' <<<"$uat_then"; then
     has_urlish=1
   fi
   if [ "$has_quoted" -eq 0 ] && [ "$has_urlish" -eq 0 ]; then
@@ -411,7 +411,7 @@ if [ -d "$target_dir" ]; then
   while IFS= read -r f; do
     [ -z "$f" ] && continue
     rel="${f#"$repo_root/"}"
-    if printf '%s' "$seen_uat_files" | grep -qxF "$rel"; then
+    if grep -qxF "$rel" <<<"$seen_uat_files"; then
       continue
     fi
     rm -f -- "$f"

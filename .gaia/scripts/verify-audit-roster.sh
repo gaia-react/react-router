@@ -448,10 +448,10 @@ while IFS=$'\t' read -r kind name; do
     printf '  clearance, but its definition does not exist.\n'
     printf '\n'
   fi
-  if [ -n "$machinery_list" ] && ! printf '%s\n' "$machinery_list" | grep -qxF -- "$agent_rel"; then
+  if [ -n "$machinery_list" ] && ! grep -qxF -- "$agent_rel" <<<"$machinery_list"; then
     _report_unregistered "$name" "$agent_rel" AUDIT_MACHINERY_PATHS "$machinery_lib"
   fi
-  if [ -n "$gate_list" ] && ! printf '%s\n' "$gate_list" | grep -qxF -- "$agent_rel"; then
+  if [ -n "$gate_list" ] && ! grep -qxF -- "$agent_rel" <<<"$gate_list"; then
     _report_unregistered "$name" "$agent_rel" GATE_MACHINERY_FILES "$gate_script"
   fi
 done < <(printf '%s\n' "$raw_records")
@@ -1179,7 +1179,7 @@ if [ -n "$coverage_universe" ]; then
   # decision over the set (give these an owner, or declare them unowned), and a
   # directory added with two hundred files in it would otherwise bury every
   # other invariant's output under two hundred blocks.
-  if printf '%s\n' "$coverage_records" | grep -q '^ORPHANCOUNT'; then
+  if grep -q '^ORPHANCOUNT' <<<"$coverage_records"; then
     findings=$((findings + 1))
     orphan_count="$(printf '%s\n' "$coverage_records" | awk -F'\t' '$1 == "ORPHANCOUNT" { print $2 }')"
     orphan_cap="$(printf '%s\n' "$coverage_records" | awk -F'\t' '$1 == "ORPHANCOUNT" { print $3 }')"

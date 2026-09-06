@@ -159,7 +159,7 @@ get_fm_field() {
 # Whether a top-level key exists (even if value is block-scalar / list).
 has_fm_key() {
   local key="$1"
-  printf '%s' "$fm" | grep -qE "^${key}:" && return 0 || return 1
+  grep -qE "^${key}:" <<<"$fm" && return 0 || return 1
 }
 
 required_keys=(
@@ -259,10 +259,10 @@ if [ "$status_val" = "reopened" ]; then
   # Look for case-insensitive markers in the body.
   rationale_ok=0
   diff_ok=0
-  if printf '%s' "$body" | grep -qiE '^##[[:space:]]+Reopen[[:space:]]+rationale'; then
+  if grep -qiE '^##[[:space:]]+Reopen[[:space:]]+rationale' <<<"$body"; then
     rationale_ok=1
   fi
-  if printf '%s' "$body" | grep -qiE '^##[[:space:]]+UAT[[:space:]]+diff'; then
+  if grep -qiE '^##[[:space:]]+UAT[[:space:]]+diff' <<<"$body"; then
     diff_ok=1
   fi
   if [ "$rationale_ok" -eq 0 ]; then

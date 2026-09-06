@@ -258,10 +258,10 @@ MAX_HOPS=30
 # ephemeral snapshot wrapper is rejected first (whatever else its argv embeds),
 # then the host pattern is applied.
 _match_command() {
-  if printf '%s\n' "$1" | grep -qE "$SNAPSHOT_WRAPPER_PATTERN"; then
+  if grep -qE "$SNAPSHOT_WRAPPER_PATTERN" <<<"$1"; then
     return 1
   fi
-  printf '%s\n' "$1" | grep -qE "$HOST_PATTERN"
+  grep -qE "$HOST_PATTERN" <<<"$1"
 }
 
 # _resolve_host [start_pid]: walk ancestry to the Claude-CLI host. On match,
@@ -403,7 +403,7 @@ _classify_lock() {
   local kill_err kill_status
   kill_err="$(kill -0 "$lock_pid" 2>&1)"
   kill_status=$?
-  if [ "$kill_status" -ne 0 ] && ! printf '%s' "$kill_err" | grep -qi 'permitted'; then
+  if [ "$kill_status" -ne 0 ] && ! grep -qi 'permitted' <<<"$kill_err"; then
     LOCK_VERDICT=dormant
     return 0
   fi

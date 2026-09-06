@@ -81,7 +81,7 @@ assert_ping_fails "invalid field enum" --event init --mode nonsense
 # --- help path -----------------------------------------------------------
 HELP_OUT="$(cd "$STAGING" && "$GAIA" ping --help)" \
   || { fail "gaia ping --help exited non-zero"; exit 1; }
-printf '%s' "$HELP_OUT" | grep -q "Usage: gaia ping" \
+grep -q "Usage: gaia ping" <<<"$HELP_OUT" \
   || { fail "gaia ping --help did not print its usage banner"; exit 1; }
 
 pass "gaia ping fired all three events (suppressed), rejected malformed args, and printed help on staged tree"

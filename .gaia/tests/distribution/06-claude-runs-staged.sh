@@ -75,7 +75,7 @@ fi
 # `grep -i` tolerates trailing whitespace and case variation in the model's
 # reply.
 RESPONSE="$(docker_run_claude "$STAGING" --print "Reply with the single word: ok" 2>/dev/null || true)"
-if ! printf '%s' "$RESPONSE" | grep -qi 'ok'; then
+if ! grep -qi 'ok' <<<"$RESPONSE"; then
   log "claude --print did not return 'ok'; got:"
   printf '%s\n' "$RESPONSE" >&2
   fail "claude --print response did not contain 'ok' (auth failure or model unreachable?)"

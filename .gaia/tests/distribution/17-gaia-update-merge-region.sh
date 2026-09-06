@@ -276,9 +276,9 @@ log "scenario 7 (missing --current file exits non-zero): OK"
 # --- Scenario 8: help path ---------------------------------------------------
 HELP_OUT="$("$GAIA" update --help)" \
   || { fail "scenario 8: gaia update --help exited non-zero"; exit 1; }
-printf '%s' "$HELP_OUT" | grep -q "merge-region" \
+grep -q "merge-region" <<<"$HELP_OUT" \
   || { fail "scenario 8: gaia update --help did not list merge-region"; exit 1; }
-printf '%s' "$HELP_OUT" | grep -q "regen-regions" \
+grep -q "regen-regions" <<<"$HELP_OUT" \
   || { fail "scenario 8: gaia update --help did not list regen-regions"; exit 1; }
 log "scenario 8 (help lists merge-region and regen-regions): OK"
 
@@ -309,9 +309,20 @@ grep -q '"\$LATEST_DIR/\.gaia/cli/gaia" update regen-regions' \
 # character before `.gaia` cannot do this job: a quoted working-tree invocation
 # puts `"` where the space is expected and goes unseen, and an unquoted
 # release-resolved one is preceded by `/`, so it reads as an offender.
-if grep -nE '\.gaia/cli/gaia"? update (merge-region|regen-regions)' \
-    "$PROJECT_ROOT/.claude/skills/update-gaia/SKILL.md" \
-    | grep -qvF 'LATEST_DIR'; then
+#
+# The match is captured and then read by ONE awk pass rather than piped into a
+# quiet grep. A quiet grep exits at its first match and closes the pipe; the
+# upstream grep then takes SIGPIPE and returns 141, and `pipefail` promotes that
+# to the pipeline's status, so this scenario would PASS on a skill file that
+# does carry a working-tree-resolved invocation.
+# `length($0) > 0` drops the empty line `<<<` appends, which an inverted match
+# would otherwise count as an offending line on an empty capture.
+invocations="$(grep -nE '\.gaia/cli/gaia"? update (merge-region|regen-regions)' \
+  "$PROJECT_ROOT/.claude/skills/update-gaia/SKILL.md" || true)"
+if awk '
+    length($0) > 0 && index($0, "LATEST_DIR") == 0 { found = 1 }
+    END { exit(found ? 0 : 1) }
+  ' <<<"$invocations"; then
   fail "scenario 9: SKILL.md carries a working-tree-resolved invocation of merge-region or regen-regions"
   exit 1
 fi

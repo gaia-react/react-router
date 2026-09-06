@@ -193,7 +193,7 @@ classify_and_print() {
       fi
     else
       status="BLOCKED"
-      if printf '%s\n' "$repr_out" | grep -qF -- "incomplete or non-numeric"; then
+      if grep -qF -- "incomplete or non-numeric" <<<"$repr_out"; then
         reason="unparseable"
       else
         reason="needs-backfill"

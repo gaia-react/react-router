@@ -433,9 +433,18 @@ if [ -n "$report" ]; then
   # remedy that has nothing to do with what actually went red, pointing the
   # operator at the wrong fix. Gate it on at least one non-blank finding that is
   # neither, rather than on the report merely being non-empty.
-  if printf '%s' "$report" \
-    | grep -v -e 'gaia-lint-ignore' -e ': ERROR: ' \
-    | grep -q '[^[:space:]]'; then
+  # ONE awk pass, not a filtering grep feeding a quiet one. A quiet grep exits
+  # at its first match and closes the pipe; the upstream grep then takes SIGPIPE
+  # and returns 141, and `pipefail` promotes that to the pipeline's status, so
+  # the test would answer FALSE on a report that does carry a class hit. A
+  # single process cannot lose that race, and
+  # .gaia/scripts/lint-sigpipe-readers.sh is the gate that keeps the shape out.
+  if awk '
+      /gaia-lint-ignore/ { next }
+      /: ERROR: /        { next }
+      /[^[:space:]]/     { found = 1 }
+      END { exit(found ? 0 : 1) }
+    ' <<<"$report"; then
     # printf, not echo: the hint carries backslash escapes that echo may expand
     # depending on the shell (SC2028). The format string is single-quoted so the
     # sample code inside stays literal -- it is being printed, not run.

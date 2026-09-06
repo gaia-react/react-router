@@ -262,7 +262,7 @@ EOF
   added=""
   while IFS= read -r g; do
     [ -n "$g" ] || continue
-    if ! printf '%s\n' "$old_globs" | grep -qxF -- "$g"; then
+    if ! grep -qxF -- "$g" <<<"$old_globs"; then
       added="${added}+${g} "
     fi
   done <<EOF
@@ -273,7 +273,7 @@ EOF
   removed=""
   while IFS= read -r g; do
     [ -n "$g" ] || continue
-    if ! printf '%s\n' "$globs" | grep -qxF -- "$g"; then
+    if ! grep -qxF -- "$g" <<<"$globs"; then
       removed="${removed}-${g} "
     fi
   done <<EOF

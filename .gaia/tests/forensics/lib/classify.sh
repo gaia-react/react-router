@@ -19,37 +19,37 @@ classify_description() {
   local desc
   desc="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
 
-  if printf '%s' "$desc" | grep -qE 'init|scaffold failed|rename|branding strip'; then
+  if grep -qE 'init|scaffold failed|rename|branding strip' <<<"$desc"; then
     printf 'init'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'update|merge conflict|three-way'; then
+  if grep -qE 'update|merge conflict|three-way' <<<"$desc"; then
     printf 'update'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'wiki-sync|sync|wiki commit'; then
+  if grep -qE 'wiki-sync|sync|wiki commit' <<<"$desc"; then
     printf 'wiki-sync'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'quality gate|quality-gate|typecheck|lint failed'; then
+  if grep -qE 'quality gate|quality-gate|typecheck|lint failed' <<<"$desc"; then
     printf 'quality-gate'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'hook|pretooluse|posttooluse|session-start|session-stop'; then
+  if grep -qE 'hook|pretooluse|posttooluse|session-start|session-stop' <<<"$desc"; then
     printf 'hook'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'scaffold|new-component|skeleton|template'; then
+  if grep -qE 'scaffold|new-component|skeleton|template' <<<"$desc"; then
     printf 'scaffold'
     return 0
   fi
 
-  if printf '%s' "$desc" | grep -qE 'dev server|dev-server|vite|5173|ssr error'; then
+  if grep -qE 'dev server|dev-server|vite|5173|ssr error' <<<"$desc"; then
     printf 'dev-server'
     return 0
   fi
@@ -67,7 +67,7 @@ classify_evidence() {
   case "$class" in
     init)
       for phrase in 'init' 'scaffold failed' 'rename' 'branding strip'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -75,7 +75,7 @@ classify_evidence() {
       ;;
     update)
       for phrase in 'update' 'merge conflict' 'three-way'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -83,7 +83,7 @@ classify_evidence() {
       ;;
     wiki-sync)
       for phrase in 'wiki-sync' 'sync' 'wiki commit'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -91,7 +91,7 @@ classify_evidence() {
       ;;
     quality-gate)
       for phrase in 'quality gate' 'quality-gate' 'typecheck' 'lint failed'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -99,7 +99,7 @@ classify_evidence() {
       ;;
     hook)
       for phrase in 'hook' 'pretooluse' 'posttooluse' 'session-start' 'session-stop'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -107,7 +107,7 @@ classify_evidence() {
       ;;
     scaffold)
       for phrase in 'scaffold' 'new-component' 'skeleton' 'template'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi
@@ -115,7 +115,7 @@ classify_evidence() {
       ;;
     dev-server)
       for phrase in 'dev server' 'dev-server' 'vite' '5173' 'ssr error'; do
-        if printf '%s' "$desc" | grep -q "$phrase"; then
+        if grep -q "$phrase" <<<"$desc"; then
           printf '"%s"' "$phrase"
           return 0
         fi

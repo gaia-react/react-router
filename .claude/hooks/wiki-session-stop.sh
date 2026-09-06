@@ -45,7 +45,17 @@ if ! git merge-base --is-ancestor "$start_sha" HEAD 2>/dev/null; then
 fi
 
 # Reminder #1, wiki files modified this session → refresh hot cache.
-if git log "$start_sha..HEAD" --name-only --pretty=format: 2>/dev/null | grep -q '^wiki/'; then
+#
+# The listing is captured and matched from a here-string rather than piped into
+# `grep -q`. A quiet grep exits at its first match and closes the pipe, the
+# upstream `git log` takes SIGPIPE and exits 141, and `pipefail` promotes that
+# to the pipeline's status -- so the `if` would take the FALSE branch BECAUSE a
+# wiki path matched. A session's whole changed-path set is exactly the input
+# that outruns the pipe buffer, and an early `wiki/` match is exactly the
+# session this reminder exists for. `.gaia/scripts/lint-sigpipe-readers.sh` is
+# the gate that keeps the shape from coming back.
+session_paths="$(git log "$start_sha..HEAD" --name-only --pretty=format: 2>/dev/null || true)"
+if grep -q '^wiki/' <<<"$session_paths"; then
   echo 'WIKI_CHANGED: Wiki pages were modified this session. Please update wiki/hot.md with a brief summary of what changed (under 200 words). Use the hot cache format: Last Updated, Key Recent Facts, Recent Changes, Active Threads. Keep it factual. Overwrite the file completely. It is a cache, not a journal.'
 fi
 
