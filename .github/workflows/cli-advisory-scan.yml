@@ -68,12 +68,11 @@ jobs:
   cli-advisory-scan:
     name: Advisory scan (.gaia/cli)
     runs-on: ubuntu-latest
-    # Sized from the step bounds below rather than from an observed runtime:
-    # four attempts capped at ten minutes each, three one-minute waits between
-    # them, and a five-minute setup. The cap is the sum plus slack, so it is the
-    # backstop for a stall the step bounds somehow missed rather than the bound
-    # anything is expected to hit.
-    timeout-minutes: 55
+    # Sized from the step bounds below rather than from an observed runtime: the
+    # scan step's own cap plus the setup step's, plus slack. It is the backstop
+    # for a stall both step bounds somehow missed rather than a bound anything is
+    # expected to reach, which is why it sits above their sum instead of at it.
+    timeout-minutes: 58
     # Checkout needs it to clone, and setup-node inside the composite action
     # defaults its `token` to `github.token` for the node-versions download.
     # Nothing here writes.
@@ -128,10 +127,14 @@ jobs:
       # bounds every attempt and every wait between them, so a run that gets
       # there reds as this step rather than as an unattributed job timeout.
       - name: Scan the CLI workspace's dependency closure for advisories
-        # Four attempts at ten minutes plus three one-minute waits is 43; this
-        # is that plus slack, and under the job's own cap so a step that hangs
-        # is named by its own bound rather than by the job's.
-        timeout-minutes: 46
+        # Sized against the worst case that retries an escalated stall, which is
+        # the expensive path rather than the ordinary one: each attempt can cost
+        # the ten-minute bound plus the thirty-second kill grace, so four of
+        # those plus three one-minute waits is 45. This is that plus slack, and
+        # under the job's own cap so a step that hangs is named by its own bound
+        # rather than by the job's. Do not size this from 4x10+3, which omits the
+        # grace and leaves the cap firing before the last attempt.
+        timeout-minutes: 48
         run: |
           set -uo pipefail
           attempts=4
@@ -164,7 +167,15 @@ jobs:
                 echo '::error::high or critical advisories in .gaia/cli dependency closure; see the ADVISORY lines above'
                 exit 1
                 ;;
-              4|124)
+              # 137, not only 124, and the difference is the whole point of the
+              # `-k` above. GNU timeout preserves the child's signalled status
+              # when its own KILL escalation fires, so an escalated stall exits
+              # 128+9 rather than the 124 an ordinary expiry gives. Listing 124
+              # alone sends exactly the condition `-k` was added for to the
+              # catch-all arm, which hard-fails on the first attempt with three
+              # unspent and calls the status unreadable rather than naming the
+              # stall.
+              4|124|137)
                 # Announced only when a retry actually follows. Said
                 # unconditionally, the final attempt claims a retry that never
                 # happens and the exhaustion error one line below contradicts it,

@@ -53,11 +53,14 @@
 #   job's only channel to a human is its conclusion, so an arm that reports
 #   without deciding reaches nobody there: the run goes green having found a
 #   critical advisory and printed it into a log nothing reads. Under the flag
-#   the arm's outcome becomes the exit status, and the two outcomes get
-#   different statuses because the caller does different things with them, one
-#   is retried and the other is alerted on. Parity still outranks both: it is
-#   the offline, deterministic verdict, and sending someone to the registry for
-#   a cause sitting in the lockfile is the wrong direction.
+#   the arm's outcome becomes the exit status, and its outcomes get different
+#   statuses because the caller does different things with each: a report it
+#   could not read is retried, an advisory it found is alerted on rather than
+#   retried, since retrying only prints the same advisory again, and an arm that
+#   could not run at all is neither, because no retry supplies a missing binary.
+#   Parity still outranks every one of them: it is the offline, deterministic
+#   verdict, and sending someone to the registry for a cause sitting in the
+#   lockfile is the wrong direction.
 #
 # WHAT THIS DOES NOT CATCH, and saying so is load-bearing rather than modest. A
 # floor whose parents have bumped their own pins past it stops being a floor and
@@ -71,11 +74,13 @@
 #
 # Exit status: 0 nothing to report, 1 a floor is not applied as configured,
 # 2 the check could not do what it was asked -- the root could not be read, the
-# arguments were wrong, or, under --advisory-strict, a tool the advisory arm
-# needs is absent from PATH so that arm never ran. Under --advisory-strict only,
-# and only when the parity arm found nothing: 3 the advisory arm found a high or
-# critical advisory, 4 the advisory arm could not read a report and this closure
-# was therefore not audited. 3 and 4 are the pair a caller retries; 2 is not.
+# arguments were wrong, a tool the parity arm needs (node, awk, js-yaml) is
+# absent from PATH, on any invocation, or, under --advisory-strict only, a tool
+# the advisory arm needs is absent so that arm never ran. Under
+# --advisory-strict only, and only when the parity arm found nothing: 3 the
+# advisory arm found a high or critical advisory, 4 the advisory arm could not
+# read a report and this closure was therefore not audited. 4 is the one status
+# a caller retries; 3 is alerted on, and 2 is neither.
 
 set -uo pipefail
 
@@ -424,9 +429,10 @@ gaia_cwf_main() {
   #
   # 2 rather than 3 or 4, and the exit-status block above carries this as one of
   # that code's causes. 2 already means the check could not do what it was asked
-  # to; a tool absent from PATH is exactly that, and it is not an advisory
-  # finding (3) nor a report that could not be read (4), which is the pair the
-  # caller retries. No retry recovers a missing binary.
+  # to, and a tool absent from PATH is exactly that. It is not an advisory
+  # finding, which a caller alerts on rather than retries (3), and it is not a
+  # report that could not be read, which is the one status a caller does retry
+  # (4). No retry recovers a missing binary.
   if [ "$run_audit" -eq 0 ]; then
     printf 'advisory arm skipped: --no-audit\n'
   elif ! command -v pnpm >/dev/null 2>&1; then
