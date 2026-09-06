@@ -6,13 +6,14 @@
 #
 # lint-sigpipe-readers.sh: flag a short-circuiting reader -- `grep` or `rg`
 # carrying a `-q`-bearing flag cluster, `--quiet`, or `--silent` -- standing
-# downstream of a `|` in a tracked shell script that arms `pipefail`. Run it
-# directly from the repo root: `bash .gaia/scripts/lint-sigpipe-readers.sh`.
+# downstream of a `|` in a tracked shell script that runs under `pipefail`. Run
+# it directly from the repo root:
+# `bash .gaia/scripts/lint-sigpipe-readers.sh`.
 #
 # Exit 0 when clean, and 1 either with a file:line report on any hit or on a
 # scan surface that came back empty. Two statuses say the gate never ran at
-# all: 2 when guard-awk-lib.sh is missing beside this script, and 3 when the
-# scan-surface discovery failed.
+# all: 2 when it could not start (guard-awk-lib.sh missing beside this script,
+# or no scratch directory), and 3 when the scan-surface discovery failed.
 # gaia:maintainer-only:start
 #
 # Enforced by the sibling bats suite
@@ -69,11 +70,47 @@
 # shapes, and the `code-audit-maintainer-shell` agent has caught it once but is
 # model-dispatched and advisory, so nothing enforced it.
 #
-# Scan surface: tracked `*.sh`, the `shell` set the shared library defines.
-# Three surfaces are deliberately outside it:
+# ---------------------------------------------------------------------------
+# WHICH FILES RUN UNDER PIPEFAIL, which is a closure and not a per-file test
+# ---------------------------------------------------------------------------
 #
-#   *.bats            bats-core does not enable pipefail, so a suite is not a
-#                     place the class can fire.
+# `pipefail` is a shell OPTION, not a file attribute: it belongs to the process,
+# and a sourced library therefore runs under whatever its caller armed. A gate
+# that asked only whether the scanned file carries its own `set -o pipefail`
+# would report every library clean, and `.claude/hooks/lib/` is exactly where
+# three of the four historical occurrences above lived. That is an arming-stage
+# hole in the sense .claude/rules/guards-must-fail.md names: correct wherever it
+# runs, and never run on the surface that most needs it.
+#
+# So a file counts as running under pipefail when it arms pipefail itself, OR
+# when it is reachable by `source` from a file that does. The seeds are the
+# self-arming files; the edges are the `.`/`source` loads; the closure is
+# transitive, because a library sourced by a library sourced by an armed entry
+# point runs armed too.
+#
+# An edge resolves by BASENAME against the tracked set, because a load names its
+# target through a variable far more often than not
+# (`. "$lib_dir/guard-awk-lib.sh"`), and no static reader can resolve that
+# variable. Two consequences, both stated rather than hidden. A basename shared
+# by two tracked files draws an edge to both, so one armed caller can mark a
+# same-named file it never loads: that direction costs a correct edit and never
+# a missed defect, which is the direction a guard may be wrong in. And a load
+# whose target is built entirely from variables, with no literal `*.sh` token on
+# the line, draws no edge at all; a file reachable only that way is not covered.
+#
+# ---------------------------------------------------------------------------
+# Scan surface
+# ---------------------------------------------------------------------------
+#
+# Tracked `*.sh`, the `shell` set the shared library defines. Three surfaces are
+# deliberately outside it:
+#
+#   *.bats            bats-core arms no pipefail by DEFAULT, so an ordinary
+#                     suite does not run the class. A suite that arms pipefail
+#                     itself does, and that is out of scope by choice rather
+#                     than by impossibility: the suites doing it today arm it
+#                     inside a command substitution or a `bash -c` fixture,
+#                     where the shape is the fixture rather than the suite.
 #   the husky hooks   `.husky/_/h` runs each one as `sh -e`, which arms no
 #                     pipefail either.
 #   workflow YAML     a `run:` body inherits pipefail from the step's RESOLVED
@@ -99,6 +136,8 @@
 
 set -euo pipefail
 
+readonly PROG="lint-sigpipe-readers"
+
 # Script-relative, never cwd-relative: every fixture test runs this guard with
 # cwd inside a throwaway repo that carries no .gaia/scripts/. Bracketed with
 # set +e/-e because this file arms errexit itself, the shape
@@ -109,7 +148,7 @@ if [ "$_gaia_guard_lib_dir" = "${BASH_SOURCE[0]}" ]; then _gaia_guard_lib_dir=".
 # shellcheck source=.gaia/scripts/guard-awk-lib.sh
 set +e; [ -f "$_gaia_guard_lib_dir/guard-awk-lib.sh" ] && . "$_gaia_guard_lib_dir/guard-awk-lib.sh" 2>/dev/null; set -e
 type gaia_guard_scan_files >/dev/null 2>&1 || {
-  printf 'lint-sigpipe-readers: guard-awk-lib.sh is missing beside this script\n' >&2
+  printf '%s: guard-awk-lib.sh is missing beside this script\n' "$PROG" >&2
   exit 2
 }
 
@@ -124,15 +163,17 @@ type gaia_guard_scan_files >/dev/null 2>&1 || {
 # tree was read and held nothing, 3 says it was never read at all, and an
 # operator handed 1 for the second would look at the tree instead of the
 # discovery.
-gaia_guard_scan_files lint-sigpipe-readers shell || exit $?
+gaia_guard_scan_files "$PROG" shell || exit $?
 
-# The class detector. Single-quoted, so every literal single quote inside is
-# spelled \047 and no comment in it may carry an apostrophe.
+# One pass per file, emitting three tab-separated record kinds rather than a
+# verdict, because no file can be graded until the whole closure is known:
 #
-# ONE PASS, buffered, released at END. `pipefail` can be armed on a line BELOW a
-# pipeline, so a scan that decided armedness on the way past would report a file
-# clean on the strength of where its `set` happens to sit. Every candidate is
-# held and the whole set is released only if the file armed pipefail anywhere.
+#   #armed  <file>                     the file arms pipefail itself (a seed)
+#   #source <file> <basename>          the file loads that basename (an edge)
+#   #hit    <file> <line> <message>    a candidate, graded later
+#
+# Single-quoted, so every literal single quote inside is spelled \047 and no
+# comment in it may carry an apostrophe.
 readonly SCAN_AWK='
 # A token that turns a reader into a short-circuiting one. The cluster form is
 # what makes a plain substring test wrong: -qF, -qxF, -qvF, -nq and --quiet all
@@ -144,16 +185,19 @@ function is_qflag(t) {
 }
 
 # Read one pipeline SEGMENT and answer with the reader heading it, or the empty
-# string. The command word is the segment head, so a -q sitting inside the
-# quoted argument of some other command is never read as a flag of a reader.
+# string. The command word is the segment head, so a -q sitting in the quoted
+# argument of some other command is never read as a flag of a reader.
 function segment_reader(s,   toks, m, j, t, w) {
   sub(/;.*$/, "", s)
   m = split(s, toks, /[[:space:]]+/)
   j = 1
-  # & heads the right half of a |& pipe; !, command and env are modifiers that
-  # leave the reader as the effective command word.
+  # Everything a reader can hide behind and still be the command that runs.
+  # The assignment arm is the one that matters most in this tree: a locale or
+  # encoding prefix is the ordinary spelling here, and without it the command
+  # word reads as LC_ALL=C and the segment is graded as some other command.
   while (j <= m && (toks[j] == "" || toks[j] == "!" || toks[j] == "&" ||
-                    toks[j] == "command" || toks[j] == "env")) j++
+                    toks[j] == "command" || toks[j] == "env" ||
+                    toks[j] ~ /^[A-Za-z_][A-Za-z0-9_]*=/)) j++
   if (j > m) return ""
   w = toks[j]
   sub(/^.*\//, "", w)
@@ -173,8 +217,18 @@ function segment_reader(s,   toks, m, j, t, w) {
   # a trailing pipe and the command that follows it, so the carry is left alone.
   if (bare ~ /^#/) next
 
-  if (bare ~ /(^|[^A-Za-z0-9_])set[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
+  # The flag run before -o is optional and unbounded: set -o pipefail,
+  # set -euo pipefail and set -e -o pipefail all arm it.
+  if (bare ~ /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
     armed = 1
+
+  # A source edge. The load token is recognized anywhere a command may start,
+  # not at line start only, because the bracketed load this tree uses for an
+  # errexit-armed file puts it after a semicolon and an &&.
+  if (bare ~ /(^|[^A-Za-z0-9_${}\/.-])(\.|source)[[:space:]]/) {
+    if (match(bare, /[A-Za-z0-9_.-]+\.sh/))
+      printf "#source\t%s\t%s\n", file, substr(bare, RSTART, RLENGTH)
+  }
 
   # A doubled bar is a logical OR, not a pipe. Masking it before the split is
   # what keeps the command after one from reading as a downstream segment.
@@ -185,10 +239,8 @@ function segment_reader(s,   toks, m, j, t, w) {
     # Segment 1 is downstream only when the PREVIOUS line left a pipeline open.
     if (i == 1 && !prev_pipe) continue
     hit = segment_reader(seg[i])
-    if (hit != "") {
-      count++
-      pending[count] = sprintf("%s:%d: `%s` short-circuits a pipeline under pipefail", file, FNR, hit)
-    }
+    if (hit != "")
+      printf "#hit\t%s\t%d\t`%s` short-circuits a pipeline under pipefail\n", file, FNR, hit
   }
 
   # Carry an open pipeline to the next line. A trailing backslash after the bar
@@ -200,16 +252,55 @@ function segment_reader(s,   toks, m, j, t, w) {
   prev_pipe = (tail ~ /\|$/ && tail !~ /\|\|$/)
 }
 
-END {
-  if (!armed) exit 0
-  for (i = 1; i <= count; i++) print pending[i]
-}
+# At END, not inline: a file may arm pipefail on a line BELOW a pipeline, so
+# where the set sits says nothing about whether the file runs armed.
+END { if (armed) printf "#armed\t%s\n", file }
 '
+
+WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$PROG.XXXXXX")" || {
+  printf '%s: could not create a scratch directory; nothing was scanned\n' "$PROG" >&2
+  exit 2
+}
+# Three arms, not one shared arm: bash resumes at the point of interruption once
+# a trapped handler returns, so a single arm that only cleans up would leave
+# Ctrl-C printing a verdict as if uninterrupted.
+trap 'rm -rf "$WORK_DIR"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+for f in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
+  [ -f "$f" ] || continue
+  awk -v file="$f" "$SCAN_AWK" "$f"
+  printf '%s\t%s\n' "$(basename -- "$f")" "$f" >> "$WORK_DIR/index"
+done > "$WORK_DIR/records"
+
+# `|| true` on each: grep exits 1 on no match, and an absent record kind is an
+# ordinary tree rather than a failure.
+awk -F'\t' '$1 == "#armed"  { print $2 }' "$WORK_DIR/records" | LC_ALL=C sort -u > "$WORK_DIR/closure"
+awk -F'\t' '$1 == "#source" { printf "%s\t%s\n", $2, $3 }' "$WORK_DIR/records" > "$WORK_DIR/edges"
+awk -F'\t' '$1 == "#hit"    { print }' "$WORK_DIR/records" > "$WORK_DIR/hits"
+[ -f "$WORK_DIR/index" ] || : > "$WORK_DIR/index"
+LC_ALL=C sort -u "$WORK_DIR/index" -o "$WORK_DIR/index"
+
+# Transitive closure over the source edges. A fixed-point loop rather than a
+# recursive walk, because bash 3.2 has no associative array to memoize with and
+# the tracked set is small enough that re-resolving the whole frontier each
+# round is cheaper than the bookkeeping that would avoid it.
+while : ; do
+  awk -F'\t' 'NR == FNR { seed[$0] = 1; next } ($1 in seed) { print $2 }' \
+    "$WORK_DIR/closure" "$WORK_DIR/edges" | LC_ALL=C sort -u > "$WORK_DIR/bases"
+  awk -F'\t' 'NR == FNR { want[$0] = 1; next } ($1 in want) { print $2 }' \
+    "$WORK_DIR/bases" "$WORK_DIR/index" | LC_ALL=C sort -u > "$WORK_DIR/reached"
+  LC_ALL=C comm -13 "$WORK_DIR/closure" "$WORK_DIR/reached" > "$WORK_DIR/added"
+  [ -s "$WORK_DIR/added" ] || break
+  LC_ALL=C sort -u "$WORK_DIR/closure" "$WORK_DIR/added" > "$WORK_DIR/closure.next"
+  mv "$WORK_DIR/closure.next" "$WORK_DIR/closure"
+done
 
 report=""
 for f in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
-  [ -f "$f" ] || continue
-  hits="$(awk -v file="$f" "$SCAN_AWK" "$f")"
+  grep -qxF -- "$f" "$WORK_DIR/closure" || continue
+  hits="$(awk -F'\t' -v f="$f" '$2 == f { printf "%s:%s: %s\n", $2, $3, $4 }' "$WORK_DIR/hits")"
   [ -z "$hits" ] || report+="$hits"$'\n'
 done
 
@@ -225,9 +316,10 @@ Fix each by removing the pipeline rather than making the race safer:
     a filter feeding the reader          ->  one awk pass over <<<"$var"
 An inverted reader (grep -qv, grep -qvF) additionally needs the newline <<< appends
 trimmed off the value, or it succeeds on the trailing blank line unconditionally.
+A file with no `set -o pipefail` of its own still counts when an armed file sources it.
 REMEDY
   exit 1
 fi
 
-echo "lint-sigpipe-readers: clean" >&2
+printf '%s: clean\n' "$PROG" >&2
 exit 0

@@ -167,6 +167,25 @@ printf "%s" "$b" | grep --silent two'
   grep -qF -- "check.sh:3:" <<<"$output"
 }
 
+# The assignment prefix is the most common modifier spelling in this tree, and
+# without an arm for it the command word reads as the assignment itself, so the
+# segment grades as some other command and the gate reports clean.
+@test "flags a reader behind a VAR=value assignment prefix" {
+  fixture_repo
+  fixture_script 'printf "%s" "$a" | LC_ALL=C grep -qE needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+@test "flags a reader behind an assignment prefix stacked on env" {
+  fixture_repo
+  fixture_script 'printf "%s" "$a" | env LC_ALL=C grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
 @test "flags a reader negated with !, which still reads the pipeline status" {
   fixture_repo
   fixture_script 'some_command | ! grep -q needle'
@@ -226,6 +245,91 @@ set -o pipefail'
   run_linter
   [ "$status" -eq 1 ]
   grep -qF -- "check.sh:2:" <<<"$output"
+}
+
+# The flag run before -o is unbounded and optional. A pattern requiring the o to
+# sit in the FIRST flag token drops every candidate in a file spelling it this
+# way, which is legal, idiomatic, and silent.
+@test "the split-flag spelling set -e -o pipefail arms the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set -e -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+@test "the bare spelling set -o pipefail arms the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+# --- the pipefail closure --------------------------------------------------
+#
+# pipefail is a process option, so a sourced library runs under whatever its
+# caller armed. Grading each file by its own `set` line alone would report every
+# library clean, and .claude/hooks/lib/ is where three of the four historical
+# occurrences lived.
+
+@test "flags a library with no pipefail of its own that an armed file sources" {
+  fixture_repo
+  fixture_file lib.sh '#!/usr/bin/env bash
+probe() { printf "%s" "$1" | grep -q needle; }'
+  fixture_file caller.sh '#!/usr/bin/env bash
+set -uo pipefail
+. "$(dirname "$0")/lib.sh"
+probe "$1"'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "lib.sh:2:" <<<"$output"
+}
+
+@test "the closure is transitive through an intermediate library" {
+  fixture_repo
+  fixture_file inner.sh '#!/usr/bin/env bash
+probe() { printf "%s" "$1" | grep -q needle; }'
+  fixture_file middle.sh '#!/usr/bin/env bash
+. "$(dirname "$0")/inner.sh"'
+  fixture_file outer.sh '#!/usr/bin/env bash
+set -euo pipefail
+. "$(dirname "$0")/middle.sh"'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "inner.sh:2:" <<<"$output"
+}
+
+# The bracketed load is the shape .gaia/scripts/lint-errexit-source-guard.sh
+# demands of an errexit-arming file, so it is what an armed caller in this tree
+# actually writes. A source reader keyed to line start alone draws no edge from
+# it and the library it loads goes ungraded.
+@test "an edge is drawn from the bracketed load an errexit-armed caller writes" {
+  fixture_repo
+  fixture_file lib.sh '#!/usr/bin/env bash
+probe() { printf "%s" "$1" | grep -q needle; }'
+  fixture_file caller.sh '#!/usr/bin/env bash
+set -euo pipefail
+d="$(dirname "$0")"
+set +e; [ -f "$d/lib.sh" ] && . "$d/lib.sh" 2>/dev/null; set -e'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "lib.sh:2:" <<<"$output"
+}
+
+@test "a library sourced only by an UNARMED file stays out of the closure" {
+  fixture_repo
+  fixture_file lib.sh '#!/usr/bin/env bash
+probe() { printf "%s" "$1" | grep -q needle; }'
+  fixture_file caller.sh '#!/usr/bin/env bash
+set -eu
+. "$(dirname "$0")/lib.sh"'
+  run_linter
+  [ "$status" -eq 0 ]
 }
 
 @test "reports every hit in a file, not only the first" {
