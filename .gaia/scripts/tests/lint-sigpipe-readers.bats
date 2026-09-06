@@ -16,8 +16,8 @@
 # indistinguishable from an honest tree there. Every test below drives the gate
 # against a fixture tree shaped one way at a time.
 #
-# Three jobs. Prove the detector fires on the class, in each spelling the flag
-# cluster takes and across the line breaks a real pipeline uses; prove it stays
+# Three jobs. Prove the detector fires on the class, in each spelling the gate's
+# own header enumerates and across the line breaks a real pipeline uses; prove it stays
 # quiet on the legitimate shapes, which for this gate includes the repair it
 # advertises, since a gate that reds on its own advice cannot ship; and assert
 # the real scanned tree is clean so a regression fails CI.
