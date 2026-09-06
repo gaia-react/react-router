@@ -63,12 +63,15 @@
 #
 # gaia_check_scope_digest_adoption <repo_root>
 #   Prints one line per finding plus a verdict line per assertion. Returns 0
-#   when all four hold, 1 when any does not, 2 on the check's own failure
-#   (an unresolvable root, a repo_root with no `.claude/agents/` directory
-#   at all -- nothing to scan, not a vacuous pass -- or assertion 4's `jq`
-#   being absent). <repo_root> is a required parameter -- this check never
-#   derives it itself, so a bats fixture can drive it against a throwaway
-#   repo.
+#   when all four hold, 1 when any does not, 2 on the check's own failure.
+#   The 2 cases: an unresolvable root, a repo_root with no `.claude/agents/`
+#   directory at all (nothing to scan, not a vacuous pass), and assertion
+#   4's `jq` being absent. The last of those is reported as 2 only when no
+#   assertion also found a defect; a run that found one exits 1 and names
+#   it, so an environment note never hides a finding behind a status that
+#   reads as "fix your toolchain and re-run". <repo_root> is a required
+#   parameter -- this check never derives it itself, so a bats fixture can
+#   drive it against a throwaway repo.
 
 # The Code Audit Team members this check reasons about, and assertion 3's
 # per-member region anchor beside each. Both are DISCOVERED by
@@ -444,6 +447,36 @@ EOF
   return 1
 }
 
+# _gaia_sda_grant_verdict <label> <script> <grant_state> <matchable>
+#                         <scope_plural> <scope_singular>
+#   The grant-versus-call-site rule, held in one place so the two surfaces
+#   below cannot come to disagree about it. The surfaces differ only in where
+#   they look for a call site, which is what the two scope phrases carry;
+#   keeping a second copy of the ladder per surface is the drifting-duplicate
+#   shape this whole check exists to catch, so it does not get one.
+#   Prints one finding line and returns 1 when the pair does not hold,
+#   returns 0 silently when it does.
+_gaia_sda_grant_verdict() {
+  local label="$1" script="$2" grant_state="$3" matchable="$4"
+  local scope_plural="$5" scope_singular="$6"
+  if [ "$matchable" = untrusted ]; then
+    printf '%s: unmatched backtick truncated the scan; the grant for %s cannot be checked\n' \
+      "$label" "$script"
+    return 1
+  fi
+  if [ "$grant_state" = granted ] && [ "$matchable" = none ]; then
+    printf '%s: grants "Bash(bash .gaia/scripts/%s:*)" but nothing in %s spells a call site that rule can match\n' \
+      "$label" "$script" "$scope_plural"
+    return 1
+  fi
+  if [ "$grant_state" = ungranted ] && [ "$matchable" = some ]; then
+    printf '%s: %s spells "bash .gaia/scripts/%s ..." but no grant here covers it\n' \
+      "$label" "$scope_singular" "$script"
+    return 1
+  fi
+  return 0
+}
+
 # _gaia_sda_assert4 <repo_root>: every pre-approval for the two scripts
 # above covers a call site spelled the way the grant is spelled, in both
 # directions and on both surfaces.
@@ -470,16 +503,24 @@ _gaia_sda_assert4() {
   local mfile wdir wfile rel allowed
 
   settings="$repo_root/.claude/settings.json"
-  if [ -f "$settings" ]; then
-    if ! command -v jq >/dev/null 2>&1; then
-      printf 'check-scope-digest-adoption: jq not found; assertion 4 cannot read %s\n' \
-        '.claude/settings.json' >&2
-      return 2
-    fi
-    if ! granted="$(jq -r '(.permissions.allow // [])[]' "$settings" 2>/dev/null)"; then
-      printf '.claude/settings.json: unreadable or not valid JSON; permission grants cannot be checked\n'
-      return 1
-    fi
+  if [ ! -f "$settings" ]; then
+    # Not "no grants, therefore nothing to check". A caller reaching this
+    # point already has a `.claude/agents/` directory, so the settings file
+    # is a surface this repo_root is expected to carry; its absence leaves
+    # the whole settings half unread, and reporting that as a pass is the
+    # vacuous pass this file's own header refuses. Reported as a finding
+    # rather than as the check's own failure, so a run that also found real
+    # defects still exits 1 and names them all.
+    printf '.claude/settings.json: missing, so no permission grant can be checked against the agent definitions\n'
+    failed=1
+  elif ! command -v jq >/dev/null 2>&1; then
+    printf 'check-scope-digest-adoption: jq not found; assertion 4 cannot read %s\n' \
+      '.claude/settings.json' >&2
+    return 2
+  elif ! granted="$(jq -r '(.permissions.allow // [])[]' "$settings" 2>/dev/null)"; then
+    printf '.claude/settings.json: unreadable or not valid JSON; permission grants cannot be checked\n'
+    failed=1
+  else
     for script in "${GAIA_SDA_GRANTED_SCRIPTS[@]}"; do
       case "$granted" in
         *"Bash(bash .gaia/scripts/${script}:*)"*) grant_state=granted ;;
@@ -494,16 +535,9 @@ _gaia_sda_assert4() {
           2) matchable=untrusted; break ;;
         esac
       done
-      if [ "$matchable" = untrusted ]; then
-        printf '.claude/agents/: unmatched backtick truncated the scan; the grant for %s cannot be checked\n' "$script"
-        failed=1
-      elif [ "$grant_state" = granted ] && [ "$matchable" = none ]; then
-        printf '.claude/settings.json: grants "Bash(bash .gaia/scripts/%s:*)" but no agent definition spells a call site that rule can match\n' "$script"
-        failed=1
-      elif [ "$grant_state" = ungranted ] && [ "$matchable" = some ]; then
-        printf '.claude/settings.json: an agent definition spells "bash .gaia/scripts/%s ..." but no grant covers it\n' "$script"
-        failed=1
-      fi
+      _gaia_sda_grant_verdict '.claude/settings.json' "$script" \
+        "$grant_state" "$matchable" \
+        'the agent definitions' 'an agent definition' || failed=1
     done
   fi
 
@@ -514,6 +548,16 @@ _gaia_sda_assert4() {
       # grep exits 1 on no match, which is the ordinary case for a workflow
       # that arms no tool list; the `|| true` keeps that from reading as a
       # failure under a caller that armed errexit.
+      #
+      # Honest limit, and the direction it fails in: the grant set is every
+      # line in the file carrying `--allowedTools`, pooled. So a file with
+      # two tool-armed steps is judged as if one step armed all of them,
+      # which can let one step's grant vouch for another step's call site,
+      # and a value wrapped onto a continuation line is not seen as granted
+      # at all. Neither shape exists in this tree today: every workflow here
+      # carries at most one such line with its whole value on it. Parsing
+      # per step means parsing YAML, which is the hand-rolled-parser trade
+      # this check declines elsewhere for the same reason.
       allowed="$(grep -F -- '--allowedTools' "$wfile" 2>/dev/null || true)"
       for script in "${GAIA_SDA_GRANTED_SCRIPTS[@]}"; do
         case "$allowed" in
@@ -526,16 +570,9 @@ _gaia_sda_assert4() {
           2) matchable=untrusted ;;
           *) matchable=none ;;
         esac
-        if [ "$matchable" = untrusted ]; then
-          printf '%s: unmatched backtick truncated the scan; the grant for %s cannot be checked\n' "$rel" "$script"
-          failed=1
-        elif [ "$grant_state" = granted ] && [ "$matchable" = none ]; then
-          printf '%s: --allowedTools grants "Bash(bash .gaia/scripts/%s:*)" but this file spells no call site that rule can match\n' "$rel" "$script"
-          failed=1
-        elif [ "$grant_state" = ungranted ] && [ "$matchable" = some ]; then
-          printf '%s: spells "bash .gaia/scripts/%s ..." but its --allowedTools grants no rule that matches it\n' "$rel" "$script"
-          failed=1
-        fi
+        _gaia_sda_grant_verdict "$rel" "$script" \
+          "$grant_state" "$matchable" \
+          'this file' 'this file' || failed=1
       done
     done < <(find "$repo_root/$wdir" -type f -print0 2>/dev/null)
   done
@@ -558,7 +595,7 @@ gaia_check_scope_digest_adoption() {
   fi
 
   local assert1_failed=0 assert2_failed=0 assert3_failed=0 assert4_failed=0
-  local assert4_rc=0
+  local assert4_rc=0 assert4_env=0
 
   printf -- '-- earned call-site --scope-digest coverage --\n'
   _gaia_sda_assert1 "$repo_root" || assert1_failed=1
@@ -571,17 +608,24 @@ gaia_check_scope_digest_adoption() {
 
   printf -- '-- permission-grant spelling --\n'
   _gaia_sda_assert4 "$repo_root" || assert4_rc=$?
-  # 2 is the check's own environment failure (no jq), not a finding, and it
-  # propagates as 2 the way the two early-out arms above do. Any other
-  # non-zero is a finding.
+  # 2 is the check's own environment failure (no jq), not a finding. Unlike
+  # the two early-out arms above, it is reached AFTER the other assertions
+  # have run and possibly found real defects, so it is recorded rather than
+  # returned here: returning 2 from this point would discard those findings'
+  # status and send the operator to install jq when the tree also needs
+  # repairing. Any other non-zero is a finding.
   if [ "$assert4_rc" -eq 2 ]; then
-    return 2
+    assert4_env=1
   elif [ "$assert4_rc" -ne 0 ]; then
     assert4_failed=1
   fi
 
-  [ "$assert1_failed" -eq 0 ] && [ "$assert2_failed" -eq 0 ] &&
-    [ "$assert3_failed" -eq 0 ] && [ "$assert4_failed" -eq 0 ]
+  if [ "$assert1_failed" -ne 0 ] || [ "$assert2_failed" -ne 0 ] ||
+    [ "$assert3_failed" -ne 0 ] || [ "$assert4_failed" -ne 0 ]; then
+    return 1
+  fi
+  [ "$assert4_env" -eq 0 ] || return 2
+  return 0
 }
 
 if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then

@@ -398,7 +398,7 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
-  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but no agent definition spells a call site that rule can match' <<<"$output" || return 1
+  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but nothing in the agent definitions spells a call site that rule can match' <<<"$output" || return 1
 }
 
 @test "assertion 4: a matchable definition call site with no settings grant fails" {
@@ -414,7 +414,7 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
-  grep -qF '.claude/settings.json: an agent definition spells "bash .gaia/scripts/audit-write-clearance.sh ..." but no grant covers it' <<<"$output" || return 1
+  grep -qF '.claude/settings.json: an agent definition spells "bash .gaia/scripts/audit-write-clearance.sh ..." but no grant here covers it' <<<"$output" || return 1
 }
 
 @test "assertion 4: a matchable call site WITH its grant passes (the assertion is not merely always-red)" {
@@ -442,7 +442,7 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
-  grep -qF '.github/workflows/fake-audit.yml: spells "bash .gaia/scripts/audit-scope-digest.sh ..." but its --allowedTools grants no rule that matches it' <<<"$output" || return 1
+  grep -qF '.github/workflows/fake-audit.yml: this file spells "bash .gaia/scripts/audit-scope-digest.sh ..." but no grant here covers it' <<<"$output" || return 1
 }
 
 @test "assertion 4: a workflow granting a script it never invokes fails and names the file" {
@@ -454,7 +454,7 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
-  grep -qF '.github/workflows/fake-audit.yml: --allowedTools grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but this file spells no call site that rule can match' <<<"$output" || return 1
+  grep -qF '.github/workflows/fake-audit.yml: grants "Bash(bash .gaia/scripts/audit-scope-digest.sh:*)" but nothing in this file spells a call site that rule can match' <<<"$output" || return 1
 }
 
 @test "assertion 4: an interpolated-root call site does not count as matchable" {
@@ -472,7 +472,39 @@ EOF
   git -C "$repo" commit -q -m mutate
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
-  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-write-clearance.sh:*)" but no agent definition spells a call site that rule can match' <<<"$output" || return 1
+  grep -qF '.claude/settings.json: grants "Bash(bash .gaia/scripts/audit-write-clearance.sh:*)" but nothing in the agent definitions spells a call site that rule can match' <<<"$output" || return 1
+}
+
+@test "assertion 4: an absent settings.json fails rather than skipping the settings surface silently" {
+  local repo
+  repo="$(make_fixture_repo settings-absent)"
+  # The fail-open shape: with no settings file there are no grants to
+  # contradict, so the whole settings half reads as satisfied and the
+  # verdict prints. A missing scan surface is not a clean one.
+  rm -f "$repo/.claude/settings.json"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/settings.json: missing, so no permission grant can be checked against the agent definitions' <<<"$output" || return 1
+  grep -qF "permission-grant spelling: every grant matches a call site" <<<"$output" && return 1
+  return 0
+}
+
+@test "assertion 4: a malformed settings.json fails without discarding the other assertions" {
+  local repo
+  repo="$(make_fixture_repo settings-malformed)"
+  printf 'not json at all\n' >"$repo/.claude/settings.json"
+  # A second, unrelated defect the earlier assertions catch. The status has
+  # to report a finding, not the environment, or an operator repairs the
+  # JSON and never learns the definition is broken too.
+  perl -0pi -e 's/ --scope-digest "\$D_SCOPE"//g' "$repo/.claude/agents/code-audit-maintainer-prose.md"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/settings.json: unreadable or not valid JSON; permission grants cannot be checked' <<<"$output" || return 1
+  grep -qF '.claude/agents/code-audit-maintainer-prose.md: earned call site missing --scope-digest' <<<"$output" || return 1
 }
 
 @test "usage: a fixture with no scan surface exits 2 rather than passing vacuously" {
