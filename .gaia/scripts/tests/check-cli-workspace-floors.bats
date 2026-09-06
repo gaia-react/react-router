@@ -1277,3 +1277,182 @@ STUB
   [ "$status" -eq 0 ]
   grep -qF -- '.gaia/cli' <<<"$output"
 }
+
+# THE STRICT ADVISORY CONTRACT. `--advisory-strict` is what a lane with no other
+# notification channel uses: a scheduled job's only way to say something happened
+# is to fail, and this arm's default posture is to report without deciding the
+# status. Each test below pins one of the statuses that posture resolves to under
+# the flag, and the flagless advisory tests above are the regression pins that the
+# default posture did not move.
+#
+# The stub payloads are the ones those flagless tests already use, deliberately:
+# what is being pinned is the status the flag derives from a payload, not a second
+# reading of the payload itself.
+
+@test "under --advisory-strict a high advisory decides the exit status" {
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{"1098765":{"id":1098765,"module_name":"fast-uri","severity":"high","title":"host confusion via a backslash authority introducer"}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 3 ]
+  grep -qF -- 'ADVISORY (high' <<<"$output"
+}
+
+@test "under --advisory-strict a scan that ran and found nothing is still clean" {
+  # The flag must not redden the lane on every run; a status that never says
+  # clean is a status nobody reads.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{},"metadata":{"vulnerabilities":{"high":0,"critical":0}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 0 ]
+  grep -qF -- 'no high or critical advisories' <<<"$output"
+}
+
+@test "under --advisory-strict an audit that could not be read exits its own status" {
+  # Separate from the advisory status on purpose: a caller retries this one and
+  # alerts on the other, and one status for both collapses a registry outage
+  # into a vulnerability report.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+printf '{"error":{"code":23,"message":"The operation was aborted due to timeout"}}\n'
+exit 1
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 4 ]
+  grep -qF -- 'NOT audited' <<<"$output"
+}
+
+@test "under --advisory-strict a report contradicting its own empty parse is unread" {
+  # The second unread route, reached through the counts rather than through the
+  # container gate, so the flag is pinned on both approaches to status 4.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{},"metadata":{"vulnerabilities":{"high":2,"critical":0}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 4 ]
+  grep -qF -- 'NOT audited' <<<"$output"
+}
+
+@test "under --advisory-strict an entry shape this reader cannot read is unread" {
+  # The third unread route: the container parses and the entries do not.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{"1":{"severity":"high","module_name":"fast-uri"}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 4 ]
+  grep -qF -- 'NOT audited' <<<"$output"
+}
+
+@test "an unapplied floor outranks the advisory status under --advisory-strict" {
+  # Parity is the offline, deterministic verdict and the only one CI gates on,
+  # so it keeps status 1. Without this the flag would relabel a floor drift as an
+  # advisory finding and send the caller to the registry for a cause sitting in
+  # the lockfile.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.4"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+cat <<'JSON'
+{"advisories":{"1098765":{"id":1098765,"module_name":"fast-uri","severity":"high","title":"host confusion via a backslash authority introducer"}}}
+JSON
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 1 ]
+  grep -qF -- 'FLOOR NOT APPLIED' <<<"$output"
+  grep -qF -- 'ADVISORY (high' <<<"$output"
+}
+
+@test "an unapplied floor still outranks an unread audit under --advisory-strict" {
+  # The same precedence on the other advisory status. Pinned separately because
+  # the unread route returns before the end-of-function status is taken, so it is
+  # a second site rather than a second case of the one above.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.4"
+  mkdir -p "$TMP/bin"
+  cat > "$TMP/bin/pnpm" <<'STUB'
+#!/usr/bin/env bash
+printf '{"error":{"code":23,"message":"The operation was aborted due to timeout"}}\n'
+exit 1
+STUB
+  chmod +x "$TMP/bin/pnpm"
+  PATH="$TMP/bin:$PATH" run bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 1 ]
+  grep -qF -- 'FLOOR NOT APPLIED' <<<"$output"
+  grep -qF -- 'NOT audited' <<<"$output"
+}
+
+@test "--no-audit and --advisory-strict together are refused, not silently ordered" {
+  # The two contradict: one turns the arm off, the other makes its result decide
+  # the status. Whichever way a precedence rule resolved it one caller gets the
+  # opposite of what they asked for, and under `--no-audit` winning that caller
+  # is a scheduled lane reporting a clean scan it never ran.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  run bash "$CHECK" --no-audit --advisory-strict "$WS"
+  [ "$status" -eq 2 ]
+  # The named contradiction, not merely a non-zero status: an unknown-flag
+  # refusal also exits 2 and names the flag, so a looser assertion would green
+  # on a build that never learned the flag at all.
+  grep -qF -- 'contradicts --no-audit' <<<"$output"
+  grep -qF -- 'floor applied' <<<"$output" && return 1
+  true
+}
+
+@test "the contradicting flags are refused in either order" {
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  run bash "$CHECK" --advisory-strict --no-audit "$WS"
+  [ "$status" -eq 2 ]
+  grep -qF -- 'contradicts --no-audit' <<<"$output"
+}
+
+@test "--advisory-strict decides nothing when the arm could not run at all" {
+  # pnpm absent is a skip, not a finding and not an unread report: the arm never
+  # reached the registry to have an opinion. Reporting 4 here would send the
+  # scheduled lane into a retry loop over a condition no retry changes.
+  write_workspace "  fast-uri: 3.1.6"
+  write_lock "  fast-uri: 3.1.6"
+  mkdir -p "$TMP/emptybin"
+  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
+    command -v "$tool" >/dev/null 2>&1 || continue
+    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
+  done
+  PATH="$TMP/emptybin" run /bin/bash "$CHECK" --advisory-strict "$WS"
+  [ "$status" -eq 0 ]
+  grep -qF -- 'advisory arm skipped' <<<"$output"
+}

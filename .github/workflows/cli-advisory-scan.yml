@@ -1,0 +1,153 @@
+name: CLI Advisory Scan
+
+# Runs the advisory arm of .gaia/scripts/check-cli-workspace-floors.sh against
+# .gaia/cli's dependency closure, on a schedule, on its own lane.
+#
+# WHY THIS LANE EXISTS. .gaia/cli is a second pnpm workspace root, and the root's
+# own pnpm-workspace.yaml is what makes it one, so the repository root's closure
+# never contains it. Every dependency-CVE surface here runs `pnpm audit` from the
+# repository root and nowhere else, and .gaia/cli's build inlines its closure
+# into a binary adopters receive. Until this lane, a high or critical advisory
+# landing in that closure was reported by nothing.
+#
+# WHY IT IS NOT A STEP IN cli-tests.yml, where the parity arm already runs.
+# That was measured rather than assumed, and the measurement is written out
+# beside the arm in the check's own docblock: the call reached the registry in
+# half its observed runs and took between 107s and 251s whether it worked or not,
+# so its duration cannot tell a success from a failure and no timeout can be
+# sized against it. `Vitest (.gaia/cli)` is a declared-required context, so a
+# registry condition no pull request caused would red the merge gate; and the
+# five-minute bound the arm would need leaves that job less headroom under its
+# own cap than its install step has been observed to vary across.
+#
+# Every one of those objections is an objection to running it where a pull
+# request waits on the answer. Here nothing does. A coin-flip reach rate is
+# answered by retrying, a multi-minute call costs only runner time, and a failure
+# names a registry condition to a maintainer instead of blocking a merge.
+#
+# NOT A REQUIRED CONTEXT, and it must not become one: promoting it would
+# reintroduce the exact coupling the lane exists to avoid.
+#
+# Maintainer-only and release-excluded, like the workspace it audits: adopters
+# have no second pnpm root, so on an adopter clone this would be a red check over
+# a directory they do not have.
+#
+# Pinned action SHAs match the other workflows here; adopter-ci-action-pins.test.ts
+# holds every workflow in this directory to one pin per action:
+#   actions/checkout @ 3d3c42e5aac5ba805825da76410c181273ba90b1 (v7.0.1)
+
+on:
+  # Daily, because the thing being watched is the advisory database rather than
+  # the closure: a new advisory lands against dependencies that have not moved,
+  # so the cadence belongs to the publisher, not to this repository's commits.
+  # Off the hour deliberately, since GitHub defers scheduled runs hardest at the
+  # top of one.
+  schedule:
+    - cron: '17 6 * * *'
+  # The hand-run lane: after landing an override, or to re-run a day the
+  # registry never answered on.
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: true
+
+# Default-deny, so a job added later inherits no scope rather than the
+# repository default. The one job below grants exactly what it needs.
+permissions: {}
+
+jobs:
+  cli-advisory-scan:
+    name: Advisory scan (.gaia/cli)
+    runs-on: ubuntu-latest
+    # Sized from the step bounds below rather than from an observed runtime:
+    # four attempts capped at ten minutes each, three one-minute waits between
+    # them, and a five-minute setup. The cap is the sum plus slack, so it is the
+    # backstop for a stall the step bounds somehow missed rather than the bound
+    # anything is expected to hit.
+    timeout-minutes: 55
+    # Checkout needs it to clone, and setup-node inside the composite action
+    # defaults its `token` to `github.token` for the node-versions download.
+    # Nothing here writes.
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # Bounded at the step, unlike most callers of this action, because this
+      # lane's whole subject is a network call: an install that stalls fetching
+      # the pnpm tarball would otherwise burn the job cap before the scan it
+      # exists to run had started, and the failure would name the job rather
+      # than the fetch. Five minutes is the same bound audit-ci-tests.yml sizes
+      # its own gaia-setup-node steps to, for the same reason.
+      - name: Setup Node and install the CLI workspace
+        timeout-minutes: 5
+        uses: ./.github/actions/gaia-setup-node
+        with:
+          install: cli
+          cache-dependency-path: '.gaia/cli/pnpm-lock.yaml'
+      # The retry is the whole difference between this lane and the step in
+      # cli-tests.yml. One attempt reaches the registry about half the time, and
+      # a lane that reported "not audited" on a coin flip would be ignored inside
+      # a week; four attempts turn that into a red run that means something.
+      #
+      # WHAT EACH STATUS MEANS, and why the retryable ones are separated from the
+      # rest rather than folded into "non-zero". The check's own header owns the
+      # vocabulary; what this step adds is that 4 (no readable report) and 124
+      # (this step's own timeout killed the attempt) are conditions a later
+      # attempt can resolve, while 1, 2 and 3 are facts about the tree that
+      # retrying only restates. Retrying the latter would spend forty minutes to
+      # print the same advisory four times.
+      #
+      # A NOT-AUDITED RUN THAT EXHAUSTS ITS ATTEMPTS FAILS. Reporting green there
+      # would make the most reassuring outcome this lane can produce the one it
+      # reaches by auditing nothing, which is the false clean the check's own
+      # reader refuses one level down; refusing it here too keeps the two ends
+      # honest about the same thing.
+      #
+      # The per-attempt bound is deliberately well clear of the slowest call
+      # observed, because duration says nothing about whether a call worked: a
+      # bound sized near the observed range kills successes and reports them as
+      # registry failures. Ten minutes bounds a genuine stall and clears the
+      # observed ceiling several times over.
+      - name: Scan the CLI workspace's dependency closure for advisories
+        run: |
+          set -uo pipefail
+          attempts=4
+          attempt=1
+          while :; do
+            echo "::group::advisory scan, attempt $attempt of $attempts"
+            status=0
+            timeout 600 bash .gaia/scripts/check-cli-workspace-floors.sh --advisory-strict || status=$?
+            echo '::endgroup::'
+            case "$status" in
+              0)
+                echo 'clean: every floor is applied and the closure carries no high or critical advisory'
+                exit 0
+                ;;
+              1)
+                echo '::error::a security floor declared in .gaia/cli/pnpm-workspace.yaml is not the floor its lockfile resolves against; see the FLOOR NOT APPLIED lines above'
+                exit 1
+                ;;
+              2)
+                echo '::error::the check could not read the CLI workspace; see its diagnostic above'
+                exit 1
+                ;;
+              3)
+                echo '::error::high or critical advisories in .gaia/cli dependency closure; see the ADVISORY lines above'
+                exit 1
+                ;;
+              4|124)
+                echo "attempt $attempt reached no readable report; retrying"
+                ;;
+              *)
+                echo "::error::the check exited $status, which this lane does not know how to read"
+                exit 1
+                ;;
+            esac
+            if [ "$attempt" -ge "$attempts" ]; then
+              echo "::error::the advisory arm reached no readable report in $attempts attempts; this closure was NOT audited"
+              exit 1
+            fi
+            attempt=$((attempt + 1))
+            sleep 60
+          done

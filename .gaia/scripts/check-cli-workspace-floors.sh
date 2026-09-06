@@ -29,19 +29,35 @@
 #   that looks present and is not. The `/update-deps` skill closes its own
 #   override audit with this same assertion, against the repository root only.
 #
-#   Advisory, needs the network, and deliberately does NOT decide the exit
+#   Advisory, needs the network, and by default does NOT decide the exit
 #   status. It surfaces high and critical advisories in the root's closure.
 #   Reporting-not-blocking is the posture every other local `pnpm audit` in this
 #   repository already takes.
 #
-#   THE ADVISORY ARM IS NOT RUN IN CI, and that is measured rather than
-#   cautious. Across four runs of the job that gates this check it reached the
-#   registry twice and failed twice, taking between 107s and 251s either way,
-#   so its duration says nothing about whether it worked. It is a network call
-#   inside a declared-required context whose own cap it competes for, buying a
-#   result about half the time. CI therefore passes `--no-audit` and gates on
-#   the parity arm alone; this arm is for a maintainer running the check by
-#   hand, where a slow or failed call costs nothing and can be re-run.
+#   THE ADVISORY ARM IS NOT RUN ON ANY PULL REQUEST, and that is measured rather
+#   than cautious. Across four runs of the job that gates this check it reached
+#   the registry twice and failed twice, taking between 107s and 251s either
+#   way, so its duration says nothing about whether it worked. It is a network
+#   call inside a declared-required context whose own cap it competes for,
+#   buying a result about half the time. That job therefore passes `--no-audit`
+#   and gates on the parity arm alone.
+#
+#   IT DOES RUN ON A SCHEDULE, on its own non-required lane
+#   (.github/workflows/cli-advisory-scan.yml), which is where the measurement
+#   above stops being an argument against running it: no pull request waits on
+#   that lane, so a multi-minute call and a coin-flip reach rate cost nothing,
+#   and the lane retries rather than reporting a registry outage as a result.
+#   A maintainer still runs the arm by hand the same way.
+#
+#   THAT LANE NEEDS THE STATUS, which `--advisory-strict` is for. A scheduled
+#   job's only channel to a human is its conclusion, so an arm that reports
+#   without deciding reaches nobody there: the run goes green having found a
+#   critical advisory and printed it into a log nothing reads. Under the flag
+#   the arm's outcome becomes the exit status, and the two outcomes get
+#   different statuses because the caller does different things with them, one
+#   is retried and the other is alerted on. Parity still outranks both: it is
+#   the offline, deterministic verdict, and sending someone to the registry for
+#   a cause sitting in the lockfile is the wrong direction.
 #
 # WHAT THIS DOES NOT CATCH, and saying so is load-bearing rather than modest. A
 # floor whose parents have bumped their own pins past it stops being a floor and
@@ -54,7 +70,10 @@
 # that they are still needed.
 #
 # Exit status: 0 nothing to report, 1 a floor is not applied as configured,
-# 2 the root could not be read or the arguments were wrong.
+# 2 the root could not be read or the arguments were wrong. Under
+# --advisory-strict only, and only when the parity arm found nothing: 3 the
+# advisory arm found a high or critical advisory, 4 the advisory arm could not
+# read a report and this closure was therefore not audited.
 
 set -uo pipefail
 
@@ -62,11 +81,15 @@ SELF_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 usage() {
   cat >&2 <<'USAGE'
-usage: check-cli-workspace-floors.sh [--no-audit] [<workspace-root>]
+usage: check-cli-workspace-floors.sh [--no-audit | --advisory-strict] [<workspace-root>]
 
-  <workspace-root>  a directory holding its own pnpm-workspace.yaml and
-                    pnpm-lock.yaml. Defaults to this repository's .gaia/cli.
-  --no-audit        run the parity arm only; do not reach the network.
+  <workspace-root>   a directory holding its own pnpm-workspace.yaml and
+                     pnpm-lock.yaml. Defaults to this repository's .gaia/cli.
+  --no-audit         run the parity arm only; do not reach the network.
+  --advisory-strict  let the advisory arm decide the exit status when the parity
+                     arm found nothing: 3 an advisory was found, 4 no report
+                     could be read. For a caller whose only channel is its own
+                     exit status. Contradicts --no-audit.
 USAGE
 }
 
@@ -220,11 +243,12 @@ gaia_cwf_resolve_reader() {
 }
 
 gaia_cwf_main() {
-  local run_audit=1 root=""
+  local run_audit=1 advisory_strict=0 root=""
 
   while [ "$#" -gt 0 ]; do
     case "$1" in
       --no-audit) run_audit=0; shift ;;
+      --advisory-strict) advisory_strict=1; shift ;;
       -h|--help) usage; return 2 ;;
       --*) printf 'check-cli-workspace-floors: unknown flag %s\n' "$1" >&2; usage; return 2 ;;
       *)
@@ -235,6 +259,17 @@ gaia_cwf_main() {
         root="$1"; shift ;;
     esac
   done
+
+  # Refused rather than ordered by precedence. One flag turns the advisory arm
+  # off and the other makes its result decide the status, so any precedence rule
+  # hands one of the two callers the opposite of what they asked for, silently.
+  # Under `--no-audit` winning, that caller is a scheduled lane reporting a clean
+  # scan it never ran, which is the exact false clean the advisory arm's own
+  # reader is built to refuse one level down.
+  if [ "$run_audit" -eq 0 ] && [ "$advisory_strict" -eq 1 ]; then
+    printf 'check-cli-workspace-floors: --advisory-strict contradicts --no-audit; pass one or the other\n' >&2
+    return 2
+  fi
 
   [ -n "$root" ] || root="$SELF_DIR/../cli"
   # Canonicalize so the reported root reads as a path someone can act on. The
@@ -409,6 +444,11 @@ gaia_cwf_main() {
     if ! printf '%s' "$audit_json" \
       | jq -e 'type == "object" and has("advisories") and (has("error") | not)' >/dev/null 2>&1; then
       printf 'advisory arm: pnpm audit could not be read; this closure was NOT audited\n'
+      # Guarded on `rc` as well as the flag, at every site below that raises
+      # one of these statuses: a parity failure already has a status the caller
+      # must not lose to an advisory code. See the header's note on why parity
+      # outranks both.
+      [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=4
       return "$rc"
     fi
     # Every entry must carry all three fields the extraction below reads, not
@@ -428,6 +468,7 @@ gaia_cwf_main() {
         | (type == "object")
           and has("severity") and has("module_name") and has("title")))' >/dev/null 2>&1; then
       printf 'advisory arm: pnpm audit named advisories in a shape this reader cannot read; this closure was NOT audited\n'
+      [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=4
       return "$rc"
     fi
     advisories="$(printf '%s' "$audit_json" | jq -r '
@@ -457,13 +498,19 @@ gaia_cwf_main() {
         ;;
       *)
         printf 'advisory arm: the report does not state zero high or critical advisories (%s) and this reader parsed none; this closure was NOT audited\n' "${declared:-unreadable}"
+        [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=4
         ;;
       esac
     else
-      # Reported, never fatal: see the posture note in this file's header.
+      # Reported, and fatal only under --advisory-strict: see the posture note
+      # in this file's header. The line's own wording stays keyed to the flag so
+      # a log never claims a status the run did not take.
+      local fatality='not fatal here'
+      [ "$advisory_strict" -eq 1 ] && fatality='fatal under --advisory-strict'
       printf '%s\n' "$advisories" | while IFS="$(printf '\t')" read -r sev mod title; do
-        printf 'ADVISORY (%s, not fatal here): %s -- %s\n' "$sev" "$mod" "$title"
+        printf 'ADVISORY (%s, %s): %s -- %s\n' "$sev" "$fatality" "$mod" "$title"
       done
+      [ "$advisory_strict" -eq 1 ] && [ "$rc" -eq 0 ] && rc=3
     fi
   fi
 

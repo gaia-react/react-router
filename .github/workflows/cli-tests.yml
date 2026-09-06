@@ -473,7 +473,10 @@ jobs:
       #
       # Why the advisory arm is not run here is measured, and the measurement
       # lives beside the arm in that same docblock rather than being restated
-      # twice. The part specific to this job: the smallest whole-minute bound
+      # twice. Not run HERE is the whole claim: it runs daily on its own
+      # non-required lane, cli-advisory-scan.yml, where nothing waits on the
+      # answer and every objection below is answered by that alone. The part
+      # specific to this job: the smallest whole-minute bound
       # that would not cut short the slowest call observed is five, because the
       # docblock's own point is that the duration does not say whether a call
       # succeeded, so a bound has to clear the ceiling rather than a successful

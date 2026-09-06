@@ -354,6 +354,13 @@ wiki/decisions/Shell Guard Fixture Discrimination.md
 # the schema, the generated page, and the `gaia labels` CLI, but not this CI
 # job asserting parity against GAIA's own tree.
 .github/workflows/label-registry.yml
+# `cli-advisory-scan.yml` runs the advisory arm of
+# .gaia/scripts/check-cli-workspace-floors.sh on a schedule, against .gaia/cli's
+# dependency closure. Excluded on the same reasoning as the check itself
+# (category 1 above): .gaia/cli is a second pnpm workspace root that exists only
+# on this clone, so on an adopter's the job would red daily over a directory they
+# do not have.
+.github/workflows/cli-advisory-scan.yml
 # `dependabot.yml` schedules weekly bumps of the full-SHA action pins in
 # `.github/workflows/`, a directory that on this clone is the maintainer-only
 # workflows plus the two shipped ones. An adopter clone has neither those
