@@ -76,7 +76,7 @@ fi
 # --- help path -----------------------------------------------------------
 HELP_OUT="$("$GAIA" update --help)" \
   || { fail "gaia update --help exited non-zero"; exit 1; }
-printf '%s' "$HELP_OUT" | grep -q "Usage: gaia update" \
+grep -q "Usage: gaia update" <<<"$HELP_OUT" \
   || { fail "gaia update --help did not print its usage banner"; exit 1; }
 
 pass "gaia update merge-workspace produced the expected verdict, rejected a missing file, and printed help on staged tree"

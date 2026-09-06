@@ -12,7 +12,8 @@
 # (.gaia/scripts/lint-oracle-blind-invocations.sh), the stale-cardinal guard
 # (.gaia/scripts/lint-stale-cardinals.sh), the guard-rule shell-coverage
 # guard (.gaia/scripts/lint-guard-rule-shell-coverage.sh), the collapsed
-# signal-trap guard (.gaia/scripts/lint-collapsed-signal-trap.sh), and the
+# signal-trap guard (.gaia/scripts/lint-collapsed-signal-trap.sh), the
+# SIGPIPE-reader guard (.gaia/scripts/lint-sigpipe-readers.sh), and the
 # bundled-hooks inventory guard (.gaia/scripts/lint-hook-wiki-inventory.sh),
 # the wiki cached-version guard (.gaia/scripts/lint-wiki-cached-version.sh),
 # and the hook advisory-classification guard
@@ -597,6 +598,20 @@ fi
 # resolves and the file:line it prints is repo-relative.
 echo "--> lint-collapsed-signal-trap (one trap arm binding EXIT with INT or TERM)"
 if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-collapsed-signal-trap.sh"); then
+  status=1
+fi
+
+# Fold in the SIGPIPE-reader guard, for the same reason again: shellcheck reads
+# a pipeline into a quiet grep as well-formed, and it is, right up to the point
+# where the quiet grep closes the pipe on its first match, the upstream dies of
+# SIGPIPE, and `pipefail` hands the caller a FALSE that means a match was found.
+# A fixture carrying both live shapes returns exit 0 at the `*.sh` severity floor
+# this harness sets, so nothing here saw it; the class had four known
+# occurrences, three of them inside guard machinery, before this gate existed.
+# Run from the repo root so its `git ls-files` discovery resolves and the
+# file:line it prints is repo-relative.
+echo "--> lint-sigpipe-readers (a short-circuiting reader inverting a pipeline under pipefail)"
+if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-sigpipe-readers.sh"); then
   status=1
 fi
 

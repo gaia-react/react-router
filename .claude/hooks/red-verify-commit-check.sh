@@ -266,7 +266,7 @@ while IFS= read -r path; do
     # renames, refactors of an existing test never demand a fresh RED), even
     # when their signal changed.
     if [ -n "$head_fullnames" ] \
-       && printf '%s\n' "$head_fullnames" | grep -qxF -- "$full"; then
+       && grep -qxF -- "$full" <<<"$head_fullnames"; then
       continue
     fi
 

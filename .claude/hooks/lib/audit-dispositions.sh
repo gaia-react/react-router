@@ -490,7 +490,7 @@ EOF
       # Fail closed on the key shape. A key the extractor cannot parse is an
       # offender, and neither term is evaluated for it, so a malformed key is
       # never cleared by a changed-files match on a path it does not name.
-      if ! printf '%s\n' "$key" | LC_ALL=C grep -qE '^v1 class=[^[:space:]]+ path=.+ line=[0-9]+$'; then
+      if ! LC_ALL=C grep -qE '^v1 class=[^[:space:]]+ path=.+ line=[0-9]+$' <<<"$key"; then
         offenders="${offenders}machinery-waived-not-eligible: ${key}
 "
         continue
@@ -635,17 +635,17 @@ disposition_note_block() {
 
 ${notes%$'\n'}"
 
-  if printf '%s\n' "$notes" | grep -q '^machinery-classifier-unavailable:'; then
+  if grep -q '^machinery-classifier-unavailable:' <<<"$notes"; then
     block="${block}
 
 machinery-classifier-unavailable: the machinery path list could not be loaded, so the waive abuse-check did not run at all for this merge."
   fi
-  if printf '%s\n' "$notes" | grep -q '^changed-files-not-attributable:'; then
+  if grep -q '^changed-files-not-attributable:' <<<"$notes"; then
     block="${block}
 
 changed-files-not-attributable: the sidecar was written while judging a different pull request, so its entries were set aside rather than judged against this diff."
   fi
-  if printf '%s\n' "$notes" | grep -q '^changed-files-unverified:'; then
+  if grep -q '^changed-files-unverified:' <<<"$notes"; then
     block="${block}
 
 changed-files-unverified: this tree's pull-request diff base could not be resolved, so only the gate-machinery term was evaluated for that entry."

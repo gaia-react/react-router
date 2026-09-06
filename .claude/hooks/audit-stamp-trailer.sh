@@ -231,7 +231,8 @@ fi
 # (the marker is keyed to the pre-amend SHA). Re-stamping a pushed HEAD
 # creates a spurious empty commit on every audit re-run. Both produce the
 # same bad outcome: the PR accrues unnecessary commits.
-if git -C "$repo_root" log -1 --format='%B' | grep -q "^GAIA-Audit:"; then
+head_message="$(git -C "$repo_root" log -1 --format='%B' 2>/dev/null || true)"
+if grep -q "^GAIA-Audit:" <<<"$head_message"; then
   emit_decline "already stamped"
   exit 0
 fi

@@ -10,7 +10,7 @@ payload=$(cat)
 file_path=$(jq -r '.tool_input.file_path // ""' <<<"$payload" 2>/dev/null || echo "")
 
 # Only check page and component files
-if ! echo "$file_path" | grep -qE 'app/(pages|components)/.*\.tsx$'; then
+if ! grep -qE 'app/(pages|components)/.*\.tsx$' <<<"$file_path"; then
   exit 0
 fi
 

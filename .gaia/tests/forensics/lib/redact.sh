@@ -159,59 +159,59 @@ redact_body() {
   local recheck="$out"
 
   # Recheck pattern 1: GitHub tokens (classic prefixes + fine-grained PAT)
-  if printf '%s' "$recheck" | grep -qE '(gho|ghp|ghs|ghr|ghu)_[A-Za-z0-9]{20,}'; then
+  if grep -qE '(gho|ghp|ghs|ghr|ghu)_[A-Za-z0-9]{20,}' <<<"$recheck"; then
     printf 'REDACTION BUG: GitHub token survived sanity recheck\n' >&2
     return 1
   fi
-  if printf '%s' "$recheck" | grep -qE 'github_pat_[A-Za-z0-9_]{20,}'; then
+  if grep -qE 'github_pat_[A-Za-z0-9_]{20,}' <<<"$recheck"; then
     printf 'REDACTION BUG: GitHub fine-grained PAT survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 2: Anthropic API key
-  if printf '%s' "$recheck" | grep -qE 'sk-ant-[A-Za-z0-9_-]{20,}'; then
+  if grep -qE 'sk-ant-[A-Za-z0-9_-]{20,}' <<<"$recheck"; then
     printf 'REDACTION BUG: Anthropic API key survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 3: OpenAI API key (but not sk-ant- which is already above)
-  if printf '%s' "$recheck" | grep -qE 'sk-[A-Za-z0-9]{20,}'; then
+  if grep -qE 'sk-[A-Za-z0-9]{20,}' <<<"$recheck"; then
     printf 'REDACTION BUG: OpenAI API key survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 4: GitLab PAT
-  if printf '%s' "$recheck" | grep -qE 'glpat-[A-Za-z0-9_-]{20,}'; then
+  if grep -qE 'glpat-[A-Za-z0-9_-]{20,}' <<<"$recheck"; then
     printf 'REDACTION BUG: GitLab PAT survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 5: Slack token (xox* + app-level xapp-)
-  if printf '%s' "$recheck" | grep -qE 'xox[baprs]-[A-Za-z0-9-]{10,}|xapp-[A-Za-z0-9-]{10,}'; then
+  if grep -qE 'xox[baprs]-[A-Za-z0-9-]{10,}|xapp-[A-Za-z0-9-]{10,}' <<<"$recheck"; then
     printf 'REDACTION BUG: Slack token survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 6: JWT
-  if printf '%s' "$recheck" | grep -qE 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+'; then
+  if grep -qE 'eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+' <<<"$recheck"; then
     printf 'REDACTION BUG: JWT survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 7: Bearer token
-  if printf '%s' "$recheck" | grep -qE 'Bearer[[:space:]]+[A-Za-z0-9._-]{10,}'; then
+  if grep -qE 'Bearer[[:space:]]+[A-Za-z0-9._-]{10,}' <<<"$recheck"; then
     printf 'REDACTION BUG: Bearer token survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 8: connection-string credentials
-  if printf '%s' "$recheck" | grep -qE '://[^/@:[:space:]]+:[^/@:[:space:]]+@'; then
+  if grep -qE '://[^/@:[:space:]]+:[^/@:[:space:]]+@' <<<"$recheck"; then
     printf 'REDACTION BUG: connection-string credentials survived sanity recheck\n' >&2
     return 1
   fi
 
   # Recheck pattern 9: AWS access key
-  if printf '%s' "$recheck" | grep -qE '[A-Z]{4}[0-9A-Z]{16}'; then
+  if grep -qE '[A-Z]{4}[0-9A-Z]{16}' <<<"$recheck"; then
     printf 'REDACTION BUG: AWS access key survived sanity recheck\n' >&2
     return 1
   fi

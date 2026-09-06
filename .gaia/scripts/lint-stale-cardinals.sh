@@ -610,9 +610,18 @@ if [ -n "$report" ]; then
   # else. A run whose findings are all pragma hygiene (unused, malformed,
   # honored nowhere) or the desync ERROR would otherwise print a remedy that has
   # nothing to do with what actually went red.
-  if printf '%s' "$report" \
-    | grep -v -e 'gaia-lint-ignore' -e ': ERROR: ' \
-    | grep -q '[^[:space:]]'; then
+  # ONE awk pass, not a filtering grep feeding a quiet one. A quiet grep exits
+  # at its first match and closes the pipe; the upstream grep then takes SIGPIPE
+  # and returns 141, and `pipefail` promotes that to the pipeline's status, so
+  # the test would answer FALSE on a report that does carry a class hit. A
+  # single process cannot lose that race, and
+  # .gaia/scripts/lint-sigpipe-readers.sh is the gate that keeps the shape out.
+  if awk '
+      /gaia-lint-ignore/ { next }
+      /: ERROR: /        { next }
+      /[^[:space:]]/     { found = 1 }
+      END { exit(found ? 0 : 1) }
+    ' <<<"$report"; then
     printf 'Fix each by preferring the set to its cardinality:\n    name the members, or point at what holds them, and let the reader count\n    or, where the number carries the claim, add a check that recounts it\nSee .claude/rules/code-comments.md (## Counts) for the rule and the remedy.\n' >&2
   fi
   exit 1
