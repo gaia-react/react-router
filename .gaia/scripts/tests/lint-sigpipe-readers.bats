@@ -8,7 +8,7 @@
 # Tests for .gaia/scripts/lint-sigpipe-readers.sh: the static gate that flags a
 # short-circuiting reader standing downstream of a pipe in a file that arms
 # `pipefail`, the shape whose pipeline status INVERTS on a match because the
-# quiet reader closes the pipe and the upstream dies of SIGPIPE.
+# short-circuiting reader closes the pipe and the upstream dies of SIGPIPE.
 #
 # THIS SUITE IS THE BLOCKING RUNNER. shell-lint.sh invokes the gate a second,
 # advisory way, but a gate run against a tree that is already clean reports

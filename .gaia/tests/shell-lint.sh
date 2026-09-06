@@ -610,7 +610,7 @@ fi
 # occurrences, three of them inside guard machinery, before this gate existed.
 # Run from the repo root so its `git ls-files` discovery resolves and the
 # file:line it prints is repo-relative.
-echo "--> lint-sigpipe-readers (a quiet reader inverting a pipeline under pipefail)"
+echo "--> lint-sigpipe-readers (a short-circuiting reader inverting a pipeline under pipefail)"
 if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-sigpipe-readers.sh"); then
   status=1
 fi
