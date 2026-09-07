@@ -557,7 +557,7 @@ EOF
 # mirroring shape, rather than a stub directory holding just the binaries the
 # check needs. That helper's header states the criterion: which shape fits is
 # decided by whether the subject's binary needs are enumerable. This check is a
-# large shell program reaching for git, sed, awk and grep among others, so its
+# large shell program reaching for awk, grep and find among others, so its
 # needs are not enumerable, and an allowlist that missed one would fail as a
 # missing-tool error inside the fixture rather than on the arm under test.
 
