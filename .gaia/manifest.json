@@ -609,6 +609,7 @@
     "wiki/decisions/Co-located Tests Folder.md": "wiki-owned",
     "wiki/decisions/Code Audit Team.md": "wiki-owned",
     "wiki/decisions/composeStory Pattern.md": "wiki-owned",
+    "wiki/decisions/Composite Action Step Timeouts.md": "wiki-owned",
     "wiki/decisions/Content Security Policy.md": "wiki-owned",
     "wiki/decisions/Dark Mode Modernization.md": "wiki-owned",
     "wiki/decisions/Deliberate Configuration Asymmetries.md": "wiki-owned",
@@ -676,7 +677,7 @@
     "wiki/overview.md": "wiki-owned",
     "wiki/README.md": "wiki-owned"
   },
-  "generated": "2026-09-05T05:31:15.634Z",
+  "generated": "2026-09-07T08:27:48.558Z",
   "regions": [
     {
       "endMarker": "<!-- gaia:audit-remit:end -->",
