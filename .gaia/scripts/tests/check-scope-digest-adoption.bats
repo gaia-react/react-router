@@ -23,6 +23,8 @@ setup() {
   SCRIPT_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")/.." && pwd)"
   CHECK="$SCRIPT_DIR/check-scope-digest-adoption.sh"
   REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
   # shellcheck source=.gaia/scripts/check-scope-digest-adoption.sh
   source "$CHECK"
   FIXTURE_REPOS=()
@@ -538,6 +540,52 @@ EOF
   run gaia_check_scope_digest_adoption "$repo"
   [ "$status" -eq 1 ]
   grep -qF '.github/workflows/fake-audit.yml: unmatched backtick truncated the scan' <<<"$output" || return 1
+}
+
+# The environment arm, and the aggregation that decides what a run reports
+# when it fires. `_gaia_sda_assert4` returns 2 when `jq` is absent, and
+# `gaia_check_scope_digest_adoption` RECORDS that rather than returning on the
+# spot, because assertion 4 runs after the earlier assertions have already
+# found whatever they found: returning 2 from there would discard a real
+# finding and send the operator to install jq while the tree still needs
+# repairing. Both halves of that contract are driven below, and neither was
+# reachable from any other test here -- the malformed-settings case exercises
+# the arm below the jq one, and exits 1 identically with or without the
+# aggregation, so it stands behind nothing.
+#
+# The shim is `path_shim_without` from `.gaia/tests/helpers/path.sh`, the
+# mirroring shape, rather than a stub directory holding just the binaries the
+# check needs. That helper's header states the criterion: which shape fits is
+# decided by whether the subject's binary needs are enumerable. This check is a
+# large shell program reaching for awk, grep and find among others, so its
+# needs are not enumerable, and an allowlist that missed one would fail as a
+# missing-tool error inside the fixture rather than on the arm under test.
+
+@test "environment: jq absent on an otherwise-clean tree exits 2 rather than passing" {
+  local repo
+  # Built before the shim: the fixture builder is git, and it has no business
+  # running against a rebuilt PATH.
+  repo="$(make_fixture_repo jq-absent-healthy)"
+  PATH="$(path_shim_without jq)"
+  run gaia_check_scope_digest_adoption "$repo"
+  [ "$status" -eq 2 ]
+  grep -qF 'jq not found; assertion 4 cannot read .claude/settings.json' <<<"$output" || return 1
+}
+
+@test "environment: jq absent alongside an assertion-1 defect exits 1 and still names the defect" {
+  local repo
+  repo="$(make_fixture_repo jq-absent-defective)"
+  perl -0pi -e 's/ --scope-digest "\$D_SCOPE"//g' \
+    "$repo/.claude/agents/code-audit-maintainer-prose.md"
+  git -C "$repo" add -A
+  git -C "$repo" commit -q -m mutate
+  PATH="$(path_shim_without jq)"
+  run gaia_check_scope_digest_adoption "$repo"
+  # 1, not 2. The environment note is real and still printed, but a status of 2
+  # would report the missing tool as the run's verdict and bury the finding.
+  [ "$status" -eq 1 ]
+  grep -qF '.claude/agents/code-audit-maintainer-prose.md: earned call site missing --scope-digest' <<<"$output" || return 1
+  grep -qF 'jq not found; assertion 4 cannot read .claude/settings.json' <<<"$output" || return 1
 }
 
 @test "usage: a fixture with no scan surface exits 2 rather than passing vacuously" {
