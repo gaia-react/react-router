@@ -45,11 +45,13 @@
 #      not the files the scenarios inside it inspect. Reaching those needs either
 #      a declared-inputs convention on every gated step or a runtime witness.
 #   2. Paths built at runtime. A `$NAME` or `${NAME}` reference is resolved
-#      wherever it sits in the body, not only as a leading segment, whenever the
-#      workflow states the value outright in an `env:` block whose value is a
-#      literal string; that much is right there in the file. Everything else
-#      stays invisible to a token scan and always will be: a value that is a
-#      `${{ }}` expression, a name assigned in the shell, and a glob expansion.
+#      wherever it sits in the body, not only as a leading segment, whenever an
+#      `env:` block in scope states the value outright as a literal string; that
+#      much is right there in the file. Every other shape stays invisible to a
+#      token scan and always will be, and the rule generating that set is that
+#      one pass over the file does not answer it: a `${{ }}` value, a name
+#      assigned in the shell, a glob expansion, a value holding another `$NAME`
+#      (the substitution runs once and does not recurse).
 #   3. Composite-action bodies. A local action's own `run:` steps are not
 #      descended into; only its `action.yml` is checked.
 #   4. A filter propagated across jobs. The gate scan reads
