@@ -166,6 +166,131 @@ run_hook_without_library() {
   assert_denied_by_json
 }
 
+# The rest of reader-operands.sh's plain-file flags, whose value IS a file the
+# reader opens. _GAIA_RO_SHORT_FILE and _GAIA_RO_LONG_FILE_PATTERN also supply
+# the pattern, so the positional after them is an ordinary file;
+# _GAIA_RO_LONG_FILE_PLAIN names a file of globs and supplies no pattern, so one
+# still has to follow. Each command below is written in the spelling that puts
+# the secret in the flag's own value.
+#
+# These are named literally rather than driven from the same tables the derived
+# test below reads, and the split is what makes the pair worth having. A
+# derivation cannot notice an entry deleted from the table it reads: the set
+# just comes back shorter and every member of it still passes. Only a named
+# spelling reds when its entry is dropped. The derivation earns its own place
+# from the other side: it drives whatever the tables hold at the time it runs,
+# so a member added later is covered without anyone remembering to write a test
+# for it, and a regression in the operand walk reds against every member rather
+# than only against the spellings someone thought to pin.
+
+@test "grep --file certs/server.key foo.txt is denied (the pattern FILE is the secret)" {
+  run_hook_bash "grep --file certs/server.key foo.txt"
+  assert_denied_by_json
+}
+
+@test "grep --exclude-from certs/server.key TOKEN . is denied (the glob FILE is the secret)" {
+  run_hook_bash "grep --exclude-from certs/server.key TOKEN ."
+  assert_denied_by_json
+}
+
+@test "rg --ignore-file certs/server.key TOKEN app is denied (the glob FILE is the secret)" {
+  run_hook_bash "rg --ignore-file certs/server.key TOKEN app"
+  assert_denied_by_json
+}
+
+@test "every plain-file flag reader-operands.sh carries denies a secret passed as its value" {
+  local lib="$HOOKS_SRC/lib/reader-operands.sh"
+  # shellcheck source=.claude/hooks/lib/reader-operands.sh disable=SC1091
+  . "$lib"
+
+  # Which tables exist is the library's to say, so read it rather than restate
+  # it. Each table needs its own grammar arm below, so one added there and not
+  # here would leave this test driving a subset under a name claiming the whole
+  # set; comparing the two reds instead, and names the arm to write.
+  #
+  local declared mentioned missed found known
+  declared=$(grep -oE '^_GAIA_RO_[A-Z0-9_]+=' "$lib" | sed 's/=$//' | sort -u)
+
+  # That anchor reads a bare column-0 assignment, which is how this library
+  # declares every table today. Rather than widen it once per declaration
+  # keyword someone might later reach for, sweep every _GAIA_RO_ name the file
+  # mentions at all and require the anchor to have reached each one. A table
+  # declared in a shape the anchor cannot read then reds here, rather than
+  # sitting outside the comparison below with nothing left to notice it.
+  mentioned=$(grep -ohE '_GAIA_RO_[A-Z0-9_]+' "$lib" | sort -u)
+  missed=$(comm -23 <(printf '%s\n' "$mentioned") <(printf '%s\n' "$declared"))
+  if [ -n "$missed" ]; then
+    echo "lib/reader-operands.sh names tables this test's discovery cannot read:" >&2
+    echo "  $(echo "$missed" | tr '\n' ' ')" >&2
+    return 1
+  fi
+
+  # Subtract the tables that carry no plain-file flag, rather than selecting
+  # the ones that do by name. Selecting would rest the comparison on a naming
+  # convention this test cannot enforce; subtracting puts the burden the other
+  # way, so a new table is a mismatch until someone either gives it a grammar
+  # arm below or writes it into this list. Deliberately not plain-file tables:
+  # PLAIN_READERS and GREP_READERS hold command words rather than flags, and
+  # SHORT_DISCARD and LONG_DISCARD hold the flags whose value the walk throws
+  # away instead of opening.
+  found=$(printf '%s\n' "$declared" \
+    | grep -vxE '_GAIA_RO_(PLAIN_READERS|GREP_READERS|SHORT_DISCARD|LONG_DISCARD)') || true
+  known=$(printf '%s\n' _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN _GAIA_RO_SHORT_FILE | sort)
+  if [ "$found" != "$known" ]; then
+    echo "the plain-file tables in lib/reader-operands.sh are not the ones this test builds commands for" >&2
+    echo "  lib:  $(echo "$found" | tr '\n' ' ')" >&2
+    echo "  test: $(echo "$known" | tr '\n' ' ')" >&2
+    return 1
+  fi
+
+  # An empty table contributes no command and leaves this test asserting
+  # nothing, which reads exactly like a pass. A table emptied in place passes
+  # the comparison above, since the name is still there, so name whichever one
+  # went hollow rather than iterating a set that quietly shrank.
+  local name
+  for name in $known; do
+    if [ -z "${!name}" ]; then
+      echo "$name is empty in lib/reader-operands.sh" >&2
+      return 1
+    fi
+  done
+
+  # Two spellings per flag, because the walk reaches the value down two
+  # different paths: a separate token arrives through the pending branch, an
+  # attached or `=` value through the emit beside it. Driving one leaves the
+  # other free to be deleted with nothing red.
+  #
+  # The tables are the union of GNU grep's flags and ripgrep's, so no single
+  # command word spells every member and the mismatches below are deliberate.
+  # What is under test is the flag's grammar, which the guard reads the same way
+  # for every word in its grep family, so one word per grammar is enough.
+  local cmds=() f c i=0
+  while [ "$i" -lt "${#_GAIA_RO_SHORT_FILE}" ]; do
+    c="${_GAIA_RO_SHORT_FILE:$i:1}"
+    cmds+=("grep -$c certs/server.key foo.txt")
+    cmds+=("grep -${c}certs/server.key foo.txt")
+    i=$((i + 1))
+  done
+  for f in $_GAIA_RO_LONG_FILE_PATTERN; do
+    cmds+=("grep $f certs/server.key foo.txt")
+    cmds+=("grep $f=certs/server.key foo.txt")
+  done
+  for f in $_GAIA_RO_LONG_FILE_PLAIN; do
+    cmds+=("rg $f certs/server.key TOKEN app")
+    cmds+=("rg $f=certs/server.key TOKEN app")
+  done
+
+  local cmd allowed=0
+  for cmd in "${cmds[@]}"; do
+    run_hook_bash "$cmd"
+    if [ "$status" -ne 0 ] || ! grep -qF -- '"permissionDecision": "deny"' <<<"$output"; then
+      echo "not denied: $cmd" >&2
+      allowed=1
+    fi
+  done
+  [ "$allowed" -eq 0 ]
+}
+
 @test "x=\$(<certs/server.key) is denied (redirection)" {
   # The single-quoting is deliberate: the payload must reach the hook verbatim
   # so it classifies the literal command text. Never double-quote it, which
