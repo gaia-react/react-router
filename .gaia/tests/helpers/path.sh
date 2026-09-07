@@ -29,9 +29,16 @@
 #
 # A suite that drives a "tool is not installed" arm has to guarantee the tool is
 # absent, and cannot assume it: a real `uvx`, `specify` or `pnpm` may live
-# anywhere further down a developer's PATH. Every such suite asks one question
-# of each PATH directory, does this directory provide <name> as a command, and
-# rebuilds a PATH from the answer. Two rebuild shapes exist and both live here.
+# anywhere further down a developer's PATH. Every CLIENT OF THIS FILE gets there
+# by asking one question of each PATH directory, does this directory provide
+# <name> as a command, and rebuilding a PATH from the answer. That is not the
+# only way to reach the same guarantee, and the quantifier is scoped this
+# narrowly on purpose: a suite whose fixture needs a known, small set of
+# binaries can build an allowlist directory holding just those instead, which
+# asks nothing about any PATH directory at all. Both are legitimate; which one
+# fits is decided by whether the subject's binary needs are enumerable.
+# Two rebuild shapes exist for the question this file does ask, and both live
+# here.
 # Dropping each providing directory is the cheaper one and is right whenever the
 # command under test needs nothing else those directories hold. Mirroring each
 # providing directory into a shim of symlinks with the tool left out is the one
@@ -93,6 +100,13 @@ path_without() {
 # have to be. A caller assigns the result the same way it assigns
 # `path_without`'s, either for the rest of the test or for one command.
 #
+# The honest limit: this does not preserve lookup ORDER. The shim leads the
+# rebuilt PATH, so a command that a kept earlier directory and a mirrored later
+# one both provide resolves to the mirrored copy rather than to the one bash
+# would have found. Callers here want the named tool gone with everything else
+# still runnable, which that satisfies; a caller who needs true resolution order
+# preserved needs a rebuild that splices each shim in at its own position.
+#
 # The shim lives under the bats per-test temp directory, so it is torn down with
 # the test that built it and two tests cannot share one. That makes this a
 # bats-only primitive, and it says so rather than writing somewhere a caller did
@@ -112,9 +126,12 @@ path_shim_without() {
       for bin in "$dir"/*; do
         base="${bin##*/}"
         [ "$base" = "$name" ] && continue
-        # First writer wins, so an earlier PATH entry keeps its precedence over
-        # a later one providing the same command, which is what the lookup this
-        # stands in for would have done.
+        # First writer wins, so among the MIRRORED directories an earlier one
+        # keeps its precedence over a later one providing the same command.
+        # That is the whole of the ordering this preserves, and the docblock
+        # above states the limit: the shim leads, so a command that a kept
+        # earlier directory and a mirrored later one both provide now resolves
+        # to the mirrored copy.
         [ -e "$shim/$base" ] || ln -s "$bin" "$shim/$base" 2>/dev/null || true
       done
     else

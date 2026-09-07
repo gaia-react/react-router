@@ -139,12 +139,16 @@ real_tool() {
 # bare fixture PATH takes the two commands the primitive itself calls away from
 # it. Prepending stays hermetic for what these tests assert: a real `uvx` further
 # down is mirrored out exactly like the fixture's, which is the property under
-# test, and the mate names are fixture-only.
+# test, and the other fixture names carry a `gaia-fixture-` prefix so no
+# installed command can supply one. That prefix is doing real work rather than
+# reading as decoration: a plain `mate` is TextMate's own CLI, and on a host
+# that ships it the dropping-form control below would have gone red on an
+# ambient binary rather than on the property it pins.
 @test "path_shim_without leaves the tool unresolvable while its directory-mates still resolve" {
   local shared="$BATS_TEST_TMPDIR/shared"
   mkdir -p "$shared"
   real_tool "$shared" uvx
-  real_tool "$shared" mate
+  real_tool "$shared" gaia-fixture-mate
 
   local result
   result="$(PATH="$shared:$PATH" path_shim_without uvx)"
@@ -155,7 +159,7 @@ real_tool() {
     echo "the tool still resolves on the shimmed PATH" >&2
     return 1
   }
-  PATH="$result" command -v mate >/dev/null 2>&1 || {
+  PATH="$result" command -v gaia-fixture-mate >/dev/null 2>&1 || {
     echo "a directory-mate stopped resolving; the shim took more than the tool" >&2
     return 1
   }
@@ -171,18 +175,18 @@ real_tool() {
   local shared="$BATS_TEST_TMPDIR/shared"
   mkdir -p "$shared"
   real_tool "$shared" uvx
-  real_tool "$shared" mate
+  real_tool "$shared" gaia-fixture-mate
 
   local dropped
   dropped="$(PATH="$shared:$PATH" path_without uvx)"
-  PATH="$dropped" command -v mate >/dev/null 2>&1 && {
+  PATH="$dropped" command -v gaia-fixture-mate >/dev/null 2>&1 && {
     echo "control broken: path_without kept a mate of the dropped tool" >&2
     return 1
   }
 
   local shimmed
   shimmed="$(PATH="$shared:$PATH" path_shim_without uvx)"
-  PATH="$shimmed" command -v mate >/dev/null 2>&1 || return 1
+  PATH="$shimmed" command -v gaia-fixture-mate >/dev/null 2>&1 || return 1
   true
 }
 
@@ -190,7 +194,7 @@ real_tool() {
   local holds="$BATS_TEST_TMPDIR/holds" clean="$BATS_TEST_TMPDIR/clean"
   mkdir -p "$holds" "$clean"
   real_tool "$holds" uvx
-  real_tool "$clean" other
+  real_tool "$clean" gaia-fixture-other
 
   local result
   result="$(PATH="$holds:$clean:$PATH" path_shim_without uvx)"
