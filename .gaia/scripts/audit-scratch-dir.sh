@@ -44,12 +44,18 @@
 # back to its own judgment, never to a shared path this file invented.
 #
 # ONE TREE, read in one place. The optional trailing <dir> selects the tree
-# every half of this file reads: the audit key the path is minted under, and
-# the tree the direct-run mint's worktree advisory describes. It defaults to
-# `.` and no shipped caller passes it, which is why the usage lines below do
-# not offer it -- an undocumented argument earns no public contract. What it
-# must never become is two arguments' worth of behaviour under one name, so
-# any half added here takes its tree from the same place the existing ones do.
+# for both halves that are about the CALLER's tree: the audit key the path is
+# minted under, and the tree the direct-run mint's worktree advisory
+# describes. Both read it at the same `${3:-.}` default, so a half added
+# beside them takes its tree from there too rather than resolving one of its
+# own; what <dir> must never become is two arguments' worth of behaviour under
+# one name. The scratch ROOT is the deliberate exception and not a third
+# half: it is main-anchored by the layout above, so it answers to the main
+# checkout rather than to any tree a caller names, and no <dir> reaches it.
+#
+# <dir> defaults to `.` and no shipped caller passes it, which is why the
+# usage lines below do not offer it -- an undocumented argument earns no
+# public contract.
 #
 # Usage, sourced:
 #   . .gaia/scripts/audit-scratch-dir.sh

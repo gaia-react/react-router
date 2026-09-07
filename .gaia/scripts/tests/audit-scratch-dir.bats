@@ -14,11 +14,12 @@
 # .gaia/local.
 #
 # WHICH TREE A CASE RUNS IN is stated here rather than left to be inferred,
-# because the subject reads it from the process working directory and this
-# file has cases on both sides of that. setup() pins a PLAIN checkout, so a
-# case that says nothing about trees gets one, and that is a fixture rather
-# than an accident of where bats was launched. A case needing a different
-# answer cds there itself and the pin decides nothing for it; the
+# because the subject reads it from the `<dir>` positional, which defaults to
+# the process working directory, and this file has cases on both sides of
+# that. setup() pins a PLAIN checkout, so a case that says nothing about trees
+# gets one, and that is a fixture rather than an accident of where bats was
+# launched. A case needing a different answer cds there itself, or names the
+# tree it wants as `<dir>`, and the pin decides nothing for it; the
 # `mint/populate asymmetry` block at the foot is where those live, and it
 # carries both answers rather than one.
 #
@@ -46,13 +47,13 @@ setup() {
   git -C "$REPO" add f
   git -C "$REPO" commit -qm init
 
-  # Pin the ACTING tree, not only the key's tree. The script takes its KEY
-  # tree from the <dir> positional, which defaults to the process working
-  # directory, and its ACTING tree from gaia_is_linked_worktree with NO
-  # argument, which is that working directory and nothing else. So a case can
-  # name the first and nothing but this cd names the second. Left ambient the
-  # second is whatever tree bats happened to be launched from, which no case
-  # here controls.
+  # Pin the tree the cases inherit. The script takes its KEY tree and the
+  # ACTING tree its worktree advisory describes from one place, the <dir>
+  # positional, at one `${3:-.}` default. So a case that passes no <dir> gets
+  # both from the process working directory, and left ambient that is whatever
+  # tree bats happened to be launched from, which no case here controls. This
+  # cd is what makes it a fixture; the two cases at the foot that do pass <dir>
+  # name their trees outright and this pin decides nothing for them.
   #
   # Unpinned, running the suite from a linked worktree fires the mint's
   # advisory note on stderr; `run` captures "$@" 2>&1, so $output becomes the
