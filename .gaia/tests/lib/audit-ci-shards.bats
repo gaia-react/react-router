@@ -2165,15 +2165,30 @@ setup_node_cap_gaps() {
 }
 
 # The workflow files in <workflow-file>... that call gaia-setup-node from at
-# least one step, one basename per line. Only the reach tests read this; the
-# check itself needs the gaps, not the file set.
+# least one step, one basename per line, and `unreadable:<basename>` for one
+# that would not load. Only the reach tests read this; the check itself needs
+# the gaps, not the file set.
 setup_node_workflows() {
-  local file
+  local file caps="${BATS_TEST_TMPDIR:-${TMPDIR:-/tmp}}/setup-node-workflows.$$"
   for file in "$@"; do
-    if setup_node_caps "$file" | grep -q '.'; then
+    # The same per-file status capture `setup_node_cap_gaps` makes, and this
+    # helper needs it for a different reason. Piping into `grep -q` would
+    # discard `read_wf`'s exit 2, leaving an unreadable workflow
+    # indistinguishable from one that calls the action from no step. That
+    # direction fails closed, since either way the file contributes no
+    # basename and a lower count reds the reach assertion, so what is lost is
+    # not the catch but the diagnosis: the assertion would blame a re-narrowed
+    # scan set for a file that simply would not load, which is the wrong
+    # repair. Marking it is what lets the caller tell those two apart.
+    if ! setup_node_caps "$file" > "$caps"; then
+      printf 'unreadable:%s\n' "$(basename "$file")"
+      continue
+    fi
+    if grep -q '.' "$caps"; then
       basename "$file"
     fi
   done
+  rm -f "$caps"
 }
 
 @test "W12: every gaia-setup-node step declares an integer cap under its job's cap" {
@@ -2192,17 +2207,36 @@ setup_node_workflows() {
 # sites stand green for as long as they did, so re-narrowing has to red
 # something other than the check.
 @test "W12 reach: every workflow in the index is in the scanned set" {
-  local tracked missing=""
+  local tracked missing="" listing="$BATS_TEST_TMPDIR/tracked-workflows"
   # The index is a second authority on the set, independent of the directory
   # glob setup() derives it from. A short read -- a glob narrowed to one
   # extension, one prefix, or one file -- leaves the check green over the
   # workflows it still opens, so the difference between the two is what has to
   # be reported.
+  #
+  # Captured to a file rather than read straight from a process substitution,
+  # so this derivation's own status and emptiness are both testable. The loop
+  # below is a per-element claim, and a per-element claim over an empty set is
+  # true while asserting nothing: an unlisted index would report ok having
+  # compared no workflow at all. setup() guards its own derivation exactly
+  # this way, and feeding this loop from a substitution would leave this the
+  # one derivation in the check without it. `-z` is what keeps a C-quoted
+  # non-ASCII path from silently failing the comparison.
+  git -C "$REPO_ROOT" ls-files -z -- \
+    '.github/workflows/*.yml' '.github/workflows/*.yaml' > "$listing" || {
+    echo "could not list tracked workflows; this assertion would otherwise pass over an empty set" >&2
+    return 1
+  }
+  [ -s "$listing" ] || {
+    echo "the index lists no workflow at all; this assertion would otherwise pass having compared nothing" >&2
+    return 1
+  }
+
   while IFS= read -r -d '' tracked; do
     [ -n "$tracked" ] || continue
     printf '%s\n' "${WORKFLOW_FILES[@]}" | grep -qxF "$REPO_ROOT/$tracked" \
       || missing="${missing}${tracked}"$'\n'
-  done < <(git -C "$REPO_ROOT" ls-files -z -- '.github/workflows/*.yml' '.github/workflows/*.yaml')
+  done < "$listing"
 
   [ -z "$missing" ] || {
     printf 'tracked workflows absent from the W12 scan set:\n%s' "$missing" >&2
@@ -2212,11 +2246,21 @@ setup_node_workflows() {
 
 @test "W12 reach: gaia-setup-node call sites are read across more than one workflow" {
   require_yaml_parser
-  local scanned pinned
+  local read_set scanned pinned unreadable
   # Counting the workflows that CONTRIBUTE a step, not the ones scanned: a set
   # widened to every file while the steps still come from one of them is the
   # same blindness with a longer argument list.
-  scanned="$(setup_node_workflows "${WORKFLOW_FILES[@]}" | grep -c '.' || true)"
+  read_set="$(setup_node_workflows "${WORKFLOW_FILES[@]}")"
+  # A workflow that would not load contributes no basename, so it depresses
+  # the count exactly as a re-narrowed set would. Reported separately and
+  # first, because the two have different repairs and the count's own message
+  # can only name one of them.
+  unreadable="$(printf '%s\n' "$read_set" | grep '^unreadable:' || true)"
+  [ -z "$unreadable" ] || {
+    printf 'workflows that would not load, so the count below is not a verdict on the scan set:\n%s\n' "$unreadable" >&2
+    return 1
+  }
+  scanned="$(printf '%s\n' "$read_set" | grep -c '.' || true)"
   # The pre-#1793 scope, driven through the same helper, as the control that
   # makes the assertion above discriminating rather than merely true: it must
   # answer 1, or `-gt 1` is passing for some reason other than the widening.
@@ -2313,6 +2357,23 @@ setup_node_workflows() {
   }
   printf '%s' "$gaps" | grep -qF 'could not be read' || {
     echo "an unparseable workflow was silently skipped rather than reported: ${gaps}" >&2
+    return 1
+  }
+}
+
+# The reach helper's own copy of the arm above. It needs its own fixture
+# because the reach tests run over the real workflow set, where nothing fails
+# to parse, so the marker would otherwise ship undriven. Two files again, and
+# for the same reason: the marker only earns its keep when a healthy sibling
+# is present to be counted normally beside it.
+@test "W12 adversarial: the reach helper marks an unparseable workflow rather than counting it stepless" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w12h.yml" read_set
+  replace_line "$WORKFLOW" "jobs:" "jobs: {" "$doctored"
+
+  read_set="$(setup_node_workflows "$doctored" "$WORKFLOW")"
+  printf '%s\n' "$read_set" | grep -qF "unreadable:$(basename "$doctored")" || {
+    echo "an unparseable workflow read as one that simply calls no step: ${read_set}" >&2
     return 1
   }
 }
