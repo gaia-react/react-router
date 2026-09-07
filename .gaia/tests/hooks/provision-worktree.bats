@@ -27,6 +27,7 @@ setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
   HOOK_ABS="$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)/provision-worktree.sh"
   REPO_ROOT_REAL="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
+  . "$REPO_ROOT_REAL/.gaia/tests/helpers/path.sh"
 }
 
 teardown() {
@@ -704,19 +705,11 @@ SH
   # gone: the Node install for the node-dependent RED suites runs on this leg,
   # ahead of the bats step. A test must not depend on a tool being absent from
   # the environment by accident.
-  # `-x` alone is true for a searchable *directory* named `pnpm`, which would
-  # drop that PATH entry and every real tool it provides; `-f` first restricts
-  # the test to what `command -v` will accept as a command. The here-string
-  # feeds this loop in the current shell, not a subshell, so `filtered_path`
-  # is appended to directly and no intermediate array is needed.
-  filtered_path=""
-  while IFS= read -r path_dir; do
-    [ -n "$path_dir" ] || continue
-    [ -f "$path_dir/pnpm" ] && [ -x "$path_dir/pnpm" ] && continue
-    filtered_path="${filtered_path:+$filtered_path:}$path_dir"
-  done <<<"${PATH//:/$'\n'}"
-
-  PATH="$filtered_path" run bash "$HOOK_ABS" "$WT"
+  # The rebuild itself lives in the shared helper, which is also where the
+  # membership predicate lives: `-x` alone is true for a searchable *directory*
+  # named `pnpm`, and dropping that PATH entry would take every real tool it
+  # provides with it.
+  PATH="$(path_without pnpm)" run bash "$HOOK_ABS" "$WT"
   [ "$status" -eq 0 ]
   grep -qF -- "no pnpm found on PATH" <<<"$output" || return 1
   [ -f "$WT/.react-router/types/.stamp" ]
