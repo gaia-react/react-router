@@ -2,7 +2,10 @@
  * Strategy: `escapeRegExp` is pure, so every case calls it directly. What this
  * suite owns is the **escape set itself**, which is the reason the helper has
  * one home: its call sites build guards whose matching behaviour is decided by
- * which characters get escaped, and no call site asserts that set.
+ * which characters get escaped. Only `exclude-parser-parity.test.ts` pins the
+ * whole set today, and it does so through one call site, against the shell
+ * reference pipeline rather than against this module; the remaining callers
+ * keep passing their own suites with a wrong set.
  *
  * The set is pinned two ways on purpose. The character-by-character table is
  * the readable statement of intent; the round-trip cases are the ones that
@@ -90,8 +93,11 @@ describe('escapeRegExp', () => {
     // An unescaped `[` opens a character class the input never closes, so the
     // `new RegExp` call itself throws. A caller compiling a user-supplied path
     // gets a crash rather than a wrong match.
-    expect(
-      () => new RegExp(escapeRegExp('wiki/[draft].md'), 'u')
-    ).not.toThrow();
+    //
+    // The bracket is deliberately unclosed. A balanced `[draft]` compiles as a
+    // character class whether or not the brackets were escaped, so this case
+    // would stay green with `[` and `]` dropped from the set, asserting
+    // nothing while naming the construct it cannot detect.
+    expect(() => new RegExp(escapeRegExp('wiki/[draft.md'), 'u')).not.toThrow();
   });
 });
