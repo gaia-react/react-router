@@ -345,7 +345,7 @@ readonly PRED_AWK='
 
       # Nouns naming an artifact this repository CONTAINS, which is what makes
       # a recount possible and therefore what makes the finding actionable.
-      split("agents callers commands consumers entries exemptions files fixtures guards helpers hooks jobs labels lines markers members pages rules scripts shards siblings sites skills subcommands suites tests workflows", t, " ")
+      split("agents callers commands consumers entries exemptions files fixtures guards helpers hooks jobs knobs labels lines markers members pages rules scripts shards siblings sites skills subcommands suites tests workflows", t, " ")
       for (i in t) NOUN[t[i]] = 1
 
       # How many words may sit between the cardinal and its noun. One admits

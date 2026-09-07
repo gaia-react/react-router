@@ -14,17 +14,19 @@
 # switched off; and assert the real scanned tree is clean so a regression fails
 # CI.
 #
-# Two tests are load-bearing beyond coverage, and both carry a historical form
-# verbatim rather than a tidied stand-in. A gate written for a class must red
-# against that class's real shape or it asserts nothing about the class it was
-# written for. `reds against the naming-convention header form` and `reds
-# against the derived-count separator form` are the two instances that motivated
-# this gate, copied from the comments they were found in: one spells its
-# cardinal as a word and sits directly against its noun, the other spells it as
-# digits and sits behind a modifier. They fail differently, and a detector that
-# reaches one does not necessarily reach the other -- the digit form was in fact
-# missed by the first draft of the noun vocabulary, which is why it is pinned
-# here rather than trusted.
+# Some tests are load-bearing beyond coverage, and each of those carries a
+# historical form verbatim rather than a tidied stand-in. A gate written for a
+# class must red against that class's real shape or it asserts nothing about
+# the class it was written for. `reds against the naming-convention header
+# form` and `reds against the derived-count separator form` are the instances
+# that motivated this gate, copied from the comments they were found in: one
+# spells its cardinal as a word and sits directly against its noun, the other
+# spells it as digits and sits behind a modifier. They fail differently, and a
+# detector that reaches one does not necessarily reach the other -- the digit
+# form was in fact missed by the first draft of the noun vocabulary, which is
+# why it is pinned here rather than trusted. `reds against the retention-knob
+# header form` joins them on the same terms, and its own comment says which
+# vocabulary entry it stands behind.
 #
 # Assertion style: bash-3.2-safe per .claude/rules/bats-assertions.md.
 #
@@ -185,6 +187,20 @@ true'
 true'
   run_linter
   [ "$status" -eq 1 ]
+}
+
+# A historical form too, and the one that motivated the `knobs` vocabulary
+# entry it pins: that noun was outside the closed list, so this comment stood
+# on main until a human found it (#1777, repaired by #1832) and the gate stayed
+# green against the very instance it was pointed at. Carried verbatim from the
+# comment it was found in, for the reason the forms above it are.
+@test "reds against the retention-knob header form" {
+  fixture_repo
+  fixture_script '# the outlier sweep'"'"'s own documentation must name its three retention knobs
+true'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:1:" <<<"$output"
 }
 
 @test "reds regardless of letter case" {
