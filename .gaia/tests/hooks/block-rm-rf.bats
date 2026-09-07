@@ -807,11 +807,12 @@ t'
 # --- allowed: the ABSOLUTE spelling of a whitelisted scratch path ---
 #
 # `.claude/rules/shell-cwd.md` mandates an absolute path on every Bash call,
-# repo-wide, because a single `cd` persists for the rest of the session and breaks
-# every relative-path hook. A guard that whitelists a scratch directory in its
-# relative spelling only denies the exact form that rule requires, so an agent
-# cannot satisfy both at once. The absolute spelling is authoritative; both are
-# accepted, and these arms are what make the rule and the guard agree.
+# repo-wide, because a `cd` off the repo root persists for the rest of the session
+# and silently disarms the hooks that load their libraries by a cwd-relative path.
+# A guard that whitelists a scratch directory in its relative spelling only denies
+# the exact form that rule requires, so an agent cannot satisfy both at once. The
+# absolute spelling is authoritative; both are accepted, and these arms are what
+# make the rule and the guard agree.
 #
 # The match is a SUFFIX on the scratch segment, never a resolved root. Computing
 # the repo root would need a live `git rev-parse`, which this guard deliberately

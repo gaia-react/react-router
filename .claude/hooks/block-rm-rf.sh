@@ -573,12 +573,13 @@ main() {
       # deny arm and reaches the catch-all allow.
       #
       # `.claude/rules/shell-cwd.md` mandates an absolute path on every Bash call,
-      # repo-wide, because a single `cd` persists for the rest of the session and
-      # breaks every relative-path hook. Whitelisting these directories relatively
-      # only put that rule in direct conflict with this guard: the form the rule
-      # requires is the form the arm below denies, and an agent could satisfy one
-      # or the other but never both. Both spellings are accepted now, and absolute
-      # is the authoritative one to write.
+      # repo-wide, because a `cd` off the repo root persists for the rest of the
+      # session and silently disarms the hooks that load their libraries by a
+      # cwd-relative path. Whitelisting these directories relatively only put that
+      # rule in direct conflict with this guard: the form the rule requires is the
+      # form the arm below denies, and an agent could satisfy one or the other but
+      # never both. Both spellings are accepted now, and absolute is the
+      # authoritative one to write.
       #
       # Matched as a SUFFIX on the scratch segment, deliberately. Recognizing the
       # absolute spelling of a repo-relative target otherwise means resolving the
