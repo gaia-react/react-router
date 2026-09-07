@@ -20,7 +20,7 @@ tool_name=$(jq -r '.tool_name // ""' <<<"$payload")
 
 cmd=$(jq -r '.tool_input.command // ""' <<<"$payload")
 
-# The verb fragment mirrors the mandated `git -C <path> commit|push` form
+# The verb fragment mirrors the prescribed `git -C <path> commit|push` form
 # (.claude/rules/shell-cwd.md): an optional `-C <path>` group between `git`
 # and the subcommand, where <path> may be quoted as long as it holds no
 # spaces. Shared arming decision (.claude/hooks/lib/verb-arming.sh): its data

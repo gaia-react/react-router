@@ -115,7 +115,7 @@ while IFS= read -r seg; do
   # cumulatively with the last absolute one winning, so capture the LAST
   # occurrence (greedy .* consumes through it), a first-only capture lets
   # `git -C <a> -C <b> commit` slip past the commit/push regexes. Handles
-  # `git -C /abs/path` (required by shell-cwd rule).
+  # `git -C /abs/path` (the form the shell-cwd rule prescribes).
   git_cwd=$(printf '%s' "$seg" | sed -nE 's/.*[[:space:]]-C[[:space:]]+([^[:space:]]+).*/\1/p')
   norm=$(printf '%s' "$seg" | sed -E 's/[[:space:]]-C[[:space:]]+[^[:space:]]+//g')
 

@@ -131,8 +131,8 @@ run_hook() {
   [ "$(jq -r '.kind' "$LEDGER")" = "execute" ]
 }
 
-# ---------- 2a. git -C <path> form (shell-cwd.md mandated form, issue #770) ----------
-@test "git -C <path> commit records an execute record (shell-cwd.md mandated form)" {
+# ---------- 2a. git -C <path> form (shell-cwd.md prescribed form, issue #770) ----------
+@test "git -C <path> commit records an execute record (shell-cwd.md prescribed form)" {
   build_repo
   cd "$REPO"
   branch="$(git branch --show-current)"
