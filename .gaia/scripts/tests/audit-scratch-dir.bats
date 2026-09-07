@@ -397,3 +397,41 @@ mk_worktree() {
   ( cd "$wt" && bash "$SCRIPT" --release code-audit-frontend deadbeef ) >/dev/null 2>"$err"
   [ ! -s "$err" ]
 }
+
+# --- which tree the note describes -------------------------------------------
+#
+# The mint resolves two trees: the KEY tree, from the `<dir>` positional, and
+# the ACTING tree the advisory note describes. Both must be the same tree. Take
+# them from different places and a caller naming a tree other than its own cwd
+# gets a path keyed to one and a note decided by the other, so the note either
+# withholds a real confinement or invents one (gaia-react/gaia#1806).
+#
+# These cases pin the two halves together by driving them APART: each runs from
+# one tree and names the other, which is the only shape in which the two
+# spellings differ at all. Absent the positional they are identical (`-C .`
+# from cwd is cwd), so every case above is blind to this split and these two
+# have to exist separately to reach it.
+
+@test "the note follows the tree <dir> names, not the process working directory" {
+  local wt err
+  wt="$(mk_worktree)"
+  err="$TMP/err"
+  # cwd is the PLAIN checkout, <dir> names the worktree. The path is keyed to
+  # the worktree, so the confinement the note describes is real and the caller
+  # is owed it.
+  ( cd "$REPO" && bash "$SCRIPT" code-audit-frontend deadbeef "$wt" ) >/dev/null 2>"$err"
+  grep -qF -- "Bash" "$err"
+  grep -qF -- "Write" "$err"
+}
+
+@test "a <dir> naming a plain checkout silences the note, even from a worktree cwd" {
+  local wt err
+  wt="$(mk_worktree)"
+  err="$TMP/err"
+  # The mirror image: cwd is the worktree, <dir> names the plain checkout. The
+  # path is keyed to a tree with no confinement, so a note here sends the
+  # caller looking for a restriction that does not apply to the directory it
+  # was just handed.
+  ( cd "$wt" && bash "$SCRIPT" code-audit-frontend deadbeef "$REPO" ) >/dev/null 2>"$err"
+  [ ! -s "$err" ]
+}

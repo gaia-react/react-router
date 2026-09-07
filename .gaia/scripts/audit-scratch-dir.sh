@@ -43,6 +43,14 @@
 # already apply: a caller that cannot be given a private directory must fall
 # back to its own judgment, never to a shared path this file invented.
 #
+# ONE TREE, read in one place. The optional trailing <dir> selects the tree
+# every half of this file reads: the audit key the path is minted under, and
+# the tree the direct-run mint's worktree advisory describes. It defaults to
+# `.` and no shipped caller passes it, which is why the usage lines below do
+# not offer it -- an undocumented argument earns no public contract. What it
+# must never become is two arguments' worth of behaviour under one name, so
+# any half added here takes its tree from the same place the existing ones do.
+#
 # Usage, sourced:
 #   . .gaia/scripts/audit-scratch-dir.sh
 #   SCRATCH="$(gaia_audit_scratch_dir code-audit-frontend "$BASE_SHA")"
@@ -246,12 +254,21 @@ if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
   #
   # Advisory: an unresolvable predicate skips the note rather than failing a
   # mint that worked, matching this file's fail-open rule.
+  #
+  # The predicate is asked about the tree the path was KEYED to, which is the
+  # `<dir>` positional gaia_audit_scratch_path reads at the same `${3:-.}`
+  # default. Left argument-free it answers for the process working directory
+  # instead, and the two are the same tree only while nobody passes <dir>: a
+  # caller naming another tree then gets a path keyed to one tree and a note
+  # decided by the other, so the note either withholds a real confinement or
+  # invents one about a tree the caller is not in. Sharing the default is what
+  # keeps the halves aligned by construction rather than by coincidence.
   gaia_scratch_lib="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/main-root-lib.sh"
   if [[ -r "$gaia_scratch_lib" ]]; then
     # shellcheck disable=SC1090
     . "$gaia_scratch_lib" 2>/dev/null || true
   fi
-  if type gaia_is_linked_worktree >/dev/null 2>&1 && gaia_is_linked_worktree 2>/dev/null; then
+  if type gaia_is_linked_worktree >/dev/null 2>&1 && gaia_is_linked_worktree "${3:-.}" 2>/dev/null; then
     printf 'audit-scratch-dir: populate and mutate %s with Bash (cp, redirection, an in-place sed).\n' "$out" >&2
     printf 'audit-scratch-dir: Write/Edit into it is refused -- this is a linked worktree, .gaia/local is one symlink to the main checkout, so the path leaves this tree. That confinement is enforced by the runtime, not by a GAIA guard, so there is nothing here to widen.\n' >&2
   fi
