@@ -1493,29 +1493,14 @@ EOF
   chmod +x "$GH_BIN/git"
 }
 
-# Drop `gh` from PATH entirely, by mirroring every PATH directory that carries
-# one into a shim directory without it. Filtering the directory out wholesale
-# would take jq and git with it on a Homebrew host, where all three share a
-# prefix.
+# Drop `gh` from PATH entirely, taking the mirroring rebuild rather than the
+# dropping one: filtering the directory out wholesale would take jq and git
+# with it on a Homebrew host, where all three share a prefix
+# (.gaia/tests/helpers/path.sh).
 scrub_gh_from_path() {
-  local shim keep dir bin name
-  shim="$BATS_TEST_TMPDIR/nogh"
-  mkdir -p "$shim"
-  keep=""
-  while IFS= read -r dir; do
-    [ -n "$dir" ] || continue
-    [ -d "$dir" ] || continue
-    if path_dir_provides "$dir" gh; then
-      for bin in "$dir"/*; do
-        name="${bin##*/}"
-        [ "$name" = "gh" ] && continue
-        [ -e "$shim/$name" ] || ln -s "$bin" "$shim/$name" 2>/dev/null || true
-      done
-    else
-      keep="${keep:+$keep:}$dir"
-    fi
-  done <<< "$(printf '%s' "$PATH" | tr ':' '\n')"
-  export PATH="$shim${keep:+:$keep}"
+  local rebuilt
+  rebuilt="$(path_shim_without gh)"
+  export PATH="$rebuilt"
 }
 
 # Run the hook with stdout and stderr kept apart, so a permit's silence on

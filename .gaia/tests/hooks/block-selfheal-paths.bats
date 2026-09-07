@@ -709,31 +709,14 @@ run_hook_bash() {
 # `assert_blocked_by_exit` / `assert_allowed_by_exit` while every test above
 # asserts through the JSON pair.
 
-# Mirror every PATH directory that provides jq into a shim without it, rather
-# than dropping the directory: jq sits in /usr/bin on the CI runners, beside
-# the bash, grep and cat both the hook and these assertions still need. Only
-# the "does this directory provide it" question is shared
-# (.gaia/tests/helpers/path.sh); that file's header keeps the rebuild shape
-# with its caller, which is what this is.
+# The mirroring rebuild rather than the dropping one: jq sits in /usr/bin on the
+# CI runners, beside the bash, grep and cat both the hook and these assertions
+# still need, so dropping the directory would take them too
+# (.gaia/tests/helpers/path.sh).
 scrub_jq_from_path() {
-  local shim keep dir bin name
-  shim="$BATS_TEST_TMPDIR/nojq"
-  mkdir -p "$shim"
-  keep=""
-  while IFS= read -r dir; do
-    [ -n "$dir" ] || continue
-    [ -d "$dir" ] || continue
-    if path_dir_provides "$dir" jq; then
-      for bin in "$dir"/*; do
-        name="${bin##*/}"
-        [ "$name" = "jq" ] && continue
-        [ -e "$shim/$name" ] || ln -s "$bin" "$shim/$name" 2>/dev/null || true
-      done
-    else
-      keep="${keep:+$keep:}$dir"
-    fi
-  done <<< "$(printf '%s' "$PATH" | tr ':' '\n')"
-  export PATH="$shim${keep:+:$keep}"
+  local rebuilt
+  rebuilt="$(path_shim_without jq)"
+  export PATH="$rebuilt"
 }
 
 @test "jq absent: a member's edit to a refused path is blocked, not let through" {

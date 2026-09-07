@@ -132,3 +132,87 @@ real_tool() {
   result="$(PATH="$a::" path_without uvx)"
   [ "$result" = "$a" ]
 }
+
+# The shim primitive builds a directory of symlinks, so unlike the pure-builtin
+# `path_without` above it needs `mkdir` and `ln` on the PATH it RUNS under. The
+# fixture directory therefore leads the real PATH rather than replacing it; a
+# bare fixture PATH takes the two commands the primitive itself calls away from
+# it. Prepending stays hermetic for what these tests assert: a real `uvx` further
+# down is mirrored out exactly like the fixture's, which is the property under
+# test, and the mate names are fixture-only.
+@test "path_shim_without leaves the tool unresolvable while its directory-mates still resolve" {
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" uvx
+  real_tool "$shared" mate
+
+  local result
+  result="$(PATH="$shared:$PATH" path_shim_without uvx)"
+
+  # The property every caller actually wants, asserted through bash's lookup
+  # rather than through the helper's own notion of membership.
+  PATH="$result" command -v uvx >/dev/null 2>&1 && {
+    echo "the tool still resolves on the shimmed PATH" >&2
+    return 1
+  }
+  PATH="$result" command -v mate >/dev/null 2>&1 || {
+    echo "a directory-mate stopped resolving; the shim took more than the tool" >&2
+    return 1
+  }
+  true
+}
+
+@test "path_shim_without preserves a mate that path_without would have taken" {
+  # The control for this primitive's whole reason to exist. Dropping the
+  # directory wholesale is the cheaper rebuild and it takes every other command
+  # that directory provides, which is why a caller whose subject still needs one
+  # of them mirrors instead. If this control ever passes on the dropping form,
+  # the two shapes have stopped differing and one of them is redundant.
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" uvx
+  real_tool "$shared" mate
+
+  local dropped
+  dropped="$(PATH="$shared:$PATH" path_without uvx)"
+  PATH="$dropped" command -v mate >/dev/null 2>&1 && {
+    echo "control broken: path_without kept a mate of the dropped tool" >&2
+    return 1
+  }
+
+  local shimmed
+  shimmed="$(PATH="$shared:$PATH" path_shim_without uvx)"
+  PATH="$shimmed" command -v mate >/dev/null 2>&1 || return 1
+  true
+}
+
+@test "path_shim_without keeps a directory that does not provide the tool, rather than mirroring it" {
+  local holds="$BATS_TEST_TMPDIR/holds" clean="$BATS_TEST_TMPDIR/clean"
+  mkdir -p "$holds" "$clean"
+  real_tool "$holds" uvx
+  real_tool "$clean" other
+
+  local result
+  result="$(PATH="$holds:$clean:$PATH" path_shim_without uvx)"
+  grep -qF ":$clean" <<<"$result" || {
+    echo "a directory providing nothing was not kept by its own name" >&2
+    return 1
+  }
+  grep -qF "$holds" <<<"$result" && {
+    echo "the providing directory survived on the rebuilt PATH" >&2
+    return 1
+  }
+  true
+}
+
+@test "path_shim_without refuses rather than writing outside a bats per-test temp dir" {
+  # Sourced outside a test there is nowhere sanctioned to build the shim, and
+  # picking one anyway would write where no caller asked. Asserted on the
+  # diagnostic rather than on the status alone: a non-zero status is also what a
+  # failed mkdir at an unwritable guessed path returns, so the status cannot
+  # tell the refusal apart from the accident it exists to replace.
+  local out rc=0
+  out="$(BATS_TEST_TMPDIR="" path_shim_without uvx 2>&1)" || rc=$?
+  [ "$rc" -ne 0 ]
+  grep -qF 'BATS_TEST_TMPDIR is unset' <<<"$out"
+}

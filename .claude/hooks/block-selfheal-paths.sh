@@ -54,8 +54,8 @@ payload=$(cat)
 # jq is not optional here, and its absence must not fall through to the tool
 # call. Under the errexit armed above, a missing jq ends the agent_type read
 # below at status 127, and PreToolUse reads 127 as a non-blocking error: the
-# refused edit proceeds with no denial and no diagnostic, a fail-open in the
-# one hook whose header commits to the opposite. `deny` cannot carry this
+# refused edit proceeds with no denial and no diagnostic, a fail-open in a
+# hook whose header commits to the opposite. `deny` cannot carry this
 # refusal, since it builds its JSON response with jq, so this arm writes a
 # plain-text reason and exits 2, the exit-code block contract, which needs no
 # interpreter at all.
