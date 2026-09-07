@@ -10,8 +10,15 @@
 # each carried their own ~40-line copy of the same detection + message,
 # hand-deriving the current tree with their own `git rev-parse
 # --show-toplevel` instead of the shared resolver. This is the one
-# definition; both skills and /gaia-release source it instead of
-# re-deriving anything.
+# definition; consumers source it instead of re-deriving anything. Which
+# files those are is deliberately not listed here: an enumeration in a
+# docblock drifts silently while nothing rechecks it.
+# gaia:maintainer-only:start
+# `CALL_SITE_FILES` in .gaia/scripts/tests/main-only-lib.bats is the roster,
+# kept honest by a census test that reds when a flow drifts out of it. That
+# roster covers the flow call sites only, so a shell script sourcing this
+# library is pinned by its own suite instead.
+# gaia:maintainer-only:end
 #
 # Deliberately NOT a resolver. This file sources main-root-lib.sh (the one
 # canonical resolver) and calls its functions; it performs no root
