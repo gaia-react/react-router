@@ -37,11 +37,15 @@ jobs:
 
       - name: Setup Node
         # Same bound-a-stall reasoning as every other gaia-setup-node call site.
-        # `install: none` runs no pnpm install of its own, so the only thing that
-        # can hang here is the Node tarball download or the pnpm store restore;
-        # across recent CI runs this step took 5-10 seconds, and three minutes is
-        # many times its observed cost while leaving twelve of the job's 15 for
-        # the distribution layers below.
+        # Lower than the usual five because `install: none` skips the workspace
+        # install; what the cap still has to hold is the composite's own
+        # provisioning, which `.github/actions/gaia-setup-node/action.yml`
+        # enumerates and already sizes its retry pause against this cap. Read
+        # that set there rather than restating it here, where a copy of it goes
+        # stale the next time the composite changes. Across recent CI runs this
+        # step took 5-10 seconds, and three minutes is many times its observed
+        # cost while leaving twelve of the job's 15 for the distribution layers
+        # below.
         timeout-minutes: 3
         uses: ./.github/actions/gaia-setup-node
         with:

@@ -640,12 +640,16 @@ jobs:
       - if: steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
         name: Setup Node
         # Same bound-a-stall reasoning as the sibling job's install step above,
-        # sized to what this one actually does. `install: none` runs no pnpm
-        # install of its own, so all it can stall on is the Node tarball
-        # download and the pnpm store restore; across recent CI runs it took
-        # 13-18 seconds warm, and three minutes is about ten times that. Lower
-        # than the sibling's five because the work is lower, not because the job
-        # cap is: both jobs cap at 15, and the scenarios below need the rest.
+        # sized to what this one actually does. What the cap has to hold is the
+        # composite's own provisioning, which
+        # `.github/actions/gaia-setup-node/action.yml` enumerates and already
+        # sizes its retry pause against this cap. Read that set there rather
+        # than restating it here, where a copy of it goes stale the next time
+        # the composite changes. Across recent CI runs it took 13-18 seconds
+        # warm, and three minutes is about ten times that. Lower than the
+        # sibling's five because `install: none` skips the workspace install,
+        # not because the job cap is lower: both jobs cap at 15, and the
+        # scenarios below need the rest.
         timeout-minutes: 3
         uses: ./.github/actions/gaia-setup-node
         with:
