@@ -335,12 +335,12 @@ CALL_SITE_FLOW_NAMES=(
 # site above, not here.
 #
 # That warrant stands on its own and deliberately does not rest on
-# main-only-lib.sh's docblock, which reads like the classification criterion
-# and is not one. Taking the docblock at face value reaches the same verdict
-# anyway: its sentence is a conjunction, a VERSION/lockfile/cache-state write
-# AND opening or driving a PR, and /distribution-audit satisfies neither half.
-# CALL_SITE_FILES is the roster, and the `call-site roster:` census tests are
-# what enforce it.
+# main-only-lib.sh's docblock, which disclaims deciding membership and points
+# here instead. Reading the motivating case the docblock does record reaches
+# the same verdict anyway: that sentence is a conjunction, a
+# VERSION/lockfile/cache-state write AND opening or driving a PR, and
+# /distribution-audit satisfies neither half. CALL_SITE_FILES is the roster,
+# and the `call-site roster:` census tests are what enforce it.
 NO_CALL_SITE_FILES=(
   ".claude/commands/distribution-audit.md"
   ".claude/commands/gaia-plan.md"
