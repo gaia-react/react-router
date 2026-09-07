@@ -5,10 +5,11 @@
 # wiki/concepts/Local Working State.md must enumerate one bullet per janitor
 # sweep, its stated count numeral must equal both the enumerated bullet count
 # and the sweep count derived from .claude/hooks/local-janitor.sh source, and
-# the outlier sweep's own documentation must name its three retention knobs
-# and state the maxdepth-1 scope and never-traverse zones. This mechanically
-# enforces the agreement so the enumeration cannot silently drift when a
-# sweep is added, removed, or renumbered.
+# the outlier sweep's own documentation must name the retention knobs
+# source_sweep9_knobs derives from that sweep's own paragraph in the janitor
+# source, and state the maxdepth-1 scope and never-traverse zones. This
+# mechanically enforces the agreement so the enumeration cannot silently
+# drift when a sweep is added, removed, or renumbered.
 #
 # Assertion style: .claude/rules/bats-assertions.md.
 

@@ -68,6 +68,7 @@ import {describe, expect, test} from 'vitest';
 import {existsSync, readdirSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import type {ToolId} from '../../schemas/automation-config.js';
+import {escapeRegExp} from '../../util/escape-regexp.js';
 import {matchesShippedInvocation} from '../../util/gaia-invocation-matcher.js';
 import {resolveRepoRootFromImportMeta} from '../../util/repo-root-fixture.js';
 import {workflowSchedulerTemplatePath, workflowTemplatePath} from '../paths.js';
@@ -103,9 +104,6 @@ const templatePathFor = (key: TemplateKey): string =>
   key === 'scheduler' ?
     workflowSchedulerTemplatePath()
   : workflowTemplatePath(key);
-
-const escapeRegExp = (value: string): string =>
-  value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 // A router recognizes a dispatch token when the token is a
 // `SUBCOMMAND_HANDLERS` map key (`'token': runX`) or an inline

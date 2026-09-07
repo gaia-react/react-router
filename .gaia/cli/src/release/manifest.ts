@@ -20,6 +20,7 @@ import {z} from 'zod';
 import {execFileSync} from 'node:child_process';
 import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
+import {escapeRegExp} from '../util/escape-regexp.js';
 import {gitZArgs, splitZStream} from '../util/git-z.js';
 import {resolveRepoRoot} from '../util/repo-root.js';
 import {hasRejectedExcludeMetacharacter} from './manifest-answers.js';
@@ -76,16 +77,6 @@ const WIKI_OWNED_PREFIXES = [
 const WIKI_OWNED_EXACT = new Set(['wiki/overview.md', 'wiki/README.md']);
 
 export type ManifestClass = 'owned' | 'shared' | 'wiki-owned';
-
-// Escapes every regex metacharacter, including `*`. `.gaia/release-exclude`
-// entries are literal paths, matched the same way by the shell staging
-// pipeline (`release.yml`) and the distribution bats suite; a compiler that
-// rewrote `*` into a glob, or left `[](){}^$|` unescaped, would silently
-// disagree with both of them (or crash on a bracketed path). See
-// `validateExcludeText` below, which is the loud-rejection half of the same
-// fix: this escaping is defense-in-depth for any direct caller.
-const escapeRegExp = (pattern: string): string =>
-  pattern.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 /**
  * Trimmed, non-blank, non-comment lines from a `.gaia/release-exclude` body.
@@ -145,6 +136,14 @@ export const validateExcludeText = (text: string): void => {
  * Emitted from the string form, NOT `RegExp.prototype.source`: `.source` escapes
  * `/` to `\/` and renders the empty pattern as `(?:)`, which would diverge from
  * the shell `awk | sed | awk` text on every slash-bearing line.
+ *
+ * `escapeRegExp` escapes every metacharacter, `*` included, because
+ * `.gaia/release-exclude` entries are literal paths matched the same way by the
+ * shell staging pipeline (`release.yml`) and the distribution bats suite; a
+ * compiler that rewrote `*` into a glob, or left `[](){}^$|` unescaped, would
+ * silently disagree with both of them (or crash on a bracketed path). See
+ * `validateExcludeText` below, which is the loud-rejection half of the same
+ * fix: this escaping is defense-in-depth for any direct caller.
  */
 export const compileExcludeRegexStrings = (text: string): string[] =>
   parseExcludeLines(text).map((line) => `^${escapeRegExp(line)}(/|$)`);
