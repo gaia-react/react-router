@@ -454,6 +454,7 @@ delta_for() {
 lib_dir="${repo_root}/.claude/hooks/lib"
 for lib_file in audit-scope.sh audit-machinery.sh audit-rules-changed.sh audit-clearance.sh; do
   if [ -f "${lib_dir}/${lib_file}" ]; then
+    # shellcheck source=/dev/null
     . "${lib_dir}/${lib_file}" 2>/dev/null || true
   fi
 done
