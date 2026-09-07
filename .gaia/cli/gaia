@@ -17175,11 +17175,14 @@ var windowClasses = (prs) => {
 import { readdirSync, readFileSync as readFileSync7 } from "node:fs";
 import path8 from "node:path";
 
+// src/util/escape-regexp.ts
+var METACHARACTERS = /[.*+?^${}()|[\]\\]/g;
+var escapeRegExp = (value) => value.replaceAll(METACHARACTERS, String.raw`\$&`);
+
 // src/harden/marker.ts
 var MARKER_PREFIX = "gaia-harden: promoted from recurring finding_class";
 
 // src/harden/covered-classes.ts
-var escapeRegExp = (value) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 var tryReadFile = (filePath) => {
   try {
     return readFileSync7(filePath, "utf8");

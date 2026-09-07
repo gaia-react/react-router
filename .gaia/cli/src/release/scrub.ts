@@ -45,6 +45,7 @@ import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
 import {takeValue} from '../util/argv.js';
 import {atomicWriteFileSync} from '../util/atomic-write.js';
+import {escapeRegExp} from '../util/escape-regexp.js';
 import {extractWikilinks} from '../wiki/util/wikilinks.js';
 import {parseExcludeLines} from './manifest.js';
 import {stripMarkerBlocks} from './marker-strip.js';
@@ -1083,10 +1084,6 @@ const runDerivedWorkflowCheck = ({
 
 // Derived excluded-titles check
 
-// Literal regex-escape set for a title body. Matches `escapeRegExp` in
-// `manifest.js`: `-` is deliberately absent, harmless as a literal outside a
-// character class, and the token boundaries below handle hyphen adjacency.
-const TITLE_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 // Exclude BOTH brackets from the inner class: a wikilink target never contains
 // one, and excluding `[` keeps overlapping `[[` prefixes from forcing a rescan
 // (linear, not polynomial).
@@ -1144,15 +1141,14 @@ const buildExcludedTitleSet = (cwd: string): Set<string> => {
   return titles;
 };
 
-const escapeTitle = (title: string): string =>
-  title.replaceAll(TITLE_ESCAPE, String.raw`\$&`);
-
 // Case-sensitive (no `i` flag), whole-token: alphanumerics AND hyphens are
 // token-internal, so `Bundle-time Scrub` never fires inside `Bundle-time
 // Scrubbing` and `CLI-Binary-Split` never fires inside `CLI-Binary-Split-Extra`
-// or `Pre-CLI-Binary-Split`.
+// or `Pre-CLI-Binary-Split`. The boundaries are also why the shared escaper's
+// omission of `-` is safe here: hyphen adjacency is decided by them, not by
+// the escape set.
 const titleToRegex = (title: string): RegExp =>
-  new RegExp(String.raw`(?<![\w-])${escapeTitle(title)}(?![\w-])`);
+  new RegExp(String.raw`(?<![\w-])${escapeRegExp(title)}(?![\w-])`);
 
 // A fence delimiter opens or closes a fenced code block: a line whose trimmed
 // text begins with three backticks or three tildes.

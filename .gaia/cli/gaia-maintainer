@@ -22636,6 +22636,10 @@ import { execFileSync as execFileSync2 } from "node:child_process";
 import { existsSync as existsSync16, readFileSync as readFileSync19 } from "node:fs";
 import path22 from "node:path";
 
+// src/util/escape-regexp.ts
+var METACHARACTERS = /[.*+?^${}()|[\]\\]/g;
+var escapeRegExp = (value) => value.replaceAll(METACHARACTERS, String.raw`\$&`);
+
 // src/release/manifest-answers.ts
 var CATEGORY_HEADER = /^# --- (\d+)\. (.+?) ---\s*$/;
 var REJECTED_PATH_CHARACTERS = [
@@ -22974,7 +22978,6 @@ var WIKI_OWNED_PREFIXES = [
   "wiki/sources/"
 ];
 var WIKI_OWNED_EXACT = /* @__PURE__ */ new Set(["wiki/overview.md", "wiki/README.md"]);
-var escapeRegExp = (pattern) => pattern.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 var parseExcludeLines = (text) => text.split("\n").flatMap((line) => {
   const trimmed = line.trim();
   if (trimmed.length === 0 || trimmed.startsWith("#")) return [];
@@ -25476,7 +25479,6 @@ var runDerivedWorkflowCheck = ({
     }))
   );
 };
-var TITLE_ESCAPE = /[.*+?^${}()|[\]\\]/g;
 var WIKILINK_SPAN = /\[\[[^[\]]*\]\]/g;
 var INLINE_CODE_SPAN = /`[^`]*`/g;
 var addTitlesForExcludeLine = (line, cwd, addTitle) => {
@@ -25501,8 +25503,7 @@ var buildExcludedTitleSet = (cwd) => {
   }
   return titles;
 };
-var escapeTitle = (title) => title.replaceAll(TITLE_ESCAPE, String.raw`\$&`);
-var titleToRegex = (title) => new RegExp(String.raw`(?<![\w-])${escapeTitle(title)}(?![\w-])`);
+var titleToRegex = (title) => new RegExp(String.raw`(?<![\w-])${escapeRegExp(title)}(?![\w-])`);
 var isFenceDelimiter = (line) => {
   const trimmed = line.trim();
   return trimmed.startsWith("```") || trimmed.startsWith("~~~");
