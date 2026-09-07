@@ -267,12 +267,12 @@ install_libs() {
 
 # ---------- the call-site meter ----------
 #
-# main-only-lib.sh's own header (:65-102) records the Milestone 5 false
-# green: the refusal is shell an agent runs through its shell tool, zsh on a
-# stock Mac, not the bash a settings-registered hook gets, and for most of
-# that milestone the refusal was dead under zsh while a bash-only meter read
-# green. This section is what keeps the hardening honest as the call-site
-# count grows. It tests the block AS WRITTEN in each file, under the shell
+# main-only-lib.sh's own header, in the sibling-location idiom note above its
+# location-candidate loop, records the Milestone 5 false green: the refusal is
+# shell an agent runs through its shell tool, zsh on a stock Mac, not the bash
+# a settings-registered hook gets, and for most of that milestone the refusal
+# was dead under zsh while a bash-only meter read green. This section is what
+# keeps the hardening honest as the call-site count grows. It tests the block AS WRITTEN in each file, under the shell
 # the call site really uses, from a REAL linked worktree, not a copy
 # hand-transcribed into this suite.
 #
