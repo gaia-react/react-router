@@ -73,9 +73,13 @@ runs:
     # reaching every call site; gaia-react/gaia#1783 tracks that half on its
     # own terms.
     #
-    # Running the action twice also registers its `post:` step twice. Harmless:
-    # that step is a cache save gated on the action's own `cache` input, which
-    # is left at its `false` default here.
+    # Running the action twice also registers its `post:` step twice. Harmless
+    # as this composite stands, but on two gates rather than one: that step
+    # runs a store prune gated on the action's `run_install` input and a cache
+    # save gated on its `cache` input. This composite passes the action no
+    # `with:` at all, so both sit at their defaults and both arms no-op. A
+    # `with:` added here has to be checked against the gate that governs the
+    # input being added, not against `cache` alone.
     - id: install-pnpm
       continue-on-error: true
       uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
