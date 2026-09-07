@@ -10,7 +10,7 @@ tags: [decision, ci, github-actions]
 
 # Decision: Composite Action Step Timeouts
 
-Every workflow that provisions Node routes through the shared composite action `.github/actions/gaia-setup-node`. A step-level `timeout-minutes` on the caller bounds the whole composite; without one, a stalled pnpm registry fetch or Node tarball download runs until the owning job's own cap fires. The job then reds with a generic job-timeout message attributed to no step, which on a declared-required context blocks a pull request with a failure pointing at nothing, and the obvious next move (re-run) doesn't diagnose it.
+Most workflows that provision Node route through the shared composite action `.github/actions/gaia-setup-node`; the action's own docblock names the callers deliberately left out and why. A step-level `timeout-minutes` on the caller bounds the whole composite; without one, a stalled pnpm registry fetch or Node tarball download runs until the owning job's own cap fires. The job then reds with a generic job-timeout message attributed to no step, which on a declared-required context blocks a pull request with a failure pointing at nothing, and the obvious next move (re-run) doesn't diagnose it.
 
 ## Rule
 
