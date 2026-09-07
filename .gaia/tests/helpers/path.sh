@@ -1,8 +1,16 @@
 #!/usr/bin/env bash
 # Shared bats primitives for building a PATH with a named tool absent.
 #
-# Sourced from a suite's `setup()`, in any of the three bats directories:
+# Sourced from a suite's `setup()`, from any bats directory. The path is
+# repo-root-absolute, so what varies between call sites is only how the suite
+# names its own repo root:
+#
 #   . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
+#   . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
+#
+# `REPO_ROOT` is a `.gaia/scripts/tests/` convention rather than a repo-wide
+# one; a suite that carries no such variable uses the second form, whose `..`
+# depth is that suite's own rather than a constant to copy.
 #
 # This is a CROSS-DIRECTORY helper, alongside `files.sh` and distinct from the
 # per-suite-directory `.gaia/tests/lib/helpers/` and `.gaia/tests/hooks/helpers/`,
