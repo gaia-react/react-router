@@ -22,18 +22,30 @@
 #                                 lookup would run as a command
 #   path_without NAME           - print $PATH with every directory that
 #                                 provides NAME removed
+#   path_shim_without NAME      - print a $PATH on which NAME does not resolve
+#                                 and every other command still does
 #
 # WHY THIS EXISTS, and why the obvious predicate is the bug it replaces.
 #
 # A suite that drives a "tool is not installed" arm has to guarantee the tool is
 # absent, and cannot assume it: a real `uvx`, `specify` or `pnpm` may live
-# anywhere further down a developer's PATH. Every such suite asks one question
-# of each PATH directory, does this directory provide <name> as a command, and
-# acts on the answer in whatever way suits it: `no_stub` and the
-# provision-worktree pnpm arm drop the directory from a rebuilt PATH, while
-# `scrub_gh_from_path` mirrors it into a shim without the tool, deliberately,
-# because on a Homebrew host dropping it would take jq and git too. The
-# question is what lives here. The rebuild shapes stay with their callers.
+# anywhere further down a developer's PATH. Every CLIENT OF THIS FILE gets there
+# by asking one question of each PATH directory, does this directory provide
+# <name> as a command, and rebuilding a PATH from the answer. That is not the
+# only way to reach the same guarantee, and the quantifier is scoped this
+# narrowly on purpose: a suite whose fixture needs a known, small set of
+# binaries can build an allowlist directory holding just those instead, which
+# asks nothing about any PATH directory at all. Both are legitimate; which one
+# fits is decided by whether the subject's binary needs are enumerable.
+# Two rebuild shapes exist for the question this file does ask, and both live
+# here.
+# Dropping each providing directory is the cheaper one and is right whenever the
+# command under test needs nothing else those directories hold. Mirroring each
+# providing directory into a shim of symlinks with the tool left out is the one
+# to reach for when it does: on a Homebrew host or a Linux runner the tool
+# shares a prefix with git, jq, bash, grep and cat, and dropping the directory
+# takes all of them with it. A tree-wide grep for these function names answers
+# which suites call which.
 #
 # The tempting way to write the question is:
 #
@@ -52,7 +64,9 @@
 # DUPLICATION. A rule with two homes gets repaired in one of them, and the copy
 # nobody edited has nothing red to catch the drift, so the two disagree with no
 # gate anywhere between them. Two homes for one rule is the condition; a single
-# home is the repair.
+# home is the repair. That argument is why the rebuild shapes live here too and
+# not with their callers: a second caller reaching for one of them is the moment
+# the condition arrives, not a later one.
 #
 # `.gaia/scripts/tests/bats-path-helper.bats` holds this file to the standard
 # the copies could not be held to, driving the over-strip case directly with a
@@ -77,4 +91,52 @@ path_without() {
     kept="${kept:+$kept:}$dir"
   done <<<"${PATH//:/$'\n'}"
   printf '%s\n' "$kept"
+}
+
+# path_shim_without <name>: print a $PATH on which <name> does not resolve and
+# every other command the current $PATH provides still does. Each providing
+# directory is mirrored into a shim of symlinks with <name> left out; every
+# other directory is kept by its own name, so nothing is copied that does not
+# have to be. A caller assigns the result the same way it assigns
+# `path_without`'s, either for the rest of the test or for one command.
+#
+# The honest limit: this does not preserve lookup ORDER. The shim leads the
+# rebuilt PATH, so a command that a kept earlier directory and a mirrored later
+# one both provide resolves to the mirrored copy rather than to the one bash
+# would have found. Callers here want the named tool gone with everything else
+# still runnable, which that satisfies; a caller who needs true resolution order
+# preserved needs a rebuild that splices each shim in at its own position.
+#
+# The shim lives under the bats per-test temp directory, so it is torn down with
+# the test that built it and two tests cannot share one. That makes this a
+# bats-only primitive, and it says so rather than writing somewhere a caller did
+# not ask for: sourced outside a test, it refuses.
+path_shim_without() {
+  local name="$1" shim kept="" dir bin base
+  if [ -z "${BATS_TEST_TMPDIR:-}" ]; then
+    printf 'path_shim_without: BATS_TEST_TMPDIR is unset; this primitive needs a bats per-test temp dir\n' >&2
+    return 1
+  fi
+  shim="$BATS_TEST_TMPDIR/path-shim-without-$name"
+  mkdir -p "$shim" || return 1
+  while IFS= read -r dir; do
+    [ -n "$dir" ] || continue
+    [ -d "$dir" ] || continue
+    if path_dir_provides "$dir" "$name"; then
+      for bin in "$dir"/*; do
+        base="${bin##*/}"
+        [ "$base" = "$name" ] && continue
+        # First writer wins, so among the MIRRORED directories an earlier one
+        # keeps its precedence over a later one providing the same command.
+        # That is the whole of the ordering this preserves, and the docblock
+        # above states the limit: the shim leads, so a command that a kept
+        # earlier directory and a mirrored later one both provide now resolves
+        # to the mirrored copy.
+        [ -e "$shim/$base" ] || ln -s "$bin" "$shim/$base" 2>/dev/null || true
+      done
+    else
+      kept="${kept:+$kept:}$dir"
+    fi
+  done <<<"${PATH//:/$'\n'}"
+  printf '%s\n' "$shim${kept:+:$kept}"
 }

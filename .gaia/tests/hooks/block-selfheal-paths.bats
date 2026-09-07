@@ -18,6 +18,7 @@
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   HOOKS_SRC=$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)
   HOOK_ABS="$HOOKS_SRC/block-selfheal-paths.sh"
   SETTINGS_ABS="${HOOKS_SRC%/hooks}/settings.json"
@@ -695,6 +696,65 @@ run_hook_bash() {
   # redirect into an allowed path must still be allowed.
   run_hook_bash "code-audit-frontend" "(echo x > app/foo.ts)"
   assert_allowed_by_json
+}
+
+# --- jq absent from PATH (the interpreter the payload read needs) ---
+#
+# The hook reads the payload with jq under errexit, so with no jq on PATH it
+# would die at status 127 before any path check runs. PreToolUse blocks on 2
+# and treats every other non-zero status as a non-blocking error, so that death
+# is a fail-open: the refused edit goes through undenied. The refusal cannot
+# route through `deny`, which builds its JSON with jq, so it takes the
+# exit-code contract instead -- which is why these three assert through
+# `assert_blocked_by_exit` / `assert_allowed_by_exit` while every test above
+# asserts through the JSON pair.
+
+# The mirroring rebuild rather than the dropping one: jq sits in /usr/bin on the
+# CI runners, beside the bash, grep and cat both the hook and these assertions
+# still need, so dropping the directory would take them too
+# (.gaia/tests/helpers/path.sh).
+scrub_jq_from_path() {
+  local rebuilt
+  rebuilt="$(path_shim_without jq)"
+  export PATH="$rebuilt"
+}
+
+@test "jq absent: a member's edit to a refused path is blocked, not let through" {
+  # The payload is built while jq is still reachable; only the hook runs
+  # without it.
+  local json
+  json=$(jq -n '{agent_type: "code-audit-frontend", tool_name: "Edit", tool_input: {file_path: "test/foo.ts"}}')
+  scrub_jq_from_path
+  [ -z "$(command -v jq)" ]
+
+  invoke_hook "$json" "$HOOK_ABS"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: a payload naming no member is allowed, so the machine stays repairable" {
+  # The refusal is narrow on purpose. An unconditional one would deny every
+  # Edit/Write/MultiEdit and every Bash call in every session, the command that
+  # installs jq among them, leaving no way out from inside the session.
+  local json
+  json=$(jq -n '{tool_name: "Bash", tool_input: {command: "brew install jq"}}')
+  scrub_jq_from_path
+  [ -z "$(command -v jq)" ]
+
+  invoke_hook "$json" "$HOOK_ABS"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: a payload merely naming a member is blocked too (the over-deny is deliberate)" {
+  # Without jq the literal cannot be read as a field, so a command that only
+  # mentions a member reads the same as a member's own payload. Over-denying is
+  # the safe direction, and this pins it as intended rather than as a surprise.
+  local json
+  json=$(jq -n '{tool_name: "Bash", tool_input: {command: "echo code-audit-frontend"}}')
+  scrub_jq_from_path
+  [ -z "$(command -v jq)" ]
+
+  invoke_hook "$json" "$HOOK_ABS"
+  assert_blocked_by_exit
 }
 
 # --- structural ---
