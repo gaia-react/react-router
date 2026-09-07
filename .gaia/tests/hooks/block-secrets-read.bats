@@ -208,20 +208,33 @@ run_hook_without_library() {
   # here would leave this test driving a subset under a name claiming the whole
   # set; comparing the two reds instead, and names the arm to write.
   #
-  # Discovery takes EVERY table the library declares and subtracts the ones
-  # named here as carrying no plain-file flag, rather than selecting the ones
-  # whose name happens to say FILE. Selecting on the name would rest the whole
-  # comparison on a convention this test cannot enforce, and a new table under
-  # any other name would sit outside `found` with nothing red. Subtracting puts
-  # the burden the other way: a new table is a mismatch until someone either
-  # gives it an arm or writes it into the list below.
-  #
-  # Deliberately not plain-file tables: PLAIN_READERS and GREP_READERS hold
-  # command words rather than flags, and SHORT_DISCARD and LONG_DISCARD hold
-  # the flags whose value the walk throws away instead of opening.
-  local found known
-  found=$(grep -oE '^_GAIA_RO_[A-Z_]+=' "$lib" | sed 's/=$//' \
-    | grep -vxE '_GAIA_RO_(PLAIN_READERS|GREP_READERS|SHORT_DISCARD|LONG_DISCARD)' | sort) || true
+  local declared mentioned missed found known
+  declared=$(grep -oE '^_GAIA_RO_[A-Z0-9_]+=' "$lib" | sed 's/=$//' | sort -u)
+
+  # That anchor reads a bare column-0 assignment, which is how this library
+  # declares every table today. Rather than widen it once per declaration
+  # keyword someone might later reach for, sweep every _GAIA_RO_ name the file
+  # mentions at all and require the anchor to have reached each one. A table
+  # declared in a shape the anchor cannot read then reds here, rather than
+  # sitting outside the comparison below with nothing left to notice it.
+  mentioned=$(grep -ohE '_GAIA_RO_[A-Z0-9_]+' "$lib" | sort -u)
+  missed=$(comm -23 <(printf '%s\n' "$mentioned") <(printf '%s\n' "$declared"))
+  if [ -n "$missed" ]; then
+    echo "lib/reader-operands.sh names tables this test's discovery cannot read:" >&2
+    echo "  $(echo "$missed" | tr '\n' ' ')" >&2
+    return 1
+  fi
+
+  # Subtract the tables that carry no plain-file flag, rather than selecting
+  # the ones that do by name. Selecting would rest the comparison on a naming
+  # convention this test cannot enforce; subtracting puts the burden the other
+  # way, so a new table is a mismatch until someone either gives it a grammar
+  # arm below or writes it into this list. Deliberately not plain-file tables:
+  # PLAIN_READERS and GREP_READERS hold command words rather than flags, and
+  # SHORT_DISCARD and LONG_DISCARD hold the flags whose value the walk throws
+  # away instead of opening.
+  found=$(printf '%s\n' "$declared" \
+    | grep -vxE '_GAIA_RO_(PLAIN_READERS|GREP_READERS|SHORT_DISCARD|LONG_DISCARD)') || true
   known=$(printf '%s\n' _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN _GAIA_RO_SHORT_FILE | sort)
   if [ "$found" != "$known" ]; then
     echo "the plain-file tables in lib/reader-operands.sh are not the ones this test builds commands for" >&2
