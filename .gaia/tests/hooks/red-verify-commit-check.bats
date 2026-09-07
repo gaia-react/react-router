@@ -270,6 +270,29 @@ test("adds two numbers", () => {
   refute_denied
 }
 
+@test "still allows editing a test present at HEAD when the cwd is a subdirectory" {
+  # The HEAD-side signal recompute is a THIRD cwd-resolved read, separate from
+  # the two the subdirectory tests above cover. It feeds `head_fullnames`, and
+  # empty there means "nothing pre-existed at HEAD", so every current test reads
+  # as new-at-HEAD. The failure is an inverted verdict rather than a stood-down
+  # gate: an ordinary edit to a long-standing test gets denied for want of a RED
+  # it never owed. The two new-test subdirectory cases above cannot see it,
+  # because for a genuinely new test an empty HEAD set is the correct answer.
+  commit_file_at_head "app/utils/x/index.test.ts" 'import {expect, test} from "vitest";
+test("adds two numbers", () => {
+  expect(1 + 1).toBe(2);
+});
+'
+  stage_file "app/utils/x/index.test.ts" 'import {expect, test} from "vitest";
+test("adds two numbers", () => {
+  expect(2 + 1).toBe(3);
+});
+'
+  run_commit_hook_from "app/utils"
+  [ "$status" -eq 0 ]
+  refute_denied
+}
+
 @test "denies a brand-new test added to a file that already exists at HEAD" {
   commit_file_at_head "app/utils/x/index.test.ts" 'import {expect, test} from "vitest";
 test("existing test", () => {

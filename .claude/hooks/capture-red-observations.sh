@@ -187,7 +187,16 @@ if [ -n "$failures" ]; then
     # Recompute the file's {fullName → signal} map once and reuse it.
     if [ "$rel_file" != "$cached_file" ]; then
       cached_file="$rel_file"
-      cached_signals=$(red_ledger_signals "$rel_file" 2>/dev/null || echo "")
+      # From the ACTING TREE, not the process working directory. This helper
+      # reads the test file from disk at a repo-relative path and returns 0 with
+      # no output when it cannot see it, so from a subdirectory `cached_signals`
+      # is empty and the `continue` below appends no ledger line at all.
+      #
+      # That is load-bearing beyond this hook: this is the FEEDER for the
+      # RED-before-GREEN commit gate, which now enforces from a subdirectory.
+      # A feeder that silently records nothing there would leave that gate
+      # denying every new test with no way to satisfy it.
+      cached_signals=$( cd "$tree_root" && red_ledger_signals "$rel_file" 2>/dev/null || echo "")
     fi
     [ -n "$cached_signals" ] || continue
 

@@ -7,12 +7,14 @@
 # lint-hook-cwd-relative-loads.sh: flag every place a hook under
 # `.claude/hooks/**` locates FRAMEWORK CODE by a bare repository-root-relative
 # path, which resolves against the process working directory rather than
-# against the hook's own checkout. Run it directly from the repo root:
+# against the hook's own checkout. It roots itself at its own on-disk location,
+# so it can be run from anywhere:
 # `bash .gaia/scripts/lint-hook-cwd-relative-loads.sh`.
 #
 # Exit 0 when clean, and 1 either with a file:line report on any hit or on a
 # scan surface that came back empty or short. Exit 2 says the gate never ran:
-# git is unavailable or the discovery command itself failed.
+# git is unavailable, its own root is unresolvable, the discovery command
+# failed, or awk could not read a file in the surface.
 # gaia:maintainer-only:start
 #
 # Enforced by the sibling bats suite
@@ -54,7 +56,12 @@
 # invoked by absolute path from a working directory nobody controls. It scans
 # no other directory, so it needs neither the shared scan-surface library nor
 # its bats-fixture discriminator. A path this gate reports is repo-relative
-# because the discovery is `git ls-files` run from the repository root.
+# because the discovery is `git ls-files` scoped to this gate's own root.
+#
+# Both the quoted and the unquoted spelling of each position are read. The
+# distinction that decides a hit is literal-versus-variable-rooted, never
+# quoted-versus-unquoted: `[ -f ".claude/hooks/lib/x.sh" ]` is the same defect
+# as its bare spelling, while `[ -f "$_lib_dir/x.sh" ]` is the repair.
 #
 # WHAT COUNTS AS A HIT, four positions, each one a place a bare literal is
 # resolved against the working directory at run time:
@@ -127,6 +134,18 @@ command -v git >/dev/null 2>&1 || {
   exit 2
 }
 
+# This gate's own root, from its own on-disk location rather than from the
+# process working directory. A gate that flags cwd-resolved paths must not
+# resolve its own scan surface that way: run from a subdirectory it would find
+# nothing and blame the tree, and run from another checkout entirely it would
+# scan that one. Every git call and every file read below is scoped to this.
+gate_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || gate_root=''
+if [ -z "$gate_root" ] || [ ! -d "$gate_root/.claude/hooks" ]; then
+  printf 'lint-hook-cwd-relative-loads: cannot resolve this gate own repository root from %s, so no file was scanned\n' \
+    "${BASH_SOURCE[0]}" >&2
+  exit 2
+fi
+
 # The scan surface, from the index rather than from a filesystem walk, so an
 # untracked build artifact or a live worktree under .claude/worktrees/ cannot
 # enter the set. NUL-delimited, so a path carrying whitespace or a non-ASCII
@@ -156,7 +175,7 @@ trap 'rm -f -- "$surface_file"' EXIT
 trap 'exit 130' INT
 trap 'exit 143' TERM
 
-if ! git ls-files -z -- '.claude/hooks/*.sh' >"$surface_file" 2>/dev/null; then
+if ! git -C "$gate_root" ls-files -z -- '.claude/hooks/*.sh' >"$surface_file" 2>/dev/null; then
   printf 'lint-hook-cwd-relative-loads: the tracked-file discovery failed, so no file was scanned\n' >&2
   exit 2
 fi
@@ -249,18 +268,24 @@ readonly OWN_AWK='
       return d
     }
 
-    # bare_operand(s, pat): 1 when `pat` is followed by a bare repository-root-
-    # relative literal. The operand must start with a dot immediately after the
-    # separator, so a quoted or variable-rooted path (\"$_lib_dir/x.sh\") never
-    # matches, which is the whole distinction this gate enforces.
+    # bare_operand(s, pat): 1 when `pat` is followed by a repository-root-
+    # relative LITERAL. The distinction this gate enforces is literal versus
+    # variable-rooted, NOT quoted versus unquoted: `[ -f ".claude/x.sh" ]` is
+    # the same defect as its unquoted spelling, while `[ -f "$_lib_dir/x.sh" ]`
+    # is the repair. So every arm admits an optional surrounding quote and then
+    # requires a literal dot, which a variable-rooted path can never satisfy
+    # because a `$` stands where that dot would be.
     function bare_operand(s, pat) {
       return (s ~ pat)
     }
 
     BEGIN {
-      TEST_PAT   = "(\\[|\\[\\[)[[:space:]]+-[a-zA-Z][[:space:]]+\\.(claude|gaia|specify)/"
-      SOURCE_PAT = "(^|[;&|(){}][[:space:]]*|&&[[:space:]]*|\\|\\|[[:space:]]*|then[[:space:]]+|do[[:space:]]+|else[[:space:]]+)(\\.|source)[[:space:]]+\\.(claude|gaia|specify)/"
-      RUN_PAT    = "(bash|sh|zsh|node|python3?|awk[[:space:]]+-f|\\}\")[[:space:]]+(-[A-Za-z][[:space:]]+)?\\.(claude|gaia|specify)/"
+      # `[\"\047]?` is the optional opening quote, double or single. It sits
+      # before the literal dot in all three arms, so the quoted and unquoted
+      # spellings of one defect are read the same way.
+      TEST_PAT   = "(\\[|\\[\\[)[[:space:]]+-[a-zA-Z][[:space:]]+[\"\047]?\\.(claude|gaia|specify)/"
+      SOURCE_PAT = "(^|[;&|(){}][[:space:]]*|&&[[:space:]]*|\\|\\|[[:space:]]*|then[[:space:]]+|do[[:space:]]+|else[[:space:]]+)(\\.|source)[[:space:]]+[\"\047]?\\.(claude|gaia|specify)/"
+      RUN_PAT    = "(bash|sh|zsh|node|python3?|awk[[:space:]]+-f|\\}\")[[:space:]]+(-[A-Za-z][[:space:]]+)?[\"\047]?\\.(claude|gaia|specify)/"
       ASSIGN_PAT = "=[[:space:]]*\"?\\.(claude|gaia|specify)/[^\"[:space:]]*\\.(sh|bash|mjs|cjs|js|py)\"?([[:space:]]|;|$)"
       in_dq = 0
       hd = ""
@@ -291,13 +316,13 @@ readonly OWN_AWK='
       code = code_prefix($0)
 
       if (bare_operand(code, TEST_PAT))
-        printf "%s:%d: a file-test operand names a bare repo-relative path, so it resolves against the process working directory: root it at ${BASH_SOURCE[0]} instead\n", FILENAME, FNR
+        printf "%s:%d: a file-test operand names a bare repo-relative path, so it resolves against the process working directory: root it at ${BASH_SOURCE[0]} instead\n", file, FNR
       else if (bare_operand(code, SOURCE_PAT))
-        printf "%s:%d: a source operand names a bare repo-relative path, so a working directory below the repository root loads nothing and the capability probe behind it reads that as a missing library: root it at ${BASH_SOURCE[0]} instead\n", FILENAME, FNR
+        printf "%s:%d: a source operand names a bare repo-relative path, so a working directory below the repository root loads nothing and the capability probe behind it reads that as a missing library: root it at ${BASH_SOURCE[0]} instead\n", file, FNR
       else if (bare_operand(code, RUN_PAT) && code !~ /(^|[[:space:]&|;(])cd[[:space:]]/)
-        printf "%s:%d: an interpreter argument names a bare repo-relative path, so it resolves against the process working directory: root it at ${BASH_SOURCE[0]}, or cd to the intended tree first\n", FILENAME, FNR
+        printf "%s:%d: an interpreter argument names a bare repo-relative path, so it resolves against the process working directory: root it at ${BASH_SOURCE[0]}, or cd to the intended tree first\n", file, FNR
       else if (bare_operand(code, ASSIGN_PAT))
-        printf "%s:%d: this assignment names a bare repo-relative path to a code file, so wherever it is later tested or run it resolves against the process working directory: root it at ${BASH_SOURCE[0]} instead\n", FILENAME, FNR
+        printf "%s:%d: this assignment names a bare repo-relative path to a code file, so wherever it is later tested or run it resolves against the process working directory: root it at ${BASH_SOURCE[0]} instead\n", file, FNR
 
       # Advance the string tracker last, over the code part only, so a match on
       # this line is decided before the line can change the context.
@@ -312,8 +337,18 @@ report=""
 # `set -u`. The floor check above already returns on an empty set, so this is
 # belt-and-braces against a later edit moving the loop ahead of it.
 for f in ${files[@]+"${files[@]}"}; do
-  [ -f "$f" ] || continue
-  hits=$(awk "$OWN_AWK" "$f") || hits=""
+  # `$f` stays repo-relative, because that is what a report has to print; the
+  # read is rooted at $gate_root, so it does not depend on the cwd either.
+  [ -f "$gate_root/$f" ] || continue
+  # awk's status is READ, not discarded. Swallowing it would let a file awk
+  # cannot open or parse count as clean, which is the same "reports clean over
+  # input it never read" failure the surface floor above refuses on; leaving it
+  # only here would put the whole guard's remaining blind spot in the one place
+  # the floor cannot see.
+  if ! hits=$(awk -v file="$f" "$OWN_AWK" "$gate_root/$f"); then
+    printf 'lint-hook-cwd-relative-loads: ERROR: awk could not scan %s, so this file was not checked\n' "$f" >&2
+    exit 2
+  fi
   [ -z "$hits" ] || report+="$hits"$'\n'
 done
 

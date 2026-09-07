@@ -264,7 +264,13 @@ while IFS= read -r path; do
   head_src=$(git show "HEAD:$rel" 2>/dev/null || true)
   head_fullnames=""
   if [ -n "$head_src" ]; then
-    head_ndjson=$(printf '%s' "$head_src" \
+    # From the acting tree, like the two reads above: $signal_script is the bare
+    # repo-relative literal red_ledger_signal_script returns, so from a
+    # subdirectory node cannot find it, `|| true` swallows the failure, and
+    # head_fullnames stays empty. Empty means "nothing pre-existed at HEAD", so
+    # every current test reads as new-at-HEAD and an ordinary edit to a test
+    # that has always been there is denied for want of a RED it never owed.
+    head_ndjson=$( cd "$tree_root" && printf '%s' "$head_src" \
       | node "$signal_script" "$rel" --stdin 2>/dev/null || true)
     if [ -n "$head_ndjson" ]; then
       head_fullnames=$(printf '%s\n' "$head_ndjson" \

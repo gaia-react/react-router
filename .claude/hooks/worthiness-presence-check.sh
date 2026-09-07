@@ -162,9 +162,9 @@ classifier_script="$_gaia_root/.gaia/scripts/classifier/classify-determinism.mjs
 # The shared main-root resolver, sourced from this hook's own checkout via
 # BASH_SOURCE (never process cwd): the worthiness ledger is per-tree state,
 # so its root is the ACTING tree, not wherever this hook process happens to
-# sit.
-gaia_scripts="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || exit 0
-gaia_scripts="$gaia_scripts/.gaia/scripts"
+# sit. Derived from the root resolved just above rather than resolving it a
+# second time, so the two cannot answer differently.
+gaia_scripts="$_gaia_root/.gaia/scripts"
 # shellcheck source=/dev/null
 source "$gaia_scripts/main-root-lib.sh" 2>/dev/null || exit 0
 

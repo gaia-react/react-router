@@ -53,11 +53,23 @@ teardown() {
   return 0
 }
 
-# fixture_repo_bare: an initialized git repo in $TMP with no hook files, so the
+# fixture_repo_bare: an initialized git repo in $TMP with an empty hooks
+# directory and a COPY of the gate staged at its own repo-relative path, so the
 # discovery comes back empty. Point a test that needs a short surface here.
+#
+# The staged copy is what makes every test below mean anything. The gate roots
+# its scan surface at its OWN on-disk location rather than at the working
+# directory, so running $LINTER with cwd set to the fixture would scan the real
+# repository and report it clean, no matter what the fixture holds. Only a copy
+# living inside the fixture reads the fixture. The empty `.claude/hooks` is
+# deliberate too: the gate refuses (exit 2) when it cannot see that directory
+# at its root, so creating it is what leaves the short-surface arm reachable.
 fixture_repo_bare() {
   TMP="$(mktemp -d -t hookcwd-lint-XXXXXX)"
   git -C "$TMP" init -q .
+  mkdir -p "$TMP/.claude/hooks" "$TMP/.gaia/scripts"
+  STAGED_LINTER="$TMP/.gaia/scripts/lint-hook-cwd-relative-loads.sh"
+  cp "$LINTER" "$STAGED_LINTER"
 }
 
 # fixture_repo: fixture_repo_bare plus enough benign tracked hooks to clear the
@@ -90,9 +102,10 @@ $1" > "$TMP/.claude/hooks/check.sh"
   git -C "$TMP" add -A
 }
 
-# run_linter: run the gate from inside the fixture repo.
+# run_linter: run the fixture's own staged copy of the gate. cwd is set to the
+# fixture only so a failure here reads naturally; the gate no longer consults it.
 run_linter() {
-  run bash -c "cd '$TMP' && bash '$LINTER' 2>&1"
+  run bash -c "cd '$TMP' && bash '$STAGED_LINTER' 2>&1"
 }
 
 # --- the class fires, one test per position the header enumerates -----------
@@ -132,6 +145,55 @@ type red_ledger_path >/dev/null 2>&1 || exit 0'
   [ "$status" -eq 1 ]
   grep -qF -- ".claude/hooks/check.sh:3:" <<<"$output" || return 1
   grep -qF -- "this assignment names a bare repo-relative path to a code file" <<<"$output"
+}
+
+@test "flags the QUOTED spelling of each position, not only the bare one" {
+  # The distinction is literal-versus-variable-rooted, never quoted-versus-
+  # unquoted: a quoted literal resolves against the working directory exactly
+  # as its bare spelling does. A gate that read only the bare form would report
+  # clean over half its own class, and the tree carried a live quoted instance.
+  fixture_repo
+  fixture_hook '[ -f ".claude/hooks/lib/red-ledger.sh" ] && . ".claude/hooks/lib/red-ledger.sh"
+bash ".gaia/scripts/token-tally.sh" --action review'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".claude/hooks/check.sh:3:" <<<"$output" || return 1
+  grep -qF -- ".claude/hooks/check.sh:4:" <<<"$output" || return 1
+  grep -qF -- "a file-test operand names a bare repo-relative path" <<<"$output" || return 1
+  grep -qF -- "an interpreter argument names a bare repo-relative path" <<<"$output"
+}
+
+@test "flags a single-quoted literal too" {
+  fixture_repo
+  fixture_hook ". '.gaia/scripts/ledger-path-lib.sh'"
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "a source operand names a bare repo-relative path" <<<"$output"
+}
+
+@test "a quoted VARIABLE-rooted path is still the repair, not a hit" {
+  # The negative control for the two tests above: adding the optional quote must
+  # not turn the advertised repair into a finding.
+  fixture_repo
+  fixture_hook '_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=""
+[ -f "$_lib_dir/red-ledger.sh" ] && . "$_lib_dir/red-ledger.sh"
+bash "$_lib_dir/../../.gaia/scripts/token-tally.sh"'
+  run_linter
+  [ "$status" -eq 0 ]
+  grep -qF -- "check.sh" <<<"$output" && return 1
+  true
+}
+
+@test "scans from its own root, not the working directory" {
+  # The gate flags cwd-resolved paths, so it must not resolve its own surface
+  # that way. Run from a subdirectory of the fixture it must still find the
+  # planted hook rather than reporting an empty surface.
+  fixture_repo
+  fixture_hook '[ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh'
+  mkdir -p "$TMP/app/components"
+  run bash -c "cd '$TMP/app/components' && bash '$STAGED_LINTER' 2>&1"
+  [ "$status" -eq 1 ]
+  grep -qF -- ".claude/hooks/check.sh:3:" <<<"$output"
 }
 
 @test "reaches a hook under lib/, not only the top level" {

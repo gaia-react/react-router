@@ -75,6 +75,24 @@ run_capture() {
   fi
 }
 
+# The same, from a subdirectory of the repository root. The agent's working
+# directory is wherever the session last left it, so the capture has to record
+# from a depth nobody chose.
+# Args: <subdir> <tool_name> <command> [json_override_relpath]
+run_capture_from() {
+  local sub="$1" tool="$2" cmd="$3" override_rel="${4:-}"
+  local payload
+  payload=$(jq -n --arg t "$tool" --arg c "$cmd" \
+    '{tool_name: $t, tool_input: {command: $c}, tool_response: {stdout: "", stderr: "", interrupted: false}}')
+  mkdir -p "$REPO_ROOT/$sub"
+  if [ -n "$override_rel" ]; then
+    RED_CAPTURE_JSON_OVERRIDE="$REPO_ROOT/$override_rel" \
+      invoke_hook_in "$REPO_ROOT/$sub" "$payload" "$HOOK"
+  else
+    invoke_hook_in "$REPO_ROOT/$sub" "$payload" "$HOOK"
+  fi
+}
+
 # Count ledger lines (0 when the file is absent).
 ledger_lines() {
   [ -f "$LEDGER_ABS" ] && wc -l < "$LEDGER_ABS" | tr -d ' ' || echo 0
@@ -96,6 +114,23 @@ ledger_lines() {
   [ "$(printf '%s' "$line" | jq -r '.failureKind')" = "assertion" ]
   [[ "$(printf '%s' "$line" | jq -r '.signal')" == sha256:* ]]
   [[ "$(printf '%s' "$line" | jq -r '.observedAt')" == *T*Z ]]
+}
+
+@test "still records a RED when the working directory is a subdirectory" {
+  # This hook is the FEEDER for the RED-before-GREEN commit gate, and that gate
+  # now enforces from a subdirectory. The signal helper reads the test file at a
+  # repo-relative path and returns 0 with no output when it cannot see it, so a
+  # cwd-resolved read here records nothing and says nothing. Feeder silent plus
+  # gate active is the worst of the two states: every new test denied, with no
+  # way to satisfy the demand.
+  run_capture_from "app" "Bash" \
+    "pnpm test --run $FIX_REL/mixed-pass-fail.test.ts" \
+    "$JSON_REL/assertion-fail.json"
+  [ "$status" -eq 0 ]
+  [ "$(ledger_lines)" -eq 1 ]
+  line=$(cat "$LEDGER_ABS")
+  [ "$(printf '%s' "$line" | jq -r '.fullName')" = "fails on assertion" ]
+  grep -qE '^sha256:' <<<"$(printf '%s' "$line" | jq -r '.signal')"
 }
 
 @test "recorded signal matches the helper's signal for that test" {
