@@ -44,12 +44,12 @@
 #   1. Transitive inputs. A step invoking `run-all.sh` gets that script checked,
 #      not the files the scenarios inside it inspect. Reaching those needs either
 #      a declared-inputs convention on every gated step or a runtime witness.
-#   2. Paths built at runtime. A `$VAR/` prefix is resolved when the workflow
-#      states the value outright, in an `env:` block whose value is a literal
-#      string; that much is right there in the file. Everything else stays
-#      invisible to a token scan and always will be: a value that is a `${{ }}`
-#      expression, a name assigned in the shell, a glob expansion, a path
-#      assembled from a variable that is not a whole leading segment.
+#   2. Paths built at runtime. A `$NAME` or `${NAME}` reference is resolved
+#      wherever it sits in the body, not only as a leading segment, whenever the
+#      workflow states the value outright in an `env:` block whose value is a
+#      literal string; that much is right there in the file. Everything else
+#      stays invisible to a token scan and always will be: a value that is a
+#      `${{ }}` expression, a name assigned in the shell, and a glob expansion.
 #   3. Composite-action bodies. A local action's own `run:` steps are not
 #      descended into; only its `action.yml` is checked.
 #   4. A filter propagated across jobs. The gate scan reads
@@ -915,6 +915,11 @@ YAML
   # `${VAR}/x` splits into `VAR` and `/x`. Neither reaches the membership test as
   # a path, so an unexpanded body grades the step as reading nothing but its own
   # workflow file, which is the same silent green a broken token scan gives.
+  #
+  # The third and fourth put the reference somewhere other than the leading
+  # segment, which is where the header's out-of-scope note used to draw a
+  # boundary the substitution does not actually have. Pinned here so the prose is
+  # a claim that re-checks itself rather than one that decays.
   cat > "$dir/.github/workflows/fixture.yml" <<'YAML'
 name: Fixture
 on:
@@ -924,6 +929,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       SCRIPTS_DIR: scripts
+      LEAF: third
+      MIDDLE: nested
     steps:
       - uses: dorny/paths-filter@v4
         id: filter
@@ -936,15 +943,18 @@ jobs:
         run: |
           bash "$SCRIPTS_DIR/guard.sh"
           bash "${SCRIPTS_DIR}/other.sh"
+          bash "scripts/$LEAF.sh"
+          bash "scripts/${MIDDLE}/fourth.sh"
 YAML
   printf '%s\n' \
-    ".github/workflows/fixture.yml" "scripts/guard.sh" "scripts/other.sh" > "$dir/tracked"
+    ".github/workflows/fixture.yml" "scripts/guard.sh" "scripts/other.sh" \
+    "scripts/third.sh" "scripts/nested/fourth.sh" > "$dir/tracked"
 
   run filter_coverage pairs "$dir/tracked" "$dir/.github/workflows/fixture.yml"
   [ "$status" -eq 0 ] || { echo "extractor failed: $output" >&2; return 1; }
 
   local script
-  for script in scripts/guard.sh scripts/other.sh; do
+  for script in scripts/guard.sh scripts/other.sh scripts/third.sh scripts/nested/fourth.sh; do
     printf '%s\n' "$output" | grep -q "^unreached.*$script" || {
       echo "the guard did not report $script; a path indirected through env: is invisible to it" >&2
       return 1
