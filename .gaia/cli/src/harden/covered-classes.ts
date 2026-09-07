@@ -12,10 +12,8 @@
  */
 import {readdirSync, readFileSync} from 'node:fs';
 import path from 'node:path';
+import {escapeRegExp} from '../util/escape-regexp.js';
 import {MARKER_PREFIX} from './marker.js';
-
-const escapeRegExp = (value: string): string =>
-  value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
 
 // Returns null for an unreadable file rather than throwing, so one bad rule
 // file doesn't abort the whole scan.

@@ -30,8 +30,7 @@
  * adopter clone carries neither this module nor its consumers.
  */
 
-const escapeRegExp = (value: string): string =>
-  value.replaceAll(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`);
+import {escapeRegExp} from './escape-regexp.js';
 
 // An invocation-shaped string for `commandPath` in `text`: the binary name,
 // optionally closed by a quote, then the space-separated path, bounded so
