@@ -204,11 +204,24 @@ run_hook_without_library() {
   . "$lib"
 
   # Which tables exist is the library's to say, so read it rather than restate
-  # it. Each table below needs its own grammar arm, so a table added there and
-  # not here would leave this test driving a subset under a name claiming the
-  # whole set; comparing the two reds instead, and points at the arm to write.
+  # it. Each table needs its own grammar arm below, so one added there and not
+  # here would leave this test driving a subset under a name claiming the whole
+  # set; comparing the two reds instead, and names the arm to write.
+  #
+  # Discovery takes EVERY table the library declares and subtracts the ones
+  # named here as carrying no plain-file flag, rather than selecting the ones
+  # whose name happens to say FILE. Selecting on the name would rest the whole
+  # comparison on a convention this test cannot enforce, and a new table under
+  # any other name would sit outside `found` with nothing red. Subtracting puts
+  # the burden the other way: a new table is a mismatch until someone either
+  # gives it an arm or writes it into the list below.
+  #
+  # Deliberately not plain-file tables: PLAIN_READERS and GREP_READERS hold
+  # command words rather than flags, and SHORT_DISCARD and LONG_DISCARD hold
+  # the flags whose value the walk throws away instead of opening.
   local found known
-  found=$(grep -oE '^_GAIA_RO_[A-Z_]*FILE[A-Z_]*=' "$lib" | sed 's/=$//' | sort)
+  found=$(grep -oE '^_GAIA_RO_[A-Z_]+=' "$lib" | sed 's/=$//' \
+    | grep -vxE '_GAIA_RO_(PLAIN_READERS|GREP_READERS|SHORT_DISCARD|LONG_DISCARD)' | sort) || true
   known=$(printf '%s\n' _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN _GAIA_RO_SHORT_FILE | sort)
   if [ "$found" != "$known" ]; then
     echo "the plain-file tables in lib/reader-operands.sh are not the ones this test builds commands for" >&2
