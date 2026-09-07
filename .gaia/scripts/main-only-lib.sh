@@ -4,15 +4,18 @@
 # GAIA main-only-flow refusal helper (single-sourced).
 #
 # The one place that renders the "this flow is main-checkout-only" refusal.
-# Three flows write `.gaia/VERSION` / a lockfile / cache state and open or
-# drive a PR: those belong on the main checkout, never on a per-SPEC
-# worktree branch. Before this file existed, /update-gaia and /update-deps
-# each carried their own ~40-line copy of the same detection + message,
-# hand-deriving the current tree with their own `git rev-parse
-# --show-toplevel` instead of the shared resolver. This is the one
-# definition; consumers source it instead of re-deriving anything. Which
-# files those are is deliberately not listed here: an enumeration in a
-# docblock drifts silently while nothing rechecks it.
+# What motivated it: a flow that writes `.gaia/VERSION` / a lockfile / cache
+# state and opens or drives a PR belongs on the main checkout, never on a
+# per-SPEC worktree branch. That is the motivating case, not a membership
+# test. The set carrying the refusal has grown past it, and members of that
+# set match one half of the description without the other, so whether a new
+# flow belongs is not answered by reading this paragraph. Before this file
+# existed, /update-gaia and /update-deps each carried their own ~40-line
+# copy of the same detection + message, hand-deriving the current tree with
+# their own `git rev-parse --show-toplevel` instead of the shared resolver.
+# This is the one definition; consumers source it instead of re-deriving
+# anything. Which files those are is deliberately not listed here: an
+# enumeration in a docblock drifts silently while nothing rechecks it.
 # gaia:maintainer-only:start
 # `CALL_SITE_FILES` in .gaia/scripts/tests/main-only-lib.bats is the roster,
 # kept honest by a census test that reds when a flow drifts out of it. That
@@ -77,7 +80,7 @@
 #
 # Both statements below are written for the shell that actually sources this
 # file. Unlike a hook, which settings.json invokes as `bash <script>`, the
-# three call sites are markdown blocks an agent runs through its shell tool,
+# flow call sites are markdown blocks an agent runs through its shell tool,
 # so the sourcing shell is that machine's login shell -- zsh on a stock Mac.
 # Under zsh BASH_SOURCE is unset, and `declare -F` declares a float and
 # succeeds rather than answering whether a function exists, so the resolver
