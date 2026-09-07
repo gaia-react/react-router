@@ -23,7 +23,7 @@
       "hook": ".claude/hooks/block-env-read.sh",
       "scope": "any",
       "state": [],
-      "why": "Pattern-matches a Bash command string only; touches no tree-scoped state."
+      "why": "Pattern-matches a Bash command string, a Read payload's file_path, and a Grep payload's path and glob, each against a path predicate; the Grep matcher is registered because content mode returns file contents and so reads a path exactly as Read does. Reads no file and touches no tree-scoped state."
     },
     {
       "hook": ".claude/hooks/block-env-write.sh",
@@ -83,7 +83,7 @@
       "hook": ".claude/hooks/block-secrets-read.sh",
       "scope": "any",
       "state": [],
-      "why": "Pattern-matches a Bash command string and a Read payload's file_path against a path predicate; reads no file and touches no tree-scoped state."
+      "why": "Pattern-matches a Bash command string, a Read payload's file_path, and a Grep payload's path and glob, each against a path predicate; the Grep matcher is registered because content mode returns file contents and so reads a path exactly as Read does. Reads no file and touches no tree-scoped state."
     },
     {
       "hook": ".claude/hooks/block-secrets-write.sh",
