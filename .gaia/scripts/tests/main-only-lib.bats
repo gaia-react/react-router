@@ -339,7 +339,8 @@ CALL_SITE_FLOW_NAMES=(
 # and is not one. Taking the docblock at face value reaches the same verdict
 # anyway: its sentence is a conjunction, a VERSION/lockfile/cache-state write
 # AND opening or driving a PR, and /distribution-audit satisfies neither half.
-# CALL_SITE_FILES is the roster, and tests 14 and 15 are what enforce it.
+# CALL_SITE_FILES is the roster, and the `call-site roster:` census tests are
+# what enforce it.
 NO_CALL_SITE_FILES=(
   ".claude/commands/distribution-audit.md"
   ".claude/commands/gaia-plan.md"
