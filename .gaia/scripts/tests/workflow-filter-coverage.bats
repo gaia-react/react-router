@@ -31,10 +31,11 @@
 #   the globs of the filter output that gates it,
 #
 # where "names literally" means a git-tracked file appearing as a whitespace-
-# delimited token in the step's `run:` body, plus the `action.yml` of a local
-# composite action the step `uses:`. Each gated step's own workflow file counts as
-# an input of itself, which is the self-coverage half: a gate must re-run on a
-# change to its own definition.
+# delimited token in the step's `run:` body, after any `$VAR` whose value is a
+# literal string in an `env:` block in scope has been substituted for that value,
+# plus the `action.yml` of a local composite action the step `uses:`. Each gated
+# step's own workflow file counts as an input of itself, which is the
+# self-coverage half: a gate must re-run on a change to its own definition.
 #
 # The following are deliberately out of scope, because each needs a mechanism
 # this floor does not have and a decision this suite should not make on its own
@@ -43,8 +44,12 @@
 #   1. Transitive inputs. A step invoking `run-all.sh` gets that script checked,
 #      not the files the scenarios inside it inspect. Reaching those needs either
 #      a declared-inputs convention on every gated step or a runtime witness.
-#   2. Paths built at runtime. A path assembled from a variable or a glob
-#      expansion is invisible to a token scan, and always will be.
+#   2. Paths built at runtime. A `$VAR/` prefix is resolved when the workflow
+#      states the value outright, in an `env:` block whose value is a literal
+#      string; that much is right there in the file. Everything else stays
+#      invisible to a token scan and always will be: a value that is a `${{ }}`
+#      expression, a name assigned in the shell, a glob expansion, a path
+#      assembled from a variable that is not a whole leading segment.
 #   3. Composite-action bodies. A local action's own `run:` steps are not
 #      descended into; only its `action.yml` is checked.
 #   4. A filter propagated across jobs. The gate scan reads
@@ -179,6 +184,12 @@ GATE = re.compile(r'steps\.([A-Za-z0-9_-]+)\.outputs\.([A-Za-z0-9_-]+)')
 # A shell token that could be a repo-relative path. Deliberately permissive: the
 # tracked-file membership test below is what decides, not this.
 TOKEN = re.compile(r'[A-Za-z0-9_./+-]+')
+# `$NAME` or `${NAME}` in a `run:` body. `$` is outside TOKEN's character class,
+# so an unexpanded reference never survives the scan intact: `$D/x.sh` tokenizes
+# as the untracked `D/x.sh` and `${D}/x.sh` splits at the brace into `D` and
+# `/x.sh`. Either way the path the step really reads is dropped and the step
+# grades as reading nothing but its own workflow file.
+ENV_REF = re.compile(r'\$(?:\{([A-Za-z_][A-Za-z0-9_]*)\}|([A-Za-z_][A-Za-z0-9_]*))')
 
 
 def die(msg):
@@ -302,17 +313,57 @@ def filters_in(steps):
     return found
 
 
-def literal_inputs(step, workflow_rel):
+def literal_env(*scopes):
+    """Merge `env:` mappings, inner scopes last, keeping only literal strings.
+
+    A value holding a `${{ }}` expression resolves at runtime from context this
+    parse cannot see, and a non-string scalar is never a path; both are dropped.
+    An inner scope that redeclares a name drops the outer value with it rather
+    than falling back to it: the outer value is not what the step runs under, so
+    expanding it would name a path the step provably never reads.
+    """
+    merged = {}
+    for scope in scopes:
+        if not isinstance(scope, dict):
+            continue
+        for name, value in scope.items():
+            name = str(name)
+            if isinstance(value, str) and '${{' not in value:
+                merged[name] = value
+            else:
+                merged.pop(name, None)
+    return merged
+
+
+def expand_env(body, env):
+    """Substitute the `env:` values in scope into a `run:` body.
+
+    Single-pass and non-recursive: a value that itself holds a `$NAME` is left
+    with that reference intact, which drops out of the token scan the same way an
+    unresolved name does. A name with no literal value in scope is left verbatim,
+    so this only ever adds paths the workflow states outright.
+    """
+    def resolve(match):
+        return env.get(match.group(1) or match.group(2), match.group(0))
+
+    return ENV_REF.sub(resolve, body)
+
+
+def literal_inputs(step, workflow_rel, outer_env):
     """Repo-relative paths this step names literally.
 
     A `run:` body's comment lines are stripped first: a comment naming a path is
     documentation about the step, not an input to it, and counting it would make
     the guard red on prose.
+
+    `<outer_env>` is the workflow's and job's merged literal `env:`; the step's
+    own overrides it.
     """
     body = str(step.get('run', ''))
     body = '\n'.join(
         line for line in body.splitlines() if not line.lstrip().startswith('#')
     )
+    body = expand_env(body, literal_env(outer_env, step.get('env')))
     inputs = set()
     for token in TOKEN.findall(body):
         if token.startswith('./'):
@@ -369,6 +420,7 @@ for path in sys.argv[3:]:
         steps = job.get('steps') or []
         if not isinstance(steps, list):
             continue
+        job_env = literal_env(doc.get('env'), job.get('env'))
         filters = filters_in(steps)
         for step in steps:
             if not isinstance(step, dict):
@@ -395,7 +447,7 @@ for path in sys.argv[3:]:
             if mode == 'gated':
                 rows.append('\t'.join([workflow_rel, job_id, name]))
                 continue
-            inputs = literal_inputs(step, workflow_rel)
+            inputs = literal_inputs(step, workflow_rel, job_env)
             for step_id, output in gates:
                 globs = filters[step_id].get(output)
                 # dorny/paths-filter accepts a filter value as a bare scalar, not
@@ -851,6 +903,96 @@ YAML
   # unreachable (SC2317). This is also the spelling .claude/rules/bats-assertions.md
   # prescribes for closing a test whose last assertion is the `<bad-case> && return 1`
   # form.
+  true
+}
+
+@test "negative: a gated step's env-indirected path resolves to the file it names" {
+  require_yaml_parser
+  local dir="$BATS_TEST_TMPDIR/sb"
+  mkdir -p "$dir/.github/workflows"
+  # Both spellings, because the token scan mangles them differently: `$VAR/x`
+  # tokenizes as `VAR/x` (a slash-bearing token that is simply untracked), while
+  # `${VAR}/x` splits into `VAR` and `/x`. Neither reaches the membership test as
+  # a path, so an unexpanded body grades the step as reading nothing but its own
+  # workflow file, which is the same silent green a broken token scan gives.
+  cat > "$dir/.github/workflows/fixture.yml" <<'YAML'
+name: Fixture
+on:
+  pull_request:
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    env:
+      SCRIPTS_DIR: scripts
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - '.github/workflows/fixture.yml'
+      - if: steps.filter.outputs.code == 'true'
+        name: Gated step
+        run: |
+          bash "$SCRIPTS_DIR/guard.sh"
+          bash "${SCRIPTS_DIR}/other.sh"
+YAML
+  printf '%s\n' \
+    ".github/workflows/fixture.yml" "scripts/guard.sh" "scripts/other.sh" > "$dir/tracked"
+
+  run filter_coverage pairs "$dir/tracked" "$dir/.github/workflows/fixture.yml"
+  [ "$status" -eq 0 ] || { echo "extractor failed: $output" >&2; return 1; }
+
+  local script
+  for script in scripts/guard.sh scripts/other.sh; do
+    printf '%s\n' "$output" | grep -q "^unreached.*$script" || {
+      echo "the guard did not report $script; a path indirected through env: is invisible to it" >&2
+      return 1
+    }
+  done
+}
+
+@test "negative: an env name a step redeclares does not expand to the outer value" {
+  require_yaml_parser
+  local dir="$BATS_TEST_TMPDIR/sb"
+  mkdir -p "$dir/.github/workflows"
+  # The step's own value is a `${{ }}` expression, resolved at runtime from
+  # context this parse cannot see. Falling back to the job's literal would name a
+  # tracked file the step provably never reads: an over-reach, and the one
+  # direction this guard must not have, since it reports a red against a path
+  # nobody can make the filter cover.
+  cat > "$dir/.github/workflows/fixture.yml" <<'YAML'
+name: Fixture
+on:
+  pull_request:
+jobs:
+  fixture:
+    runs-on: ubuntu-latest
+    env:
+      SCRIPTS_DIR: scripts
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            code:
+              - '.github/workflows/fixture.yml'
+      - if: steps.filter.outputs.code == 'true'
+        name: Gated step
+        env:
+          SCRIPTS_DIR: ${{ runner.temp }}/staged
+        run: bash "$SCRIPTS_DIR/guard.sh"
+YAML
+  printf '%s\n' ".github/workflows/fixture.yml" "scripts/guard.sh" > "$dir/tracked"
+
+  run filter_coverage pairs "$dir/tracked" "$dir/.github/workflows/fixture.yml"
+  [ "$status" -eq 0 ] || { echo "extractor failed: $output" >&2; return 1; }
+
+  printf '%s\n' "$output" | grep -q "scripts/guard.sh" && {
+    echo "the step's redeclared env name fell back to the job's value; the guard named a path the step never reads" >&2
+    return 1
+  }
+  # Explicit `true` for the reason the comment-fixture test above gives.
   true
 }
 
