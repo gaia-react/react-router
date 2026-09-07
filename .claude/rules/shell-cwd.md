@@ -1,10 +1,10 @@
 # Shell CWD
 
-Do not `cd` in Bash tool calls. Use absolute paths for every command.
+Prefer an absolute path in a Bash tool call over a `cd`. A `cd` is not scoped to the call that ran it: the working directory it sets persists for the rest of the session, so every later command written against the repo root resolves somewhere else. That is the whole of the general case, and it is a preference, not a guard.
 
-## Why
+## The one hard line
 
-`.claude/settings.json` roots every hook registration at the tree the working directory is in, and `.gaia/scripts/check-hook-command-rooting.sh` holds it to that, so a `cd` to any depth *inside this repository* keeps the guard layer registered. The root is derived per invocation, not pinned, so it follows the working directory out of the repository too: a `cd` into a sibling checkout roots every hook at that checkout, the scripts are absent, `/bin/sh` exits 127, and because 127 neither blocks nor is reported, the whole `PreToolUse` layer fails open silently. Nothing at the registration site can close that, which is why this rule is a directive and not merely a convention. What a `cd` moves in every case is each *other* relative path: the working directory it sets persists for the rest of the session, so a later command written against the repo root resolves somewhere else.
+**Never `cd` into a different git checkout.** `.claude/settings.json` roots every hook registration at `$(git rev-parse --show-toplevel …)`, derived per invocation rather than pinned, so the working directory decides which tree the guard layer loads from. At any depth *inside this repository* that still resolves here, which is why the general case above is only a preference. In a sibling checkout it resolves there instead: the hook scripts are absent, `/bin/sh` exits 127, and because 127 neither blocks nor is reported, the whole `PreToolUse` layer fails open silently. Nothing at the registration site can close that (`.gaia/scripts/check-hook-command-rooting.sh` holds the rooting form, not the runtime cwd), so this one is stated as a line rather than a preference.
 
 ## How to apply
 
