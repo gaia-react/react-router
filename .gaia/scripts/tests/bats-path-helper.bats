@@ -1,10 +1,12 @@
 #!/usr/bin/env bats
 # The shared PATH primitives in .gaia/tests/helpers/path.sh.
 #
-# Two bats suites need the same thing: a PATH with a named tool guaranteed
-# absent, so a test can drive the "tool is not installed" arm on a developer
-# machine where the tool really is installed. Both hand-rolled the same loop,
-# and both wrote the membership test as `[ -x "$dir/$name" ]`.
+# A bats suite that drives a "tool is not installed" arm on a developer machine
+# where the tool really is installed needs a PATH with that tool guaranteed
+# absent. The need arrived independently in suites across the tree, each with
+# its own hand-rolled rebuild loop; a tree-wide grep for `helpers/path.sh`
+# answers which suites are clients today. Separately, and not at every one of
+# those loops, the membership test was written as `[ -x "$dir/$name" ]`.
 #
 # That predicate is wrong in one direction. `-x` is true for a searchable
 # DIRECTORY named for the tool, not only for an executable file, so a PATH
