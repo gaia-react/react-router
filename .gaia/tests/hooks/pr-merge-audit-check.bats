@@ -51,6 +51,7 @@ bats_require_minimum_version 1.5.0
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   HOOK_ABS=$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)/pr-merge-audit-check.sh
   RESOLVER_ABS=$(cd "$BATS_TEST_DIRNAME/../../../.gaia/scripts" && pwd)/resolve-audit-members.sh
   SPAWN_ABS=$(cd "$BATS_TEST_DIRNAME/../../../.gaia/scripts" && pwd)/resolve-audit-spawn.sh
@@ -1504,7 +1505,7 @@ scrub_gh_from_path() {
   while IFS= read -r dir; do
     [ -n "$dir" ] || continue
     [ -d "$dir" ] || continue
-    if [ -x "$dir/gh" ]; then
+    if path_dir_provides "$dir" gh; then
       for bin in "$dir"/*; do
         name="${bin##*/}"
         [ "$name" = "gh" ] && continue

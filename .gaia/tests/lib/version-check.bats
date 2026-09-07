@@ -17,6 +17,7 @@
 # `grep -qF` for non-final assertions, `&& return 1` for absence checks.
 
 setup() {
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   SCRIPT=$(cd "$BATS_TEST_DIRNAME/../../../.specify/extensions/gaia/lib" && pwd)/version-check.sh
   ROOT="$BATS_TEST_TMPDIR/repo"
   BIN="$BATS_TEST_TMPDIR/bin"
@@ -80,18 +81,13 @@ EOF
 # no_stub <name>: guarantee <name> is absent from PATH for this test. A real
 # `uvx` (or `specify`) may live further down a developer's PATH, so drop the
 # stub and rebuild PATH from only the dirs that do not hold <name>.
+#
+# `$BIN` keeps its leading position because setup() prepended it and
+# path_without preserves order; removing the stub above is what makes $BIN stop
+# providing <name>, so the rebuild leaves it in place rather than dropping it.
 no_stub() {
   rm -f "$BIN/$1"
-  local clean="$BIN" dir
-  while IFS= read -r dir; do
-    if [ -z "$dir" ] || [ "$dir" = "$BIN" ] || [ -x "$dir/$1" ]; then
-      continue
-    fi
-    clean="$clean:$dir"
-  done <<EOF
-$(printf '%s' "$PATH" | tr ':' '\n')
-EOF
-  PATH="$clean"
+  PATH="$(path_without "$1")"
 }
 
 run_check() { run bash "$SCRIPT" "$ROOT"; }
