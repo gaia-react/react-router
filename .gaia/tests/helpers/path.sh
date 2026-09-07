@@ -27,17 +27,24 @@
 #
 # A suite that drives a "tool is not installed" arm has to guarantee the tool is
 # absent, and cannot assume it: a real `uvx`, `specify` or `pnpm` may live
-# anywhere further down a developer's PATH. The construct both suites reached
-# for was to rebuild PATH from only the directories that do not hold the tool,
-# with membership written as:
+# anywhere further down a developer's PATH. Every such suite asks one question
+# of each PATH directory, does this directory provide <name> as a command, and
+# acts on the answer in whatever way suits it: `no_stub` and the
+# provision-worktree pnpm arm drop the directory from a rebuilt PATH, while
+# `scrub_gh_from_path` mirrors it into a shim without the tool, deliberately,
+# because on a Homebrew host dropping it would take jq and git too. The
+# question is what lives here. The rebuild shapes stay with their callers.
+#
+# The tempting way to write the question is:
 #
 #   [ -x "$dir/$name" ]
 #
 # `-x` is true for a searchable DIRECTORY named for the tool, not only for an
 # executable file. So a PATH entry that merely holds a directory called `uvx`
-# was dropped, taking every real tool that entry provides with it. bash's own
-# lookup accepts a regular file that is executable, which is `-f` and `-x`
-# together, and that is what `path_dir_provides` tests.
+# is treated as providing it, and the caller drops or shims an entry over a
+# tool that was never there, taking every real tool that entry provides with
+# it. bash's own lookup accepts a regular file that is executable, which is
+# `-f` and `-x` together, and that is what `path_dir_provides` tests.
 #
 # The direction is safe: an over-strip removes a tool the command under test
 # needs and fails it, rather than greening a test that should be red. So the
