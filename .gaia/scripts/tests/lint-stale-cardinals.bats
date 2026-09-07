@@ -187,6 +187,20 @@ true'
   [ "$status" -eq 1 ]
 }
 
+# A third historical form, and the one that motivated the vocabulary entry it
+# pins: `knobs` was outside the closed list, so this comment stood on main
+# until a human found it (#1777, repaired by #1832) and the gate stayed green
+# against the very instance it was pointed at. Carried verbatim from the
+# comment it was found in, for the reason the two forms above are.
+@test "reds against the retention-knob header form" {
+  fixture_repo
+  fixture_script '# the outlier sweep'"'"'s own documentation must name its three retention knobs
+true'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:1:" <<<"$output"
+}
+
 @test "reds regardless of letter case" {
   fixture_repo
   fixture_script '# Earned write lands for ALL THREE MEMBERS.
