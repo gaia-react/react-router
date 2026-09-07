@@ -14,13 +14,15 @@
 # .gaia/local.
 #
 # WHICH TREE A CASE RUNS IN is stated here rather than left to be inferred,
-# because the subject reads it from the process working directory and this
-# file has cases on both sides of that. setup() pins a PLAIN checkout, so a
-# case that says nothing about trees gets one, and that is a fixture rather
-# than an accident of where bats was launched. A case needing a different
-# answer cds there itself and the pin decides nothing for it; the
-# `mint/populate asymmetry` block at the foot is where those live, and it
-# carries both answers rather than one.
+# because the subject reads it from the `<dir>` positional, which defaults to
+# the process working directory, and this file has cases on both sides of
+# that. setup() pins a PLAIN checkout, so a case that says nothing about trees
+# gets one, and that is a fixture rather than an accident of where bats was
+# launched. A case needing a different answer cds there itself, or names the
+# tree it wants as `<dir>`, and the pin decides nothing for it; the two blocks
+# at the foot are where the deliberate ones live, the asymmetry block for the
+# cases that cd and the note-tree block for the cases that name a `<dir>`
+# other than their own cwd.
 #
 # Assertion style: bash-3.2-safe per .claude/rules/bats-assertions.md.
 #
@@ -46,26 +48,32 @@ setup() {
   git -C "$REPO" add f
   git -C "$REPO" commit -qm init
 
-  # Pin the ACTING tree, not only the key's tree. The script takes its KEY
-  # tree from the <dir> positional, which defaults to the process working
-  # directory, and its ACTING tree from gaia_is_linked_worktree with NO
-  # argument, which is that working directory and nothing else. So a case can
-  # name the first and nothing but this cd names the second. Left ambient the
-  # second is whatever tree bats happened to be launched from, which no case
-  # here controls.
+  # Pin the tree a case inherits when it names none. The script takes its KEY
+  # tree and the ACTING tree its worktree advisory describes from one place,
+  # the <dir> positional, at one `${3:-.}` default. So a case passing no <dir>
+  # gets both from the process working directory, and left ambient that is
+  # whatever tree bats happened to be launched from, which no case here
+  # controls. This cd is what makes that default a fixture.
   #
-  # Unpinned, running the suite from a linked worktree fires the mint's
-  # advisory note on stderr; `run` captures "$@" 2>&1, so $output becomes the
-  # note lines PLUS the path, and every `[ -d "$output" ]` in the file is then
-  # asserting against a multi-line string. That is gaia-react/gaia#1780: the
-  # suite was green from a plain checkout and red from a worktree at one
-  # commit, and CI only ever runs the first. The mint itself was never at
-  # fault -- the directory is on disk in both environments.
+  # READ WHAT IT GOVERNS BEFORE RELYING ON IT, because it is much less than
+  # its position suggests. Every case below that reaches the mint either
+  # passes <dir> as $REPO or cds itself first, so the pin decides the tree of
+  # none of them. What is left to it is a case written with neither, which
+  # today is the fixture assertion alone and tomorrow is whichever case
+  # somebody adds that way.
   #
-  # Deliberately NOT a guard or a skip on the assertions that red: that would
-  # leave them unrun in a worktree, which is the same invisibility pointed
-  # the other way. A case that cds for itself overrides this pin by doing so,
-  # so nothing below has to be exempted from it by hand.
+  # The tree a case runs in is worth pinning at all because of
+  # gaia-react/gaia#1780: the mint's advisory note goes to stderr, `run`
+  # captures "$@" 2>&1, so $output carries the note lines PLUS the path and a
+  # `[ -d "$output" ]` then asserts against a multi-line string. That made the
+  # suite green from a plain checkout and red from a linked worktree, and CI
+  # only ever runs the first. The mint itself was never at fault -- the
+  # directory is on disk in both environments.
+  #
+  # Deliberately NOT a guard or a skip on the assertions that would red: that
+  # would leave them unrun in a worktree, which is the same invisibility
+  # pointed the other way. A case that names its own tree, by either route,
+  # overrides this pin by doing so, so nothing below is exempted by hand.
   cd "$REPO" || return 1
 }
 
@@ -77,11 +85,15 @@ teardown() {
 # --- the fixture itself ------------------------------------------------------
 
 @test "setup pins the acting tree, so no case inherits the tree bats was launched from" {
-  # setup()'s cd is this file's whole answer to gaia-react/gaia#1780, and on
-  # its own it is unarmed: delete it and every case still passes from a plain
-  # checkout, which is the only environment CI runs, while a developer running
-  # from a linked worktree is back to the original red. Asserting the fixture
-  # makes that deletion visible from ANY tree.
+  # setup()'s cd decides the tree only for a case that names none, and no case
+  # below is written that way, so deleting the cd reds this line and nothing
+  # else, from a linked worktree as much as from a plain checkout. That is
+  # what the assertion is for rather than an argument against it: the pin's
+  # whole remaining job is keeping the no-<dir> default a fixture instead of
+  # the tree bats was launched from, and this is the only thing that notices
+  # it going away. Without this line the deletion is silent until somebody
+  # writes the case that relies on the default, and then it is that case's
+  # environment that decides whether the suite is honest.
   #
   # This is not the guard the note in setup() rules out. That one would have
   # gated the assertions that red, leaving them unrun in a worktree; this
@@ -395,5 +407,43 @@ mk_worktree() {
   err="$TMP/err"
   ( cd "$wt" && bash "$SCRIPT" code-audit-frontend deadbeef ) >/dev/null 2>/dev/null
   ( cd "$wt" && bash "$SCRIPT" --release code-audit-frontend deadbeef ) >/dev/null 2>"$err"
+  [ ! -s "$err" ]
+}
+
+# --- which tree the note describes -------------------------------------------
+#
+# The mint resolves two trees: the KEY tree, from the `<dir>` positional, and
+# the ACTING tree the advisory note describes. Both must be the same tree. Take
+# them from different places and a caller naming a tree other than its own cwd
+# gets a path keyed to one and a note decided by the other, so the note either
+# withholds a real confinement or invents one (gaia-react/gaia#1806).
+#
+# These cases pin the two halves together by driving them APART: each runs from
+# one tree and names the other, which is the only shape in which the two
+# spellings differ at all. Absent the positional they are identical (`-C .`
+# from cwd is cwd), so every case above is blind to this split and these two
+# have to exist separately to reach it.
+
+@test "the note follows the tree <dir> names, not the process working directory" {
+  local wt err
+  wt="$(mk_worktree)"
+  err="$TMP/err"
+  # cwd is the PLAIN checkout, <dir> names the worktree. The path is keyed to
+  # the worktree, so the confinement the note describes is real and the caller
+  # is owed it.
+  ( cd "$REPO" && bash "$SCRIPT" code-audit-frontend deadbeef "$wt" ) >/dev/null 2>"$err"
+  grep -qF -- "Bash" "$err"
+  grep -qF -- "Write" "$err"
+}
+
+@test "a <dir> naming a plain checkout silences the note, even from a worktree cwd" {
+  local wt err
+  wt="$(mk_worktree)"
+  err="$TMP/err"
+  # The mirror image: cwd is the worktree, <dir> names the plain checkout. The
+  # path is keyed to a tree with no confinement, so a note here sends the
+  # caller looking for a restriction that does not apply to the directory it
+  # was just handed.
+  ( cd "$wt" && bash "$SCRIPT" code-audit-frontend deadbeef "$REPO" ) >/dev/null 2>"$err"
   [ ! -s "$err" ]
 }
