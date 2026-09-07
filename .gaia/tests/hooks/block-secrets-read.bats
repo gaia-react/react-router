@@ -166,6 +166,81 @@ run_hook_without_library() {
   assert_denied_by_json
 }
 
+# The rest of reader-operands.sh's plain-file flags, whose value IS a file the
+# reader opens. _GAIA_RO_SHORT_FILE and _GAIA_RO_LONG_FILE_PATTERN also supply
+# the pattern, so the positional after them is an ordinary file;
+# _GAIA_RO_LONG_FILE_PLAIN names a file of globs and supplies no pattern, so one
+# still has to follow. Each command below is written in the spelling that puts
+# the secret in the flag's own value.
+#
+# These are named literally rather than driven from the same tables the derived
+# test below reads, and the split is what makes the pair worth having. A
+# derivation cannot notice an entry deleted from the table it reads: the set
+# just comes back shorter and every member of it still passes. Only a named
+# spelling reds when its entry is dropped. The derivation earns its own place
+# from the other side: it drives whatever the tables hold at the time it runs,
+# so a member added later is covered without anyone remembering to write a test
+# for it, and a regression in the operand walk reds against every member rather
+# than only against the spellings someone thought to pin.
+
+@test "grep --file certs/server.key foo.txt is denied (the pattern FILE is the secret)" {
+  run_hook_bash "grep --file certs/server.key foo.txt"
+  assert_denied_by_json
+}
+
+@test "grep --exclude-from certs/server.key TOKEN . is denied (the glob FILE is the secret)" {
+  run_hook_bash "grep --exclude-from certs/server.key TOKEN ."
+  assert_denied_by_json
+}
+
+@test "rg --ignore-file certs/server.key TOKEN app is denied (the glob FILE is the secret)" {
+  run_hook_bash "rg --ignore-file certs/server.key TOKEN app"
+  assert_denied_by_json
+}
+
+@test "every plain-file flag reader-operands.sh carries denies a secret passed as its value" {
+  # shellcheck source=.claude/hooks/lib/reader-operands.sh disable=SC1091
+  . "$HOOKS_SRC/lib/reader-operands.sh"
+
+  # An empty table contributes no command and leaves this test asserting
+  # nothing, which reads exactly like a pass. A renamed or deleted variable is
+  # how that happens, so name whichever one went missing rather than iterating
+  # a set that quietly shrank.
+  local name
+  for name in _GAIA_RO_SHORT_FILE _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN; do
+    if [ -z "${!name}" ]; then
+      echo "$name is empty or gone from lib/reader-operands.sh" >&2
+      return 1
+    fi
+  done
+
+  # The tables are the union of GNU grep's flags and ripgrep's, so no single
+  # command word spells every member and the mismatches below are deliberate.
+  # What is under test is the flag's grammar, which the guard reads the same way
+  # for every word in its grep family, so one word per grammar is enough.
+  local cmds=() f i=0
+  while [ "$i" -lt "${#_GAIA_RO_SHORT_FILE}" ]; do
+    cmds+=("grep -${_GAIA_RO_SHORT_FILE:$i:1} certs/server.key foo.txt")
+    i=$((i + 1))
+  done
+  for f in $_GAIA_RO_LONG_FILE_PATTERN; do
+    cmds+=("grep $f certs/server.key foo.txt")
+  done
+  for f in $_GAIA_RO_LONG_FILE_PLAIN; do
+    cmds+=("rg $f certs/server.key TOKEN app")
+  done
+
+  local cmd allowed=0
+  for cmd in "${cmds[@]}"; do
+    run_hook_bash "$cmd"
+    if [ "$status" -ne 0 ] || ! grep -qF -- '"permissionDecision": "deny"' <<<"$output"; then
+      echo "not denied: $cmd" >&2
+      allowed=1
+    fi
+  done
+  [ "$allowed" -eq 0 ]
+}
+
 @test "x=\$(<certs/server.key) is denied (redirection)" {
   # The single-quoting is deliberate: the payload must reach the hook verbatim
   # so it classifies the literal command text. Never double-quote it, which
