@@ -2,7 +2,13 @@
 
 When a dispatched agent's output is something you will act on, do not ask for it in the reply. An absent report is indistinguishable from a clean result, and the likeliest reading of a missing one is "it found nothing", the conclusion you must not draw.
 
-**Give it a file.** Pre-clear an output path (`rm -f`), have the agent write its result there and return only a thin digest, then classify the file:
+**Give it a file, and say in the dispatch prompt that the file is JSON.** Pre-clear an output path (`rm -f`), have the agent write its result there and return only a thin digest, then classify the file. The artifact has to be JSON whose report is an **array**, either the top-level value or the value at the one top-level key `--report-key` names; a Markdown or plain-text report classifies NO-OP however complete it is, which is the exact inversion this guard exists to prevent. Ask for one of these two shapes:
+
+```json
+{"findings": [{"path": "app/foo/index.ts", "line": 12, "detail": "..."}]}
+```
+
+classified with `--report-key findings`, or a bare top-level `[...]` array with the key omitted. Then:
 
 ```bash
 bash .gaia/scripts/audit-noop-detect.sh --shape agent-report-file --path <path> \
