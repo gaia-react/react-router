@@ -79,6 +79,7 @@ setup() {
   WORKFLOW="$REPO_ROOT/.github/workflows/audit-ci-tests.yml"
   POLLER_WORKFLOW="$REPO_ROOT/.github/workflows/code-review-audit.yml"
   CLI_WORKFLOW="$REPO_ROOT/.github/workflows/cli-tests.yml"
+  WORKFLOW_DIR="$REPO_ROOT/.github/workflows"
   BATS_SHARDS="$REPO_ROOT/.gaia/tests/bats-shards.sh"
   # Matches retrigger-reachability.bats' own constant: the self-heal poller
   # margin charged per hop of the needs: chain.
@@ -105,7 +106,33 @@ setup() {
   require_repo_path -f "$WORKFLOW" "audit-ci-tests.yml" || return 1
   require_repo_path -f "$POLLER_WORKFLOW" "code-review-audit.yml" || return 1
   require_repo_path -f "$CLI_WORKFLOW" "cli-tests.yml" || return 1
+  require_repo_path -d "$WORKFLOW_DIR" ".github/workflows/" || return 1
   require_repo_path -f "$BATS_SHARDS" "bats-shards.sh" || return 1
+
+  # W12's subject set: every workflow file in the directory, derived from the
+  # directory rather than listed, so a workflow added later is scanned without
+  # an edit here. Derived once in setup() so the check and the reach assertions
+  # below cannot enumerate differently -- a second expansion is a second
+  # authority, and re-narrowing one of them is exactly the regression the reach
+  # tests exist to catch.
+  #
+  # Both extensions, because GitHub accepts both and a call site added under the
+  # spelling this file did not glob would be SKIPPED rather than reported. A
+  # glob that matches nothing expands to its own literal, which is not a file,
+  # so the `-f` filter is what keeps that literal out of the set.
+  WORKFLOW_FILES=()
+  local wf_candidate
+  for wf_candidate in "$WORKFLOW_DIR"/*.yml "$WORKFLOW_DIR"/*.yaml; do
+    if [ -f "$wf_candidate" ]; then
+      WORKFLOW_FILES+=("$wf_candidate")
+    fi
+  done
+  # A per-element claim over an empty set is true and means nothing, and every
+  # W12 test below expands this array, so an empty one would green them all.
+  [ "${#WORKFLOW_FILES[@]}" -gt 0 ] || {
+    echo "no workflow files under $WORKFLOW_DIR; every W12 test would assert over an empty set" >&2
+    return 1
+  }
 }
 
 teardown() {
@@ -1983,8 +2010,8 @@ concurrency_tree_needs_packages() {
   true
 }
 
-# W12. Every gaia-setup-node step in audit-ci-tests.yml is capped with an
-# integer literal that fires before its job's own cap.
+# W12. Every gaia-setup-node step in EVERY workflow is capped with an integer
+# literal that fires before its job's own cap.
 #
 # The apt step already carries `timeout-minutes: 6` and says why in so many
 # words -- "Sized for fast failure and honest attribution" -- so the reasoning
@@ -1998,17 +2025,37 @@ concurrency_tree_needs_packages() {
 # uncapped call sites this file then held; by the time it was drained a third
 # had been added, uncapped, in the same shape. Enumerating the sites from the
 # `uses:` value, rather than from a list of step names, is what makes the next
-# one in THIS workflow reachable without an edit here.
+# one reachable without an edit here.
 #
-# The reach stops at this workflow. `setupnodecaps` walks `$WORKFLOW` alone, so
-# the same composite action invoked from any other workflow is outside what
-# this check can report, and W5, the sibling that does run tree-wide, asserts a
-# cap per JOB and says nothing about steps. gaia-react/gaia#1793 tracks the
-# uncapped call sites that gap leaves and the widening that would reach them.
+# The reach used to stop at this workflow, and that scope was itself the
+# defect: `setupnodecaps` walked `$WORKFLOW` alone, so the same composite action
+# invoked from any other workflow was outside what this check could report, and
+# W5, the sibling that does run tree-wide, asserts a cap per JOB and says
+# nothing about steps. Call sites across the other workflows sat uncapped
+# behind that gap until gaia-react/gaia#1793 drained them. So the subject set
+# is now every file in `.github/workflows/`, derived in `setup()` from the
+# directory, and the reach tests below assert that derivation rather than
+# trusting it: no workflow in the index is missing from it, and call sites are
+# actually read across more than one file. Re-pinning the check to a single
+# workflow reds them, which is what makes this widening durable rather than a
+# repair of the instance.
+#
+# Enumerating steps from the `uses:` value and workflows from the directory are
+# the same move applied to the two axes this check can be narrowed on. Neither
+# is a convenience: each is what keeps a site added later reachable without an
+# edit here, and a check narrowed on either axis reports clean over what it
+# never opened.
 #
 # The cap must also be strictly under its job's cap. A step cap at or above
 # the job's can never fire first, so it reads as a bound while buying none of
 # the attribution that is the whole point.
+#
+# Every fixture below passes ONE doctored copy of this workflow rather than the
+# whole scanned set, and the predicate is variadic so that still drives the same
+# code the check runs. Doctoring one file inside the real set would leave the
+# other workflows' healthy steps in the read, which is fine for the gap arms but
+# would silently defeat the empty-set arm, whose whole subject is a read that
+# came back with nothing in it.
 #
 # The step-cap fixtures below doctor by full-line equality on
 # `        timeout-minutes: 5`, which every one of these steps carries at the
@@ -2050,39 +2097,66 @@ setup_node_caps() {
   read_wf setupnodecaps "$1"
 }
 
-# Every capping gap the gaia-setup-node steps in <workflow-file> present, one
-# line per gap, empty when it has none. Returns non-zero when the set is empty,
-# which is a gap of its own rather than a clean read: this enumerates its
-# subjects from the `uses:` value instead of pinning them, so a renamed action
-# yields nothing and would otherwise be indistinguishable from every step
-# passing.
+# Every capping gap the gaia-setup-node steps in <workflow-file>... present, one
+# line per gap, each naming its own workflow, empty when they have none.
+# Returns non-zero when NO step was read across the whole argument list, which
+# is a gap of its own rather than a clean read: this enumerates its subjects
+# from the `uses:` value instead of pinning them, so a renamed action yields
+# nothing and would otherwise be indistinguishable from every step passing.
+#
+# The emptiness verdict is over the whole list, not per file. Most workflows
+# legitimately call this action from no step at all, so a per-file verdict would
+# report every one of them as reaching nothing the moment the check went
+# tree-wide. The adversarial fixtures below pass a single doctored file, where
+# the two verdicts coincide.
 setup_node_cap_gaps() {
-  local file="$1"
+  local file wf
   local jid name kind cap job_cap seen="" gaps=""
+  local caps="${BATS_TEST_TMPDIR:-${TMPDIR:-/tmp}}/setup-node-caps.$$"
 
-  while IFS=$'\t' read -r jid name kind cap job_cap; do
-    [ -n "$jid" ] || continue
-    seen="x"
-    if [ "$kind" != "int" ]; then
-      gaps="${gaps}${jid}/${name}: cap is ${kind}, not an integer literal"$'\n'
+  for file in "$@"; do
+    wf="$(basename "$file")"
+    # `read_wf` exits 2 on a file it cannot load (unparseable YAML, unreadable
+    # path) or that declares no `jobs:` mapping, and a process substitution
+    # discards that status. Per file that was harmless while the emptiness
+    # verdict was per file too, since the unread file's own zero lines tripped
+    # it. Whole-list it is not: the other workflows keep `seen` set, so an
+    # unreadable one would contribute nothing, report nothing, and leave the
+    # check green over a file it never opened -- the same blindness the
+    # tree-wide widening exists to remove, reintroduced one layer down. So the
+    # read is captured and its status tested per file, and a failure becomes a
+    # reported gap. `workflow_timeout_gaps` in
+    # .gaia/scripts/tests/retrigger-reachability.bats reports its own per-file
+    # zero for the same reason; this is that shape.
+    if ! setup_node_caps "$file" > "$caps"; then
+      gaps="${gaps}${wf}: could not be read (unparseable YAML, or no jobs mapping), so its gaia-setup-node steps were never opened"$'\n'
       continue
     fi
-    if [ "$job_cap" = "-" ]; then
-      gaps="${gaps}${jid}/${name}: the owning job declares no integer cap"$'\n'
-      continue
-    fi
-    [ "$cap" -lt "$job_cap" ] \
-      || gaps="${gaps}${jid}/${name}: ${cap}m is not under the job's ${job_cap}m"$'\n'
-  done < <(setup_node_caps "$file")
+    while IFS=$'\t' read -r jid name kind cap job_cap; do
+      [ -n "$jid" ] || continue
+      seen="x"
+      if [ "$kind" != "int" ]; then
+        gaps="${gaps}${wf} ${jid}/${name}: cap is ${kind}, not an integer literal"$'\n'
+        continue
+      fi
+      if [ "$job_cap" = "-" ]; then
+        gaps="${gaps}${wf} ${jid}/${name}: the owning job declares no integer cap"$'\n'
+        continue
+      fi
+      [ "$cap" -lt "$job_cap" ] \
+        || gaps="${gaps}${wf} ${jid}/${name}: ${cap}m is not under the job's ${job_cap}m"$'\n'
+    done < "$caps"
+  done
+  rm -f "$caps"
 
-  # Two conditions reach an empty read and the repairs differ, so the message
-  # names both rather than the one that prompted it: the action was renamed or
-  # its last call site removed, OR `read_wf` exited 2 (unparseable YAML, no
-  # jobs mapping) and printed its own line to stderr. Process substitution
-  # discards that status, which is why it is named here instead of tested.
-  if [ -z "$seen" ]; then
-    printf '%s: no gaia-setup-node step read. Either the action was renamed or its last call site removed, or read_wf failed to parse this file (check its stderr above). Either way this check is now reaching nothing.\n' \
-      "$(basename "$file")"
+  # One condition now reaches an empty read: every workflow loaded and none
+  # called the action, so it was renamed or its last call site removed. The
+  # unreadable-file case used to land here too and no longer does; it is a
+  # named gap above, which is the stronger report because it says which file.
+  # Guarded on `gaps` as well as `seen` so a run whose only workflows were
+  # unreadable reports them rather than replacing them with this message.
+  if [ -z "$seen" ] && [ -z "$gaps" ]; then
+    printf 'no gaia-setup-node step read across the workflows scanned, though every one of them loaded. The action was renamed, or its last call site was removed. Either way this check is now reaching nothing.\n'
     return 1
   fi
 
@@ -2090,14 +2164,116 @@ setup_node_cap_gaps() {
   [ -z "$gaps" ]
 }
 
+# The workflow files in <workflow-file>... that call gaia-setup-node from at
+# least one step, one basename per line, and `unreadable:<basename>` for one
+# that would not load. Only the reach tests read this; the check itself needs
+# the gaps, not the file set.
+setup_node_workflows() {
+  local file caps="${BATS_TEST_TMPDIR:-${TMPDIR:-/tmp}}/setup-node-workflows.$$"
+  for file in "$@"; do
+    # The same per-file status capture `setup_node_cap_gaps` makes, and this
+    # helper needs it for a different reason. Piping into `grep -q` would
+    # discard `read_wf`'s exit 2, leaving an unreadable workflow
+    # indistinguishable from one that calls the action from no step. That
+    # direction fails closed, since either way the file contributes no
+    # basename and a lower count reds the reach assertion, so what is lost is
+    # not the catch but the diagnosis: the assertion would blame a re-narrowed
+    # scan set for a file that simply would not load, which is the wrong
+    # repair. Marking it is what lets the caller tell those two apart.
+    if ! setup_node_caps "$file" > "$caps"; then
+      printf 'unreadable:%s\n' "$(basename "$file")"
+      continue
+    fi
+    if grep -q '.' "$caps"; then
+      basename "$file"
+    fi
+  done
+  rm -f "$caps"
+}
+
 @test "W12: every gaia-setup-node step declares an integer cap under its job's cap" {
   require_yaml_parser
   local gaps
-  gaps="$(setup_node_cap_gaps "$WORKFLOW")" || {
+  gaps="$(setup_node_cap_gaps "${WORKFLOW_FILES[@]}")" || {
     echo "$gaps" >&2
     return 1
   }
   [ -z "$gaps" ] || { echo "$gaps" >&2; return 1; }
+}
+
+# The reach tests below assert the DERIVATION, which the check itself cannot: a
+# narrowed subject set produces a clean read, and a clean read and a blind one
+# are the same output. That indistinguishability is what let uncapped call
+# sites stand green for as long as they did, so re-narrowing has to red
+# something other than the check.
+@test "W12 reach: every workflow in the index is in the scanned set" {
+  local tracked missing="" listing="$BATS_TEST_TMPDIR/tracked-workflows"
+  # The index is a second authority on the set, independent of the directory
+  # glob setup() derives it from. A short read -- a glob narrowed to one
+  # extension, one prefix, or one file -- leaves the check green over the
+  # workflows it still opens, so the difference between the two is what has to
+  # be reported.
+  #
+  # Captured to a file rather than read straight from a process substitution,
+  # so this derivation's own status and emptiness are both testable. The loop
+  # below is a per-element claim, and a per-element claim over an empty set is
+  # true while asserting nothing: an unlisted index would report ok having
+  # compared no workflow at all. setup() guards its own derivation exactly
+  # this way, and feeding this loop from a substitution would leave this the
+  # one derivation in the check without it. `-z` is what keeps a C-quoted
+  # non-ASCII path from silently failing the comparison.
+  git -C "$REPO_ROOT" ls-files -z -- \
+    '.github/workflows/*.yml' '.github/workflows/*.yaml' > "$listing" || {
+    echo "could not list tracked workflows; this assertion would otherwise pass over an empty set" >&2
+    return 1
+  }
+  [ -s "$listing" ] || {
+    echo "the index lists no workflow at all; this assertion would otherwise pass having compared nothing" >&2
+    return 1
+  }
+
+  while IFS= read -r -d '' tracked; do
+    [ -n "$tracked" ] || continue
+    printf '%s\n' "${WORKFLOW_FILES[@]}" | grep -qxF "$REPO_ROOT/$tracked" \
+      || missing="${missing}${tracked}"$'\n'
+  done < "$listing"
+
+  [ -z "$missing" ] || {
+    printf 'tracked workflows absent from the W12 scan set:\n%s' "$missing" >&2
+    return 1
+  }
+}
+
+@test "W12 reach: gaia-setup-node call sites are read across more than one workflow" {
+  require_yaml_parser
+  local read_set scanned pinned unreadable
+  # Counting the workflows that CONTRIBUTE a step, not the ones scanned: a set
+  # widened to every file while the steps still come from one of them is the
+  # same blindness with a longer argument list.
+  read_set="$(setup_node_workflows "${WORKFLOW_FILES[@]}")"
+  # A workflow that would not load contributes no basename, so it depresses
+  # the count exactly as a re-narrowed set would. Reported separately and
+  # first, because the two have different repairs and the count's own message
+  # can only name one of them.
+  unreadable="$(printf '%s\n' "$read_set" | grep '^unreadable:' || true)"
+  [ -z "$unreadable" ] || {
+    printf 'workflows that would not load, so the count below is not a verdict on the scan set:\n%s\n' "$unreadable" >&2
+    return 1
+  }
+  scanned="$(printf '%s\n' "$read_set" | grep -c '.' || true)"
+  # The pre-#1793 scope, driven through the same helper, as the control that
+  # makes the assertion above discriminating rather than merely true: it must
+  # answer 1, or `-gt 1` is passing for some reason other than the widening.
+  pinned="$(setup_node_workflows "$WORKFLOW" | grep -c '.' || true)"
+
+  [ "$pinned" -eq 1 ] || {
+    echo "the single-workflow control read $pinned workflows, so the reach assertion below proves nothing" >&2
+    return 1
+  }
+  [ "$scanned" -gt 1 ] || {
+    echo "gaia-setup-node steps were read from $scanned workflow(s); the check has re-narrowed to a single file" >&2
+    return 1
+  }
 }
 
 @test "W12 adversarial: a gaia-setup-node step with no cap is caught" {
@@ -2157,6 +2333,47 @@ setup_node_cap_gaps() {
   }
   printf '%s' "$gaps" | grep -qF 'the owning job declares no integer cap' || {
     echo "a step whose job declares no cap was not reported: ${gaps}" >&2
+    return 1
+  }
+}
+
+# The one fixture here that passes TWO files, and it has to. The arm it drives
+# only differs from the old behaviour when a healthy sibling is present to keep
+# `seen` set: an unreadable file on its own trips the empty-read arm either way,
+# so a single-file fixture would pass against the code that has this bug.
+@test "W12 adversarial: a workflow that will not parse is reported, not skipped" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w12g.yml" gaps
+  # An unterminated flow mapping where the jobs block opens: PyYAML raises
+  # rather than returning a partial document, which is the `read_wf` exit-2
+  # path. Doctoring the workflow's own `jobs:` line rather than writing a
+  # throwaway file keeps the fixture pointed at a real subject, the same way
+  # every fixture above does.
+  replace_line "$WORKFLOW" "jobs:" "jobs: {" "$doctored"
+
+  gaps="$(setup_node_cap_gaps "$doctored" "$WORKFLOW")" && {
+    echo "an unparseable workflow beside a healthy one left the check reporting no gaps" >&2
+    return 1
+  }
+  printf '%s' "$gaps" | grep -qF 'could not be read' || {
+    echo "an unparseable workflow was silently skipped rather than reported: ${gaps}" >&2
+    return 1
+  }
+}
+
+# The reach helper's own copy of the arm above. It needs its own fixture
+# because the reach tests run over the real workflow set, where nothing fails
+# to parse, so the marker would otherwise ship undriven. Two files again, and
+# for the same reason: the marker only earns its keep when a healthy sibling
+# is present to be counted normally beside it.
+@test "W12 adversarial: the reach helper marks an unparseable workflow rather than counting it stepless" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w12h.yml" read_set
+  replace_line "$WORKFLOW" "jobs:" "jobs: {" "$doctored"
+
+  read_set="$(setup_node_workflows "$doctored" "$WORKFLOW")"
+  printf '%s\n' "$read_set" | grep -qF "unreadable:$(basename "$doctored")" || {
+    echo "an unparseable workflow read as one that simply calls no step: ${read_set}" >&2
     return 1
   }
 }
