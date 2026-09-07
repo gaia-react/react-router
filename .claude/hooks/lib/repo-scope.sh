@@ -9,7 +9,8 @@
 # a sibling project B.
 #
 # Usage (from a PreToolUse Bash hook, after extracting $cmd):
-#   [ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+#   _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=''
+#   [ -n "$_lib_dir" ] && [ -f "$_lib_dir/repo-scope.sh" ] && . "$_lib_dir/repo-scope.sh"
 #   if type cmd_targets_foreign_repo >/dev/null 2>&1 \
 #      && cmd_targets_foreign_repo "$cmd"; then exit 0; fi   # foreign: allow
 #

@@ -43,7 +43,14 @@ fi
 # Bracketed in `set +e` because errexit is armed above: an unparseable copy (an
 # unresolved merge conflict, a truncated write) would otherwise abandon the hook
 # at the load, before the `type` check below can degrade it to "not managed".
-set +e; [ -f .claude/hooks/lib/gaia-ci-defer.sh ] && . .claude/hooks/lib/gaia-ci-defer.sh 2>/dev/null; set -e
+# Rooted at this file's own on-disk location, never at the process working
+# directory: a bare test is false from anywhere below the repository root, and
+# the `type` check reads that as a missing library. Through the ancestor rather
+# than a lib child, for the reason block-main-destructive-git.sh states at the
+# same load: the ancestor cannot fail, so no degrade branch is owed.
+_hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || _hook_root=''
+_defer_lib="$_hook_root/.claude/hooks/lib/gaia-ci-defer.sh"
+set +e; [ -n "$_hook_root" ] && [ -f "$_defer_lib" ] && . "$_defer_lib" 2>/dev/null; set -e
 if type gaia_ci_defer_if_managed >/dev/null 2>&1; then
   gaia_ci_defer_if_managed wiki || true
 fi

@@ -460,8 +460,14 @@ make_hook_sandbox() {
   # build long after this PR merges. `release runtime-deps` strips
   # marker-delimited blocks before extracting path references, so the wrap is
   # what keeps the reference invisible to the scan.
+  #
+  # The needle names the script the delegation runs, not the exact path
+  # expression it runs it through. The hook roots that path at its own on-disk
+  # location rather than at the working directory, so the spelling carries a
+  # variable; pinning the literal would red on a correct rooting change while
+  # saying nothing about the marker wrap, which is the whole claim here.
   local delegation_line start_line end_line
-  delegation_line="$(grep -n 'bash .gaia/scripts/audit-respawn-prune.sh' "$HOOK_ABS" | head -1 | cut -d: -f1)"
+  delegation_line="$(grep -nE 'bash .*audit-respawn-prune\.sh' "$HOOK_ABS" | head -1 | cut -d: -f1)"
   [ -n "$delegation_line" ]
   start_line="$(awk -v n="$delegation_line" 'NR < n && /gaia:maintainer-only:start/ { l = NR } END { print l + 0 }' "$HOOK_ABS")"
   end_line="$(awk -v n="$delegation_line" 'NR > n && /gaia:maintainer-only:end/ { print NR; exit }' "$HOOK_ABS")"

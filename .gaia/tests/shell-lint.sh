@@ -16,8 +16,9 @@
 # SIGPIPE-reader guard (.gaia/scripts/lint-sigpipe-readers.sh), and the
 # bundled-hooks inventory guard (.gaia/scripts/lint-hook-wiki-inventory.sh),
 # the wiki cached-version guard (.gaia/scripts/lint-wiki-cached-version.sh),
-# and the hook advisory-classification guard
-# (.gaia/scripts/lint-hook-advisory-classification.sh).
+# the hook advisory-classification guard
+# (.gaia/scripts/lint-hook-advisory-classification.sh), and the hook
+# cwd-relative-load guard (.gaia/scripts/lint-hook-cwd-relative-loads.sh).
 # Exit 0 when clean, 1 on any finding at or above the severity floor, and 1 on
 # a pass that cannot run at all (no shellcheck binary, an empty *.sh discovery
 # set, an unusable bash-3.2 interpreter). A red gate is therefore not always a
@@ -650,6 +651,20 @@ fi
 
 echo "--> lint-hook-advisory-classification (a blocking hook filed under an Advisory heading)"
 if ! bash "$REPO_ROOT/.gaia/scripts/lint-hook-advisory-classification.sh" "$REPO_ROOT"; then
+  status=1
+fi
+
+# Fold in the hook cwd-relative-load guard, for the reason every gate above it
+# rides here: shellcheck reads `[ -f .claude/hooks/lib/x.sh ] && . .claude/hooks/
+# lib/x.sh` as well-formed, and it is, right up to the point where the hook runs
+# from a working directory below the repository root, the test answers false for
+# a library that is present, and the capability probe behind it takes the
+# fail-open written for a library that is absent. Two of the hooks carrying the
+# shape were blocking guards, and neither said anything when it stood down. Run
+# from the repo root so its `git ls-files` discovery resolves and the file:line
+# it prints is repo-relative.
+echo "--> lint-hook-cwd-relative-loads (a hook locating framework code from the working directory)"
+if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-hook-cwd-relative-loads.sh"); then
   status=1
 fi
 

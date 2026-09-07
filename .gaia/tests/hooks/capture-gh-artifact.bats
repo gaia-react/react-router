@@ -275,11 +275,19 @@ any_breadcrumb_exists() {
 }
 
 @test "lib absent: exit 0, no file, no output" {
-  REPO="$("$HELPERS/tmp-git-repo.sh")"
+  # The hook resolves gh-artifact-lib.sh off its OWN location, so an absent lib
+  # is expressed by staging a copy of the hook in a tree that does not carry
+  # one. Running $HOOK_ABS from a lib-less working directory would not express
+  # it: that reaches the real checkout's lib and records normally, which is the
+  # whole point of the rooting. `stage_hook_repo` is reused rather than a bare
+  # tmp repo so the verb-arming load still resolves and the hook reaches the
+  # gh-artifact load this case is about.
+  stage_hook_repo
+  rm -f "$REPO/.gaia/scripts/gh-artifact-lib.sh"
   cd "$REPO"
   git checkout -b feat/nolib --quiet
 
-  run_hook "gh pr create --title x" "https://github.com/gaia-react/gaia/pull/712"
+  run_staged_hook "gh pr create --title x" "https://github.com/gaia-react/gaia/pull/712"
   [ "$status" -eq 0 ]
   [ -z "$output" ]
 

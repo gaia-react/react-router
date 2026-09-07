@@ -10,8 +10,9 @@
 # mode: source it for the function below, or run it directly as a script so
 # the Node writer can shell out to it (see "Usage (executable)" below).
 #
-# Usage (sourced, from a hook script, pwd = repo root):
-#   [ -f .claude/hooks/lib/worthiness-ledger.sh ] && . .claude/hooks/lib/worthiness-ledger.sh
+# Usage (sourced, from a hook script, at any working directory):
+#   _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=''
+#   [ -n "$_lib_dir" ] && [ -f "$_lib_dir/worthiness-ledger.sh" ] && . "$_lib_dir/worthiness-ledger.sh"
 #   ledger=$(worthiness_ledger_path "$tree_root")
 #
 # Usage (executable):

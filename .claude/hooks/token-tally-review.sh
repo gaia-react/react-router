@@ -77,14 +77,15 @@ shopt -u nullglob
 [ "$has_review" -eq 1 ] || exit 0
 
 # Resolve association through the same shared resolver the execute-time
-# tally uses. The two hooks load it differently, on two axes. That hook derives
-# the lib's directory from BASH_SOURCE while the load below stays cwd-relative,
-# so a cwd off the repo root silently loses attribution here; token-rollup-merge
-# does the same, so this is the family's shape rather than this file's. And that
-# hook parse-checks before sourcing where this one does not, which it can afford
-# to skip because it runs without errexit: a source that fails, whether the file
-# is missing or unparseable, reaches the ERR trap above and exits 0.
-. .claude/hooks/lib/gaia-active-plan.sh
+# tally uses, loaded from this file's own directory rather than from the
+# process working directory: a cwd anywhere under the repository root would
+# otherwise lose attribution silently. This hook still differs from the
+# execute-time one on the second axis, which is deliberate: that hook
+# parse-checks before sourcing where this one does not, which it can afford to
+# skip because it runs without errexit, so a source that fails, whether the
+# file is missing or unparseable, reaches the ERR trap above and exits 0.
+_hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)"
+. "$_hook_dir/lib/gaia-active-plan.sh"
 
 plan_dir="$(resolve_active_plan_dir)" || true
 feature_key=""
@@ -129,7 +130,7 @@ esac
 # under `set -u`; bash 4.4+ tolerates it. The tally owns window detection,
 # per-run dedup by review_id, the spurious no-op, and the record write; this
 # hook does not parse or dedup.
-bash .gaia/scripts/token-tally.sh \
+bash "$_hook_dir/../../.gaia/scripts/token-tally.sh" \
   --action review ${id_flag[@]+"${id_flag[@]}"} --session-id "$sid" \
   ${GAIA_TALLY_PROJECTS_ROOT:+--projects-root "$GAIA_TALLY_PROJECTS_ROOT"} >/dev/null 2>&1 || true
 

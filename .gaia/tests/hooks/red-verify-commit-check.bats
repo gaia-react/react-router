@@ -127,6 +127,18 @@ run_commit_hook() {
   invoke_hook_in "$REPO" "$json" "$HOOK_ABS"
 }
 
+# The same, from a subdirectory of the tmp repo. The agent's working directory
+# is whatever the session last set, not the repository root, so every arm this
+# gate depends on has to resolve from a depth nobody chose.
+run_commit_hook_from() {
+  local sub="$1"
+  local cmd="${2:-git commit -m change}"
+  local json
+  mkdir -p "$REPO/$sub"
+  json=$(jq -nc --arg c "$cmd" '{tool_name:"Bash", tool_input:{command:$c}}')
+  invoke_hook_in "$REPO/$sub" "$json" "$HOOK_ABS"
+}
+
 denied() { [[ "$output" == *'"permissionDecision": "deny"'* ]]; }
 
 # Absence assertion: fail the test when the hook denied. A bare `! denied` only
@@ -175,6 +187,27 @@ test("adds two numbers", () => {
   [ "$status" -eq 0 ]
   denied
   [[ "$output" == *"adds two numbers"* ]]
+}
+
+@test "still denies when the working directory is a subdirectory" {
+  # The regression this pins: the gate located its shared libraries by a bare
+  # repository-root-relative path, so from any subdirectory the load failed,
+  # the capability probe took the fail-open written for a MISSING library, and
+  # an ungated commit looked exactly like a clean pass. One `cd` bought that.
+  stage_file "app/utils/x/index.test.ts" "$PASSING_TEST"
+  run_commit_hook_from "app/utils"
+  [ "$status" -eq 0 ]
+  denied
+}
+
+@test "still allows a matching RED when the working directory is a subdirectory" {
+  # The other half: the rooting must not make the gate deny everything from a
+  # subdirectory either, which would be a different silent break.
+  stage_file "app/utils/x/index.test.ts" "$PASSING_TEST"
+  seed_matching_red "app/utils/x/index.test.ts" "adds two numbers"
+  run_commit_hook_from "app/utils"
+  [ "$status" -eq 0 ]
+  refute_denied
 }
 
 @test "denies a new first-run-pass test (ledger has no matching RED)" {

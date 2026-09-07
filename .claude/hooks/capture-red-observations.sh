@@ -61,7 +61,13 @@ done < <(printf '%s\n' "$cmd" | tr '|&;()' '\n')
 [ -n "$test_seg" ] || exit 0
 
 # --- source the shared lib (ledger path, repo-rel, signal helper) -------------
-[ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh
+# Rooted at this file's own directory, the same way the main-root load below is
+# and never at the process working directory: a bare test is false from anywhere
+# under the repository root, and the `type` degrade below cannot distinguish a
+# moved working directory from a missing library, so a `cd` alone would stop
+# this hook recording RED observations at all.
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=''
+[ -n "$_lib_dir" ] && [ -f "$_lib_dir/red-ledger.sh" ] && . "$_lib_dir/red-ledger.sh"
 type red_ledger_path >/dev/null 2>&1 || exit 0
 
 # The shared main-root resolver, sourced from this hook's own checkout via

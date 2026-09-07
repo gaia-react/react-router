@@ -5,8 +5,9 @@
 # repo-relative normalization, and the signal invocation in one place keeps
 # the two hooks in sync by construction.
 #
-# Usage (from a hook script, pwd = repo root):
-#   [ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh
+# Usage (from a hook script, at any working directory):
+#   _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=''
+#   [ -n "$_lib_dir" ] && [ -f "$_lib_dir/red-ledger.sh" ] && . "$_lib_dir/red-ledger.sh"
 #   ledger=$(red_ledger_path "$tree_root")
 #   rel=$(red_ledger_repo_rel "$some_path")
 #   red_ledger_signals "$rel"          # NDJSON on stdout; helper's exit code

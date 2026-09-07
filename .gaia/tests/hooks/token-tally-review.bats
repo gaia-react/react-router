@@ -4,16 +4,20 @@
 #
 # This hook is a thin trigger: it cheap-gates on a code-audit-frontend sidecar
 # actually existing, resolves SPEC/PLAN association, and invokes
-# `token-tally.sh --action review` by its literal repo-relative path. The
+# `token-tally.sh --action review` by a path rooted at its own on-disk
+# location, never by a PATH lookup and never against the working directory. The
 # real trigger -> row -> dedup effect is owned by task-integration-e2e; this
 # suite proves the INVOCATION (arg capture via a recording stub, DP-004),
 # the cheap negative gate, the Bash/Stop payload dispatch, and the
 # never-blocks contract.
 #
-# Every test runs the hook with cwd = a tmp git repo, never the real repo
-# root, so no test row is ever appended to the real
+# Every test drives a COPY of the hook staged inside a tmp git repo, never the
+# real one, so no test row is ever appended to the real
 # .gaia/local/telemetry/cost.jsonl and no test ever shells out to the real
-# token-tally.sh (a recording stub stands in at the same repo-relative path).
+# token-tally.sh (a recording stub stands in beside the staged copy). Running
+# the real hook with cwd set to the tmp repo would not achieve that: the hook
+# roots what it loads and runs at itself, so it would reach the real tree
+# whatever the working directory says.
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
@@ -63,6 +67,18 @@ printf '%s\n' "\$@" > "$CALLS_FILE"
 exit 0
 STUB
   chmod +x "$REPO/.gaia/scripts/token-tally.sh"
+
+  # A copy of the hook, staged at its own repo-relative path inside $REPO. The
+  # hook resolves both its shared lib and the tally script off ${BASH_SOURCE[0]}
+  # rather than off the working directory, so the staged libs above and the
+  # recording stub beside them are in its view only when the hook running is
+  # this copy. Driving $HOOK_ABS with cwd set to $REPO would reach the real
+  # checkout's lib and its real token-tally.sh instead, which is the whole
+  # point of the rooting and would make every invocation assertion below read
+  # a stub that was never called.
+  STAGED_HOOK="$REPO/.claude/hooks/token-tally-review.sh"
+  cp "$HOOK_ABS" "$STAGED_HOOK"
+  chmod +x "$STAGED_HOOK"
 }
 
 write_running() {
@@ -102,14 +118,14 @@ run_hook_bash() {
   # run_hook_bash <command> <session_id> <projects_root>
   local cmd="$1" sid="$2" proot="$3" input
   input=$("$HELPERS/mock-hook-input.sh" post-tool-use "$sid" Bash "$cmd")
-  run env GAIA_TALLY_PROJECTS_ROOT="$proot" bash -c "echo '$input' | '$HOOK_ABS'"
+  run env GAIA_TALLY_PROJECTS_ROOT="$proot" bash -c "echo '$input' | '$STAGED_HOOK'"
 }
 
 run_hook_stop() {
   # run_hook_stop <session_id> <projects_root>
   local sid="$1" proot="$2" input
   input=$("$HELPERS/mock-hook-input.sh" stop "$sid")
-  run env GAIA_TALLY_PROJECTS_ROOT="$proot" bash -c "echo '$input' | '$HOOK_ABS'"
+  run env GAIA_TALLY_PROJECTS_ROOT="$proot" bash -c "echo '$input' | '$STAGED_HOOK'"
 }
 
 # ---------- 1. Never-blocks contract (acceptance criterion 1) ----------
@@ -358,21 +374,21 @@ run_hook_stop() {
   write_review_sidecar "$PROOT" "S1" "code-audit-frontend"
 
   input=$(jq -n --arg sid "S1" '{session_id: $sid, transcript_path: "/tmp/t.jsonl", cwd: ".", hook_event_name: "Stop", stop_hook_active: true}')
-  run env GAIA_TALLY_PROJECTS_ROOT="$PROOT" bash -c "echo '$input' | '$HOOK_ABS'"
+  run env GAIA_TALLY_PROJECTS_ROOT="$PROOT" bash -c "echo '$input' | '$STAGED_HOOK'"
   [ "$status" -eq 0 ]
   [ ! -f "$CALLS_FILE" ]
 }
 
-# ---------- 5. Repo-relative invocation: no PATH-injected stub interception ----------
+# ---------- 5. Script-rooted invocation: no PATH-injected stub interception ----------
 
-@test "invokes token-tally.sh by literal repo-relative path, not via PATH lookup" {
+@test "invokes token-tally.sh by a script-rooted path, not via PATH lookup" {
   build_repo
   cd "$REPO"
   PROOT="$REPO/projects"
   write_review_sidecar "$PROOT" "S1" "code-audit-frontend"
 
-  # A PATH-injected stub named token-tally.sh must NOT be the one invoked;
-  # the hook calls `bash .gaia/scripts/token-tally.sh` by literal path.
+  # A PATH-injected stub named token-tally.sh must NOT be the one invoked; the
+  # hook names the script by a path derived from its own location.
   PATHSTUB="$(mktemp -d -t token-tally-review-pathstub-XXXXXX)"
   cat > "$PATHSTUB/token-tally.sh" <<'EOF'
 #!/usr/bin/env bash
@@ -382,7 +398,7 @@ EOF
   chmod +x "$PATHSTUB/token-tally.sh"
 
   input=$("$HELPERS/mock-hook-input.sh" post-tool-use S1 Bash "gh pr merge")
-  run env PATH="$PATHSTUB:$PATH" GAIA_TALLY_PROJECTS_ROOT="$PROOT" bash -c "echo '$input' | '$HOOK_ABS'"
+  run env PATH="$PATHSTUB:$PATH" GAIA_TALLY_PROJECTS_ROOT="$PROOT" bash -c "echo '$input' | '$STAGED_HOOK'"
   [ "$status" -eq 0 ]
   [ -f "$CALLS_FILE" ]
   rm -rf "$PATHSTUB"

@@ -156,8 +156,12 @@ fi
 # Repo-scope: this gate enforces the home repo's audit contract only. A
 # `gh pr merge` aimed at a different repo (e.g. a sibling project merged via
 # `cd ../other && gh pr merge` or `gh pr merge -R owner/other`) has no bearing
-# on this repo's audit markers, allow it.
-[ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+# on this repo's audit markers, allow it. Rooted at this hook's own on-disk
+# location, reusing the value resolved for the arming load above, for exactly
+# the reason the clearance load below states: a cwd-relative source misses the
+# lib from any directory that has no `.claude/`, and the `type` check that
+# follows reads that as a library the checkout does not carry.
+[ -n "$_va_lib_dir" ] && [ -f "$_va_lib_dir/repo-scope.sh" ] && . "$_va_lib_dir/repo-scope.sh"
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0
