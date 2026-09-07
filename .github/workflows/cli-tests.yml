@@ -330,7 +330,7 @@ jobs:
         # Measured rather than estimated. Across recent CI runs this step took
         # 21-28 seconds with the pnpm store warm, so five minutes is about ten
         # times its observed cost, and it still leaves ten of the job's 15 for
-        # the lint and Vitest steps below, which are the bulk of this job.
+        # the checks below.
         #
         # Under the job's own cap on purpose: a step cap at or above the job's
         # can never fire first, so the job would red with a generic timeout

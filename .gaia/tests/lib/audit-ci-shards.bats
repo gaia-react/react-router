@@ -2025,7 +2025,7 @@ concurrency_tree_needs_packages() {
 # uncapped call sites this file then held; by the time it was drained a third
 # had been added, uncapped, in the same shape. Enumerating the sites from the
 # `uses:` value, rather than from a list of step names, is what makes the next
-# one in THIS workflow reachable without an edit here.
+# one reachable without an edit here.
 #
 # The reach used to stop at this workflow, and that scope was itself the
 # defect: `setupnodecaps` walked `$WORKFLOW` alone, so the same composite action
@@ -2112,9 +2112,26 @@ setup_node_caps() {
 setup_node_cap_gaps() {
   local file wf
   local jid name kind cap job_cap seen="" gaps=""
+  local caps="${BATS_TEST_TMPDIR:-${TMPDIR:-/tmp}}/setup-node-caps.$$"
 
   for file in "$@"; do
     wf="$(basename "$file")"
+    # `read_wf` exits 2 on a file it cannot load (unparseable YAML, unreadable
+    # path) or that declares no `jobs:` mapping, and a process substitution
+    # discards that status. Per file that was harmless while the emptiness
+    # verdict was per file too, since the unread file's own zero lines tripped
+    # it. Whole-list it is not: the other workflows keep `seen` set, so an
+    # unreadable one would contribute nothing, report nothing, and leave the
+    # check green over a file it never opened -- the same blindness the
+    # tree-wide widening exists to remove, reintroduced one layer down. So the
+    # read is captured and its status tested per file, and a failure becomes a
+    # reported gap. `workflow_timeout_gaps` in
+    # .gaia/scripts/tests/retrigger-reachability.bats reports its own per-file
+    # zero for the same reason; this is that shape.
+    if ! setup_node_caps "$file" > "$caps"; then
+      gaps="${gaps}${wf}: could not be read (unparseable YAML, or no jobs mapping), so its gaia-setup-node steps were never opened"$'\n'
+      continue
+    fi
     while IFS=$'\t' read -r jid name kind cap job_cap; do
       [ -n "$jid" ] || continue
       seen="x"
@@ -2128,16 +2145,18 @@ setup_node_cap_gaps() {
       fi
       [ "$cap" -lt "$job_cap" ] \
         || gaps="${gaps}${wf} ${jid}/${name}: ${cap}m is not under the job's ${job_cap}m"$'\n'
-    done < <(setup_node_caps "$file")
+    done < "$caps"
   done
+  rm -f "$caps"
 
-  # Two conditions reach an empty read and the repairs differ, so the message
-  # names both rather than the one that prompted it: the action was renamed or
-  # its last call site removed, OR `read_wf` exited 2 (unparseable YAML, no
-  # jobs mapping) and printed its own line to stderr. Process substitution
-  # discards that status, which is why it is named here instead of tested.
-  if [ -z "$seen" ]; then
-    printf 'no gaia-setup-node step read across the workflows scanned. Either the action was renamed or its last call site removed, or read_wf failed to parse them (check its stderr above). Either way this check is now reaching nothing.\n'
+  # One condition now reaches an empty read: every workflow loaded and none
+  # called the action, so it was renamed or its last call site removed. The
+  # unreadable-file case used to land here too and no longer does; it is a
+  # named gap above, which is the stronger report because it says which file.
+  # Guarded on `gaps` as well as `seen` so a run whose only workflows were
+  # unreadable reports them rather than replacing them with this message.
+  if [ -z "$seen" ] && [ -z "$gaps" ]; then
+    printf 'no gaia-setup-node step read across the workflows scanned, though every one of them loaded. The action was renamed, or its last call site was removed. Either way this check is now reaching nothing.\n'
     return 1
   fi
 
@@ -2270,6 +2289,30 @@ setup_node_workflows() {
   }
   printf '%s' "$gaps" | grep -qF 'the owning job declares no integer cap' || {
     echo "a step whose job declares no cap was not reported: ${gaps}" >&2
+    return 1
+  }
+}
+
+# The one fixture here that passes TWO files, and it has to. The arm it drives
+# only differs from the old behaviour when a healthy sibling is present to keep
+# `seen` set: an unreadable file on its own trips the empty-read arm either way,
+# so a single-file fixture would pass against the code that has this bug.
+@test "W12 adversarial: a workflow that will not parse is reported, not skipped" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w12g.yml" gaps
+  # An unterminated flow mapping where the jobs block opens: PyYAML raises
+  # rather than returning a partial document, which is the `read_wf` exit-2
+  # path. Doctoring the workflow's own `jobs:` line rather than writing a
+  # throwaway file keeps the fixture pointed at a real subject, the same way
+  # every fixture above does.
+  replace_line "$WORKFLOW" "jobs:" "jobs: {" "$doctored"
+
+  gaps="$(setup_node_cap_gaps "$doctored" "$WORKFLOW")" && {
+    echo "an unparseable workflow beside a healthy one left the check reporting no gaps" >&2
+    return 1
+  }
+  printf '%s' "$gaps" | grep -qF 'could not be read' || {
+    echo "an unparseable workflow was silently skipped rather than reported: ${gaps}" >&2
     return 1
   }
 }
