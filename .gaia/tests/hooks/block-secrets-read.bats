@@ -199,35 +199,59 @@ run_hook_without_library() {
 }
 
 @test "every plain-file flag reader-operands.sh carries denies a secret passed as its value" {
+  local lib="$HOOKS_SRC/lib/reader-operands.sh"
   # shellcheck source=.claude/hooks/lib/reader-operands.sh disable=SC1091
-  . "$HOOKS_SRC/lib/reader-operands.sh"
+  . "$lib"
+
+  # Which tables exist is the library's to say, so read it rather than restate
+  # it. Each table below needs its own grammar arm, so a table added there and
+  # not here would leave this test driving a subset under a name claiming the
+  # whole set; comparing the two reds instead, and points at the arm to write.
+  local found known
+  found=$(grep -oE '^_GAIA_RO_[A-Z_]*FILE[A-Z_]*=' "$lib" | sed 's/=$//' | sort)
+  known=$(printf '%s\n' _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN _GAIA_RO_SHORT_FILE | sort)
+  if [ "$found" != "$known" ]; then
+    echo "the plain-file tables in lib/reader-operands.sh are not the ones this test builds commands for" >&2
+    echo "  lib:  $(echo "$found" | tr '\n' ' ')" >&2
+    echo "  test: $(echo "$known" | tr '\n' ' ')" >&2
+    return 1
+  fi
 
   # An empty table contributes no command and leaves this test asserting
-  # nothing, which reads exactly like a pass. A renamed or deleted variable is
-  # how that happens, so name whichever one went missing rather than iterating
-  # a set that quietly shrank.
+  # nothing, which reads exactly like a pass. A table emptied in place passes
+  # the comparison above, since the name is still there, so name whichever one
+  # went hollow rather than iterating a set that quietly shrank.
   local name
-  for name in _GAIA_RO_SHORT_FILE _GAIA_RO_LONG_FILE_PATTERN _GAIA_RO_LONG_FILE_PLAIN; do
+  for name in $known; do
     if [ -z "${!name}" ]; then
-      echo "$name is empty or gone from lib/reader-operands.sh" >&2
+      echo "$name is empty in lib/reader-operands.sh" >&2
       return 1
     fi
   done
 
+  # Two spellings per flag, because the walk reaches the value down two
+  # different paths: a separate token arrives through the pending branch, an
+  # attached or `=` value through the emit beside it. Driving one leaves the
+  # other free to be deleted with nothing red.
+  #
   # The tables are the union of GNU grep's flags and ripgrep's, so no single
   # command word spells every member and the mismatches below are deliberate.
   # What is under test is the flag's grammar, which the guard reads the same way
   # for every word in its grep family, so one word per grammar is enough.
-  local cmds=() f i=0
+  local cmds=() f c i=0
   while [ "$i" -lt "${#_GAIA_RO_SHORT_FILE}" ]; do
-    cmds+=("grep -${_GAIA_RO_SHORT_FILE:$i:1} certs/server.key foo.txt")
+    c="${_GAIA_RO_SHORT_FILE:$i:1}"
+    cmds+=("grep -$c certs/server.key foo.txt")
+    cmds+=("grep -${c}certs/server.key foo.txt")
     i=$((i + 1))
   done
   for f in $_GAIA_RO_LONG_FILE_PATTERN; do
     cmds+=("grep $f certs/server.key foo.txt")
+    cmds+=("grep $f=certs/server.key foo.txt")
   done
   for f in $_GAIA_RO_LONG_FILE_PLAIN; do
     cmds+=("rg $f certs/server.key TOKEN app")
+    cmds+=("rg $f=certs/server.key TOKEN app")
   done
 
   local cmd allowed=0
