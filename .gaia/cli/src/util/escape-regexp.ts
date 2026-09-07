@@ -9,11 +9,13 @@
  * *valid* regex, it just matches (or refuses) a token its sibling handles the
  * other way.
  *
- * The release exclude-regex path is the caller that does not compile: it emits
- * the escaped text on stdout for the shell staging pipeline to read as POSIX
- * ERE. So the set has to stay portable across both consumers, and a
- * JavaScript-only escape added here (`/` as `\/`, a `\u{...}` form) would break
- * a parity contract no `new RegExp` caller can see.
+ * The release exclude path is the strictest caller, because one set of escaped
+ * strings feeds two consumers that read them under different grammars:
+ * `renderExcludeRegex` writes them to stdout for the shell staging pipeline to
+ * read as POSIX ERE, and `parseExcludePatterns` compiles the same strings with
+ * `new RegExp`. So the set has to satisfy both, and a JavaScript-only escape
+ * added here (`/` as `\/`, a `\u{...}` form) breaks a parity contract the
+ * compiling consumer cannot see.
  *
  * `exclude-parser-parity.test.ts` is the only call-site suite that pins the
  * whole set today, and only through that one path, against the shell reference
