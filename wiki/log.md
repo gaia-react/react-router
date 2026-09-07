@@ -11,6 +11,19 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-07 1553dfbc SKIP - tests-only, pin whole plain-file flag table not one member
+- 2026-09-07 318cf9a8 WORTHY - every gaia-setup-node call site now bounded by its own timeout-minutes so a stalled install reds by step not generic job timeout, reaches adopters via tests.yml/chromatic.yml -> wiki/decisions/Composite Action Step Timeouts.md
+- 2026-09-07 62fff5c0 SKIP - hook-scopes.json why-prose + workspace-floors withhold rationale fix; justification prose only, no behavior change, wiki already states both accurately
+- 2026-09-07 1497c3cd SKIP - main-only-lib.sh docblock prose fix; same file as 6ebc6973, no wiki page affected
+- 2026-09-07 23511edc SKIP - added jq availability guard to block-selfheal-paths.sh only, one of ~20 hooks with the same gap (rest tracked in #1838); no wiki claim contradicted
+- 2026-09-07 26777103 SKIP - tests-only, resolve env-indirected run: paths before membership test
+- 2026-09-07 eeb417e8 SKIP - consolidated duplicate escapeRegExp helpers into .gaia/cli/src/util/escape-regexp.ts; internal DRY fix, no wiki page enumerates CLI util modules
+- 2026-09-07 d96a2c56 SKIP - tests-only, name wiki-doc suite's knob set not its cardinality
+- 2026-09-07 6ebc6973 SKIP - main-only-lib.sh docblock comment fix pointing at CALL_SITE_FILES roster; no wiki page describes the docblock's consumer enumeration
+- 2026-09-07 7c4773c6 SKIP - tests-only, bats PATH-membership rule consolidation
+- 2026-09-07 0f825b24 SKIP - subagent-dispatch.md rule prose fix; wiki/concepts/Code Review Audit Agent.md already stated the JSON-array contract accurately
+- 2026-09-07 dbc8c44c SKIP - tests-only, name enforcing tests by title not ordinal
+- 2026-09-07 b4108683 SKIP - wiki: self-referential
 - 2026-09-06 b7bca55e SKIP - wiki edit landed in-commit (wiki/decisions/Sharded CI Test Matrix.md updated for the SIGPIPE-reader class); new lint-sigpipe-readers.sh joins a shell-lint custom-pattern-lint enumeration in Release Workflow.md that was already stale before this range, out of scope for this sync
 - 2026-09-06 d5d235f6 SKIP - wiki edit landed in-commit (wiki/decisions/Sharded CI Test Matrix.md updated for the scripts-group anchoring fix)
 - 2026-09-06 00896f0b SKIP - wiki edit landed in-commit (wiki/decisions/pnpm.md updated for the CLI workspace's new scheduled advisory scan)
