@@ -88,6 +88,19 @@ jobs:
         run: ./.gaia/cli/gaia-maintainer release scrub-wiki --check
 
       - name: Setup Node and install the CLI workspace
+        # Same bound-a-stall reasoning as the gaia-setup-node steps in
+        # cli-tests.yml and audit-ci-tests.yml. Five minutes against the same
+        # `install: cli` measured at 21-28 seconds warm in the CLI test lane;
+        # this lane runs rarely enough to have no recent measurement of its own,
+        # so it takes the number from the identical install rather than
+        # inventing one.
+        #
+        # The job's cap is 30 rather than 15, so the headroom here is wide, but
+        # the cap is not sized from that headroom: what it buys is that a stalled
+        # fetch reds this step by name instead of burning half an hour and reding
+        # the whole publish job with a message naming nothing. On the last check
+        # before a tarball publishes, that attribution is worth more, not less.
+        timeout-minutes: 5
         uses: ./.github/actions/gaia-setup-node
         with:
           install: cli

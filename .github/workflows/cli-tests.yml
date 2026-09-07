@@ -321,6 +321,24 @@ jobs:
               - '.gaia/cli/src/automation/templates/**'
       - if: steps.filter.outputs.code == 'true' || steps.filter.outputs.reach == 'true' || github.event_name == 'workflow_dispatch'
         name: Setup Node and install the CLI workspace
+        # Bounds a STALLED install rather than sizing the leg, the same
+        # reasoning audit-ci-tests.yml states at length for its own
+        # gaia-setup-node steps: a step-level cap on a step that `uses:` a
+        # composite action bounds the whole composite, and what it buys is a
+        # bound on a hung pnpm registry fetch or Node tarball download.
+        #
+        # Measured rather than estimated. Across recent CI runs this step took
+        # 21-28 seconds with the pnpm store warm, so five minutes is about ten
+        # times its observed cost, and it still leaves ten of the job's 15 for
+        # the lint and Vitest steps below, which are the bulk of this job.
+        #
+        # Under the job's own cap on purpose: a step cap at or above the job's
+        # can never fire first, so the job would red with a generic timeout
+        # naming no step, which on a declared-required context is the
+        # attribution this exists to buy. W12 in
+        # .gaia/tests/lib/audit-ci-shards.bats holds every gaia-setup-node call
+        # site in every workflow to both halves of that.
+        timeout-minutes: 5
         uses: ./.github/actions/gaia-setup-node
         with:
           install: cli
@@ -621,6 +639,14 @@ jobs:
               - 'pnpm-workspace.yaml'
       - if: steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch'
         name: Setup Node
+        # Same bound-a-stall reasoning as the sibling job's install step above,
+        # sized to what this one actually does. `install: none` runs no pnpm
+        # install of its own, so all it can stall on is the Node tarball
+        # download and the pnpm store restore; across recent CI runs it took
+        # 13-18 seconds warm, and three minutes is about ten times that. Lower
+        # than the sibling's five because the work is lower, not because the job
+        # cap is: both jobs cap at 15, and the scenarios below need the rest.
+        timeout-minutes: 3
         uses: ./.github/actions/gaia-setup-node
         with:
           install: none

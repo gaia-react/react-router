@@ -36,6 +36,13 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup Node
+        # Same bound-a-stall reasoning as every other gaia-setup-node call site.
+        # `install: none` runs no pnpm install of its own, so the only thing that
+        # can hang here is the Node tarball download or the pnpm store restore;
+        # across recent CI runs this step took 5-10 seconds, and three minutes is
+        # many times its observed cost while leaving twelve of the job's 15 for
+        # the distribution layers below.
+        timeout-minutes: 3
         uses: ./.github/actions/gaia-setup-node
         with:
           install: none
