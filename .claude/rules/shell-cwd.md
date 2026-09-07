@@ -1,10 +1,16 @@
 # Shell CWD
 
-Prefer an absolute path in a Bash tool call over a `cd`. A `cd` is not scoped to the call that ran it: the working directory it sets persists for the rest of the session, so every later command written against the repo root resolves somewhere else. That is the whole of the general case, and it is a preference, not a guard.
+Do not `cd` in Bash tool calls. Use absolute paths for every command.
 
-## The one hard line
+## Why
 
-**Never `cd` somewhere that changes what `git rev-parse --show-toplevel` resolves to.** `.claude/settings.json` roots every hook registration at that value, derived per invocation rather than pinned, so the working directory decides which checkout the guard layer is loaded from. Moving around inside one checkout resolves the same root every time, which is why the general case above is only a preference. Landing in a different checkout does not, and two shapes reach one: a sibling clone, where the hook scripts are absent, `/bin/sh` exits 127, and because 127 neither blocks nor is reported the whole `PreToolUse` layer fails open silently; and one of this repository's own linked worktrees under `.claude/worktrees/`, which is a different checkout at a path *inside* this one, so the guards that run are that branch's copies rather than the ones under review. The criterion is the resolved toplevel rather than the path's depth, because that second shape satisfies "inside this repository" and is a different checkout anyway. Nothing at the registration site can close either (`.gaia/scripts/check-hook-command-rooting.sh` holds the rooting form, not the runtime cwd), so this is stated as a line rather than a preference.
+The directive is about the guard layer, and a `cd` takes it down two different ways. Neither announces itself.
+
+**Off the repo root, the hook libraries stop loading.** Hooks across the layer source their shared libraries through a bare cwd-relative test (`[ -f .claude/hooks/lib/red-ledger.sh ]`), which is false from any subdirectory. Each then `exit 0`s on the missing library, a fail-open written for a *broken* library rather than for a moved working directory. From `app/`, `red-verify-commit-check.sh` stops gating RED-before-GREEN commits and `worthiness-presence-check.sh` stops gating the merge, with no diagnostic from either.
+
+**Into another checkout, the registrations re-root.** `.claude/settings.json` roots every hook command at `$(git rev-parse --show-toplevel …)`, derived per invocation rather than pinned, so the working directory picks the checkout. A sibling clone has no hook scripts, so `/bin/sh` exits 127, and because 127 neither blocks nor is reported the whole `PreToolUse` layer fails open silently; one of this repository's own linked worktrees under `.claude/worktrees/` is a different checkout at a path *inside* this one, and runs that branch's guards rather than the ones under review. `.gaia/scripts/check-hook-command-rooting.sh` holds the registration form, not the runtime cwd, so nothing at the registration site can close either case.
+
+Both compound with the ordinary cost of a `cd`: the working directory it sets persists for the rest of the session, so every later relative path resolves against it.
 
 ## How to apply
 

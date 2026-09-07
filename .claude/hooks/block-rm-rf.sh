@@ -27,8 +27,8 @@
 #
 # Each entry is whitelisted in both its relative and its absolute spelling, so
 # `rm -rf /path/to/repo/dist` is allowed exactly as `rm -rf dist` is. The absolute
-# form is what .claude/rules/shell-cwd.md steers every Bash call toward, and a guard
-# that took only the relative one denied the form the rule prefers. The relative
+# form is what .claude/rules/shell-cwd.md requires of every Bash call, and a guard
+# that took only the relative one denied the form the rule mandates. The relative
 # spelling needs no explicit arm: it is caught by no deny arm and reaches the
 # catch-all allow. The absolute spelling is matched by `_rm_whitelisted_abs`
 # against the registry-read list, once per invocation.
@@ -572,13 +572,14 @@ main() {
       # relative spelling needs no arm: a relative scratch path is caught by no
       # deny arm and reaches the catch-all allow.
       #
-      # `.claude/rules/shell-cwd.md` steers every Bash call toward an absolute path,
-      # because a single `cd` persists for the rest of the session and moves every
-      # later relative path with it. Whitelisting these directories relatively only
-      # put that rule in direct conflict with this guard: the form the rule steers
-      # toward was the form the arm below denies, and an agent could satisfy one or
-      # the other but never both. Both spellings are accepted now, and absolute is
-      # the authoritative one to write.
+      # `.claude/rules/shell-cwd.md` mandates an absolute path on every Bash call,
+      # repo-wide, because a `cd` off the repo root persists for the rest of the
+      # session and silently disarms the hooks that load their libraries by a
+      # cwd-relative path. Whitelisting these directories relatively only put that
+      # rule in direct conflict with this guard: the form the rule requires is the
+      # form the arm below denies, and an agent could satisfy one or the other but
+      # never both. Both spellings are accepted now, and absolute is the
+      # authoritative one to write.
       #
       # Matched as a SUFFIX on the scratch segment, deliberately. Recognizing the
       # absolute spelling of a repo-relative target otherwise means resolving the
