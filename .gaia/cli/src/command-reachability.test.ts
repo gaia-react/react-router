@@ -74,6 +74,7 @@ import {
   matchesUnquotedInvocation,
 } from './util/gaia-invocation-matcher.js';
 import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
+import {collectTreeFiles} from './util/tree-walk.js';
 
 // Subcommands reachable only through their router with no external invoker,
 // allowed on purpose. Each entry needs a reason. Wiring or retiring a command
@@ -278,10 +279,10 @@ const enumerateLeafCommands = (
 const collectText = (absDir: string): string => {
   if (!existsSync(absDir)) return '';
 
-  let entries: string[];
+  let entries: readonly string[];
 
   try {
-    entries = readdirSync(absDir, {recursive: true}) as string[];
+    entries = collectTreeFiles(absDir, TEXT_EXTENSIONS);
   } catch {
     return '';
   }
@@ -289,14 +290,12 @@ const collectText = (absDir: string): string => {
   const parts: string[] = [];
 
   for (const rel of entries) {
-    if (TEXT_EXTENSIONS.has(path.extname(rel).toLowerCase())) {
-      const abs = path.join(absDir, rel);
+    const abs = path.join(absDir, rel);
 
-      try {
-        if (statSync(abs).isFile()) parts.push(readFileSync(abs, 'utf8'));
-      } catch {
-        // Unreadable entry (e.g. a dangling symlink); skip it.
-      }
+    try {
+      if (statSync(abs).isFile()) parts.push(readFileSync(abs, 'utf8'));
+    } catch {
+      // Unreadable entry (e.g. a dangling symlink); skip it.
     }
   }
 

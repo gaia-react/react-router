@@ -13,7 +13,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readdirSync,
   readFileSync,
   rmSync,
   writeFileSync,
@@ -22,6 +21,7 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {resolveRepoRootFromImportMeta} from '../util/repo-root-fixture.js';
+import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from '../util/tree-walk.js';
 import {run} from './sync-await.js';
 import {defaultRunner} from './util/branch.js';
 import type {CommandRunner} from './util/branch.js';
@@ -877,33 +877,15 @@ describe('wiki sync await', () => {
     const repoRoot = resolveRepoRootFromImportMeta(import.meta.url);
     const cliSrc = path.join(repoRoot, '.gaia', 'cli', 'src');
 
-    const walk = (dir: string): string[] => {
-      const entries = readdirSync(dir, {withFileTypes: true});
-      const files: string[] = [];
-
-      for (const entry of entries) {
-        const abs = path.join(dir, entry.name);
-        const isSkippedDir =
-          entry.name === 'node_modules' || entry.name === 'dist';
-
-        if (entry.isDirectory()) {
-          if (!isSkippedDir) files.push(...walk(abs));
-        } else if (
-          entry.name.endsWith('.ts') &&
-          !entry.name.endsWith('.test.ts')
-        ) {
-          files.push(abs);
-        }
-      }
-
-      return files;
-    };
+    const sources = collectTreeFiles(cliSrc, TS_SOURCE_EXTENSIONS).filter(
+      (entry) => !entry.endsWith('.test.ts')
+    );
 
     let definitionCount = 0;
     let callCount = 0;
 
-    for (const file of walk(cliSrc)) {
-      const contents = readFileSync(file, 'utf8');
+    for (const relative of sources) {
+      const contents = readFileSync(path.join(cliSrc, relative), 'utf8');
       definitionCount += (
         contents.match(/^export const cleanupAfterMerge = /gmu) ?? []
       ).length;

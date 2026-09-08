@@ -53,9 +53,10 @@
  * skips there. Mirrors `command-reachability.test.ts`.
  */
 import {describe, expect, test} from 'vitest';
-import {existsSync, readdirSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
+import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
 
 const CLI_SRC = path.join(
   resolveRepoRootFromImportMeta(import.meta.url),
@@ -76,10 +77,9 @@ const STRING_KEYED = /Record<\s*string\s*,/u;
 const HEAD_WINDOW = 8;
 
 const sourceFiles = (): string[] =>
-  (readdirSync(CLI_SRC, {recursive: true}) as string[])
-    .filter((name) => name.endsWith('.ts') && !name.endsWith('.test.ts'))
-    .filter((name) => !name.includes('__tests__'))
-    .toSorted((left, right) => left.localeCompare(right));
+  collectTreeFiles(CLI_SRC, TS_SOURCE_EXTENSIONS).filter(
+    (name) => !name.endsWith('.test.ts') && !name.includes('__tests__')
+  );
 
 /** The declaration head at `start`: everything up to and including the `=`. */
 const headAt = (lines: readonly string[], start: number): string => {
