@@ -11,6 +11,17 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-08 c2541841 WORTHY - hooks now root library loads and gate reads on BASH_SOURCE, not cwd -> wiki/concepts/Claude Hooks.md
+- 2026-09-08 2238689b SKIP - audit-scratch-dir worktree-keying bugfix, existing wiki pointers already abstract over this detail
+- 2026-09-08 991b0698 SKIP - internal NOUN vocab tweak in lint-stale-cardinals.sh, no dedicated wiki page (enumeration would violate wiki-style)
+- 2026-09-08 9abf7a00 SKIP - tests-only: bats-path-helper header comment split
+- 2026-09-08 bbd2ad2e SKIP - shell-cwd.md rule prose only, no wiki-documented fact changed
+- 2026-09-08 9d3dd34d WORTHY - setup-node timeout comments now point at the composite's retry+pause sizing -> wiki/decisions/Composite Action Step Timeouts.md
+- 2026-09-08 6755e73a SKIP - commit itself already edited wiki/concepts/Release Workflow.md, nothing further to write
+- 2026-09-08 23c5bd5b SKIP - prior wiki-sync commit, self-referential, nothing new to catalog
+- 2026-09-08 0d67aa2e WORTHY - gaia-setup-node retries a failed pnpm install once with a 15s pause -> wiki/decisions/Composite Action Step Timeouts.md
+- 2026-09-08 f06f26e8 SKIP - tests-only: assert4 environment aggregation
+- 2026-09-08 7f1040d8 SKIP - shellcheck source directive comment only, no behavior change
 - 2026-09-07 1553dfbc SKIP - tests-only, pin whole plain-file flag table not one member
 - 2026-09-07 318cf9a8 WORTHY - every gaia-setup-node call site now bounded by its own timeout-minutes so a stalled install reds by step not generic job timeout, reaches adopters via tests.yml/chromatic.yml -> wiki/decisions/Composite Action Step Timeouts.md
 - 2026-09-07 62fff5c0 SKIP - hook-scopes.json why-prose + workspace-floors withhold rationale fix; justification prose only, no behavior change, wiki already states both accurately
