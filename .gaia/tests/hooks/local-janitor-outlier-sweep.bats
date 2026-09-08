@@ -48,6 +48,7 @@
 # `return 1`, never `!`-negation; final-line absence uses `[ ! -e ... ]`.
 
 setup() {
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   HOOK_ABS=$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)/local-janitor.sh
   GAIA_DIR_REAL=$(cd "$BATS_TEST_DIRNAME/../.." && pwd)
 }
@@ -287,11 +288,7 @@ copy_shipped_registry() {
   local_dir="$REPO/.gaia/local"
   echo x > "$local_dir/totally-unknown-thing.md"
 
-  nojq_bin="$BATS_TEST_TMPDIR/nojq-bin"
-  mkdir -p "$nojq_bin"
-  ln -sf "$(command -v bash)" "$nojq_bin/bash"
-  ln -sf "$(command -v git)" "$nojq_bin/git"
-  ln -sf "$(command -v dirname)" "$nojq_bin/dirname"
+  nojq_bin="$(path_allowlist bash git dirname)"
 
   cd "$REPO"
   PATH="$nojq_bin" GAIA_JANITOR_SWEEP_ONLY=outliers run bash "$HOOK_ABS"

@@ -25,6 +25,7 @@
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   HELPERS="$BATS_TEST_DIRNAME/helpers"
   HOOK_ABS=$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)/issue-claim-release.sh
   command -v jq >/dev/null 2>&1 || skip "jq required"
@@ -634,14 +635,7 @@ assert_nothing_released() { [ ! -s "$FAKE_GH_STATE/issue_edits" ]; }
 
 @test "8a: gh absent from PATH releases nothing and exits 0" {
   export FAKE_GH_PR_BODY="Closes #12"
-  nogh_bin="$BATS_TEST_TMPDIR/nogh-bin"
-  mkdir -p "$nogh_bin"
-  ln -sf "$(command -v bash)" "$nogh_bin/bash"
-  ln -sf "$(command -v jq)" "$nogh_bin/jq"
-  ln -sf "$(command -v git)" "$nogh_bin/git"
-  ln -sf "$(command -v grep)" "$nogh_bin/grep"
-  ln -sf "$(command -v sort)" "$nogh_bin/sort"
-  ln -sf "$(command -v cat)" "$nogh_bin/cat"
+  nogh_bin="$(path_allowlist bash jq git grep sort cat)"
 
   input=$("$HELPERS/mock-hook-input.sh" post-tool-use S1 Bash 'gh pr merge 42')
   PATH="$nogh_bin" invoke_hook_in "$REPO" "$input" "$HOOK_ABS"
@@ -651,10 +645,7 @@ assert_nothing_released() { [ ! -s "$FAKE_GH_STATE/issue_edits" ]; }
 
 @test "8b: jq absent from PATH releases nothing and exits 0" {
   export FAKE_GH_PR_BODY="Closes #12"
-  nojq_bin="$BATS_TEST_TMPDIR/nojq-bin"
-  mkdir -p "$nojq_bin"
-  ln -sf "$(command -v bash)" "$nojq_bin/bash"
-  ln -sf "$(command -v cat)" "$nojq_bin/cat"
+  nojq_bin="$(path_allowlist bash cat)"
 
   input=$("$HELPERS/mock-hook-input.sh" post-tool-use S1 Bash 'gh pr merge 42')
   PATH="$nojq_bin" invoke_hook_in "$REPO" "$input" "$HOOK_ABS"

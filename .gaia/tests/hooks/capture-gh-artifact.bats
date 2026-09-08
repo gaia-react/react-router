@@ -10,6 +10,7 @@ setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
   HELPERS="$BATS_TEST_DIRNAME/helpers"
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
+  . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
   HOOK_ABS="$REPO_ROOT/.claude/hooks/capture-gh-artifact.sh"
   LIB_SRC="$REPO_ROOT/.gaia/scripts/gh-artifact-lib.sh"
   AKL_SRC="$REPO_ROOT/.gaia/scripts/audit-key-lib.sh"
@@ -258,11 +259,7 @@ any_breadcrumb_exists() {
   cd "$REPO"
   git checkout -b feat/nojq --quiet
 
-  nojq_bin="$BATS_TEST_TMPDIR/nojq-bin"
-  mkdir -p "$nojq_bin"
-  ln -sf "$(command -v bash)" "$nojq_bin/bash"
-  ln -sf "$(command -v cat)" "$nojq_bin/cat"
-  ln -sf "$(command -v git)" "$nojq_bin/git"
+  nojq_bin="$(path_allowlist bash cat git)"
 
   input=$("$HELPERS/mock-hook-input.sh" post-tool-use S1 Bash "gh pr create --title x" \
     "https://github.com/gaia-react/gaia/pull/712")
