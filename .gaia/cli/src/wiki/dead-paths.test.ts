@@ -217,6 +217,36 @@ describe('wiki dead-paths', () => {
     ]);
   });
 
+  test('ignores gitignored machine-local files absent from this checkout', () => {
+    sandbox.writeFile(
+      'wiki/modules/Claude Integration.md',
+      '# Claude Integration\n\nOverrides live in `.claude/settings.local.json`.\n'
+    );
+
+    expect(findDeadPaths(sandbox.root)).toEqual([]);
+  });
+
+  test('exempts gitignored machine-local files by exact token, not by prefix', () => {
+    // Two widenings are pinned at once. Loosening the `.has()` membership check
+    // into a `startsWith` would swallow the `.bak`, and moving the entry into
+    // `RUNTIME_PREFIXES` as a directory prefix would swallow the sibling too.
+    sandbox.writeFile(
+      'wiki/modules/Claude Integration.md',
+      [
+        '# Claude Integration',
+        '',
+        'See `.claude/settings.local.json`, `.claude/settings.local.json.bak`,',
+        'and `.claude/settings.other.json`.',
+        '',
+      ].join('\n')
+    );
+
+    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+      '.claude/settings.local.json.bak',
+      '.claude/settings.other.json',
+    ]);
+  });
+
   test('ignores explicit historical-record bullets in decision pages', () => {
     sandbox.writeFile(
       'wiki/decisions/Some Refactor.md',
