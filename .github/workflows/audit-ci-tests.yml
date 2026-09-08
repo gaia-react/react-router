@@ -491,8 +491,8 @@ jobs:
               # having run that assertion zero times. Redundant today: the scan
               # reads only `*.sh`, and `**/*.sh` above already matches every one
               # of those under this root. Listed deliberately anyway, the same
-              # convention the two redundant `.github/workflows/` entries at the
-              # top of this filter use, so that narrowing `**/*.sh` later cannot
+              # convention the redundant `.github/workflows/` entries at the top
+              # of this filter use, so that narrowing `**/*.sh` later cannot
               # silently unarm the root. The widening it costs is small and worth
               # naming: the only files this newly matches are the seven under
               # .github/ that no glob above reaches -- CODEOWNERS, FUNDING.yml,

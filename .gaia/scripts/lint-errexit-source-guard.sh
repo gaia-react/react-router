@@ -105,6 +105,14 @@ set -euo pipefail
 # next to them (gaia-react/gaia#1870). It is also what makes that repair
 # defensible: the bats matrix is ubuntu-only, so a revert to the `|| true` shape
 # reds only on a local macOS run, and nothing but this scan would catch it.
+#
+# `.specify/extensions/gaia/lib` is knowingly NOT a root, and that is a deferred
+# decision rather than a settled one: it carries 11 live instances of this class
+# in files that ship, so widening to it is a repair of its own rather than a
+# root list edit. gaia-react/gaia#1880 tracks the choice between widening and
+# recording why not. Naming it here is what keeps the omission legible; the
+# closure qualifier above already says a load outside these roots is outside
+# this check, and this is the one directory currently known to sit there.
 scan_roots=(.claude/hooks .gaia/scripts .github)
 
 # A root that is absent or renamed makes the walk below yield the OTHER root's
