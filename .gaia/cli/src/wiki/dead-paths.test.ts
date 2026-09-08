@@ -182,6 +182,41 @@ describe('wiki dead-paths', () => {
     ]);
   });
 
+  test('ignores a hypothetical example path in either Unicode normal form', () => {
+    // An accented path has two legal spellings and `Set.has` compares code
+    // points, so a wiki page saved as NFD (`e` + U+0301) stops matching an NFC
+    // entry. Only the second line pins that; the first passes either way. Its
+    // combining mark is written as an escape rather than typed, because as a
+    // raw literal any re-encode of this file flattens it into the line above,
+    // leaving the suite green with the normalization removed and no diff
+    // showing the coverage had gone.
+    sandbox.writeFile(
+      'wiki/decisions/Quoting.md',
+      [
+        '# Quoting',
+        '',
+        'NFC: `app/components/café.test.ts`',
+        'NFD: `app/components/cafe\u0301.test.ts`',
+        '',
+      ].join('\n')
+    );
+
+    expect(findDeadPaths(sandbox.root)).toEqual([]);
+  });
+
+  test('exempts hypothetical examples by exact token, not by prefix', () => {
+    // Widening the `.has()` membership check into a prefix skip would take
+    // every real citation under the directory with it.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` and `.claude/commands/deploy.sh`.\n'
+    );
+
+    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+      '.claude/commands/deploy.sh',
+    ]);
+  });
+
   test('ignores explicit historical-record bullets in decision pages', () => {
     sandbox.writeFile(
       'wiki/decisions/Some Refactor.md',
