@@ -17,8 +17,8 @@
  * # What counts as an offense
  *
  * A JavaScript regex literal that OPENS with a character class carrying `*` and
- * at least six distinct regex metacharacters, anywhere under `.gaia/cli/src`
- * outside the declaring module. Each of the three conditions is a measured
+ * at least six distinct regex metacharacters, in any `.ts` file under
+ * `.gaia/cli/src` outside the declaring module. Each condition is a measured
  * boundary rather than a taste, and each one is what spares a live construct in
  * this tree:
  *
@@ -43,7 +43,7 @@
  *
  * # Scope boundary (v1), and it is a floor rather than a clean bill of health
  *
- * Four shapes are deliberately unreached, and a copy taking any of them slips:
+ * These shapes are deliberately unreached, and a copy taking any of them slips:
  * a class that is not the literal's first token (`/^[…]/`), a set assembled
  * through `new RegExp(...)` from string pieces, a pattern imported from another
  * module, and a set spelled across several lines. Reaching them means deciding
@@ -52,6 +52,12 @@
  * TypeScript AST rather than from lines at all. What this floor does cover is
  * the shape every copy the consolidation removed actually took, and the one the
  * next author would reach for.
+ *
+ * The corpus is `.ts` only, so the `.tmpl` scaffold templates sharing this root
+ * are never opened. They render into an adopter's app rather than into the CLI,
+ * and none carries an escape set today, so this is a boundary rather than a
+ * known miss: a template that grew one would be a copy in the adopter's tree,
+ * which is not what the shared module's callers are.
  *
  * Nothing is exempted by path except the declaring module itself, which is the
  * one place the declaration belongs. There is deliberately no allowlist beside
