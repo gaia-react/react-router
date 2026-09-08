@@ -79,9 +79,10 @@
  * scan skips there. Mirrors `module-docblock-placement.test.ts`.
  */
 import {describe, expect, test} from 'vitest';
-import {existsSync, readdirSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
+import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
 
 const REGEX_METACHARACTERS = new Set([
   '$',
@@ -148,17 +149,12 @@ const findEscapeSetDeclaration = (source: string): null | number => {
   return null;
 };
 
-// Separators normalized to POSIX, because the one entry compared by name below
-// is the declaring module. A native separator would make that comparison miss,
-// and the miss reports the shared declaration itself as the copy it exists to
-// find, which reads as the guard working.
-const collectSourceFiles = (root: string): readonly string[] =>
-  (readdirSync(root, {recursive: true}) as string[])
-    .filter((entry) => entry.endsWith('.ts'))
-    .map((entry) => entry.split(path.sep).join('/'))
-    .toSorted((a, b) => a.localeCompare(b));
-
-/** The declaring module, relative to `.gaia/cli/src`. */
+/**
+ * The declaring module, relative to `.gaia/cli/src` and spelled the way
+ * `collectTreeFiles` reports an entry. Any other spelling makes the comparison
+ * below miss, and the miss reports the shared declaration itself as a copy of
+ * itself, which reads as the guard working.
+ */
 const DECLARING_MODULE = 'util/escape-regexp.ts';
 
 const repoRoot = resolveRepoRootFromImportMeta(import.meta.url);
@@ -183,7 +179,7 @@ describe('escapeRegExp uniqueness', () => {
   test.skipIf(!sourcesPresent)(
     'no file outside the declaring module declares an escape set',
     () => {
-      const sources = collectSourceFiles(cliSrc);
+      const sources = collectTreeFiles(cliSrc, TS_SOURCE_EXTENSIONS);
 
       // A scan that reaches nothing reports nothing, so the empty result below
       // would read as a clean corpus. `.gaia/cli/src` has held hundreds of

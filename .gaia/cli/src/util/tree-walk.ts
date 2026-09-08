@@ -1,0 +1,69 @@
+/**
+ * The recursive tree walk every whole-tree guard suite scans with.
+ *
+ * A guard's corpus is exactly the set it is trusted to have scanned, and a
+ * per-suite copy of the walk drifts out from under that trust in silence:
+ * near-identical functions are not identical ones, so no lint rule reports a
+ * copy that stops normalizing separators, and an exclusion or a filter added
+ * to one copy reaches none of the others.
+ */
+import {readdirSync} from 'node:fs';
+import path from 'node:path';
+
+/** The extension set the TypeScript-only guard suites scan with. */
+export const TS_SOURCE_EXTENSIONS: ReadonlySet<string> = new Set(['.ts']);
+
+/**
+ * `entry` with `separator` rewritten to POSIX `/`.
+ *
+ * The separator is a parameter so that this has a falsifiable test. `path.sep`
+ * is `/` on every platform this repository runs on, so a test that feeds a
+ * native-separator entry through `collectTreeFiles` passes just as well with
+ * the rewrite deleted, and the one property a caller depends on ends up
+ * guarded by nothing. A test hands this a Windows separator directly.
+ */
+export const normalizeEntry = (entry: string, separator: string): string =>
+  entry.split(separator).join('/');
+
+/**
+ * Every regular file under `root` whose extension is in `extensions`, relative
+ * to `root`, separators normalized to POSIX, sorted.
+ *
+ * The extension set is a required parameter rather than a default, because a
+ * default is how a caller that meant "everything" silently gets a narrower
+ * corpus and reads the resulting empty answer as a clean pass.
+ *
+ * Normalization is unconditional: a POSIX-separated entry is correct for every
+ * caller, and a caller that compares an entry against a repo-relative module
+ * path breaks without it.
+ *
+ * Only regular files are reported, so a caller may read each entry without
+ * stating it first: a directory whose own name carries a matching extension
+ * would otherwise reach `readFileSync` and throw `EISDIR`. A symlink is not a
+ * regular file here, so the walk does not follow one, and a caller that needs
+ * to owns that stat.
+ *
+ * No directory is excluded. A caller that walks a tree holding a build or
+ * vendor directory owns that filter, which is the honest shape while no caller
+ * does: an exclusion carried here for no live caller is a rule nobody can
+ * check.
+ *
+ * A `root` that does not exist throws, the way `readdirSync` does. Silence
+ * there would be the discovery-stage fail-open this walk exists to close.
+ */
+export const collectTreeFiles = (
+  root: string,
+  extensions: ReadonlySet<string>
+): readonly string[] =>
+  readdirSync(root, {recursive: true, withFileTypes: true})
+    .filter(
+      (entry) =>
+        entry.isFile() && extensions.has(path.extname(entry.name).toLowerCase())
+    )
+    .map((entry) =>
+      normalizeEntry(
+        path.relative(root, path.join(entry.parentPath, entry.name)),
+        path.sep
+      )
+    )
+    .toSorted((a, b) => a.localeCompare(b));
