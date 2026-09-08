@@ -98,8 +98,6 @@ these classes — the list is a floor, not a ceiling.
   more than one event/matcher, plus `.claude/rules/shell-cwd.md` for the
   cwd-fragility cross-reference (the rooting is derived per invocation, so
   the working directory picks which checkout's hooks run)
-- Cross-check for duplicated contracts and conflicting instructions beyond
-  the classes above — that list is a floor, not a ceiling.
 
 ## Output
 
