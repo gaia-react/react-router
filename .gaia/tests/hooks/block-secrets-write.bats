@@ -20,14 +20,6 @@
 # written. Do not "tidy" those into single literals; the guard will deny the
 # edit that does it.
 
-# shellcheck disable=SC2317
-# SC2317 (command appears unreachable) is a structural false positive on every
-# @test block below: bats invokes each test body through its own runner, which
-# static shellcheck cannot see, so it marks the blocks unreachable. The directive
-# is file-wide because the false positive is intrinsic to the bats structure, not
-# to any single test, and it masks no genuine signal: SC2317 cannot reason about
-# an indirectly-invoked bats suite at all.
-
 # shellcheck disable=SC2016
 # SC2016 (expressions don't expand in single quotes) fires on every fixture that
 # carries a `$`, which is most of them. Not expanding is the entire point: the

@@ -66,12 +66,22 @@
 #            modes (a masked `!` assertion that never fails a test [SC2314], a
 #            `local x=$(...)` that swallows the command's exit [SC2155], a `cd`
 #            with no `|| exit` guard [SC2164]). The `info`/`style` tiers on bats
-#            are dominated by structural false positives from the bats execution
-#            model (SC2317 unreachable `@test`/`setup`/`teardown` bodies,
-#            SC2030/SC2031 subshell state from `run`, SC2016 assertion strings);
-#            those sit below the `warning` floor and never fire, so bats needs no
-#            blunt per-code exclude list. Run `shellcheck -S style <file>` by hand
-#            to see the sub-floor tiers.
+#            carry structural false positives from the bats execution model
+#            (SC2030/SC2031 subshell state from `run`, SC2016 assertion
+#            strings); those sit below the `warning` floor and never fire, so
+#            bats needs no blunt per-code exclude list. Run
+#            `shellcheck -S style <file>` by hand to see the sub-floor tiers.
+#
+#            SC2317 is NOT one of those structural codes, and reading it as one
+#            writes off a class that is both real and cheap to clear. A `@test`
+#            body parses as a top-level brace group rather than a function, so a
+#            bare `return` inside one is a script-level return and every `@test`
+#            after it reads as unreachable. A suite carrying no such return
+#            reports none of it. It sits below the floor because the idiom is
+#            semantically correct rather than unfixable; the spelling that
+#            avoids it is the explicit `true` .claude/rules/bats-assertions.md
+#            already prescribes for a test whose last check is
+#            `<positive-for-the-bad-case> && return 1`.
 #
 # Never begin a comment line with the bare word `shellcheck`: a comment of that
 # shape is parsed as a directive, and a malformed one (SC1072/SC1073) aborts the
