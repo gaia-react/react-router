@@ -94,9 +94,9 @@ branches_in() {
 }
 
 # A PATH carrying every binary this script needs EXCEPT jq, so its own
-# jq-required guard fires. The enumeration is this subject's needs and nothing
-# else: a suite whose subject drives a digest engine names a sha256 tool of its
-# own, and this subject drives none.
+# jq-required guard fires. No sha256 tool appears in the enumeration because
+# this subject drives no digest engine; a suite whose subject drives one names
+# a sha256 tool of its own.
 path_without_jq() {
   path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr
 }

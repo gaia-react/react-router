@@ -179,10 +179,10 @@ write_refusal() {
 # A PATH whose dir carries every binary these scripts need EXCEPT jq
 # (including a sha256 tool, so the digest engine itself still works and only
 # the jq-gated clearance reader is disabled), so `command -v jq` fails and the
-# digest-marker-presence filter disables itself. The sha256 tools are why this
-# enumeration is not the one the sibling audit-respawn suites name: those drive
-# no digest engine, and the difference between the lists is the difference
-# between the subjects rather than drift between copies.
+# digest-marker-presence filter disables itself. The sha256 tools are in the
+# enumeration because this subject drives the digest engine; a suite whose
+# subject drives none names no sha256 tool, and that difference between lists
+# is a difference between subjects rather than drift between copies.
 path_without_jq() {
   path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr shasum sha256sum
 }
