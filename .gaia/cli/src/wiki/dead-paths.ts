@@ -44,13 +44,18 @@ const TRACKED_PREFIXES = [
 const SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
 
 /**
- * Wiki files whose own citations are exempt from the scan, matching the
- * Exceptions list in `.claude/rules/wiki-style.md`: none is hand-edited prose,
- * so a dead citation in one is not rot a human can act on. Keep the two in
- * step; that rule owns the reasoning for each member.
+ * Wiki files whose own citations are exempt from the scan. The three markdown
+ * members match the Exceptions list in `.claude/rules/wiki-style.md`, and keep
+ * those in step: none of the three is hand-edited prose, so a dead citation in
+ * one is not rot a human can act on, and that rule owns the reasoning.
  *
- * `HELP_TEXT` above restates the reachable members of this list in prose.
- * Nothing in the language couples the two, so a test asserts it instead.
+ * `wiki/.state.json` is outside that correspondence and has no counterpart in
+ * the rule. It is a defensive non-markdown entry that `walkMarkdown` can never
+ * yield, so neither adding it to that prose rule nor deleting it here follows
+ * from the sentence above.
+ *
+ * `HELP_TEXT` above restates the markdown members in prose. Nothing in the
+ * language couples the two, so a test asserts it in both directions.
  */
 export const SKIP_PATH_FRAGMENTS = [
   'wiki/log.md',

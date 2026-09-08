@@ -288,12 +288,13 @@ describe('wiki dead-paths', () => {
     expect(findDeadPaths(sandbox.root)).toEqual([]);
   });
 
-  test('the help text names every skip fragment the scan can reach', () => {
+  test('the help text and the skip list agree, in both directions', () => {
     // The help prose and the array are two hand-written copies of one set, and
-    // one can gain a member the other never gets (#1878). Every entry is
-    // checked unless named below, so a new one is covered by default rather
-    // than by remembering to widen a predicate.
+    // either can gain or lose a member the other never does (#1878). Both
+    // directions are asserted: one of them alone leaves half the drift silent.
     //
+    // Array to prose. Every entry is checked unless named below, so a new one
+    // is covered by default rather than by remembering to widen a predicate.
     // `wiki/.state.json` is named because `walkMarkdown` collects `.md` files
     // only: no non-markdown entry can ever match a scanned path, so it is
     // unreachable and correctly absent from the help text.
@@ -304,6 +305,23 @@ describe('wiki dead-paths', () => {
 
     for (const fragment of documented) {
       expect(HELP_TEXT).toContain(fragment);
+    }
+
+    // Prose to array. Dropping an entry from the array leaves the help
+    // promising an exclusion the scan no longer applies, and readers then see
+    // dead-path findings for a file the documented contract excludes. Read the
+    // exclusion sentence back and require every file it names to still be in
+    // the array; a trailing `**` is prose glob notation for the directory
+    // prefix the array stores.
+    const sentence = /Excludes ([^(]+)\(/.exec(HELP_TEXT)?.[1] ?? '';
+    const namedInHelp = [...sentence.matchAll(/wiki\/[\w./*-]+/g)].map(
+      (match) => match[0].replaceAll('*', '')
+    );
+
+    expect(namedInHelp).toHaveLength(documented.length);
+
+    for (const fragment of namedInHelp) {
+      expect(SKIP_PATH_FRAGMENTS).toContain(fragment);
     }
   });
 
