@@ -1087,7 +1087,7 @@ assert_degraded_without() {
 # -----------------------------------------------------------------------------
 # The OTHER arm of "cannot be sourced": present, but unparseable.
 #
-# Every case above deletes the lib, so all four exercise the `[ -f ]` guard and
+# Every case above deletes the lib, so each one exercises the `[ -f ]` guard and
 # none of them reaches the load. A lib that is present but syntactically broken
 # passes that guard and fails at the load instead -- an interrupted
 # `/update-gaia`, an unresolved merge conflict, or a truncated write all leave
@@ -1133,9 +1133,11 @@ assert_degraded_with_unparseable() {
   return 0
 }
 
-# The control. Without it the four pinned cases below would stay green if the
-# resolver stopped resolving entirely under 3.2, for a reason having nothing to
-# do with either load shape.
+# The control for the `degraded:` cases below. Without it they would stay green
+# if the resolver stopped resolving entirely under 3.2, for a reason having
+# nothing to do with either load shape. The clearance-reader case at the end
+# needs no such control: it asserts `team-signal` rather than `degraded`, so a
+# resolver that had stopped resolving could not satisfy it.
 @test "unparseable control: with every lib intact, stock /bin/bash resolves normally" {
   [ -x /bin/bash ] || skip "no /bin/bash"
   add_commit a
