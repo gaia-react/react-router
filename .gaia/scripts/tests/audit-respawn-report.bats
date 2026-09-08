@@ -29,6 +29,8 @@ setup() {
   THIS_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)"
   SCRIPT="$THIS_DIR/../audit-respawn-report.sh"
   LIB="$THIS_DIR/../audit-respawn-lib.sh"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$( cd "$THIS_DIR/../../.." && pwd )/.gaia/tests/helpers/path.sh"
   [ -x "$SCRIPT" ] || skip "audit-respawn-report.sh not executable"
   [ -f "$LIB" ] || skip "audit-respawn-lib.sh not found"
   command -v jq >/dev/null 2>&1 || skip "jq required"
@@ -98,16 +100,12 @@ extract_num() {
   grep -F "$label" <<<"$output" | head -1 | grep -oE '[0-9]+' | head -1
 }
 
-# A PATH whose dir carries every binary the script needs EXCEPT jq, so
-# `command -v jq` fails and the script's own jq-required guard fires.
-# Mirrors resolve-audit-spawn.bats's path_without_jq.
+# A PATH whose dir carries every binary this script needs EXCEPT jq, so
+# `command -v jq` fails and the script's own jq-required guard fires. The
+# enumeration is this subject's own: the sibling suite that drives the digest
+# engine names a sha256 tool as well, and this one has no use for one.
 path_without_jq() {
-  local d="$BATS_TEST_TMPDIR/nojq-bin" b p
-  mkdir -p "$d"
-  for b in env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr; do
-    p="$(command -v "$b" 2>/dev/null)" && ln -sf "$p" "$d/$b"
-  done
-  printf '%s' "$d"
+  path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr
 }
 
 # 1. --help

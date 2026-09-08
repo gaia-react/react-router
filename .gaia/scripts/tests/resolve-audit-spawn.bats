@@ -26,6 +26,8 @@ setup() {
   SCRIPT="$THIS_DIR/../resolve-audit-spawn.sh"
   RESOLVER_SRC="$THIS_DIR/../resolve-audit-members.sh"
   LIB_DIR="$THIS_DIR/../../../.claude/hooks/lib"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$( cd "$THIS_DIR/../../.." && pwd )/.gaia/tests/helpers/path.sh"
   [ -x "$SCRIPT" ] || skip "resolve-audit-spawn.sh not executable"
   [ -x "$RESOLVER_SRC" ] || skip "resolve-audit-members.sh not executable"
 
@@ -177,14 +179,12 @@ write_refusal() {
 # A PATH whose dir carries every binary these scripts need EXCEPT jq
 # (including a sha256 tool, so the digest engine itself still works and only
 # the jq-gated clearance reader is disabled), so `command -v jq` fails and the
-# digest-marker-presence filter disables itself.
+# digest-marker-presence filter disables itself. The sha256 tools are why this
+# enumeration is not the one the sibling audit-respawn suites name: those drive
+# no digest engine, and the difference between the lists is the difference
+# between the subjects rather than drift between copies.
 path_without_jq() {
-  local d="$BATS_TEST_TMPDIR/nojq-bin" b p
-  mkdir -p "$d"
-  for b in env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr shasum sha256sum; do
-    p="$(command -v "$b" 2>/dev/null)" && ln -sf "$p" "$d/$b"
-  done
-  printf '%s' "$d"
+  path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr shasum sha256sum
 }
 
 # --- Freshness-advisory fixtures --------------------------------------------
@@ -331,12 +331,7 @@ run_sandbox_oracle_stderr() {
 # the "sha256-tool arm" the digest-batch-unavailable criterion needs: the
 # degrade must be reached without deleting any lib.
 path_without_sha256() {
-  local d="$BATS_TEST_TMPDIR/nosha-bin" b p
-  mkdir -p "$d"
-  for b in env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr jq; do
-    p="$(command -v "$b" 2>/dev/null)" && ln -sf "$p" "$d/$b"
-  done
-  printf '%s' "$d"
+  path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr jq
 }
 
 # Advances origin/main by ONE commit that actually changes PATH's content to
