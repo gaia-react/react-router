@@ -182,6 +182,32 @@ describe('wiki dead-paths', () => {
     ]);
   });
 
+  test('ignores a hypothetical example path carrying a non-ASCII byte', () => {
+    // The other exemption entry is covered by the exactness test below. This
+    // one is here for its bytes: the token reaches `.has()` straight from the
+    // markdown, so any re-encoding between the two spellings silently stops
+    // matching, and nothing else in this file would notice.
+    sandbox.writeFile(
+      'wiki/decisions/Quoting.md',
+      '# Quoting\n\nA staged `app/components/café.test.ts` prints C-quoted.\n'
+    );
+
+    expect(findDeadPaths(sandbox.root)).toEqual([]);
+  });
+
+  test('exempts hypothetical examples by exact token, not by prefix', () => {
+    // Widening the `.has()` membership check into a prefix skip would take
+    // every real citation under the directory with it.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` and `.claude/commands/deploy.sh`.\n'
+    );
+
+    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+      '.claude/commands/deploy.sh',
+    ]);
+  });
+
   test('ignores explicit historical-record bullets in decision pages', () => {
     sandbox.writeFile(
       'wiki/decisions/Some Refactor.md',

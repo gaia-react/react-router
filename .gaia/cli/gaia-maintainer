@@ -31599,6 +31599,10 @@ var RUNTIME_PREFIXES2 = [".gaia/local/"];
 var ADOPTER_OWNED_SENTINELS3 = /* @__PURE__ */ new Set([
   ".gaia/automation.json"
 ]);
+var HYPOTHETICAL_EXAMPLE_PATHS = /* @__PURE__ */ new Set([
+  ".claude/commands/tool.sh",
+  "app/components/caf\xE9.test.ts"
+]);
 var PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 var PLACEHOLDER_PATTERN = /[<>*${}]|N{3,}|X{3,}/;
 var HISTORICAL_BULLET_PATTERN = /^\s*-\s+\*\*(Removed|Deleted|Renamed|Migrated|Replaced)\*\*/i;
@@ -31607,6 +31611,7 @@ var isTrackedPath = (token) => {
   if (!token.includes("/")) return false;
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS3.has(token)) return false;
+  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token)) return false;
   if (RUNTIME_PREFIXES2.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
   return TRACKED_PREFIXES.some((prefix) => token.startsWith(prefix));

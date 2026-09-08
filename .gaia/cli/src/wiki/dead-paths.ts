@@ -75,6 +75,30 @@ export const ADOPTER_OWNED_SENTINELS: ReadonlySet<string> = new Set([
   '.gaia/automation.json',
 ]);
 
+/**
+ * Exact repo-relative paths that wiki prose names as illustrations of a file
+ * that does not exist and is not meant to. Each entry is a well-formed path
+ * whose surrounding sentence depends on it being absent, so without an
+ * exemption it is reported as dead on every run forever, putting a permanent
+ * floor under the count this scan exists to move.
+ *
+ * Kept distinct from `ADOPTER_OWNED_SENTINELS` rather than folded into it:
+ * that set means "absent on this checkout, present on others", which is a
+ * different fact these entries would make incoherent.
+ *
+ * An entry that later becomes a real file is harmless: a path that exists is
+ * not dead and the scan would pass it anyway.
+ *
+ * - `.claude/commands/tool.sh` reasons about how an unqualified glob would
+ *   route a *future* file to the wrong Code Audit Team member.
+ * - `app/components/café.test.ts` is a worked example of C-quoting under the
+ *   default `core.quotePath`; creating the file would be absurd.
+ */
+const HYPOTHETICAL_EXAMPLE_PATHS: ReadonlySet<string> = new Set([
+  '.claude/commands/tool.sh',
+  'app/components/café.test.ts',
+]);
+
 const PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 
 /**
@@ -111,6 +135,7 @@ const isTrackedPath = (token: string): boolean => {
   if (!token.includes('/')) return false;
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS.has(token)) return false;
+  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token)) return false;
   if (RUNTIME_PREFIXES.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
 
