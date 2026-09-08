@@ -185,15 +185,18 @@ describe('wiki dead-paths', () => {
   test('ignores a hypothetical example path in either Unicode normal form', () => {
     // An accented path has two legal spellings and `Set.has` compares code
     // points, so a wiki page saved as NFD (`e` + U+0301) stops matching an NFC
-    // entry. Only the second line here pins that; the first would pass on the
-    // raw `.has()` this test's own fixture would otherwise always feed in NFC.
+    // entry. Only the second line pins that; the first passes either way. Its
+    // combining mark is written as an escape rather than typed, because as a
+    // raw literal any re-encode of this file flattens it into the line above,
+    // leaving the suite green with the normalization removed and no diff
+    // showing the coverage had gone.
     sandbox.writeFile(
       'wiki/decisions/Quoting.md',
       [
         '# Quoting',
         '',
         'NFC: `app/components/café.test.ts`',
-        'NFD: `app/components/café.test.ts`',
+        'NFD: `app/components/cafe\u0301.test.ts`',
         '',
       ].join('\n')
     );

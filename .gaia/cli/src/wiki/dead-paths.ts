@@ -93,7 +93,8 @@ export const ADOPTER_OWNED_SENTINELS: ReadonlySet<string> = new Set([
  * two legal spellings and `Set.has` compares code points: macOS filesystems
  * and some editors hand back NFD (`e` + U+0301) where the entry below is NFC
  * (U+00E9). Without it, re-encoding a wiki page silently returns that page's
- * permanent floor, and no fixture written in this repo would show it.
+ * permanent floor. A fixture typed naturally in an editor arrives as NFC and
+ * would not show that, which is why the test carries a deliberate NFD spelling.
  *
  * - `.claude/commands/tool.sh` reasons about how an unqualified glob would
  *   route a *future* file to the wrong Code Audit Team member.
