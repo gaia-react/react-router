@@ -290,6 +290,28 @@ real_tool() {
   true
 }
 
+@test "path_allowlist links a name this shell answers as a builtin to the file on PATH" {
+  # `command -v printf` answers with the bare word `printf`, because bash
+  # resolves it as a builtin before consulting PATH. Linking that answer
+  # verbatim makes a relative link to nothing, which is neither of the two
+  # documented outcomes, and a subject reaching the command through `env`
+  # rather than through its own shell finds a broken link there. Both names the
+  # converted callers pass that hit this, `printf` and `test`, are builtins.
+  case "$(command -v printf)" in
+    /*) skip "this shell answers printf with a path, so the fixture pins nothing" ;;
+  esac
+
+  # Planted rather than borrowed from the host, so the assertion pins the walk
+  # rather than whether this machine ships /usr/bin/printf.
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" printf
+
+  local result
+  result="$(PATH="$shared:$PATH" path_allowlist printf)"
+  [ -x "$result/printf" ]
+}
+
 @test "path_allowlist gives each call its own directory, so a suite can hold more than one list" {
   # The property that lets each converted caller keep its own enumeration, and
   # that resolve-audit-spawn.bats needs twice over: its jq-absent and

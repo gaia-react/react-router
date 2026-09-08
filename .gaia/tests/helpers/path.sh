@@ -152,7 +152,7 @@ path_shim_without() {
 }
 
 # path_allowlist <name>...: print a $PATH of exactly one directory, holding a
-# symlink to each named command the current $PATH provides. The additive shape:
+# symlink to the file each named command resolves to. The additive shape:
 # a caller assigns the result the way it assigns the other two primitives'
 # (`PATH="$(path_allowlist env bash jq)" run bash "$SCRIPT"`), and the tool it
 # wants absent is absent by never being named.
@@ -172,14 +172,32 @@ path_shim_without() {
 # under the per-test temp dir, so it is torn down with the test that built it and
 # two tests cannot share one. Sourced outside a test, it refuses.
 path_allowlist() {
-  local dir name resolved
+  local dir name resolved d
   if [ -z "${BATS_TEST_TMPDIR:-}" ]; then
     printf 'path_allowlist: BATS_TEST_TMPDIR is unset; this primitive needs a bats per-test temp dir\n' >&2
     return 1
   fi
   dir="$(mktemp -d "$BATS_TEST_TMPDIR/path-allowlist-XXXXXX")" || return 1
   for name in "$@"; do
-    resolved="$(command -v "$name" 2>/dev/null)" && ln -sf "$resolved" "$dir/$name"
+    resolved="$(command -v "$name" 2>/dev/null)"
+    # `command -v` answers a builtin, keyword or function with the bare name
+    # rather than a path, and `printf` and `test` are both builtins here. Linking
+    # that answer verbatim would make a relative link to nothing, which is
+    # neither of the two outcomes above; the command may still exist as the file
+    # a subject reaching it through `env` or `xargs` needs, so ask the PATH.
+    case "$resolved" in
+      /*) ;;
+      *)
+        resolved=""
+        while IFS= read -r d; do
+          [ -n "$d" ] || continue
+          path_dir_provides "$d" "$name" && { resolved="$d/$name"; break; }
+        done <<<"${PATH//:/$'\n'}"
+        ;;
+    esac
+    if [ -n "$resolved" ]; then
+      ln -sf "$resolved" "$dir/$name"
+    fi
   done
   printf '%s\n' "$dir"
 }
