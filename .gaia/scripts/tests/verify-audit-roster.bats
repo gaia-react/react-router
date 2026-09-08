@@ -3,10 +3,16 @@
 # writers use single-quoted printf format strings where a $ is literal output
 # text (the heredoc line they emit into a fixture), not a shell expansion.
 # shellcheck disable=SC2016
-# SC2317 and SC2329 likewise: shellcheck does not model bats' `@test` dispatch,
-# so it reads a block following an early `return 0` as unreachable and the
-# helpers as uncalled. Every test runs; shell-lint gates `.bats` at
-# severity=warning, above these two, so this only quiets an ad-hoc run.
+# SC2317 and SC2329 likewise, and both trace to one cause that is not bats'
+# `@test` dispatch: a `@test` body parses as a top-level brace group rather than
+# a function, so each bare `return 0` terminating a test below reads as a
+# script-level return. Every `@test` after one then reads as unreachable
+# (SC2317), and a helper defined past one reads as never invoked because its
+# call sites do (SC2329). Every test runs. shell-lint gates `.bats` at
+# severity=warning, above both codes, so this only quiets an ad-hoc run. The
+# spelling that avoids both outright is the explicit `true`
+# .claude/rules/bats-assertions.md prescribes, and
+# .gaia/tests/shell-lint.sh's header carries the full account.
 # shellcheck disable=SC2317,SC2329
 # Tests for .gaia/scripts/verify-audit-roster.sh, the roster's deterministic
 # check.

@@ -16,17 +16,6 @@
 # circuit breaker, which forces a manual approval prompt on every recursive
 # search or copy in the tree.
 
-# shellcheck disable=SC2317
-# SC2317 (command appears unreachable) is not intrinsic to bats, and a suite
-# carrying no bare `return` inside a `@test` body reports none of it. A `@test`
-# body parses as a top-level brace group rather than a function, so the bare
-# `return 0` terminating one of the tests below reads as a script-level return
-# and every `@test` after it looks unreachable. File-wide because that cascade
-# is. shell-lint gates `.bats` at severity=warning, above SC2317's info tier, so
-# the directive only quiets an ad-hoc `shellcheck -S style` run. The terminator
-# that avoids it outright is the explicit `true`
-# .claude/rules/bats-assertions.md prescribes.
-
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
   HOOKS_SRC=$(cd "$BATS_TEST_DIRNAME/../../../.claude/hooks" && pwd)
@@ -313,7 +302,7 @@ run_write_hook_edit() {
   assert_denied_by_json
   grep -qF -- "hunter2" <<<"$output" && return 1
   grep -qF -- "env SECRET=hunter2 cat .env.local" <<<"$output" && return 1
-  return 0
+  true
 }
 
 # --- UAT-007: Edit/Write dimension, driven against the existing write hook ---
