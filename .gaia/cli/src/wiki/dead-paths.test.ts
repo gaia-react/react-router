@@ -182,14 +182,20 @@ describe('wiki dead-paths', () => {
     ]);
   });
 
-  test('ignores a hypothetical example path carrying a non-ASCII byte', () => {
-    // The other exemption entry is covered by the exactness test below. This
-    // one is here for its bytes: the token reaches `.has()` straight from the
-    // markdown, so any re-encoding between the two spellings silently stops
-    // matching, and nothing else in this file would notice.
+  test('ignores a hypothetical example path in either Unicode normal form', () => {
+    // An accented path has two legal spellings and `Set.has` compares code
+    // points, so a wiki page saved as NFD (`e` + U+0301) stops matching an NFC
+    // entry. Only the second line here pins that; the first would pass on the
+    // raw `.has()` this test's own fixture would otherwise always feed in NFC.
     sandbox.writeFile(
       'wiki/decisions/Quoting.md',
-      '# Quoting\n\nA staged `app/components/café.test.ts` prints C-quoted.\n'
+      [
+        '# Quoting',
+        '',
+        'NFC: `app/components/café.test.ts`',
+        'NFD: `app/components/café.test.ts`',
+        '',
+      ].join('\n')
     );
 
     expect(findDeadPaths(sandbox.root)).toEqual([]);

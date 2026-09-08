@@ -89,15 +89,22 @@ export const ADOPTER_OWNED_SENTINELS: ReadonlySet<string> = new Set([
  * An entry that later becomes a real file is harmless: a path that exists is
  * not dead and the scan would pass it anyway.
  *
+ * Both sides of the lookup are normalized to NFC because an accented path has
+ * two legal spellings and `Set.has` compares code points: macOS filesystems
+ * and some editors hand back NFD (`e` + U+0301) where the entry below is NFC
+ * (U+00E9). Without it, re-encoding a wiki page silently returns that page's
+ * permanent floor, and no fixture written in this repo would show it.
+ *
  * - `.claude/commands/tool.sh` reasons about how an unqualified glob would
  *   route a *future* file to the wrong Code Audit Team member.
  * - `app/components/café.test.ts` is a worked example of C-quoting under the
  *   default `core.quotePath`; creating the file would be absurd.
  */
-const HYPOTHETICAL_EXAMPLE_PATHS: ReadonlySet<string> = new Set([
-  '.claude/commands/tool.sh',
-  'app/components/café.test.ts',
-]);
+const HYPOTHETICAL_EXAMPLE_PATHS: ReadonlySet<string> = new Set(
+  ['.claude/commands/tool.sh', 'app/components/café.test.ts'].map((entry) =>
+    entry.normalize('NFC')
+  )
+);
 
 const PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 
@@ -135,7 +142,7 @@ const isTrackedPath = (token: string): boolean => {
   if (!token.includes('/')) return false;
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS.has(token)) return false;
-  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token)) return false;
+  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token.normalize('NFC'))) return false;
   if (RUNTIME_PREFIXES.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
 
