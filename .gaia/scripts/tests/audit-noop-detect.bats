@@ -17,6 +17,8 @@ assert_contains() {
 
 setup() {
   THIS_DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" && pwd )"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$( cd "$THIS_DIR/../../.." && pwd )/.gaia/tests/helpers/path.sh"
   SCRIPT="$THIS_DIR/../audit-noop-detect.sh"
   [ -x "$SCRIPT" ] || skip "audit-noop-detect.sh not executable"
   FIX="$THIS_DIR/fixtures/audit-noop"
@@ -587,14 +589,9 @@ _noop_write_findings() {
 
   # Shim PATH rather than an empty one: the script's `#!/usr/bin/env bash`
   # shebang and its basename/cat/grep calls all resolve through PATH, so
-  # emptying it fails the run at exec time (127) and tests nothing. Symlink in
+  # emptying it fails the run at exec time (127) and tests nothing. Name
   # exactly what the script needs and deliberately leave jq out.
-  shim="$BATS_TEST_TMPDIR/nojq-bin"
-  mkdir -p "$shim"
-  for _c in bash basename cat grep dirname; do
-    _p="$(command -v "$_c" 2>/dev/null)" || continue
-    ln -sf "$_p" "$shim/$_c"
-  done
+  shim="$(path_allowlist bash basename cat grep dirname)"
   if PATH="$shim" command -v jq >/dev/null 2>&1; then
     skip "jq still resolvable through the shim PATH"
   fi
