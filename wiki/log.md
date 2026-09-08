@@ -11,6 +11,16 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-08 d4e4d58 SKIP - errexit-source guard scan_roots widened to .github, page deliberately defers guard-surface detail to the guard's own header (precedent: log 4a55dc40)
+- 2026-09-08 2ed6816 SKIP - internal refactor consolidating whole-tree guard walks into a shared module, no CHANGELOG entry, no documented-contract change
+- 2026-09-08 51e8428 WORTHY - dead-path scan gains HYPOTHETICAL_EXAMPLE_PATHS exemption -> wiki/decisions/Wiki Management.md dead-paths bullet updated
+- 2026-09-08 0a0689c SKIP - tests-only
+- 2026-09-08 efe2628 SKIP - CI plumbing
+- 2026-09-08 c44d654 SKIP - internal robustness fix to resolve-audit-base.sh's fail-safe path, no documented-contract change
+- 2026-09-08 97eee29 SKIP - tests-only
+- 2026-09-08 a370b47 SKIP - health lens fix already updated wiki/decisions/Claude Integration Fitness.md in the commit itself
+- 2026-09-08 6e7278a SKIP - comment-only bullet reclassification in lint-hook-cwd-relative-loads.sh, zero behavior change
+- 2026-09-08 7eab894 SKIP - wiki's own prior maintenance chain commit, no new source content to sync
 - 2026-09-08 c2541841 WORTHY - hooks now root library loads and gate reads on BASH_SOURCE, not cwd -> wiki/concepts/Claude Hooks.md
 - 2026-09-08 2238689b SKIP - audit-scratch-dir worktree-keying bugfix, existing wiki pointers already abstract over this detail
 - 2026-09-08 991b0698 SKIP - internal NOUN vocab tweak in lint-stale-cardinals.sh, no dedicated wiki page (enumeration would violate wiki-style)
