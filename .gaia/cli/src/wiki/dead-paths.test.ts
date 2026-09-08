@@ -289,19 +289,20 @@ describe('wiki dead-paths', () => {
   });
 
   test('the help text names every skip fragment the scan can reach', () => {
-    // `walkMarkdown` collects `.md` files only, so a fragment can match a
-    // scanned path only when it names a markdown file or a directory prefix.
-    // Anything else (`wiki/.state.json`) is unreachable and correctly absent
-    // from the help text. Without this assertion the help prose and the array
-    // are two hand-written copies of one set, and one can gain a member the
-    // other never gets (#1878).
-    const reachable = SKIP_PATH_FRAGMENTS.filter(
-      (fragment) => fragment.endsWith('.md') || fragment.endsWith('/')
+    // The help prose and the array are two hand-written copies of one set, and
+    // one can gain a member the other never gets (#1878). Every entry is
+    // checked unless named below, so a new one is covered by default rather
+    // than by remembering to widen a predicate.
+    //
+    // `wiki/.state.json` is named because `walkMarkdown` collects `.md` files
+    // only: no non-markdown entry can ever match a scanned path, so it is
+    // unreachable and correctly absent from the help text.
+    const notNamedInHelp = new Set(['wiki/.state.json']);
+    const documented = SKIP_PATH_FRAGMENTS.filter(
+      (fragment) => !notNamedInHelp.has(fragment)
     );
 
-    expect(reachable.length).toBeGreaterThan(0);
-
-    for (const fragment of reachable) {
+    for (const fragment of documented) {
       expect(HELP_TEXT).toContain(fragment);
     }
   });
