@@ -53,9 +53,10 @@
  * there. Mirrors `command-reachability.test.ts`.
  */
 import {describe, expect, test} from 'vitest';
-import {existsSync, readdirSync, readFileSync} from 'node:fs';
+import {existsSync, readFileSync} from 'node:fs';
 import path from 'node:path';
 import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
+import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
 
 /** Line index of the `*\/` closing the block comment opened at `start`. */
 const blockCommentEnd = (lines: readonly string[], start: number): number => {
@@ -193,11 +194,6 @@ const findStrandedDocblock = (source: string): null | number => {
   return null;
 };
 
-const collectSourceFiles = (root: string): readonly string[] =>
-  (readdirSync(root, {recursive: true}) as string[])
-    .filter((entry) => entry.endsWith('.ts'))
-    .toSorted((a, b) => a.localeCompare(b));
-
 const repoRoot = resolveRepoRootFromImportMeta(import.meta.url);
 const cliSrc = path.join(repoRoot, '.gaia', 'cli', 'src');
 const sourcesPresent = existsSync(cliSrc);
@@ -208,7 +204,7 @@ describe('module docblock placement', () => {
   test.skipIf(!sourcesPresent)(
     'every module docblock precedes the first import',
     () => {
-      const sources = collectSourceFiles(cliSrc);
+      const sources = collectTreeFiles(cliSrc, TS_SOURCE_EXTENSIONS);
 
       // A scan that reaches nothing reports nothing, so the empty result below
       // would read as a clean corpus. `.gaia/cli/src` has held hundreds of
