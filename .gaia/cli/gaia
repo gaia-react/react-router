@@ -31779,9 +31779,9 @@ var HELP_TEXT63 = `Usage: gaia wiki dead-paths [--json]
   Scan wiki/**/*.md for backticked repo-relative paths under .claude/, .gaia/,
   app/, test/, wiki/ that no longer exist on disk, plus any reference to
   sibling-monorepo paths (studio/, website/) which reach outside the GAIA
-  tarball and never resolve on a single-repo clone. Excludes wiki/log.md
-  and wiki/meta/** (audit artifacts that legitimately reference historical
-  paths).
+  tarball and never resolve on a single-repo clone. Excludes wiki/log.md,
+  wiki/hot.md and wiki/meta/** (generated or append-only files that
+  legitimately reference historical paths).
 `;
 var HELP_TOKENS61 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var TRACKED_PREFIXES = [
@@ -31794,6 +31794,7 @@ var TRACKED_PREFIXES = [
 var SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
 var SKIP_PATH_FRAGMENTS = [
   "wiki/log.md",
+  "wiki/hot.md",
   "wiki/meta/",
   "wiki/.state.json"
 ];

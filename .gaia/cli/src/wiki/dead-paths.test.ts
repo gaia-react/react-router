@@ -5,7 +5,13 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {ADOPTER_OWNED_SENTINELS as GIT_TRACKED_SENTINELS} from '../release/manifest.js';
 import {ADOPTER_OWNED_SENTINELS as RELEASE_SENTINELS} from '../release/runtime-deps.js';
-import {ADOPTER_OWNED_SENTINELS, findDeadPaths, run} from './dead-paths.js';
+import {
+  ADOPTER_OWNED_SENTINELS,
+  findDeadPaths,
+  HELP_TEXT,
+  run,
+  SKIP_PATH_FRAGMENTS,
+} from './dead-paths.js';
 
 type Sandbox = {
   cleanup: () => void;
@@ -265,10 +271,14 @@ describe('wiki dead-paths', () => {
     expect(findDeadPaths(sandbox.root)).toEqual([]);
   });
 
-  test('skips wiki/log.md and wiki/meta/** by design', () => {
+  test('skips wiki/log.md, wiki/hot.md and wiki/meta/** by design', () => {
     sandbox.writeFile(
       'wiki/log.md',
       '# Log\n\nDeleted `.claude/hooks/old.sh` (historical record).\n'
+    );
+    sandbox.writeFile(
+      'wiki/hot.md',
+      '# Hot\n\nRecent work moved `.claude/hooks/moved.sh` (session cache).\n'
     );
     sandbox.writeFile(
       'wiki/meta/lint-report.md',
@@ -276,6 +286,24 @@ describe('wiki dead-paths', () => {
     );
 
     expect(findDeadPaths(sandbox.root)).toEqual([]);
+  });
+
+  test('the help text names every skip fragment the scan can reach', () => {
+    // `walkMarkdown` collects `.md` files only, so a fragment can match a
+    // scanned path only when it names a markdown file or a directory prefix.
+    // Anything else (`wiki/.state.json`) is unreachable and correctly absent
+    // from the help text. Without this assertion the help prose and the array
+    // are two hand-written copies of one set, and one can gain a member the
+    // other never gets (#1878).
+    const reachable = SKIP_PATH_FRAGMENTS.filter(
+      (fragment) => fragment.endsWith('.md') || fragment.endsWith('/')
+    );
+
+    expect(reachable.length).toBeGreaterThan(0);
+
+    for (const fragment of reachable) {
+      expect(HELP_TEXT).toContain(fragment);
+    }
   });
 
   test('detects dead paths under .gaia/ and app/ as well as .claude/', () => {
