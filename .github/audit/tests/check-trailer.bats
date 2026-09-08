@@ -590,7 +590,7 @@ write_unparseable_version_lib() {
   [ "$status" -eq 0 ]
   grep -qF "skip=true" <<<"$output"
   grep -qF "reason=version-lib-unavailable" <<<"$output" && return 1
-  return 0
+  true
 }
 
 @test "version normalizer PRESENT BUT UNPARSEABLE: skip=false reason=version-lib-unavailable" {

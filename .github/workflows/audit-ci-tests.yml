@@ -498,7 +498,12 @@ jobs:
               # .github/ that no glob above reaches -- CODEOWNERS, FUNDING.yml,
               # dependabot.yml, the pull request template and the three issue
               # templates -- so a PR touching one of those, and nothing else, now
-              # runs the full bats matrix where it used to run no step at all.
+              # runs the full bats matrix. Only CODEOWNERS used to run no step at
+              # all: it carries no extension, so it matches none of the four
+              # broad type globs at the end of the filter below, while the other
+              # six already armed that filter's leg alone through its '**/*.yml'
+              # and '**/*.md' entries, which reach into .github/ because the
+              # matcher runs with dot-matching on (see the note at those globs).
               - '.github/**'
               - '.gaia/audit-ci.yml'
               # check-hook-scope-manifest.bats (.gaia/scripts/tests/) asserts
