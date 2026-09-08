@@ -96,9 +96,8 @@ these classes — the list is a floor, not a ceiling.
 - Survey `.claude/agents/` and `.claude/rules/`
 - `.claude/hooks/` — at minimum, read the bodies of any hook registered on
   more than one event/matcher, plus `.claude/rules/shell-cwd.md` for the
-  relative-hook-path fragility cross-reference
-- Cross-check for duplicated contracts and conflicting instructions beyond
-  the classes above — that list is a floor, not a ceiling.
+  cwd-fragility cross-reference (the rooting is derived per invocation, so
+  the working directory picks which checkout's hooks run)
 
 ## Output
 

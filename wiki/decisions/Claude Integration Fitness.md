@@ -2,7 +2,7 @@
 type: decision
 status: active
 created: 2026-05-12
-updated: 2026-06-24
+updated: 2026-09-08
 tags: [decision, claude, fitness]
 ---
 
@@ -25,7 +25,7 @@ Eight graded categories. Each category produces findings at `error`, `warning`, 
 Checks `.claude/settings.json` and `.claude/settings.local.json` hook entries:
 
 - Every hook command path exists on disk and is executable.
-- Hook command paths resolve under GAIA's execution model. Bash runs from the repo root (the never-cd convention in `.claude/rules/shell-cwd.md`), so repo-root-relative paths (e.g. `.claude/hooks/wiki-session-start.sh`) are the correct, intended form. Flag a path only when it resolves under neither an absolute form nor the mandated repo-root cwd.
+- Hook command paths are rooted so they resolve independently of the shell's working directory. A bare repo-relative path (e.g. `.claude/hooks/wiki-session-start.sh`) is the shape to flag: it resolves against whatever directory the shell is in, and a script that is not found exits 127, which is not a blocking status, so the guard layer fails open with nothing reported. `.gaia/scripts/check-hook-command-rooting.sh` is the authority on what counts as rooted and states the property rather than a literal spelling, so read it rather than matching a remembered prefix.
 - Every hook event name is a valid Claude Code hook event.
 
 The valid Claude Code hook events (the canonical list the auditor checks against, so it does not re-derive an incomplete set from memory) are: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `UserPromptExpansion`, `Notification`, `Stop`, `SubagentStop`, `PreCompact`, `PostCompact`, `SessionStart`, `SessionEnd`, `WorktreeCreate`, `WorktreeRemove`, plus any project-specific events the repo registers (a project that wires its own event names extends this list; an unfamiliar name is a finding only when it is neither in the list above nor registered by the project's own tooling).
