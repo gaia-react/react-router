@@ -358,7 +358,10 @@ fi
 # .gaia/scripts/lint-errexit-source-guard.sh prescribes for a file that arms
 # errexit itself, which this one does above.
 version_lib="${repo_root}/.claude/hooks/lib/gaia-version.sh"
-set +e; [ -f "$version_lib" ] && . "$version_lib" 2>/dev/null; set -e
+set +e
+# shellcheck source=/dev/null
+[ -f "$version_lib" ] && . "$version_lib" 2>/dev/null
+set -e
 if ! command -v gaia_read_version >/dev/null 2>&1; then
   echo "resolve-audit-base: version normalizer unavailable (gaia-version.sh); resetting to full scope (${main_ref})." >&2
   emit "$main_ref" degraded ""
@@ -462,7 +465,10 @@ for lib_file in audit-scope.sh audit-machinery.sh audit-rules-changed.sh audit-c
   # Bracketed for the reason given at the version-normalizer load above: an
   # existence test admits an unparseable lib, and under errexit bash 3.2.57
   # dies at the load rather than at the `||`. Same shape, same reason.
-  set +e; [ -f "${lib_dir}/${lib_file}" ] && . "${lib_dir}/${lib_file}" 2>/dev/null; set -e
+  set +e
+  # shellcheck source=/dev/null
+  [ -f "${lib_dir}/${lib_file}" ] && . "${lib_dir}/${lib_file}" 2>/dev/null
+  set -e
 done
 
 missing_lib=""
