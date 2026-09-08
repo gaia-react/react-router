@@ -41,11 +41,11 @@
  * it, and those split two ways rather than one.
  *
  * Some are walks the shared module genuinely does not serve.
- * `release/scrub.ts`'s `walkFiles` collects every file whatever its extension,
- * a mode `collectTreeFiles` deliberately has no parameter for;
- * `update/regen-regions.ts` walks by hand precisely so an adopter's own tree
- * sets the depth; and the `automation/__tests__` suites thread per-directory
- * state down the descent.
+ * `release/scrub.ts`'s `walkFiles` and `audit-template-dogfood.test.ts`'s
+ * `collect` take every file whatever its extension, a mode `collectTreeFiles`
+ * deliberately has no parameter for, and `adopter-ci-action-pins.test.ts`'s
+ * `collectPins` threads a path prefix down the descent and reads each file as
+ * it goes.
  *
  * The rest are not. `wiki/dead-paths.ts`, `wiki/empty-sections.ts` and
  * `wiki/frontmatter.ts` hold byte-identical `walkMarkdown` copies, and
@@ -62,18 +62,31 @@
  * and a tokenizer is the argument for reading this from the TypeScript AST
  * rather than from lines at all.
  *
- * `update/regen-regions.ts` is therefore not an exemption and carries no entry
- * here. It was measured against the match and falls outside it on the merits,
- * which is what settling the fork on this guard was meant to establish.
+ * `update/regen-regions.ts` sits outside both shapes rather than inside either.
+ * It walks iteratively, draining an explicit pending list with no self-call, so
+ * the self-recursion shape would never match it however that shape were spelled,
+ * and it reaches for neither the option nor a recursive call because `lstat`
+ * has to refuse to descend a symlinked subdirectory that the `recursive`
+ * option would walk straight through. It is therefore not an exemption and
+ * carries no entry here: it was measured against the match and falls outside it
+ * on the merits, which is what settling the fork on this guard was meant to
+ * establish.
  *
  * Further shapes are unreached, and a copy taking any of them slips: the
  * `recursive` option reached through a variable or a spread rather than written
  * as a literal; the promise-based `readdir` or `opendir`, neither of which this
- * tree uses today; and an option list long enough to push `recursive` past the
- * bounded gap the match allows after the call. That gap has to be bounded, for
- * the reason the match's own comment gives, and its ceiling sits far above the
- * option list this API accepts, so the last of those is a miss no call anyone
- * writes can reach.
+ * tree uses today; an option list long enough to push `recursive` past the
+ * bounded gap the match allows after the call; and a read whose own argument
+ * list carries a `…Sync(` call ahead of the option, as in
+ * `readdirSync(realpathSync(root), …)`, which the neighbouring-call bound
+ * cannot tell from the nested `fs` call it exists to skip.
+ *
+ * The last two are the price of the two bounds rather than oversights, and
+ * neither is reachable by a call anyone writes here today: the gap's ceiling
+ * sits far above the option list this API accepts, and no live `readdirSync`
+ * call in this tree takes a `…Sync(` argument. Both stay documented rather than
+ * closed, because closing either means parsing the call rather than bounding
+ * the text around it, which is the tokenizer this guard declines to be.
  *
  * Nothing is exempted by path except the declaring module itself, which is the
  * one place the declaration belongs. There is deliberately no allowlist beside
