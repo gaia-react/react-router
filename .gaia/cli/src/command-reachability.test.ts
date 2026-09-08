@@ -295,7 +295,9 @@ const collectText = (absDir: string): string => {
     try {
       if (statSync(abs).isFile()) parts.push(readFileSync(abs, 'utf8'));
     } catch {
-      // Unreadable entry (e.g. a dangling symlink); skip it.
+      // Removed between the walk and the read; skip it. The walk reports
+      // regular files only, so that race is the one cause left here, and it
+      // is what the stat above still covers too.
     }
   }
 
