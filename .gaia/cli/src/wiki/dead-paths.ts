@@ -56,6 +56,33 @@ const SKIP_PATH_FRAGMENTS = [
 const RUNTIME_PREFIXES = ['.gaia/local/'] as const;
 
 /**
+ * Exact repo-relative paths that are real, gitignored, machine-local files:
+ * present only on a checkout where a human or `/setup-gaia` wrote one, and so
+ * absent on every fresh clone, every CI checkout, and every linked worktree.
+ * Their presence is a property of the checkout rather than of the repository,
+ * which makes a wiki citation of one correct even where the file is missing.
+ *
+ * `RUNTIME_PREFIXES` exempts `.gaia/local/` for the same reason and is the
+ * closest precedent; these are exact paths rather than a prefix, so they want a
+ * sibling set rather than an entry there.
+ *
+ * Kept distinct from `ADOPTER_OWNED_SENTINELS` rather than folded into it: that
+ * set is pinned by equality to the runtime-only entries of
+ * `release/runtime-deps.ts`'s same-named set, so an entry added here alone reds
+ * that test, and one added on both sides would assert that a machine-local
+ * settings file is a release runtime dependency, which it is not.
+ *
+ * `release/runtime-deps.ts`'s `PROSE_PATH_ALLOWLIST` names this same file on
+ * the same underlying fact, and is deliberately not shared with: it answers a
+ * different question (whether a path token in a shell script is a runtime
+ * dependency), and that module is maintainer-only, so importing it would pull
+ * release tooling into the adopter `gaia` bundle.
+ */
+const GITIGNORED_LOCAL_FILES: ReadonlySet<string> = new Set([
+  '.claude/settings.local.json',
+]);
+
+/**
  * Exact repo-relative paths that are adopter-owned and legitimately absent
  * on a checkout that hasn't opted in: `.gaia/automation.json` is written by
  * `/setup-gaia`, not shipped by GAIA itself, so it is correctly missing here
@@ -144,6 +171,7 @@ const isTrackedPath = (token: string): boolean => {
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS.has(token)) return false;
   if (HYPOTHETICAL_EXAMPLE_PATHS.has(token.normalize('NFC'))) return false;
+  if (GITIGNORED_LOCAL_FILES.has(token)) return false;
   if (RUNTIME_PREFIXES.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
 
