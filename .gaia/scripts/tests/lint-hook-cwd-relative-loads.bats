@@ -311,6 +311,8 @@ true  # Usage: [ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red
   true
 }
 
+# --- where the quiet arms stop, and the class reports again -----------------
+
 @test "reports a mention inside a QUOTED span, which the # does not cut" {
   fixture_repo
   # The mention sits BEHIND the `#`, so only the quote tracker keeps it in the
