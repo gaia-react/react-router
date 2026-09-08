@@ -115,11 +115,19 @@
 #   - A load inside a heredoc body that a `bash -c` later executes. Heredoc
 #     bodies are skipped outright, because the tree carries the class in them
 #     only as documentation an operator reads.
+#   - A trailing comment that mentions one of the four positions after real
+#     code on the same line. `code_prefix()` cuts the line at the first
+#     unquoted `#` preceded by whitespace and the match arms read only what is
+#     left, so the mention is quiet. That is the same call the whole-line
+#     comment arm makes, and it is the right one for a documentation mention;
+#     it is listed here rather than left unsaid because a reader who expects
+#     the scan to read the raw line would expect the opposite.
 #
 # FAIL-CLOSED, so each costs a correct edit and never a missed defect:
-#   - A trailing comment that mentions one of the four positions after real
-#     code on the same line. The scan reads the line, not the comment boundary,
-#     so the mention reports. No such line exists in this tree.
+#   - A mention inside a QUOTED span on a line of real code. A `#` inside the
+#     quotes does not cut the line, because `code_prefix()` tracks quoting, so
+#     the arms read the mention as the code it is indistinguishable from and it
+#     reports. No such line exists in this tree.
 #
 # Provenance: the class was repaired across the hook family in
 # gaia-react/gaia#1854, which found it standing behind

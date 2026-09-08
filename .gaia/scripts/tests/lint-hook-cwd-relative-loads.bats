@@ -304,11 +304,22 @@ EOF'
 @test "quiet on the class in a comment, whole-line and trailing" {
   fixture_repo
   fixture_hook '# Usage: [ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh
-true'
+true  # Usage: [ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh'
   run_linter
   [ "$status" -eq 0 ]
   grep -qF -- "check.sh" <<<"$output" && return 1
   true
+}
+
+@test "reports a mention inside a QUOTED span, which the # does not cut" {
+  fixture_repo
+  # The mention sits BEHIND the `#`, so only the quote tracker keeps it in the
+  # scanned prefix: a cut at that `#` would drop it and report clean.
+  fixture_hook 'msg="the shape is # [ -f .claude/hooks/lib/red-ledger.sh ]"'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".claude/hooks/check.sh:3:" <<<"$output" || return 1
+  grep -qF -- "a file-test operand names a bare repo-relative path" <<<"$output"
 }
 
 @test "a comment carrying an apostrophe does not blind the next line" {
