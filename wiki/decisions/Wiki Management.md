@@ -4,7 +4,7 @@ status: active
 priority: 1
 date: 2026-05-07
 created: 2026-05-07
-updated: 2026-08-02
+updated: 2026-09-08
 tags: [decision, wiki, cli]
 ---
 
@@ -30,7 +30,7 @@ The wiki is critical infrastructure; it decays when drift between code and docum
 
 **`gaia wiki near-collisions`**: Groups pages per domain (decisions, concepts, modules, etc.) and finds near-duplicate titles using Levenshtein distance. Used by `/gaia-wiki consolidate` to surface redundancy.
 
-**`gaia wiki dead-paths`**: Lists backticked repo paths in `wiki/` body prose that don't exist on disk. Used by `/gaia-wiki lint` to catch zombie filename references after merges and renames.
+**`gaia wiki dead-paths`**: Lists backticked repo paths in `wiki/` body prose that don't exist on disk. Used by `/gaia-wiki lint` to catch zombie filename references after merges and renames. Exempts an explicit `HYPOTHETICAL_EXAMPLE_PATHS` set alongside the adopter-owned sentinels: a well-formed path a page names purely as a worked example of something that does not exist and is not meant to (e.g. a hypothetical future file, a made-up path illustrating a quoting rule) would otherwise report as dead on every run forever. Membership is by exact token (normalized to NFC), not a prefix rule, so a real dead citation nearby still flags.
 
 **`gaia wiki sync land`**: Branch-aware landing of staged wiki changes: commits in place on a feature branch; on `main`, stages a branch, opens a PR, queues auto-merge, and takes one bounded wait on it. When the merge lands inside that wait the command cleans up locally (returns to base, pulls, deletes the branch, prunes); on the common path the merge gate outlasts any wait that fits in a single invocation, so it returns with the local cleanup outstanding and `sync await` or the session-start janitor completes it. Used by `/gaia-wiki sync` as the deterministic write step.
 
