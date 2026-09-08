@@ -2,7 +2,7 @@
 type: concept
 status: active
 created: 2026-04-20
-updated: 2026-07-30
+updated: 2026-09-08
 tags: [concept, claude, hooks]
 ---
 
@@ -53,6 +53,8 @@ That asymmetry decides how `.claude/settings.json` spells a hook command. Each o
 A bare relative path resolves against the Bash tool's working directory, which persists for the whole session, so a single `cd` leaves every script unfindable; `/bin/sh` then exits 127, which is neither 0 nor 2 and therefore does not block, and the guard layer fails open while every tool call proceeds. Rooting at `git rev-parse --show-toplevel` resolves to the current tree at any depth inside the repository, which keeps a worktree session on its own hooks. Prefixing with `$CLAUDE_PROJECT_DIR` instead would send a worktree session to the main checkout's copies, the same resolve-from-main shape the agent registry has. The variable earns its place only as the fallback for a working directory outside any repository, and the trailing `.` behind it is what keeps the worst case equal to a bare relative path rather than worse than one. `.gaia/scripts/check-hook-command-rooting.sh` holds the file to this shape.
 
 Nothing at the registration site fails closed, because the failure being guarded against is a missing script and a missing script exits 127. The check reads the file, so it catches an unrooted registration there; a root that fails to resolve at runtime is outside what any registration-site spelling can reach.
+
+**A registered hook is rooted; what it loads from disk after that is a separate question.** Once a hook script is running, it sources its own shared libraries (`.claude/hooks/lib/<name>.sh`) and reads the gate state it judges at paths rooted on `${BASH_SOURCE[0]}`, never on the working directory. A cwd-relative load or read is unfindable from any subdirectory the working directory has moved to, and the capability probe behind a library load treats a library it cannot find as a reason to stand down; for a blocking gate that is a silent fail-open rather than a diagnostic. Rooting on `${BASH_SOURCE[0]}` resolves to the acting tree the same way the registration form does, so a worktree session loads that worktree's own libraries and judges that worktree's own state. See `.claude/rules/shell-cwd.md` for what still holds this class down.
 
 The third row is the contested case: the working directory is per-agent, not shared. The subagent's hook observes its own worktree while the parent's hook simultaneously observes the main checkout. Two facts close off the obvious alternatives: `session_id` is shared between a parent and its subagents (both report the same identifier, so nothing keyed on `session_id` can distinguish them), and `WorktreeCreate` fires under the dispatching session's `session_id` with no agent discriminator (its key set is `session_id, transcript_path, cwd, prompt_id, hook_event_name, name`, no `agent_id`, no `agent_type`).
 
