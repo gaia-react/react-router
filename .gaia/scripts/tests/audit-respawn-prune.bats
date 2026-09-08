@@ -34,6 +34,8 @@ setup() {
   SCRIPT="$THIS_DIR/../audit-respawn-prune.sh"
   LIB="$THIS_DIR/../audit-respawn-lib.sh"
   REPO_ROOT="$( cd "$THIS_DIR/../../.." && pwd )"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
   HOOK_ABS="$REPO_ROOT/.claude/hooks/wiki-session-start.sh"
   [ -x "$SCRIPT" ] || skip "audit-respawn-prune.sh not executable"
   [ -f "$LIB" ] || skip "audit-respawn-lib.sh missing"
@@ -91,15 +93,12 @@ branches_in() {
   grep -o '"branch":"[^"]*"' "$1" 2>/dev/null | sed 's/"branch":"//; s/"$//'
 }
 
-# A PATH carrying every binary the script needs EXCEPT jq (mirrors
-# resolve-audit-spawn.bats's path_without_jq).
+# A PATH carrying every binary this script needs EXCEPT jq, so its own
+# jq-required guard fires. No sha256 tool appears in the enumeration because
+# this subject drives no digest engine; a suite whose subject drives one names
+# a sha256 tool of its own.
 path_without_jq() {
-  local d="$BATS_TEST_TMPDIR/nojq-bin" b p
-  mkdir -p "$d"
-  for b in env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr; do
-    p="$(command -v "$b" 2>/dev/null)" && ln -sf "$p" "$d/$b"
-  done
-  printf '%s' "$d"
+  path_allowlist env bash sh git awk sed grep sort head tail tr cat cut wc dirname basename mktemp date rm mkdir printf test expr
 }
 
 # mutant_script <sed_expr>: a throwaway copy of $SCRIPT with <sed_expr>

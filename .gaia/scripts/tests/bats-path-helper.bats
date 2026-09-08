@@ -22,6 +22,13 @@
 # could not be held to: it drives the over-strip case directly, with a control
 # proving the old predicate really does accept it.
 #
+# The same DUPLICATION argument, and not the predicate defect, is what brings
+# the additive shape here too: building an allowlist directory shares no code
+# with subtracting a providing directory, but it arrived as its own set of
+# hand-rolled copies in the same way and drifts in the same way. Its cases sit
+# at the end of this file, and what they pin is a different property, since
+# there is no providing directory for them to reason about.
+#
 # Assertion style: bash-3.2-safe per .claude/rules/bats-assertions.md.
 
 setup() {
@@ -219,6 +226,126 @@ real_tool() {
   # tell the refusal apart from the accident it exists to replace.
   local out rc=0
   out="$(BATS_TEST_TMPDIR="" path_shim_without uvx 2>&1)" || rc=$?
+  [ "$rc" -ne 0 ]
+  grep -qF 'BATS_TEST_TMPDIR is unset' <<<"$out"
+}
+
+# The ADDITIVE primitive builds its directory instead of deriving it from the
+# current PATH, so unlike the subtractive shapes above it has no notion of a
+# "providing directory" to assert against. What it owes instead is the property
+# that makes it the right shape for an enumerable fixture: exactly the named
+# commands resolve, and nothing that merely shares a directory with them comes
+# along. The fixture names carry the same `gaia-fixture-` prefix as the shim
+# cases above, for the same reason -- an installed command of that name would
+# satisfy an assertion the primitive had nothing to do with.
+@test "path_allowlist provides the named commands and nothing else" {
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" gaia-fixture-wanted
+  real_tool "$shared" gaia-fixture-mate
+
+  # The control: on the ambient PATH the mate really is reachable, so the
+  # absence asserted below is this primitive's doing rather than the fixture's.
+  PATH="$shared:$PATH" command -v gaia-fixture-mate >/dev/null 2>&1 || {
+    echo "control broken: the mate does not resolve even before the rebuild" >&2
+    return 1
+  }
+
+  local result
+  result="$(PATH="$shared:$PATH" path_allowlist gaia-fixture-wanted)"
+
+  PATH="$result" command -v gaia-fixture-wanted >/dev/null 2>&1 || {
+    echo "a named command does not resolve on the allowlisted PATH" >&2
+    return 1
+  }
+  PATH="$result" command -v gaia-fixture-mate >/dev/null 2>&1 && {
+    echo "a directory-mate of a named command came along; the allowlist is not one" >&2
+    return 1
+  }
+  true
+}
+
+@test "path_allowlist skips a name the current PATH does not provide" {
+  # A caller naming both `shasum` and `sha256sum` wants whichever the host
+  # ships, and a stock macOS ships only the first while many Linux hosts ship
+  # only the second. So an unprovided name is a host fact rather than a caller
+  # error, and refusing on one would red the suite on the host instead of on
+  # the subject.
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" gaia-fixture-wanted
+
+  local result rc=0
+  result="$(PATH="$shared:$PATH" path_allowlist gaia-fixture-wanted gaia-fixture-absent)" || rc=$?
+  [ "$rc" -eq 0 ]
+
+  PATH="$result" command -v gaia-fixture-wanted >/dev/null 2>&1 || {
+    echo "the provided name was dropped alongside the unprovided one" >&2
+    return 1
+  }
+  PATH="$result" command -v gaia-fixture-absent >/dev/null 2>&1 && {
+    echo "a name the host does not provide resolved anyway" >&2
+    return 1
+  }
+  true
+}
+
+@test "path_allowlist links a name this shell answers as a builtin to the file on PATH" {
+  # `command -v printf` answers with the bare word `printf`, because bash
+  # resolves it as a builtin before consulting PATH. Linking that answer
+  # verbatim makes a relative link to nothing, which is neither of the two
+  # documented outcomes, and a subject reaching the command through `env`
+  # rather than through its own shell finds a broken link there. Both names the
+  # converted callers pass that hit this, `printf` and `test`, are builtins.
+  case "$(command -v printf)" in
+    /*) skip "this shell answers printf with a path, so the fixture pins nothing" ;;
+  esac
+
+  # Planted rather than borrowed from the host, so the assertion pins the walk
+  # rather than whether this machine ships /usr/bin/printf.
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" printf
+
+  local result
+  result="$(PATH="$shared:$PATH" path_allowlist printf)"
+  [ -x "$result/printf" ]
+}
+
+@test "path_allowlist gives each call its own directory, so a suite can hold more than one list" {
+  # The property that lets each converted caller keep its own enumeration, and
+  # that resolve-audit-spawn.bats needs twice over: its jq-absent and
+  # sha256-absent fixtures are different enumerations of the same subject's
+  # needs, and a primitive with one directory per suite would have the second
+  # call overwrite the first.
+  local shared="$BATS_TEST_TMPDIR/shared"
+  mkdir -p "$shared"
+  real_tool "$shared" gaia-fixture-first
+  real_tool "$shared" gaia-fixture-second
+
+  local one two
+  one="$(PATH="$shared:$PATH" path_allowlist gaia-fixture-first)"
+  two="$(PATH="$shared:$PATH" path_allowlist gaia-fixture-second)"
+
+  [ "$one" != "$two" ]
+  PATH="$one" command -v gaia-fixture-second >/dev/null 2>&1 && {
+    echo "the second call's name leaked into the first call's directory" >&2
+    return 1
+  }
+  PATH="$two" command -v gaia-fixture-first >/dev/null 2>&1 && {
+    echo "the first call's name leaked into the second call's directory" >&2
+    return 1
+  }
+  true
+}
+
+@test "path_allowlist refuses rather than writing outside a bats per-test temp dir" {
+  # Same refusal, and the same reason, as path_shim_without's: the directory is
+  # torn down with the test that built it, so outside a test there is nowhere
+  # sanctioned to build one. Asserted on the diagnostic rather than the status
+  # alone, because a failed mkdir at a guessed path returns non-zero too.
+  local out rc=0
+  out="$(BATS_TEST_TMPDIR="" path_allowlist gaia-fixture-wanted 2>&1)" || rc=$?
   [ "$rc" -ne 0 ]
   grep -qF 'BATS_TEST_TMPDIR is unset' <<<"$out"
 }

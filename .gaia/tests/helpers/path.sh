@@ -24,28 +24,38 @@
 #                                 provides NAME removed
 #   path_shim_without NAME      - print a $PATH on which NAME does not resolve
 #                                 and every other command still does
+#   path_allowlist NAME...      - print a $PATH of one built directory holding
+#                                 just the named commands
 #
 # WHY THIS EXISTS, and why the obvious predicate is the bug it replaces.
 #
 # A suite that drives a "tool is not installed" arm has to guarantee the tool is
 # absent, and cannot assume it: a real `uvx`, `specify` or `pnpm` may live
-# anywhere further down a developer's PATH. Every CLIENT OF THIS FILE gets there
-# by asking one question of each PATH directory, does this directory provide
-# <name> as a command, and rebuilding a PATH from the answer. That is not the
-# only way to reach the same guarantee, and the quantifier is scoped this
-# narrowly on purpose: a suite whose fixture needs a known, small set of
-# binaries can build an allowlist directory holding just those instead, which
-# asks nothing about any PATH directory at all. Both are legitimate; which one
-# fits is decided by whether the subject's binary needs are enumerable.
-# Two rebuild shapes exist for the question this file does ask, and both live
-# here.
-# Dropping each providing directory is the cheaper one and is right whenever the
-# command under test needs nothing else those directories hold. Mirroring each
-# providing directory into a shim of symlinks with the tool left out is the one
-# to reach for when it does: on a Homebrew host or a Linux runner the tool
-# shares a prefix with git, jq, bash, grep and cat, and dropping the directory
-# takes all of them with it. A tree-wide grep for these function names answers
-# which suites call which.
+# anywhere further down a developer's PATH. Two strategies reach that guarantee,
+# and both live here for the DUPLICATION reason argued below, which is
+# indifferent to which of them a rule belongs to. Which one fits is decided by
+# whether the subject's binary needs are enumerable.
+#
+# SUBTRACTIVE, for a subject whose needs are open-ended. Ask one question of
+# each PATH directory, does this directory provide <name> as a command, and
+# rebuild a PATH from the answer, so the host keeps providing whatever it
+# provides and only the named tool goes. Two rebuild shapes exist for that
+# question and both live here. Dropping each providing directory is the cheaper
+# one and is right whenever the command under test needs nothing else those
+# directories hold. Mirroring each providing directory into a shim of symlinks
+# with the tool left out is the one to reach for when it does: on a Homebrew
+# host or a Linux runner the tool shares a prefix with git, jq, bash, grep and
+# cat, and dropping the directory takes all of them with it.
+#
+# ADDITIVE, for a subject whose needs enumerate. Build one directory holding a
+# symlink to each binary the fixture names and run with that as the whole PATH.
+# It asks nothing about any PATH directory, so it takes nothing from one, which
+# is what makes it the right shape where the subtractive form's collateral would
+# bite. The enumeration is the caller's: two callers naming different binaries
+# are two subjects with different needs rather than one list that drifted, and
+# this file owns the mechanism precisely so each caller's list can stay its own.
+#
+# A tree-wide grep for these function names answers which suites call which.
 #
 # The tempting way to write the question is:
 #
@@ -139,4 +149,55 @@ path_shim_without() {
     fi
   done <<<"${PATH//:/$'\n'}"
   printf '%s\n' "$shim${kept:+:$kept}"
+}
+
+# path_allowlist <name>...: print a $PATH of exactly one directory, holding a
+# symlink to the file each named command resolves to. The additive shape:
+# a caller assigns the result the way it assigns the other two primitives'
+# (`PATH="$(path_allowlist env bash jq)" run bash "$SCRIPT"`), and the tool it
+# wants absent is absent by never being named.
+#
+# A name the current $PATH does not provide is skipped rather than refused. A
+# caller naming both `shasum` and `sha256sum` wants whichever the host ships,
+# and a stock macOS ships only the first while many Linux hosts ship only the
+# second; refusing would red the suite on the host rather than on the subject.
+# The safe direction is the same one `path_dir_provides` fails in: a name that
+# silently does not arrive fails the command under test rather than greening it.
+#
+# Each call builds its own directory, so a suite whose subject needs a different
+# enumeration per fixture gets one per fixture rather than the second call
+# overwriting the first.
+#
+# bats-only, and for the same reason as `path_shim_without`: the directory lives
+# under the per-test temp dir, so it is torn down with the test that built it and
+# two tests cannot share one. Sourced outside a test, it refuses.
+path_allowlist() {
+  local dir name resolved d
+  if [ -z "${BATS_TEST_TMPDIR:-}" ]; then
+    printf 'path_allowlist: BATS_TEST_TMPDIR is unset; this primitive needs a bats per-test temp dir\n' >&2
+    return 1
+  fi
+  dir="$(mktemp -d "$BATS_TEST_TMPDIR/path-allowlist-XXXXXX")" || return 1
+  for name in "$@"; do
+    resolved="$(command -v "$name" 2>/dev/null)"
+    # `command -v` answers a builtin, keyword or function with the bare name
+    # rather than a path, and `printf` and `test` are both builtins here. Linking
+    # that answer verbatim would make a relative link to nothing, which is
+    # neither of the two outcomes above; the command may still exist as the file
+    # a subject reaching it through `env` or `xargs` needs, so ask the PATH.
+    case "$resolved" in
+      /*) ;;
+      *)
+        resolved=""
+        while IFS= read -r d; do
+          [ -n "$d" ] || continue
+          path_dir_provides "$d" "$name" && { resolved="$d/$name"; break; }
+        done <<<"${PATH//:/$'\n'}"
+        ;;
+    esac
+    if [ -n "$resolved" ]; then
+      ln -sf "$resolved" "$dir/$name"
+    fi
+  done
+  printf '%s\n' "$dir"
 }
