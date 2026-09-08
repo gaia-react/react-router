@@ -64,6 +64,13 @@ run_in_sandbox() {
   ( cd "$SANDBOX" && "$SCRIPT" )
 }
 
+# Same, under a named interpreter. The unparseable-lib cases below pass
+# /bin/bash deliberately; see the block above them for why the pin, not the
+# fixture, is what decides those.
+run_in_sandbox_with() {
+  ( cd "$SANDBOX" && "$1" "$SCRIPT" )
+}
+
 # Amend HEAD with one or more trailer key=value pairs.
 # Each argument becomes a single `--trailer` flag.
 amend_with_trailers() {
@@ -529,13 +536,71 @@ reason=digest-recompute-failed"
 # the stamping side derives it, and refuses when it cannot be.
 # -----------------------------------------------------------------------------
 
-@test "version normalizer unavailable: skip=false reason=version-lib-unavailable" {
+@test "version normalizer ABSENT: skip=false reason=version-lib-unavailable" {
   digest=$(current_digest)
   tree=$(current_tree)
   amend_with_trailers "GAIA-Audit: 1.2.3 ${digest} ${tree}"
   rm -f "$SANDBOX/.claude/hooks/lib/gaia-version.sh"
 
   run run_in_sandbox
+  [ "$status" -eq 0 ]
+  expected="skip=false
+matched_version=
+matched_tree=
+reason=version-lib-unavailable"
+  [ "$output" = "$expected" ]
+}
+
+# -----------------------------------------------------------------------------
+# The OTHER arm of "cannot be sourced": present, but unparseable.
+#
+# The deletion above is the easy half. This is the half the guarded load exists
+# for, and the half a `. X 2>/dev/null || true` never reaches: under the errexit
+# this script arms at its top, bash abandons the shell AT the load, so the
+# `|| true` is never evaluated and the `command -v` degrade below it never runs.
+# An interrupted `/update-gaia`, an unresolved merge conflict, and a truncated
+# write all leave exactly this state on disk.
+#
+# Pinned to stock /bin/bash, and it is the pin rather than the fixture that
+# decides: 3.2.57 abandons the shell on the `|| true` form and survives on the
+# bracketed one, while bash 5 survives on both. So on a bash-5 /bin/bash (Linux
+# CI) these pass either way, and only 3.2 tells the two shapes apart. Dropping
+# the pin would green them against the spelling they exist to reject.
+# -----------------------------------------------------------------------------
+
+# Overwrite gaia-version.sh in place with an unresolved-merge-conflict body: the
+# file opens and reads fine, so the `[ -f ]` guard admits it, and bash cannot
+# parse it. Deliberately not a deletion -- that is the arm above.
+write_unparseable_version_lib() {
+  { printf '<<<<<<< HEAD\n'; printf 'x() { :; }\n'; printf '=======\n'
+    printf 'y() { :; }\n'; printf '>>>>>>> other\n'; } \
+    > "$SANDBOX/.claude/hooks/lib/gaia-version.sh"
+}
+
+# The control for the case below. Without it that case would stay green if the
+# script stopped resolving entirely under 3.2, for a reason having nothing to do
+# with either load shape.
+@test "unparseable control: with the version lib intact, stock /bin/bash matches normally" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  digest=$(current_digest)
+  tree=$(current_tree)
+  amend_with_trailers "GAIA-Audit: 1.2.3 ${digest} ${tree}"
+
+  run run_in_sandbox_with /bin/bash
+  [ "$status" -eq 0 ]
+  grep -qF "skip=true" <<<"$output"
+  grep -qF "reason=version-lib-unavailable" <<<"$output" && return 1
+  true
+}
+
+@test "version normalizer PRESENT BUT UNPARSEABLE: skip=false reason=version-lib-unavailable" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  digest=$(current_digest)
+  tree=$(current_tree)
+  amend_with_trailers "GAIA-Audit: 1.2.3 ${digest} ${tree}"
+  write_unparseable_version_lib
+
+  run run_in_sandbox_with /bin/bash
   [ "$status" -eq 0 ]
   expected="skip=false
 matched_version=

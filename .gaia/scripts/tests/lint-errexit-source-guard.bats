@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 # Tests for .gaia/scripts/lint-errexit-source-guard.sh: the static gate that
 # flags a `source` / `.` reachable with errexit armed and not bracketed against
-# a present-but-unparseable target. The gate scans .claude/hooks/**/*.sh and
-# .gaia/scripts/**/*.sh, excluding tests/.
+# a present-but-unparseable target. The gate scans .claude/hooks/**/*.sh,
+# .gaia/scripts/**/*.sh and .github/**/*.sh, excluding tests/.
 #
 # Three jobs: prove the detector fires on each known-bad shape (unguarded load,
 # flat restore in a sourced file, a suspend that never restores), prove it stays
@@ -32,10 +32,13 @@ teardown() {
   return 0
 }
 
-# new_fixture: an empty tmp repo with both scan roots present. Sets $TMP.
+# new_fixture: an empty tmp repo with EVERY scan root present. Sets $TMP.
+# All three are created because the linter refuses on the first absent root
+# before it scans anything, so a fixture short one root reds every test in this
+# file on that refusal rather than on the shape the test plants.
 new_fixture() {
   TMP="$(mktemp -d -t errexit-source-lint-XXXXXX)"
-  mkdir -p "$TMP/.claude/hooks/lib" "$TMP/.gaia/scripts"
+  mkdir -p "$TMP/.claude/hooks/lib" "$TMP/.gaia/scripts" "$TMP/.github/audit"
 }
 
 # plant <relpath> <body>: write <body> to $TMP/<relpath>.
@@ -46,7 +49,7 @@ plant() {
 
 # 1. The real scanned tree is clean (regression gate)
 
-@test "the real scanned tree (.claude/hooks + .gaia/scripts) passes the lint" {
+@test "the real scanned tree (.claude/hooks + .gaia/scripts + .github) passes the lint" {
   run bash -c "cd '$REPO_ROOT' && bash '$LINTER'"
   [ "$status" -eq 0 ]
 }
@@ -490,6 +493,38 @@ plant() {
   run bash -c "cd '$TMP' && bash '$LINTER'"
   [ "$status" -eq 1 ]
   grep -qF -- ".claude/hooks/probe.sh:4" <<<"$output"
+}
+
+# 11b. The .github root is walked, not merely asserted present
+
+# The root was added to catch the two CI audit scripts that load gaia-version.sh
+# under errexit (gaia-react/gaia#1870). A root that is present but never
+# descended reports clean forever, indistinguishable from a real pass, so this
+# plants the class under .github/ and requires the hit.
+@test "walks the .github root rather than only asserting it exists" {
+  new_fixture
+  plant .github/audit/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .github/audit/lib.sh\n'
+  plant .github/audit/lib.sh $'helper() { :; }\n'
+  run bash -c "cd '$TMP' && bash '$LINTER'"
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/audit/probe.sh:3" <<<"$output"
+  grep -qF -- "unguarded load" <<<"$output"
+}
+
+@test "excludes tests/ under the .github root the same way it does elsewhere" {
+  new_fixture
+  plant .github/audit/tests/fixture.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .github/audit/lib.sh\n'
+  plant .github/audit/lib.sh $'helper() { :; }\n'
+  run bash -c "cd '$TMP' && bash '$LINTER'"
+  [ "$status" -eq 0 ]
+}
+
+@test "fails loudly when the .github scan root is absent" {
+  new_fixture
+  rm -rf "$TMP/.github"
+  run bash -c "cd '$TMP' && bash '$LINTER'"
+  [ "$status" -eq 1 ]
+  grep -qF -- "scan root missing: .github" <<<"$output"
 }
 
 # 12. A scan root that vanishes must fail the check, not shrink it
