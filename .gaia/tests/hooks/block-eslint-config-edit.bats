@@ -30,10 +30,15 @@
 # is the contract rather than a coarse approximation of one.
 #
 # shellcheck disable=SC2317
-# SC2317 (command appears unreachable) is a structural false positive on every
-# @test block: bats invokes each body through its own runner, which the static
-# analyzer cannot see. File-wide because the false positive is intrinsic to the
-# bats structure rather than to any single test. (Keep the word "shellcheck"
+# SC2317 (command appears unreachable) is not intrinsic to bats, and a suite
+# carrying no bare `return` inside a `@test` body reports none of it. A `@test`
+# body parses as a top-level brace group rather than a function, so a bare
+# `return 0` terminating one of the tests below reads as a script-level return
+# and every `@test` after it looks unreachable. File-wide because that cascade
+# is. shell-lint gates `.bats` at severity=warning, above SC2317's info tier, so
+# the directive only quiets an ad-hoc `shellcheck -S style` run. The terminator
+# that avoids it outright is the explicit `true`
+# .claude/rules/bats-assertions.md prescribes. (Keep the word "shellcheck"
 # off the start of a comment line here; it is parsed as a directive there.)
 #
 # shellcheck disable=SC2016

@@ -17,12 +17,15 @@
 # search or copy in the tree.
 
 # shellcheck disable=SC2317
-# SC2317 (command appears unreachable) is a structural false positive on every
-# @test block below: bats invokes each test body through its own runner, which
-# static shellcheck cannot see, so it marks the blocks unreachable. The directive
-# is file-wide because the false positive is intrinsic to the bats structure, not
-# to any single test, and it masks no genuine signal: SC2317 cannot reason about
-# an indirectly-invoked bats suite at all.
+# SC2317 (command appears unreachable) is not intrinsic to bats, and a suite
+# carrying no bare `return` inside a `@test` body reports none of it. A `@test`
+# body parses as a top-level brace group rather than a function, so the bare
+# `return 0` terminating one of the tests below reads as a script-level return
+# and every `@test` after it looks unreachable. File-wide because that cascade
+# is. shell-lint gates `.bats` at severity=warning, above SC2317's info tier, so
+# the directive only quiets an ad-hoc `shellcheck -S style` run. The terminator
+# that avoids it outright is the explicit `true`
+# .claude/rules/bats-assertions.md prescribes.
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
