@@ -95,8 +95,16 @@ done < <(printf '%s\n' "$cmd" | tr '|&;()' '\n')
 # ---------------------------------------------------------------------------
 # Repo-scope guard: a `git -C ../other commit` targets a different repo whose
 # RED ledger is not ours, so allow it. Fail-closed (enforce) on any ambiguity.
+#
+# This hook's libraries are rooted at its own on-disk location, the way the
+# main-root resolver below already is, and never at the process working
+# directory. A bare `.claude/hooks/lib/...` test is false from anywhere under
+# the repository root, and the fail-open degrades below are written for a
+# BROKEN library: they cannot tell that case from a moved working directory, so
+# a bare test would let a single `cd` disarm this gate with no diagnostic.
 # ---------------------------------------------------------------------------
-[ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _lib_dir=''
+[ -n "$_lib_dir" ] && [ -f "$_lib_dir/repo-scope.sh" ] && . "$_lib_dir/repo-scope.sh"
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0
@@ -106,7 +114,7 @@ fi
 # Shared RED-ledger lib: ledger path, repo-relative normalization, and the
 # signal-helper wrapper. Without it we cannot compute identity, so fail-open.
 # ---------------------------------------------------------------------------
-[ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh
+[ -n "$_lib_dir" ] && [ -f "$_lib_dir/red-ledger.sh" ] && . "$_lib_dir/red-ledger.sh"
 type red_ledger_path >/dev/null 2>&1 || exit 0
 type red_ledger_signals >/dev/null 2>&1 || exit 0
 type red_ledger_signal_script >/dev/null 2>&1 || exit 0
@@ -182,7 +190,11 @@ signal_script=$(red_ledger_signal_script)
 # path is never broken and the existing fail-open posture is preserved exactly.
 # The carve-out RELAXES the demand only on an AFFIRMATIVE emergent verdict; it
 # never tightens it.
-classifier_script=".gaia/scripts/classifier/classify-determinism.mjs"
+# Rooted through the same script-derived scripts directory the main-root load
+# above resolves, never a bare cwd-relative literal: the absence test below
+# feeds a fail-open that demands the RED, so a cwd below the repository root
+# would silently retire the emergent carve-out rather than report anything.
+classifier_script="$gaia_scripts/classifier/classify-determinism.mjs"
 
 # Echo "emergent" only when the classifier affirmatively classifies the given
 # repo-relative test path emergent; echo nothing otherwise (missing helper,
@@ -192,7 +204,17 @@ test_subject_is_emergent() {
   local rel="$1"
   [ -f "$classifier_script" ] || return 0
   local out
-  out=$(node "$classifier_script" "$rel" 2>/dev/null) || return 0
+  # Run from the ACTING TREE, not the process working directory. `$rel` is
+  # repo-relative and stays that way, because the classifier's own path rules
+  # read it (a .tsx under app/components/**, a spec under .playwright/**), so
+  # handing it an absolute path would change its verdict. What it must not do is
+  # resolve that path against a working directory nobody chose: the file read
+  # then fails, the classifier's deliberate err-EMERGENT bias returns emergent,
+  # and an emergent verdict RETIRES the RED demand for the file. That is a
+  # silent disarm of this gate from any subdirectory, in the same direction as
+  # a missing library. The `cd` is inside a command substitution, so it never
+  # persists into the rest of this hook.
+  out=$( cd "$tree_root" && node "$classifier_script" "$rel" 2>/dev/null ) || return 0
   [ -n "$out" ] || return 0
   printf '%s' "$out" \
     | jq -r 'select((.classification // "") == "emergent") | "emergent"' \
@@ -223,7 +245,11 @@ while IFS= read -r path; do
   # Current tests: helper over the working-tree (staged) file content on disk.
   # Parse failure (mid-edit syntax error) -> skip this file (fail-open).
   current_ndjson=""
-  current_ndjson=$(red_ledger_signals "$rel" 2>/dev/null) || { continue; }
+  # From the acting tree, for the reason the classifier call above gives: this
+  # helper reads the staged file from disk at the repo-relative path, so from a
+  # subdirectory it finds nothing, and "no signals" is a `continue` -- the file
+  # leaves the offender scan and the commit passes ungated.
+  current_ndjson=$( cd "$tree_root" && red_ledger_signals "$rel" 2>/dev/null ) || { continue; }
   # No emitted tests (empty file, only dynamic-title tests, or no-tests file):
   # nothing in scope for this file.
   [ -n "$current_ndjson" ] || continue
@@ -238,7 +264,13 @@ while IFS= read -r path; do
   head_src=$(git show "HEAD:$rel" 2>/dev/null || true)
   head_fullnames=""
   if [ -n "$head_src" ]; then
-    head_ndjson=$(printf '%s' "$head_src" \
+    # From the acting tree, like the two reads above: $signal_script is the bare
+    # repo-relative literal red_ledger_signal_script returns, so from a
+    # subdirectory node cannot find it, `|| true` swallows the failure, and
+    # head_fullnames stays empty. Empty means "nothing pre-existed at HEAD", so
+    # every current test reads as new-at-HEAD and an ordinary edit to a test
+    # that has always been there is denied for want of a RED it never owed.
+    head_ndjson=$( cd "$tree_root" && printf '%s' "$head_src" \
       | node "$signal_script" "$rel" --stdin 2>/dev/null || true)
     if [ -n "$head_ndjson" ]; then
       head_fullnames=$(printf '%s\n' "$head_ndjson" \

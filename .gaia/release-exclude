@@ -182,6 +182,8 @@
 # tracked-file list is built, so the withhold rests on the absent caller alone,
 # and shipping it later would be a re-decision rather than a correction.
 .gaia/scripts/list-tracked-paths.sh
+# Deterministic lint over GAIA's own hook layer; every runner (shell-lint.sh and its sibling bats suite) is release-excluded, so an adopter clone would carry a check nothing invokes. The repaired hooks themselves ship.
+.gaia/scripts/lint-hook-cwd-relative-loads.sh
 
 # --- 2. Maintainer-only wiki content ---
 # Internal vault administration files and team-specific knowledge that

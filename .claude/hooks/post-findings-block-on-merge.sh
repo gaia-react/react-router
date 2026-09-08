@@ -185,13 +185,28 @@ is_fork="$(gh pr view "$PR" --json isCrossRepository --jq .isCrossRepository 2>/
 author="$(gh pr view "$PR" --json author --jq .author.login 2>/dev/null || true)"
 [ -n "$author" ] || exit 0
 
+# Both scripts are rooted through the location resolved for the arming load
+# above rather than named cwd-relatively: each failure arm here is a silent
+# `|| true` or an `exit 0`, so from a working directory under the repository
+# root a bare name would degrade to "no local mode, nothing to post" and this
+# hook would decline to post findings for a reason it never reports.
+# Three levels up, not two: $_va_lib is the `lib` DIRECTORY
+# (<root>/.claude/hooks/lib), so the repository root is ../../.. from it.
+# Empty when the rooting above failed, and guarded rather than defaulted to a
+# bare `.claude/hooks/lib`: that default resolves against the process working
+# directory, so the one branch where the rooting fails would revert to exactly
+# the resolution this rooting exists to remove. Degrading to the same silent
+# `exit 0` the arms below take is the honest answer there.
+_gaia_scripts="${_va_lib:+$_va_lib/../../../.gaia/scripts}"
+[ -n "$_gaia_scripts" ] || exit 0
+
 resolved_mode=""
-eval "$(PR_IS_FORK="$is_fork" bash .gaia/scripts/read-audit-ci-config.sh --resolve-author "$author" 2>/dev/null)" || true
+eval "$(PR_IS_FORK="$is_fork" bash "$_gaia_scripts/read-audit-ci-config.sh" --resolve-author "$author" 2>/dev/null)" || true
 [ "$resolved_mode" = "local" ] || exit 0
 
 # Best-effort: post-findings-block.sh always exits 0 and declines cleanly
 # when no sidecars exist, so an early merge attempt before the audit ran
 # posts nothing rather than an empty block.
-bash .gaia/scripts/post-findings-block.sh --pr "$PR" >/dev/null 2>&1 || true
+bash "$_gaia_scripts/post-findings-block.sh" --pr "$PR" >/dev/null 2>&1 || true
 
 exit 0

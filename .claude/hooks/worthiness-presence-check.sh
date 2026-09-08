@@ -117,7 +117,14 @@ fi
 # Repo-scope: a `gh pr merge` aimed at a different repo (`-R owner/other`, or
 # `cd ../other && gh pr merge`) has no bearing on this repo's worthiness ledger,
 # so allow it. Fail-closed (enforce) on any ambiguity.
-[ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+#
+# Every library below is rooted at this file's own directory, reusing the value
+# resolved for the verb-arming load above, and never at the process working
+# directory. A bare `.claude/hooks/lib/...` test is false from anywhere under
+# the repository root, and the fail-open degrades that follow each load are
+# written for a BROKEN library: they cannot tell that case from a moved working
+# directory, so a bare test would let one `cd` disarm this merge gate silently.
+[ -n "$_va_lib_dir" ] && [ -f "$_va_lib_dir/repo-scope.sh" ] && . "$_va_lib_dir/repo-scope.sh"
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0
@@ -126,7 +133,7 @@ fi
 # Shared RED-ledger lib: the signal-helper wrapper and repo-relative
 # normalization. The worthiness ledger writer uses the SAME helper, so signals
 # byte-match. Without it we cannot recompute identity, so fail-open.
-[ -f .claude/hooks/lib/red-ledger.sh ] && . .claude/hooks/lib/red-ledger.sh
+[ -n "$_va_lib_dir" ] && [ -f "$_va_lib_dir/red-ledger.sh" ] && . "$_va_lib_dir/red-ledger.sh"
 type red_ledger_repo_rel >/dev/null 2>&1 || exit 0
 type red_ledger_signals >/dev/null 2>&1 || exit 0
 type red_ledger_signal_script >/dev/null 2>&1 || exit 0
@@ -136,7 +143,7 @@ type red_ledger_signal_script >/dev/null 2>&1 || exit 0
 # (.gaia/scripts/audit-ledger/append-worthiness.mjs) so the two never hand-
 # build the path independently. Without it we cannot locate the ledger, so
 # fail-open.
-[ -f .claude/hooks/lib/worthiness-ledger.sh ] && . .claude/hooks/lib/worthiness-ledger.sh
+[ -n "$_va_lib_dir" ] && [ -f "$_va_lib_dir/worthiness-ledger.sh" ] && . "$_va_lib_dir/worthiness-ledger.sh"
 type worthiness_ledger_path >/dev/null 2>&1 || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0
@@ -145,15 +152,19 @@ command -v node >/dev/null 2>&1 || exit 0
 # This hook only enforces where git answers (a real work tree at pwd).
 git rev-parse --is-inside-work-tree >/dev/null 2>&1 || exit 0
 
-classifier_script=".gaia/scripts/classifier/classify-determinism.mjs"
+# Script-rooted for the reason the library loads above are: the absence test on
+# the next line is an outright `exit 0`, so a cwd below the repository root
+# would retire this whole gate rather than report anything.
+_gaia_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || exit 0
+classifier_script="$_gaia_root/.gaia/scripts/classifier/classify-determinism.mjs"
 [ -f "$classifier_script" ] || exit 0
 
 # The shared main-root resolver, sourced from this hook's own checkout via
 # BASH_SOURCE (never process cwd): the worthiness ledger is per-tree state,
 # so its root is the ACTING tree, not wherever this hook process happens to
-# sit.
-gaia_scripts="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || exit 0
-gaia_scripts="$gaia_scripts/.gaia/scripts"
+# sit. Derived from the root resolved just above rather than resolving it a
+# second time, so the two cannot answer differently.
+gaia_scripts="$_gaia_root/.gaia/scripts"
 # shellcheck source=/dev/null
 source "$gaia_scripts/main-root-lib.sh" 2>/dev/null || exit 0
 
@@ -205,7 +216,12 @@ changed=$(git diff --name-only -z "${base}...HEAD" 2>/dev/null | tr '\0' '\n' ||
 classify_emergent() {
   local rel="$1"
   local out
-  out=$(node "$classifier_script" "$rel" 2>/dev/null) || return 0
+  # Run from the ACTING TREE, not the process working directory. `$rel` stays
+  # repo-relative because the classifier's own path rules read it, but it must
+  # not be resolved against a working directory nobody chose: the file read then
+  # fails and the verdict stops describing the file. The `cd` is inside a
+  # command substitution, so it never persists into the rest of this hook.
+  out=$( cd "$tree_root" && node "$classifier_script" "$rel" 2>/dev/null ) || return 0
   [ -n "$out" ] || return 0
   printf '%s' "$out" \
     | jq -r 'select((.classification // "") == "emergent") | "emergent"' \
@@ -232,8 +248,11 @@ while IFS= read -r path; do
   rel=$(red_ledger_repo_rel "$path")
 
   # A pure deletion leaves no working-tree file to recompute from; if the file is
-  # gone, there is nothing in scope for it.
-  [ -f "$rel" ] || continue
+  # gone, there is nothing in scope for it. Tested against the ACTING TREE, not
+  # the process working directory: `$rel` is repo-relative, so from a
+  # subdirectory this answers "deleted" for every file that exists, and the
+  # `continue` empties the offender scan into a clean pass.
+  [ -f "$tree_root/$rel" ] || continue
 
   # Authoritative emergent membership: the determinism classifier. A `.ts` test
   # under app/components/** that the classifier proves deterministic is RED-gated,
@@ -245,7 +264,11 @@ while IFS= read -r path; do
   # Current tests: helper over the working-tree file content on disk. Parse
   # failure (mid-edit syntax error) -> skip this file (fail-open).
   current_ndjson=""
-  current_ndjson=$(red_ledger_signals "$rel" 2>/dev/null) || { continue; }
+  # From the acting tree, for the reason the classifier call above gives: this
+  # helper reads the file from disk at the repo-relative path, so from a
+  # subdirectory it finds nothing, and "no signals" is a `continue` -- the file
+  # leaves the scan and the merge clears with no verdict demanded.
+  current_ndjson=$( cd "$tree_root" && red_ledger_signals "$rel" 2>/dev/null ) || { continue; }
   # No emitted tests (only dynamic-title tests, or a no-tests file): nothing in
   # scope for this file.
   [ -n "$current_ndjson" ] || continue

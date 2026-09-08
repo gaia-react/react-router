@@ -258,7 +258,9 @@ esac
 
 # Repo-scope: a `gh pr create` aimed at a different repo has no bearing on this
 # repo's distribution boundary, so allow it. Mirrors the sibling merge gates.
-[ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+# Reuses the location resolved for the arming load above rather than a bare
+# cwd-relative test, for the reason given there.
+[ -n "$va_dir" ] && [ -f "$va_dir/lib/repo-scope.sh" ] && . "$va_dir/lib/repo-scope.sh"
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0
@@ -266,7 +268,17 @@ fi
 
 # Adopter clone (or a maintainer checkout with no built binary): nothing to
 # check. This is the inertness guard the ADOPTER POSTURE note above depends on.
-maintainer_bin=".gaia/cli/gaia-maintainer"
+# Script-rooted, never cwd-relative: the test below is the inertness guard
+# itself, so a cwd anywhere under the repository root would answer "adopter
+# clone" in a maintainer checkout that does carry the binary, and the whole
+# pre-flight would stand down for the wrong reason.
+# Empty when the rooting at :205 failed, rather than defaulted to a bare
+# `.claude/hooks`: that default resolves against the process working directory,
+# so the one branch where the rooting fails would revert to exactly the
+# resolution this rooting exists to remove. The `-x` test below rejects the
+# empty path, so an unresolved root stands the pre-flight down the same way an
+# adopter clone does.
+maintainer_bin="${va_dir:+$va_dir/../../.gaia/cli/gaia-maintainer}"
 [ -x "$maintainer_bin" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0

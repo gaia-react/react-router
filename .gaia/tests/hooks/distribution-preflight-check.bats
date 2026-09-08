@@ -109,14 +109,31 @@ EOF
   chmod +x "$FIXTURE/.gaia/cli/gaia-maintainer"
 }
 
-# run_hook COMMAND [TOOL_NAME]: drive the hook with a PreToolUse payload.
-# cwd is the fixture repo because the hook resolves .gaia/cli/gaia-maintainer
-# repo-relative.
+# stage_hook_in_fixture: copy the hook layer into the fixture at its own
+# repo-relative path and echo the staged hook.
+#
+# The hook resolves BOTH its shared libraries and the maintainer binary off
+# ${BASH_SOURCE[0]} rather than off the working directory, so the fixture's
+# .gaia/cli/gaia-maintainer mock is in its view only when the hook running is
+# the copy that sits inside the fixture. Driving $HOOK_ABS with cwd set to the
+# fixture reaches the real checkout's binary instead, where the mock's report
+# cannot be expressed at all.
+stage_hook_in_fixture() {
+  mkdir -p "$FIXTURE/.claude/hooks"
+  cp -R "$REPO_ROOT/.claude/hooks/." "$FIXTURE/.claude/hooks/"
+  printf '%s\n' "$FIXTURE/.claude/hooks/distribution-preflight-check.sh"
+}
+
+# run_hook COMMAND [TOOL_NAME]: drive the hook with a PreToolUse payload, from
+# a copy staged inside the fixture so the fixture's own mock is what it reads.
+# cwd is still the fixture repo, because the git queries below it are answered
+# from the working directory.
 run_hook() {
-  local cmd="$1" tool="${2:-Bash}" payload
+  local cmd="$1" tool="${2:-Bash}" payload hook
+  hook="$(stage_hook_in_fixture)"
   payload=$(jq -n --arg t "$tool" --arg c "$cmd" \
     '{tool_name: $t, tool_input: {command: $c}}')
-  invoke_hook_in "$FIXTURE" "$payload" "$HOOK_ABS"
+  invoke_hook_in "$FIXTURE" "$payload" "$hook"
 }
 
 # run_hook_at HOOK COMMAND: the same, against a staged copy of the hook rather
@@ -325,16 +342,15 @@ assert_allow() {
   # authoritative, and a hook with that contract must not become the one guard
   # that denies every Bash tool call on a corrupted checkout.
   install_maintainer_mock
-  local staged="$BATS_TEST_TMPDIR/staged"
-  mkdir -p "$staged"
-  cp -R "$REPO_ROOT/.claude/hooks/." "$staged/"
-  [ -f "$staged/lib/verb-arming.sh" ]
+  local staged
+  staged="$(stage_hook_in_fixture)"
+  [ -f "$FIXTURE/.claude/hooks/lib/verb-arming.sh" ]
   # Non-vacuity: the staged copy denies while the library is there, so the allow
   # below can only come from its absence.
-  run_hook_at "$staged/distribution-preflight-check.sh" "gh pr create --title x"
+  run_hook_at "$staged" "gh pr create --title x"
   assert_deny
-  rm -f "$staged/lib/verb-arming.sh"
-  run_hook_at "$staged/distribution-preflight-check.sh" "gh pr create --title x"
+  rm -f "$FIXTURE/.claude/hooks/lib/verb-arming.sh"
+  run_hook_at "$staged" "gh pr create --title x"
   assert_allow
 }
 

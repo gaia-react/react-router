@@ -127,6 +127,18 @@ run_merge_hook() {
   invoke_hook_in "$REPO" "$json" "$HOOK_ABS"
 }
 
+# The same, from a subdirectory of the tmp repo. The agent's working directory
+# is whatever the session last set, not the repository root, so every arm this
+# gate depends on has to resolve from a depth nobody chose.
+run_merge_hook_from() {
+  local sub="$1"
+  local cmd="${2:-gh pr merge 30 --squash --delete-branch}"
+  local json
+  mkdir -p "$REPO/$sub"
+  json=$(jq -nc --arg c "$cmd" '{tool_name:"Bash", tool_input:{command:$c}}')
+  invoke_hook_in "$REPO/$sub" "$json" "$HOOK_ABS"
+}
+
 denied() { [[ "$output" == *'"permissionDecision": "deny"'* ]]; }
 
 # Absence assertion: fail the test when the hook denied. A bare `! denied` only
@@ -207,6 +219,29 @@ test("adds two numbers", () => {
   [ "$status" -eq 0 ]
   denied
   [[ "$output" == *"renders a label"* ]]
+}
+
+@test "still denies when the working directory is a subdirectory" {
+  # The regression this pins: the gate located its shared libraries, and read
+  # the changed test files, by bare repository-root-relative paths, so from any
+  # subdirectory the loads and the reads all failed and every path out of them
+  # was a fail-open. One `cd` cleared the merge with no verdict demanded, and
+  # nothing said so.
+  commit_file "app/components/Foo/tests/index.test.tsx" "$EMERGENT_TEST"
+  run_merge_hook_from "app/components"
+  [ "$status" -eq 0 ]
+  denied
+  grep -qF -- "renders a label" <<<"$output"
+}
+
+@test "still allows a matching verdict when the working directory is a subdirectory" {
+  # The other half: the rooting must not make the gate deny everything from a
+  # subdirectory either, which would be a different silent break.
+  commit_file "app/components/Foo/tests/index.test.tsx" "$EMERGENT_TEST"
+  seed_matching "app/components/Foo/tests/index.test.tsx" "renders a label" "keep"
+  run_merge_hook_from "app/components"
+  [ "$status" -eq 0 ]
+  refute_denied
 }
 
 @test "denies an emergent test when the ledger has only an unrelated line" {

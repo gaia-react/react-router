@@ -55,7 +55,17 @@ cmd=$(echo "$payload" | jq -r '.tool_input.command // empty')
 # refusing every matching call including the edit that would repair the library.
 # Suspending errexit for the one command lets the `type` check do the degrading, at
 # no fork and at any source depth. `bash -n` cannot: it does not recurse.
-set +e; [ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh 2>/dev/null; set -e
+#
+# Rooted at this file's own on-disk location, never at the process working
+# directory: a bare test is false from anywhere below the repository root, and
+# the `type` degrade below reads that as a missing library. Resolved through the
+# ancestor rather than a lib child, for the reason
+# block-main-destructive-git.sh states at the same load: the ancestor cannot
+# fail, so no degrade branch is owed, and a missing carve-out here is a silent
+# fail-open rather than a deny.
+_hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || _hook_root=''
+_scope_lib="$_hook_root/.claude/hooks/lib/repo-scope.sh"
+set +e; [ -n "$_hook_root" ] && [ -f "$_scope_lib" ] && . "$_scope_lib" 2>/dev/null; set -e
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0

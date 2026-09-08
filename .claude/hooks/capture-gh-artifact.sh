@@ -85,7 +85,20 @@ fi
 # `gh pr create` that already ran; both contradict the "degrade silently,
 # always exit 0" contract in this file's header. What degrades in the arm's
 # place is the `type` check.
-"${BASH:-bash}" -n .gaia/scripts/gh-artifact-lib.sh 2>/dev/null && . .gaia/scripts/gh-artifact-lib.sh 2>/dev/null || true
+#
+# Rooted through the location resolved for the arming load above rather than
+# the process working directory: the parse check answers false for a library it
+# cannot see, and the `type` degrade below reads that as an unusable lib.
+# Three levels up, not two: $_va_lib is the `lib` DIRECTORY
+# (<root>/.claude/hooks/lib), so the repository root is ../../.. from it.
+# Empty when the rooting above failed, and guarded rather than defaulted to a
+# bare `.claude/hooks/lib`: that default resolves against the process working
+# directory, so the one branch where the rooting fails would revert to exactly
+# the resolution this rooting exists to remove, indistinguishably from an
+# absent library. Same shape as the arming load above.
+_gh_lib="${_va_lib:+$_va_lib/../../../.gaia/scripts/gh-artifact-lib.sh}"
+# shellcheck source=/dev/null
+[ -n "$_gh_lib" ] && "${BASH:-bash}" -n "$_gh_lib" 2>/dev/null && . "$_gh_lib" 2>/dev/null || true
 type gaia_gh_artifact_parse_url >/dev/null 2>&1 || exit 0
 
 stdout_text=$(jq -r '.tool_response.stdout // ""' <<<"$payload")

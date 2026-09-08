@@ -29,7 +29,28 @@ cmd=$(echo "$payload" | jq -r '.tool_input.command // empty')
 # refusing every matching call including the edit that would repair the library.
 # Suspending errexit for the one command lets the `type` check do the degrading, at
 # no fork and at any source depth. `bash -n` cannot: it does not recurse.
-set +e; [ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh 2>/dev/null; set -e
+#
+# Rooted at this file's own on-disk location, never at the process working
+# directory. A bare `.claude/hooks/lib/repo-scope.sh` test is false from
+# anywhere below the repository root, and the `type` degrade below cannot tell
+# that from a missing library: the foreign-repo carve-out would be lost and a
+# `-C`-scoped push at a different repository denied with a message about this
+# one's `main`.
+#
+# Resolved through the ANCESTOR (`../..`) rather than through a `lib` child, the
+# same way the main-root load below resolves, and deliberately: a hook's own
+# directory was read to run it and an ancestor of it contains it, so this
+# substitution has no reachable failure to degrade from, while one that changes
+# directory into a lib child does.
+# gaia:maintainer-only:start
+# That is why this hook sits on the excluded side of the degrade table in
+# .gaia/tests/hooks/audit-hook-lib-degrade.bats: it reaches no reporting path on
+# a degraded run, because a missing carve-out is a silent fail-open here rather
+# than a deny, and its entry there names this warrant.
+# gaia:maintainer-only:end
+_hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || _hook_root=''
+_scope_lib="$_hook_root/.claude/hooks/lib/repo-scope.sh"
+set +e; [ -n "$_hook_root" ] && [ -f "$_scope_lib" ] && . "$_scope_lib" 2>/dev/null; set -e
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0

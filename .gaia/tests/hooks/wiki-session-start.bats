@@ -40,6 +40,26 @@ stub_script() {
   chmod +x "$REPO/$rel"
 }
 
+# install_hook: copy the hook under test into $REPO at its own repo-relative
+# path and echo that path, for a test that drives the delegation rather than
+# the stamp.
+#
+# The delegation tests need this and the stamp tests do not, because the hook
+# locates both janitors from its OWN directory (`${BASH_SOURCE[0]}`) rather
+# than from the working directory. Invoking $HOOK_ABS with cwd set to $REPO
+# therefore runs the real janitors out of the home checkout and never sees a
+# stub placed in the fixture, which reads as a pass for the fail-open tests and
+# as a failure for the witness tests. Running a copy makes the fixture the
+# hook's own tree, so a stub is what it finds; that the copy resolves its
+# delegates beside itself, in whichever tree it was invoked from, is the
+# property the rooting buys and these tests are what pin it.
+install_hook() {
+  mkdir -p "$REPO/.claude/hooks"
+  cp "$HOOK_ABS" "$REPO/.claude/hooks/wiki-session-start.sh"
+  chmod +x "$REPO/.claude/hooks/wiki-session-start.sh"
+  echo "$REPO/.claude/hooks/wiki-session-start.sh"
+}
+
 # --- the HEAD stamp ---
 
 @test "records HEAD into the git dir" {
@@ -102,7 +122,8 @@ stub_script() {
 @test "runs the local janitor when it is present" {
   REPO=$("$HELPERS/tmp-git-repo.sh")
   stub_script ".claude/hooks/local-janitor.sh"
-  invoke_hook_in "$REPO" '' "$HOOK_ABS"
+  hook=$(install_hook)
+  invoke_hook_in "$REPO" '' "$hook"
   [ "$status" -eq 0 ]
   [ -f "$REPO/local-janitor.sh.ran" ]
 }
@@ -110,17 +131,33 @@ stub_script() {
 @test "runs the audit re-spawn prune when it is present" {
   REPO=$("$HELPERS/tmp-git-repo.sh")
   stub_script ".gaia/scripts/audit-respawn-prune.sh"
-  invoke_hook_in "$REPO" '' "$HOOK_ABS"
+  hook=$(install_hook)
+  invoke_hook_in "$REPO" '' "$hook"
   [ "$status" -eq 0 ]
   [ -f "$REPO/audit-respawn-prune.sh.ran" ]
+}
+
+@test "finds its janitor from its own tree, not from the working directory" {
+  # The regression this pins: a janitor located from the working directory is
+  # unfindable from any subdirectory, so the sweep silently stops happening.
+  # Invoking from a subdirectory of $REPO must still reach the stub beside the
+  # hook, which is the whole content of the rooting.
+  REPO=$("$HELPERS/tmp-git-repo.sh")
+  stub_script ".claude/hooks/local-janitor.sh"
+  hook=$(install_hook)
+  mkdir -p "$REPO/app/components"
+  invoke_hook_in "$REPO/app/components" '' "$hook"
+  [ "$status" -eq 0 ]
+  [ -f "$REPO/local-janitor.sh.ran" ]
 }
 
 @test "a missing janitor is not an error" {
   # An adopter clone, or a checkout mid-update, can be missing either script.
   # The session must start anyway.
   REPO=$("$HELPERS/tmp-git-repo.sh")
+  hook=$(install_hook)
   [ ! -f "$REPO/.claude/hooks/local-janitor.sh" ]
-  invoke_hook_in "$REPO" '' "$HOOK_ABS"
+  invoke_hook_in "$REPO" '' "$hook"
   [ "$status" -eq 0 ]
   [ -f "$REPO/.git/claude-session-start" ]
 }
@@ -129,10 +166,10 @@ stub_script() {
   # This is the fail-open guarantee. A janitor bug must cost a sweep, not the
   # session, and must not cost the HEAD stamp either.
   REPO=$("$HELPERS/tmp-git-repo.sh")
-  mkdir -p "$REPO/.claude/hooks"
+  hook=$(install_hook)
   printf '#!/usr/bin/env bash\necho boom >&2\nexit 3\n' > "$REPO/.claude/hooks/local-janitor.sh"
   chmod +x "$REPO/.claude/hooks/local-janitor.sh"
-  invoke_hook_in "$REPO" '' "$HOOK_ABS"
+  invoke_hook_in "$REPO" '' "$hook"
   [ "$status" -eq 0 ]
   [ -f "$REPO/.git/claude-session-start" ]
 }
@@ -141,7 +178,7 @@ stub_script() {
   # Ordering matters: a janitor that hangs or dies must not be able to take
   # the baseline with it.
   REPO=$("$HELPERS/tmp-git-repo.sh")
-  mkdir -p "$REPO/.claude/hooks"
+  hook=$(install_hook)
   # `$PWD` stays unexpanded on purpose: the generated stub must evaluate it
   # when the hook runs it, not when this printf writes it, or the assertion
   # would read the bats process's cwd instead of the hook's.
@@ -149,7 +186,7 @@ stub_script() {
   printf '#!/usr/bin/env bash\n[ -s "$PWD/.git/claude-session-start" ] || exit 1\n: > "%s/order.ok"\n' "$REPO" \
     > "$REPO/.claude/hooks/local-janitor.sh"
   chmod +x "$REPO/.claude/hooks/local-janitor.sh"
-  invoke_hook_in "$REPO" '' "$HOOK_ABS"
+  invoke_hook_in "$REPO" '' "$hook"
   [ "$status" -eq 0 ]
   [ -f "$REPO/order.ok" ]
 }

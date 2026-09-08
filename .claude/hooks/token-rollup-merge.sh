@@ -77,8 +77,22 @@ fallback=0
 # under `set -e` an unparseable lib abandons the shell at exit 2 with the ERR
 # trap never reached. `bash -n` subsumes the existence test; the `type` check
 # is what degrades when the lib never defined its functions.
-if "${BASH:-bash}" -n .claude/hooks/lib/gaia-active-plan.sh 2>/dev/null; then
-  . .claude/hooks/lib/gaia-active-plan.sh 2>/dev/null || true
+#
+# Rooted at this file's own directory, never at the process working directory:
+# the parse check answers false for a library it simply cannot see, and the
+# `type` degrade below reads that as a lib that defined no functions, so a cwd
+# under the repository root would lose attribution with nothing to say so.
+#
+# Empty on failure, and guarded rather than defaulted to a bare
+# `.claude/hooks`: that default resolves against the process working directory,
+# so the one branch where the rooting fails would revert to exactly the
+# resolution the rooting exists to remove, and all three loads below would take
+# it. Standing the render down is the same silent degrade every other arm here
+# takes, and it is the honest one.
+_hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || _hook_dir=''
+[ -n "$_hook_dir" ] || exit 0
+if "${BASH:-bash}" -n "$_hook_dir/lib/gaia-active-plan.sh" 2>/dev/null; then
+  . "$_hook_dir/lib/gaia-active-plan.sh" 2>/dev/null || true
   # Degrades INTO the fallback below rather than out of the hook: a lib that
   # never defined its functions is the same situation as no active plan folder,
   # and the ledger path can still answer.
@@ -98,8 +112,8 @@ fi
 # execute row could be newer), so it is labeled at render time.
 if [ -z "$feature_key" ]; then
   # Parse-checked for the same reason the plan-folder load above is.
-  if "${BASH:-bash}" -n .gaia/scripts/ledger-path-lib.sh 2>/dev/null; then
-    . .gaia/scripts/ledger-path-lib.sh 2>/dev/null || true
+  if "${BASH:-bash}" -n "$_hook_dir/../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null; then
+    . "$_hook_dir/../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null || true
     ledger=""
     if type gaia_resolve_ledger_path >/dev/null 2>&1; then
       ledger="$(gaia_resolve_ledger_path 2>/dev/null || true)"
@@ -121,7 +135,7 @@ fi
 
 [ -n "$feature_key" ] || exit 0
 
-rollup=$(bash .gaia/scripts/token-rollup.sh --spec-id "$feature_key" 2>/dev/null || true)
+rollup=$(bash "$_hook_dir/../../.gaia/scripts/token-rollup.sh" --spec-id "$feature_key" 2>/dev/null || true)
 [ -n "$rollup" ] || exit 0
 
 if [ "$fallback" -eq 1 ]; then

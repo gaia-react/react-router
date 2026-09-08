@@ -132,7 +132,12 @@ fi
 
 # Repo-scope: a `gh pr merge` aimed at a different repo has no bearing on this
 # repo's disposition ledger, so allow it. Mirrors the sibling merge gates.
-[ -f .claude/hooks/lib/repo-scope.sh ] && . .claude/hooks/lib/repo-scope.sh
+#
+# Reuses the script-rooted lib directory resolved for the verb-arming load
+# above, never a bare cwd-relative test: that test is false from anywhere below
+# the repository root, and the `type` check below reads a moved working
+# directory as a missing library.
+[ -n "$_va_lib_dir" ] && [ -f "$_va_lib_dir/repo-scope.sh" ] && . "$_va_lib_dir/repo-scope.sh"
 if type cmd_targets_foreign_repo >/dev/null 2>&1 \
    && cmd_targets_foreign_repo "$cmd"; then
   exit 0

@@ -155,10 +155,14 @@ lib_degrade_members() {
 # author adding an indirected resolve to a listed hook owes this list an edit.
 NOT_MEMBERS="\
 block-main-destructive-git.sh resolves an ancestor (../..), not a lib child
+block-no-verify.sh resolves an ancestor (../..), not a lib child
 block-rm-rf.sh resolves an ancestor (../..), not a lib child
 block-selfheal-paths.sh resolves its own directory, not a lib child
 block-serena-cross-tree-activation.sh resolves an ancestor (../..), not a lib child
-block-worktree-path-mismatch.sh resolves an ancestor (../..), not a lib child"
+block-worktree-path-mismatch.sh resolves an ancestor (../..), not a lib child
+wiki-commit-nudge.sh resolves an ancestor (../..), not a lib child
+wiki-drift-check.sh resolves an ancestor (../..), not a lib child
+wiki-session-stop.sh resolves an ancestor (../..), not a lib child"
 
 # The loose candidate set: a hook that `lib_degrade_errexit_armed` reads as
 # armed and untrapped, and whose text opens a command substitution with a `cd`
