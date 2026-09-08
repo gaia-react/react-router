@@ -91,9 +91,14 @@ fi
 # cannot see, and the `type` degrade below reads that as an unusable lib.
 # Three levels up, not two: $_va_lib is the `lib` DIRECTORY
 # (<root>/.claude/hooks/lib), so the repository root is ../../.. from it.
-_gh_lib="${_va_lib:-.claude/hooks/lib}/../../../.gaia/scripts/gh-artifact-lib.sh"
+# Empty when the rooting above failed, and guarded rather than defaulted to a
+# bare `.claude/hooks/lib`: that default resolves against the process working
+# directory, so the one branch where the rooting fails would revert to exactly
+# the resolution this rooting exists to remove, indistinguishably from an
+# absent library. Same shape as the arming load above.
+_gh_lib="${_va_lib:+$_va_lib/../../../.gaia/scripts/gh-artifact-lib.sh}"
 # shellcheck source=/dev/null
-"${BASH:-bash}" -n "$_gh_lib" 2>/dev/null && . "$_gh_lib" 2>/dev/null || true
+[ -n "$_gh_lib" ] && "${BASH:-bash}" -n "$_gh_lib" 2>/dev/null && . "$_gh_lib" 2>/dev/null || true
 type gaia_gh_artifact_parse_url >/dev/null 2>&1 || exit 0
 
 stdout_text=$(jq -r '.tool_response.stdout // ""' <<<"$payload")

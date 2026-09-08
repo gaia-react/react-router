@@ -660,9 +660,11 @@ fi
 # from a working directory below the repository root, the test answers false for
 # a library that is present, and the capability probe behind it takes the
 # fail-open written for a library that is absent. Two of the hooks carrying the
-# shape were blocking guards, and neither said anything when it stood down. Run
-# from the repo root so its `git ls-files` discovery resolves and the file:line
-# it prints is repo-relative.
+# shape were blocking guards, and neither said anything when it stood down. The
+# subshell `cd` below is retained only so a failure reads naturally, unlike the
+# sibling gates it sits with: this one roots its own scan surface at its
+# `${BASH_SOURCE[0]}` and never consults the working directory, which is the
+# same property it exists to enforce, and its own suite pins that.
 echo "--> lint-hook-cwd-relative-loads (a hook locating framework code from the working directory)"
 if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-hook-cwd-relative-loads.sh"); then
   status=1

@@ -272,7 +272,13 @@ fi
 # itself, so a cwd anywhere under the repository root would answer "adopter
 # clone" in a maintainer checkout that does carry the binary, and the whole
 # pre-flight would stand down for the wrong reason.
-maintainer_bin="${va_dir:-.claude/hooks}/../../.gaia/cli/gaia-maintainer"
+# Empty when the rooting at :205 failed, rather than defaulted to a bare
+# `.claude/hooks`: that default resolves against the process working directory,
+# so the one branch where the rooting fails would revert to exactly the
+# resolution this rooting exists to remove. The `-x` test below rejects the
+# empty path, so an unresolved root stands the pre-flight down the same way an
+# adopter clone does.
+maintainer_bin="${va_dir:+$va_dir/../../.gaia/cli/gaia-maintainer}"
 [ -x "$maintainer_bin" ] || exit 0
 
 command -v git >/dev/null 2>&1 || exit 0

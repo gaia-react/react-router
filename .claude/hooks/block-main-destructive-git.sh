@@ -41,11 +41,13 @@ cmd=$(echo "$payload" | jq -r '.tool_input.command // empty')
 # same way the main-root load below resolves, and deliberately: a hook's own
 # directory was read to run it and an ancestor of it contains it, so this
 # substitution has no reachable failure to degrade from, while one that changes
-# directory into a lib child does and would owe the degrade branch that
-# .gaia/tests/hooks/audit-hook-lib-degrade.bats drives. This hook reaches no
-# reporting path on the degraded run, because a missing carve-out is a silent
-# fail-open here rather than a deny, so it belongs on that suite's excluded side
-# and its entry there names this warrant.
+# directory into a lib child does.
+# gaia:maintainer-only:start
+# That is why this hook sits on the excluded side of the degrade table in
+# .gaia/tests/hooks/audit-hook-lib-degrade.bats: it reaches no reporting path on
+# a degraded run, because a missing carve-out is a silent fail-open here rather
+# than a deny, and its entry there names this warrant.
+# gaia:maintainer-only:end
 _hook_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)" || _hook_root=''
 _scope_lib="$_hook_root/.claude/hooks/lib/repo-scope.sh"
 set +e; [ -n "$_hook_root" ] && [ -f "$_scope_lib" ] && . "$_scope_lib" 2>/dev/null; set -e

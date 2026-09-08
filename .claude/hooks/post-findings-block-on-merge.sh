@@ -192,7 +192,13 @@ author="$(gh pr view "$PR" --json author --jq .author.login 2>/dev/null || true)
 # hook would decline to post findings for a reason it never reports.
 # Three levels up, not two: $_va_lib is the `lib` DIRECTORY
 # (<root>/.claude/hooks/lib), so the repository root is ../../.. from it.
-_gaia_scripts="${_va_lib:-.claude/hooks/lib}/../../../.gaia/scripts"
+# Empty when the rooting above failed, and guarded rather than defaulted to a
+# bare `.claude/hooks/lib`: that default resolves against the process working
+# directory, so the one branch where the rooting fails would revert to exactly
+# the resolution this rooting exists to remove. Degrading to the same silent
+# `exit 0` the arms below take is the honest answer there.
+_gaia_scripts="${_va_lib:+$_va_lib/../../../.gaia/scripts}"
+[ -n "$_gaia_scripts" ] || exit 0
 
 resolved_mode=""
 eval "$(PR_IS_FORK="$is_fork" bash "$_gaia_scripts/read-audit-ci-config.sh" --resolve-author "$author" 2>/dev/null)" || true

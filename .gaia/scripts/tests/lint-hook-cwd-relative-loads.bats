@@ -129,6 +129,36 @@ type red_ledger_path >/dev/null 2>&1 || exit 0'
   grep -qF -- "a source operand names a bare repo-relative path" <<<"$output"
 }
 
+@test "flags an INDENTED source operand, the idiomatic spelling of the class" {
+  fixture_repo
+  fixture_hook 'if true; then
+  . .claude/hooks/lib/red-ledger.sh
+fi'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".claude/hooks/check.sh:4:" <<<"$output" || return 1
+  grep -qF -- "a source operand names a bare repo-relative path" <<<"$output"
+}
+
+@test "flags a TAB-indented source operand too" {
+  fixture_repo
+  fixture_hook "$(printf 'while :; do\n\tsource .gaia/scripts/ledger-path-lib.sh\ndone')"
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".claude/hooks/check.sh:4:" <<<"$output" || return 1
+  grep -qF -- "a source operand names a bare repo-relative path" <<<"$output"
+}
+
+@test "an indented VARIABLE-rooted load is still the repair, not a hit" {
+  fixture_repo
+  fixture_hook 'if true; then
+  . "$_hook_dir/lib/red-ledger.sh"
+fi'
+  run_linter
+  [ "$status" -eq 0 ]
+  grep -qF -- "lint-hook-cwd-relative-loads: clean" <<<"$output"
+}
+
 @test "flags a bare interpreter argument" {
   fixture_repo
   fixture_hook 'bash .gaia/scripts/token-tally.sh --action review'

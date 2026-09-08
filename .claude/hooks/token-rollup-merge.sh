@@ -82,7 +82,15 @@ fallback=0
 # the parse check answers false for a library it simply cannot see, and the
 # `type` degrade below reads that as a lib that defined no functions, so a cwd
 # under the repository root would lose attribution with nothing to say so.
-_hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || _hook_dir='.claude/hooks'
+#
+# Empty on failure, and guarded rather than defaulted to a bare
+# `.claude/hooks`: that default resolves against the process working directory,
+# so the one branch where the rooting fails would revert to exactly the
+# resolution the rooting exists to remove, and all three loads below would take
+# it. Standing the render down is the same silent degrade every other arm here
+# takes, and it is the honest one.
+_hook_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || _hook_dir=''
+[ -n "$_hook_dir" ] || exit 0
 if "${BASH:-bash}" -n "$_hook_dir/lib/gaia-active-plan.sh" 2>/dev/null; then
   . "$_hook_dir/lib/gaia-active-plan.sh" 2>/dev/null || true
   # Degrades INTO the fallback below rather than out of the hook: a lib that

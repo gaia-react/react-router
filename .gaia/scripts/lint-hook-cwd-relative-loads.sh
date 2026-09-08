@@ -284,7 +284,13 @@ readonly OWN_AWK='
       # before the literal dot in all three arms, so the quoted and unquoted
       # spellings of one defect are read the same way.
       TEST_PAT   = "(\\[|\\[\\[)[[:space:]]+-[a-zA-Z][[:space:]]+[\"\047]?\\.(claude|gaia|specify)/"
-      SOURCE_PAT = "(^|[;&|(){}][[:space:]]*|&&[[:space:]]*|\\|\\|[[:space:]]*|then[[:space:]]+|do[[:space:]]+|else[[:space:]]+)(\\.|source)[[:space:]]+[\"\047]?\\.(claude|gaia|specify)/"
+      # The `^[[:space:]]*` branch is what reaches an INDENTED load, which is
+      # the idiomatic spelling of this class: a `.` on its own line inside an
+      # `if`/`while`/`case` body. A bare `^` would require the operator at
+      # column 1, and the other branches all demand a separator token, so the
+      # arm would be blind to every load nested one level deep. The sibling
+      # patterns are unanchored and never had the gap.
+      SOURCE_PAT = "(^[[:space:]]*|[;&|(){}][[:space:]]*|&&[[:space:]]*|\\|\\|[[:space:]]*|then[[:space:]]+|do[[:space:]]+|else[[:space:]]+)(\\.|source)[[:space:]]+[\"\047]?\\.(claude|gaia|specify)/"
       RUN_PAT    = "(bash|sh|zsh|node|python3?|awk[[:space:]]+-f|\\}\")[[:space:]]+(-[A-Za-z][[:space:]]+)?[\"\047]?\\.(claude|gaia|specify)/"
       ASSIGN_PAT = "=[[:space:]]*\"?\\.(claude|gaia|specify)/[^\"[:space:]]*\\.(sh|bash|mjs|cjs|js|py)\"?([[:space:]]|;|$)"
       in_dq = 0
