@@ -6,8 +6,10 @@
  * replaced arrived, and nothing would notice a sixth: the next author who needs
  * a corpus reaches for the `recursive` option on `readdirSync` inline rather
  * than finding the module. `sonarjs/no-identical-functions` stayed silent
- * through every copy, because near-identical functions are not identical ones,
- * and the shell-side scanners reach no TypeScript.
+ * through every copy, and no threshold on it would have closed the class:
+ * ESLint rules run per file, so that rule never compares functions across
+ * files at all. Byte-identical walks live in this tree today with
+ * `pnpm lint:cli` green. The shell-side scanners reach no TypeScript.
  *
  * The failure a sixth copy produces is invisible at the call site. A guard's
  * corpus is exactly the set it is trusted to have scanned, so a private walk
@@ -35,19 +37,30 @@
  * # Scope boundary (v1), and it is a floor rather than a clean bill of health
  *
  * A hand-rolled walk that recurses into its own function is deliberately NOT
- * reported, and that boundary is measured rather than chosen. The live
- * constructs in this tree taking that shape are `wiki/dead-paths.ts`,
- * `wiki/empty-sections.ts` and `wiki/frontmatter.ts`, collecting `.md` under a
- * wiki root; `release/scrub.ts` and `release/runtime-deps.ts`, walking a
- * staging tree; `update/regen-regions.ts`, walking by hand precisely so an
- * adopter's own tree sets the depth; and the `automation/__tests__` suites
- * recursing over workflow templates. Not one is a copy of the shared walk:
- * every one filters or prunes per directory as it descends, which is the need
- * `collectTreeFiles` deliberately does not serve. Reporting the shape would red
- * on all of them and buy an allowlist the size of that list; separating them
- * from a genuine copy means deciding where a function body starts and ends in
- * arbitrary source, which is a tokenizer, and a tokenizer is the argument for
- * reading this from the TypeScript AST rather than from lines at all.
+ * reported. Reporting the shape would red on every live construct that takes
+ * it, and those split two ways rather than one.
+ *
+ * Some are walks the shared module genuinely does not serve.
+ * `release/scrub.ts`'s `walkFiles` collects every file whatever its extension,
+ * a mode `collectTreeFiles` deliberately has no parameter for;
+ * `update/regen-regions.ts` walks by hand precisely so an adopter's own tree
+ * sets the depth; and the `automation/__tests__` suites thread per-directory
+ * state down the descent.
+ *
+ * The rest are not. `wiki/dead-paths.ts`, `wiki/empty-sections.ts` and
+ * `wiki/frontmatter.ts` hold byte-identical `walkMarkdown` copies, and
+ * `release/runtime-deps.ts` holds `walkSh`. Each filters by extension per
+ * entry, prunes no directory, and applies its own skip filter after the walk
+ * returns, which is exactly the `collectTreeFiles(root, extensions)` contract.
+ * Those sit outside this guard because the match shape does not read them, not
+ * because they were measured and found to differ, and consolidating them is
+ * real work this guard does not do.
+ *
+ * So reaching that shape would owe an allowlist for the first group while the
+ * second group ought to go red, and telling the two apart means deciding where
+ * a function body starts and ends in arbitrary source, which is a tokenizer,
+ * and a tokenizer is the argument for reading this from the TypeScript AST
+ * rather than from lines at all.
  *
  * `update/regen-regions.ts` is therefore not an exemption and carries no entry
  * here. It was measured against the match and falls outside it on the merits,
@@ -92,13 +105,18 @@ import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
  * A directory read carrying the `recursive` option as a true literal.
  *
  * Matched over the whole source rather than line by line, so a call Prettier
- * has broken across several lines still reads as one. The gap is bounded and
- * admits no `;`, which keeps a match inside a single statement: without that,
- * an option object declared further down the file could be picked up and
- * reported against this call's line.
+ * has broken across several lines still reads as one.
+ *
+ * Two bounds keep the match on the call it started from. It admits no `;`, so
+ * it cannot reach an option object declared in a later statement. And it
+ * admits no further `…Sync(` call, so it cannot cross out of the listing into
+ * a neighbouring `fs` call inside the same statement: `readdirSync(dir)` whose
+ * loop or callback body calls `mkdirSync` or `rmSync` with a recursive option
+ * is an ordinary shape here, and without this bound every one of them would be
+ * reported as a private tree walk, under repair text that cannot fix it.
  */
 const RECURSIVE_DIRECTORY_READ =
-  /readdirSync\s*\([^;]{0,200}?recursive\s*:\s*true/u;
+  /readdirSync\s*\((?:(?!Sync\s*\()[^;]){0,200}?recursive\s*:\s*true/u;
 
 /**
  * Reports the 1-based line of the first recursive directory read, or `null`
@@ -133,6 +151,13 @@ const FILE_TYPES_OPTION = 'withFileTypes: true';
 
 const asDirectoryRead = (options: readonly string[]): string =>
   [READ_CALL_HEAD, options.join(', '), '})'].join('');
+
+// A plain single-directory listing, and a second `fs` call carrying a
+// recursive option, for the fixtures that pin the neighbouring-call bound.
+const LIST_CALL = 'readdirSync(dir)';
+
+const nestedRecursiveCall = (helper: string): string =>
+  [helper, '(path.join(dir, name), {', RECURSIVE_OPTION, '});'].join('');
 
 describe('tree walk uniqueness', () => {
   // Maintainer-only guard: `sourcesPresent` is false on an adopter clone,
@@ -214,9 +239,9 @@ describe('tree walk uniqueness', () => {
     expect(findRecursiveWalk(source)).toBeNull();
   });
 
-  // The documented v1 floor. Eight live constructs in this tree take this shape
-  // and none is a copy of the shared walk, so the guard has to stay green on
-  // it; the scope-boundary section above names them.
+  // The documented v1 floor: the guard stays green on this shape, which live
+  // constructs in this tree take for reasons the scope-boundary section above
+  // splits two ways.
   test('accepts a hand-rolled walk that recurses per directory', () => {
     const source = [
       'const walk = (dir: string): string[] => {',
@@ -231,12 +256,39 @@ describe('tree walk uniqueness', () => {
     expect(findRecursiveWalk(source)).toBeNull();
   });
 
-  // What the bound on the gap buys: a match cannot reach out of the call's own
+  // What the statement bound buys: a match cannot reach out of the call's own
   // statement into an unrelated option object below it.
   test('accepts an option that sits past the end of the call statement', () => {
     const source = [
       `const entries = ${asDirectoryRead([FILE_TYPES_OPTION])};`,
       `const options = {${RECURSIVE_OPTION}};`,
+    ].join('\n');
+
+    expect(findRecursiveWalk(source)).toBeNull();
+  });
+
+  // What the neighbouring-call bound buys, in the shape with the largest live
+  // collision surface: suites all over this tree list a directory and remove
+  // its entries recursively in teardown, inside one statement. Without the
+  // bound each one reports as a private tree walk, under repair text that
+  // cannot fix it.
+  test('accepts a listing whose loop body removes entries recursively', () => {
+    const source = [
+      `for (const name of ${LIST_CALL}) {`,
+      `  ${nestedRecursiveCall('rmSync')}`,
+      '}',
+    ].join('\n');
+
+    expect(findRecursiveWalk(source)).toBeNull();
+  });
+
+  // The same bound, reached through a callback rather than a loop body.
+  test('accepts a listing whose callback creates directories recursively', () => {
+    const source = [
+      `const names = ${LIST_CALL}.map((name) => {`,
+      `  ${nestedRecursiveCall('mkdirSync')}`,
+      '  return name;',
+      '});',
     ].join('\n');
 
     expect(findRecursiveWalk(source)).toBeNull();
