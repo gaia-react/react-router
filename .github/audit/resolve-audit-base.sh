@@ -348,11 +348,17 @@ fi
 
 # Sourced here rather than in the library block below, because that block sits
 # after this read and the version gate has to answer before the walk starts.
+# Bracketed rather than `if [ -f ]; then . X || true; fi`: the existence test
+# admits a file that is present but UNPARSEABLE, and on bash 3.2.57 -- the
+# /bin/bash stock macOS ships, and the floor this script's Conventions block
+# claims -- errexit abandons the shell AT the load, so the `|| true` is never
+# reached and the resolver exits emitting nothing instead of degrading to full
+# scope. Dropping errexit across the load is what lets the failure reach the
+# `command -v` degrade below. The flat `set -e` restore is the shape
+# .gaia/scripts/lint-errexit-source-guard.sh prescribes for a file that arms
+# errexit itself, which this one does above.
 version_lib="${repo_root}/.claude/hooks/lib/gaia-version.sh"
-if [ -f "$version_lib" ]; then
-  # shellcheck source=/dev/null
-  . "$version_lib" 2>/dev/null || true
-fi
+set +e; [ -f "$version_lib" ] && . "$version_lib" 2>/dev/null; set -e
 if ! command -v gaia_read_version >/dev/null 2>&1; then
   echo "resolve-audit-base: version normalizer unavailable (gaia-version.sh); resetting to full scope (${main_ref})." >&2
   emit "$main_ref" degraded ""
@@ -453,10 +459,10 @@ delta_for() {
 
 lib_dir="${repo_root}/.claude/hooks/lib"
 for lib_file in audit-scope.sh audit-machinery.sh audit-rules-changed.sh audit-clearance.sh; do
-  if [ -f "${lib_dir}/${lib_file}" ]; then
-    # shellcheck source=/dev/null
-    . "${lib_dir}/${lib_file}" 2>/dev/null || true
-  fi
+  # Bracketed for the reason given at the version-normalizer load above: an
+  # existence test admits an unparseable lib, and under errexit bash 3.2.57
+  # dies at the load rather than at the `||`. Same shape, same reason.
+  set +e; [ -f "${lib_dir}/${lib_file}" ] && . "${lib_dir}/${lib_file}" 2>/dev/null; set -e
 done
 
 missing_lib=""

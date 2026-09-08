@@ -116,8 +116,19 @@ run_in_sandbox() {
 # lines and a shape assertion written against $output passes vacuously.
 # Stderr still flows to bats, so `run --separate-stderr run_member <name>`
 # fills $stderr and $status as usual.
+#
+# $2 pins the interpreter. Unset, the script runs under its own
+# `#!/usr/bin/env bash` shebang, which is whichever bash leads PATH. The
+# unparseable-lib cases below pass /bin/bash deliberately: the guarded-load
+# shapes they tell apart behave identically on bash 5, so only the 3.2.57 stock
+# macOS ships distinguishes them.
 run_member() {
-  ( cd "$SANDBOX" && "$SCRIPT" --member "$1" ) > "$MEMBER_OUT"
+  local interp="${2:-}"
+  if [ -n "$interp" ]; then
+    ( cd "$SANDBOX" && "$interp" "$SCRIPT" --member "$1" ) > "$MEMBER_OUT"
+  else
+    ( cd "$SANDBOX" && "$SCRIPT" --member "$1" ) > "$MEMBER_OUT"
+  fi
 }
 
 # Field accessors over the filed stdout of the last run_member call.
@@ -1071,6 +1082,113 @@ assert_degraded_without() {
 # under `set -euo pipefail` instead of degrading it.
 @test "degraded: the version normalizer cannot be sourced" {
   assert_degraded_without "gaia-version.sh"
+}
+
+# -----------------------------------------------------------------------------
+# The OTHER arm of "cannot be sourced": present, but unparseable.
+#
+# Every case above deletes the lib, so all four exercise the `[ -f ]` guard and
+# none of them reaches the load. A lib that is present but syntactically broken
+# passes that guard and fails at the load instead -- an interrupted
+# `/update-gaia`, an unresolved merge conflict, or a truncated write all leave
+# one on disk. Under the errexit this script arms at its top, a trailing
+# `|| true` does not catch a parse failure on bash 3.2.57: the shell is
+# abandoned AT the load and never reaches the `||`, so the resolver would exit
+# emitting nothing instead of degrading to full scope, which inverts the
+# fail-safe these tests are named for.
+#
+# The cases below are pinned to stock /bin/bash, and it is the pin rather than
+# the fixture that decides. Measured both ways on this machine: 3.2.57 abandons
+# the shell on the `|| true` form and survives on the bracketed one, while
+# 5.3.15 survives on both. So on a bash-5 /bin/bash (Linux CI) these pass either
+# way, and only 3.2 tells the two shapes apart. Dropping the pin would green
+# them against the spelling they exist to reject.
+# -----------------------------------------------------------------------------
+
+# Overwrite <lib> in place with an unresolved-merge-conflict body: the file
+# opens and reads fine, so the `[ -f ]` guard admits it, and bash cannot parse
+# it. Deliberately not a deletion -- that is the arm above.
+write_unparseable_lib() {
+  { printf '<<<<<<< HEAD\n'; printf 'x() { :; }\n'; printf '=======\n'
+    printf 'y() { :; }\n'; printf '>>>>>>> other\n'; } > "$SANDBOX/.claude/hooks/lib/${1}"
+}
+
+# Same assertions as assert_degraded_without, against the unparseable fixture
+# and under the pinned interpreter.
+assert_degraded_with_unparseable() {
+  local lib="$1" base
+  add_commit a
+  base="$(stamp_anchor)"
+  add_commit b
+  write_unparseable_lib "$lib"
+
+  run --separate-stderr run_member "$DEFAULT_MEMBER" /bin/bash
+  [ "$status" -eq 0 ] || return 1
+  [ "$(m_lines)" -eq 4 ] || return 1
+  [ "$(m_base)" = "main" ] || return 1
+  [ "$(m_base)" != "$base" ] || return 1
+  [ "$(m_reason)" = "degraded" ] || return 1
+  [ "$(m_key)" = "main" ] || return 1
+  grep -qF "$lib" <<<"$stderr" || return 1
+  return 0
+}
+
+# The control. Without it the four pinned cases below would stay green if the
+# resolver stopped resolving entirely under 3.2, for a reason having nothing to
+# do with either load shape.
+@test "unparseable control: with every lib intact, stock /bin/bash resolves normally" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  add_commit a
+  base="$(stamp_anchor)"
+  add_commit b
+
+  run --separate-stderr run_member "$DEFAULT_MEMBER" /bin/bash
+  [ "$status" -eq 0 ]
+  [ "$(m_lines)" -eq 4 ]
+  [ "$(m_base)" = "$base" ]
+  [ "$(m_reason)" = "team-signal" ]
+  grep -qF "reason=degraded" <<<"$stderr" && return 1
+  return 0
+}
+
+@test "degraded: the ownership classifier is present but unparseable" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  assert_degraded_with_unparseable "audit-scope.sh"
+}
+
+@test "degraded: the machinery matcher is present but unparseable" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  assert_degraded_with_unparseable "audit-machinery.sh"
+}
+
+@test "degraded: the rules-tier predicate is present but unparseable" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  assert_degraded_with_unparseable "audit-rules-changed.sh"
+}
+
+@test "degraded: the version normalizer is present but unparseable" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  assert_degraded_with_unparseable "gaia-version.sh"
+}
+
+# The clearance reader is the CONTRAST on this arm exactly as it is on the
+# absent one: it is the fourth lib in the same load block, so an unparseable
+# copy abandons the shell the same way, but its unavailability falls back to the
+# floor rather than degrading. Without this case the library block's fourth
+# member is the one load the unparseable arm never opens.
+@test "an unparseable clearance reader falls back to the floor rather than degrading" {
+  [ -x /bin/bash ] || skip "no /bin/bash"
+  add_commit a
+  base="$(stamp_anchor)"
+  add_commit b
+  write_unparseable_lib "audit-clearance.sh"
+
+  run --separate-stderr run_member "$DEFAULT_MEMBER" /bin/bash
+  [ "$status" -eq 0 ]
+  [ "$(m_base)" = "$base" ]
+  [ "$(m_reason)" = "team-signal" ]
+  grep -qF "reason=degraded" <<<"$stderr" && return 1
+  return 0
 }
 
 @test "an absent clearance reader falls back to the floor rather than degrading" {
