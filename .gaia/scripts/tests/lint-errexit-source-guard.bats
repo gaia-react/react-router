@@ -129,7 +129,7 @@ plant() {
   # only the unguarded site two levels down is reported.
   grep -qF -- ".claude/hooks/probe.sh:" <<<"$output" && return 1
   grep -qF -- ".gaia/scripts/mid.sh:" <<<"$output" && return 1
-  return 0
+  true
 }
 
 @test "flags a load pulled out from under the parse check that gates it" {
@@ -673,7 +673,7 @@ plant() {
   [ "$status" -eq 1 ]
   grep -qF -- ".claude/hooks/probe.sh:6" <<<"$output"
   grep -qF -- "never closed" <<<"$output" && return 1
-  return 0
+  true
 }
 
 # 18. A line may carry more than one load
