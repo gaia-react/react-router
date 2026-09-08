@@ -89,6 +89,13 @@
 #     (`cd "$root" && bash .gaia/scripts/x.sh`). The `cd` is the rooting, and
 #     it is the shape a caller uses when the target tree is deliberately not
 #     this hook's own.
+#   - A trailing comment that mentions one of the four positions after real
+#     code on the same line. `code_prefix()` cuts the line at the first
+#     unquoted `#` preceded by whitespace and the match arms read only what is
+#     left, so the mention is quiet. That is the same call the whole-line
+#     comment arm makes, and it is the right one for a documentation mention;
+#     it is listed here rather than left unsaid because a reader who expects
+#     the scan to read the raw line would expect the opposite.
 #
 # KNOWN BLIND SPOTS, split by which way each one fails, because that is the
 # part that matters.
@@ -115,13 +122,6 @@
 #   - A load inside a heredoc body that a `bash -c` later executes. Heredoc
 #     bodies are skipped outright, because the tree carries the class in them
 #     only as documentation an operator reads.
-#   - A trailing comment that mentions one of the four positions after real
-#     code on the same line. `code_prefix()` cuts the line at the first
-#     unquoted `#` preceded by whitespace and the match arms read only what is
-#     left, so the mention is quiet. That is the same call the whole-line
-#     comment arm makes, and it is the right one for a documentation mention;
-#     it is listed here rather than left unsaid because a reader who expects
-#     the scan to read the raw line would expect the opposite.
 #
 # FAIL-CLOSED, so each costs a correct edit and never a missed defect:
 #   - A mention inside a QUOTED span on a line of real code. A `#` inside the
