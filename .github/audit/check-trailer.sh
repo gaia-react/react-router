@@ -122,11 +122,19 @@ fi
 # the equality can never drift from the stamping side.
 # -----------------------------------------------------------------------------
 
+# Bracketed rather than `if [ -f ]; then . X || true; fi`: the existence test
+# admits a file that is present but UNPARSEABLE, and on bash 3.2.57 errexit
+# abandons the shell AT the load, so the `|| true` is never reached and the
+# `command -v` degrade below never runs. Dropping errexit across the load is
+# what lets that failure reach the degrade. The flat `set -e` restore is the
+# shape .gaia/scripts/lint-errexit-source-guard.sh prescribes for a file that
+# arms errexit itself, which this one does above; the sibling repair in
+# resolve-audit-base.sh carries the long form of the argument.
 version_lib="${repo_root}/.claude/hooks/lib/gaia-version.sh"
-if [ -f "$version_lib" ]; then
-  # shellcheck source=/dev/null
-  . "$version_lib" 2>/dev/null || true
-fi
+set +e
+# shellcheck source=/dev/null
+[ -f "$version_lib" ] && . "$version_lib" 2>/dev/null
+set -e
 if ! command -v gaia_read_version >/dev/null 2>&1; then
   emit "false" "" "" "version-lib-unavailable"
   exit 0
