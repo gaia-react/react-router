@@ -14,14 +14,14 @@ import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
 
-const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
+export const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
 
   Scan wiki/**/*.md for backticked repo-relative paths under .claude/, .gaia/,
   app/, test/, wiki/ that no longer exist on disk, plus any reference to
   sibling-monorepo paths (studio/, website/) which reach outside the GAIA
-  tarball and never resolve on a single-repo clone. Excludes wiki/log.md
-  and wiki/meta/** (audit artifacts that legitimately reference historical
-  paths).
+  tarball and never resolve on a single-repo clone. Excludes wiki/log.md,
+  wiki/hot.md and wiki/meta/** (generated or append-only files that
+  legitimately reference historical paths).
 `;
 
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
@@ -43,8 +43,23 @@ const TRACKED_PREFIXES = [
  */
 const SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
 
-const SKIP_PATH_FRAGMENTS = [
+/**
+ * Wiki files whose own citations are exempt from the scan. The three markdown
+ * members match the Exceptions list in `.claude/rules/wiki-style.md`, and keep
+ * those in step: none of the three is hand-edited prose, so a dead citation in
+ * one is not rot a human can act on, and that rule owns the reasoning.
+ *
+ * `wiki/.state.json` is outside that correspondence and has no counterpart in
+ * the rule. It is a defensive non-markdown entry that `walkMarkdown` can never
+ * yield, so neither adding it to that prose rule nor deleting it here follows
+ * from the sentence above.
+ *
+ * `HELP_TEXT` above restates the markdown members in prose. Nothing in the
+ * language couples the two, so a test asserts it in both directions.
+ */
+export const SKIP_PATH_FRAGMENTS = [
   'wiki/log.md',
+  'wiki/hot.md',
   'wiki/meta/',
   'wiki/.state.json',
 ] as const;

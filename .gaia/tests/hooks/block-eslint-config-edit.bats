@@ -29,23 +29,12 @@
 # legitimate shape and the silencing shape are the same shape, so the uniform ask
 # is the contract rather than a coarse approximation of one.
 #
-# shellcheck disable=SC2317
-# SC2317 (command appears unreachable) is not intrinsic to bats, and a suite
-# carrying no bare `return` inside a `@test` body reports none of it. A `@test`
-# body parses as a top-level brace group rather than a function, so a bare
-# `return 0` terminating one of the tests below reads as a script-level return
-# and every `@test` after it looks unreachable. File-wide because that cascade
-# is. shell-lint gates `.bats` at severity=warning, above SC2317's info tier, so
-# the directive only quiets an ad-hoc `shellcheck -S style` run. The terminator
-# that avoids it outright is the explicit `true`
-# .claude/rules/bats-assertions.md prescribes. (Keep the word "shellcheck"
-# off the start of a comment line here; it is parsed as a directive there.)
-#
 # shellcheck disable=SC2016
 # SC2016 (expressions don't expand in single quotes) fires on the `$` inside
 # fixture identifiers and on `${...}` inside fixture config bodies. Not
 # expanding is the point: a fixture has to reach the hook as the literal text a
-# real edit would carry.
+# real edit would carry. (Keep the word "shellcheck" off the start of a comment
+# line here; it is parsed as a directive there.)
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
@@ -254,7 +243,7 @@ export default"
     "    rules: {'no-console': 'off', 'no-empty-pattern': 'off'},"
   [ "$status" -eq 0 ]
   grep -qF -- '"permissionDecision": "deny"' <<<"$output" && return 1
-  return 0
+  true
 }
 
 # The decision is machine-read, so a reason string that broke out of the JSON
