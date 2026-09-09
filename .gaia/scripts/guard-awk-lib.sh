@@ -881,9 +881,15 @@ gaia_guard_scan_files() {
   # working directory rather than the repository, so from a subdirectory the
   # union silently narrows to that subtree and the consuming gate reports clean
   # having read a fraction of the tree. The refusal sits in this accessor rather
-  # than at each call site so that every consumer inherits it from one place;
+  # than at each call site so that a consumer inherits it without carrying one;
   # a copy per gate is the shape that leaves the next consumer to be found
   # later, having reported clean in the meantime.
+  #
+  # One call site keeps its own copy regardless, and it is not redundant with
+  # this one: `lint-errexit-source-guard.sh` refuses a `--show-prefix` that
+  # FAILS as well, the arm this accessor deliberately omits just below. Its
+  # message is worded separately and pinned by its own suite, so rewording the
+  # refusal here does not reach it.
   #
   # `--show-prefix` is empty only at the top level, and it answers without
   # comparing two paths, so a symlinked checkout (`/var` -> `/private/var`,
