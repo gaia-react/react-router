@@ -23,6 +23,7 @@ setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
   HELPERS="$BATS_TEST_DIRNAME/helpers"
   REPO_ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
+  . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
   HOOK_ABS="$REPO_ROOT/.claude/hooks/token-tally-review.sh"
   LIB_SRC="$REPO_ROOT/.claude/hooks/lib/gaia-active-plan.sh"
   LIB_MAIN_ROOT_SRC="$REPO_ROOT/.gaia/scripts/main-root-lib.sh"
@@ -39,7 +40,6 @@ setup() {
 teardown() {
   [ -n "${REPO:-}" ] && rm -rf "$REPO"
   [ -n "${PROOT:-}" ] && rm -rf "$PROOT"
-  [ -n "${FARM:-}" ] && rm -rf "$FARM"
   return 0
 }
 
@@ -171,11 +171,7 @@ run_hook_stop() {
   PROOT="$REPO/projects-unused"
   # Symlink farm of the tools the hook + git need, deliberately WITHOUT jq, so
   # `command -v jq` fails and the hook's earliest guard fires.
-  FARM="$(mktemp -d -t token-tally-review-nojq-XXXXXX)"
-  local t p
-  for t in bash git cat mkdir mktemp mv rm cp chmod grep sed printf basename dirname env sh; do
-    p="$(command -v "$t" 2>/dev/null)" && ln -sf "$p" "$FARM/$t"
-  done
+  FARM="$(path_allowlist bash git cat mkdir mktemp mv rm cp chmod grep sed printf basename dirname env sh)"
   run env PATH="$FARM" GAIA_TALLY_PROJECTS_ROOT="$PROOT" bash -c "echo 'x' | '$HOOK_ABS'"
   [ "$status" -eq 0 ]
   [ ! -f "$CALLS_FILE" ]

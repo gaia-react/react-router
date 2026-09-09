@@ -14,6 +14,7 @@ setup() {
   HELPERS="$BATS_TEST_DIRNAME/helpers"
   # snapshot_file + assert_files_identical: byte identity without `$(cat …)`.
   . "$BATS_TEST_DIRNAME/../helpers/files.sh"
+  . "$BATS_TEST_DIRNAME/../helpers/path.sh"
   RECONCILE=".specify/extensions/gaia/lib/spec-reconcile.sh"
 }
 
@@ -23,9 +24,6 @@ teardown() {
   fi
   if [ -n "${STUB_DIR:-}" ]; then
     rm -rf "$STUB_DIR"
-  fi
-  if [ -n "${NO_GH_PATH:-}" ]; then
-    rm -rf "$NO_GH_PATH"
   fi
 }
 
@@ -74,12 +72,7 @@ EOF
 # with-ledger-lock.sh deps) actually invokes, symlinked in from the real
 # PATH, but with no `gh` anywhere on it.
 _no_gh_path() {
-  NO_GH_PATH="$(mktemp -d)"
-  local cmd real
-  for cmd in bash jq git sed mktemp mv rm mkdir rmdir stat date sleep; do
-    real="$(command -v "$cmd" 2>/dev/null || true)"
-    [ -n "$real" ] && ln -sf "$real" "$NO_GH_PATH/$cmd"
-  done
+  NO_GH_PATH="$(path_allowlist bash jq git sed mktemp mv rm mkdir rmdir stat date sleep)"
 }
 
 # --- 6: matching merged PR flips SPEC-006 to merged with merged_at from the PR ---

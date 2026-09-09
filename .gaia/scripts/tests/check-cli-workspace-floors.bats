@@ -22,6 +22,8 @@
 setup() {
   THIS_DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" && pwd )"
   REPO_ROOT="$( cd "$THIS_DIR/../../.." && pwd )"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$REPO_ROOT/.gaia/tests/helpers/path.sh"
   CHECK="$REPO_ROOT/.gaia/scripts/check-cli-workspace-floors.sh"
   TMP="$(mktemp -d)"
   WS="$TMP/ws"
@@ -895,9 +897,7 @@ STUB
   # genuinely unfalsifiable terms in place rather than leaving them bare.
   write_workspace "  fast-uri: 3.1.6"
   write_lock "  fast-uri: 3.1.4"
-  mkdir -p "$TMP/nodeonly"
-  ln -s "$(command -v node)" "$TMP/nodeonly/node"
-  PATH="$TMP/nodeonly" run /bin/bash "$CHECK" --no-audit "$WS"
+  PATH="$(path_allowlist node)" run /bin/bash "$CHECK" --no-audit "$WS"
   [ "$status" -eq 2 ]
   grep -qF -- 'awk is required to compare the two maps' <<<"$output"
 }
@@ -1449,12 +1449,8 @@ STUB
   # was asked.
   write_workspace "  fast-uri: 3.1.6"
   write_lock "  fast-uri: 3.1.6"
-  mkdir -p "$TMP/emptybin"
-  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
-    command -v "$tool" >/dev/null 2>&1 || continue
-    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
-  done
-  PATH="$TMP/emptybin" run /bin/bash "$CHECK" --advisory-strict "$WS"
+  PATH="$(path_allowlist awk node grep sed sort cat mktemp rm dirname chmod)" \
+    run /bin/bash "$CHECK" --advisory-strict "$WS"
   [ "$status" -eq 2 ]
   grep -qF -- 'advisory arm skipped' <<<"$output"
 }
@@ -1465,12 +1461,8 @@ STUB
   # posture the rest of this repository's local audits take.
   write_workspace "  fast-uri: 3.1.6"
   write_lock "  fast-uri: 3.1.6"
-  mkdir -p "$TMP/emptybin"
-  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
-    command -v "$tool" >/dev/null 2>&1 || continue
-    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
-  done
-  PATH="$TMP/emptybin" run /bin/bash "$CHECK" "$WS"
+  PATH="$(path_allowlist awk node grep sed sort cat mktemp rm dirname chmod)" \
+    run /bin/bash "$CHECK" "$WS"
   [ "$status" -eq 0 ]
   grep -qF -- 'advisory arm skipped' <<<"$output"
 }
@@ -1481,12 +1473,8 @@ STUB
   # relabelled as an environment problem.
   write_workspace "  fast-uri: 3.1.6"
   write_lock "  fast-uri: 3.1.4"
-  mkdir -p "$TMP/emptybin"
-  for tool in awk node grep sed sort cat mktemp rm dirname chmod; do
-    command -v "$tool" >/dev/null 2>&1 || continue
-    ln -sf "$(command -v "$tool")" "$TMP/emptybin/$tool"
-  done
-  PATH="$TMP/emptybin" run /bin/bash "$CHECK" --advisory-strict "$WS"
+  PATH="$(path_allowlist awk node grep sed sort cat mktemp rm dirname chmod)" \
+    run /bin/bash "$CHECK" --advisory-strict "$WS"
   [ "$status" -eq 1 ]
   grep -qF -- 'FLOOR NOT APPLIED' <<<"$output"
 }
