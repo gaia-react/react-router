@@ -12,9 +12,14 @@
  * An absent `wiki/` directory yields an empty corpus rather than throwing.
  * That is the scanners' own contract with their callers: `gaia wiki` runs on a
  * clone that has not seeded a wiki yet, and reporting nothing found is the
- * honest answer there. It is not the discovery-stage fail-open
- * `collectTreeFiles` refuses, because the condition is stated by a `statSync`
- * on the one root rather than inferred from a swallowed read error.
+ * honest answer there.
+ *
+ * The guard reads every `statSync` failure as absence, not `ENOENT` alone, so a
+ * `wiki/` that exists but cannot be stated, a symlink loop or a parent without
+ * `+x`, also yields an empty corpus and a clean pass over a tree nothing read.
+ * That is an accepted miss rather than the condition the guard states: which
+ * errors should stop a scan is a question about the scanners, and narrowing it
+ * here would answer it for all three without any of them asking.
  */
 import {statSync} from 'node:fs';
 import path from 'node:path';

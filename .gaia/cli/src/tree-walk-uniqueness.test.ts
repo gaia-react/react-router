@@ -2,8 +2,8 @@
  * Maintainer guard: the recursive tree walk is declared once.
  *
  * `util/tree-walk.ts` holds the CLI's one `collectTreeFiles`, and every
- * whole-tree guard suite scans with it. Nothing noticed when the five copies it
- * replaced arrived, and nothing would notice a sixth: the next author who needs
+ * whole-tree guard suite scans with it. Nothing noticed when the copies it
+ * replaced arrived, and nothing would notice another: the next author who needs
  * a corpus reaches for the `recursive` option on `readdirSync` inline rather
  * than finding the module. `sonarjs/no-identical-functions` stayed silent
  * through every copy, and no threshold on it would have closed the class:
@@ -11,16 +11,16 @@
  * files at all. A byte-identical copy planted in a second module therefore
  * keeps `pnpm lint:cli` green. The shell-side scanners reach no TypeScript.
  *
- * The failure a sixth copy produces is invisible at the call site. A guard's
+ * The failure another copy produces is invisible at the call site. A guard's
  * corpus is exactly the set it is trusted to have scanned, so a private walk
  * that stops normalizing separators, or that skips a directory the shared one
  * reports, still returns a plausible list and still greens. It just quietly
  * reaches less than the maintainer reading the pass believes, and an exclusion
- * or filter added to one walk reaches none of the others. The five copies the
+ * or filter added to one walk reaches none of the others. The copies the
  * consolidation removed had already diverged that way: two shared a name, a
- * signature and a body but differed on separator normalization, a third inlined
- * the walk against a module-level root, a fourth carried a try/catch variant,
- * and a fifth was a fresh recursion with its own `node_modules`/`dist`
+ * signature and a body but differed on separator normalization, another inlined
+ * the walk against a module-level root, another carried a try/catch variant,
+ * and another was a fresh recursion with its own `node_modules`/`dist`
  * exclusions, written by someone who had never seen the others.
  *
  * # What counts as an offense
