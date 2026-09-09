@@ -39,11 +39,12 @@
  *   1: leaks detected, missing inputs, bad flags
  *   2: unexpected (manifest parse failure, IO error)
  */
-import {readdirSync, readFileSync, statSync} from 'node:fs';
+import {readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
 import {takeValue} from '../util/argv.js';
+import {collectTreeFiles} from '../util/tree-walk.js';
 import {ADOPTER_OWNED_SENTINELS as GIT_TRACKED_SENTINELS} from './manifest.js';
 import {stripMarkerBlocks} from './marker-strip.js';
 import {SCAN_GLOBS} from './scan-globs.js';
@@ -472,21 +473,7 @@ const isShippedPath = (
   return false;
 };
 
-const walkSh = (root: string, dir: string): string[] => {
-  const out: string[] = [];
-
-  for (const entry of readdirSync(dir, {withFileTypes: true})) {
-    const full = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      out.push(...walkSh(root, full));
-    } else if (entry.isFile() && entry.name.endsWith('.sh')) {
-      out.push(path.relative(root, full).split(path.sep).join('/'));
-    }
-  }
-
-  return out;
-};
+const SHELL_EXTENSIONS: ReadonlySet<string> = new Set(['.sh']);
 
 const walkScripts = (root: string): string[] => {
   const out: string[] = [];
@@ -495,6 +482,9 @@ const walkScripts = (root: string): string[] => {
     const absolute = path.join(root, sub);
     let exists = true;
 
+    // `collectTreeFiles` throws on a root that does not exist, and a scan glob
+    // legitimately misses: `--staging` points at a scrubbed tarball whose
+    // release-excluded directories are gone.
     try {
       statSync(absolute);
     } catch {
@@ -502,7 +492,11 @@ const walkScripts = (root: string): string[] => {
     }
 
     if (exists) {
-      out.push(...walkSh(root, absolute));
+      out.push(
+        ...collectTreeFiles(absolute, SHELL_EXTENSIONS).map((relativePath) =>
+          path.posix.join(sub, relativePath)
+        )
+      );
     }
   }
 

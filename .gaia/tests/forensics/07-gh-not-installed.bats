@@ -44,25 +44,18 @@ no_gh_surrogate() {
 }
 
 setup() {
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   WORKDIR="$(mktemp -d)"
-  # Build a PATH that has no gh binary. CLEAN_BIN is the ONLY entry;
+  # Build a PATH that has no gh binary. The built directory is the ONLY entry;
   # /usr/bin and /bin are deliberately excluded because GitHub Actions
   # ubuntu-latest ships gh at /usr/bin/gh, which would defeat the test.
-  CLEAN_BIN="$(mktemp -d)"
-  # Populate with the binaries the surrogate needs. printf/command are bash
-  # builtins; mkdir is the only external command exercised in the surrogate.
-  for cmd in bash mkdir; do
-    local real
-    real="$(command -v "$cmd" 2>/dev/null || true)"
-    if [[ -n "$real" ]]; then
-      ln -sf "$real" "$CLEAN_BIN/$cmd" 2>/dev/null || true
-    fi
-  done
-  NO_GH_PATH="$CLEAN_BIN"
+  # printf/command are bash builtins; mkdir is the only external command
+  # exercised in the surrogate.
+  NO_GH_PATH="$(path_allowlist bash mkdir)"
 }
 
 teardown() {
-  rm -rf "$WORKDIR" "$CLEAN_BIN"
+  rm -rf "$WORKDIR"
 }
 
 # ---------------------------------------------------------------------------

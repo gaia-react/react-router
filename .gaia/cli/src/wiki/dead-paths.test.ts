@@ -295,8 +295,8 @@ describe('wiki dead-paths', () => {
     //
     // Array to prose. Every entry is checked unless named below, so a new one
     // is covered by default rather than by remembering to widen a predicate.
-    // `wiki/.state.json` is named because `walkMarkdown` collects `.md` files
-    // only: no non-markdown entry can ever match a scanned path, so it is
+    // `wiki/.state.json` is named because the markdown corpus collects `.md`
+    // files only: no non-markdown entry can ever match a scanned path, so it is
     // unreachable and correctly absent from the help text.
     const notNamedInHelp = new Set(['wiki/.state.json']);
     const documented = SKIP_PATH_FRAGMENTS.filter(

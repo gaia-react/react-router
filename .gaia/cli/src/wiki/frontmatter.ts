@@ -13,11 +13,12 @@
  * `--json`, emits { "gaps": [ { path, missing } ] }. Exit 0 always; gaps
  * are informational, not a failure.
  */
-import {readdirSync, readFileSync, statSync} from 'node:fs';
+import {readFileSync} from 'node:fs';
 import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
 import {parseFrontmatter} from './util/frontmatter.js';
+import {collectWikiMarkdown} from './util/markdown-corpus.js';
 
 const HELP_TEXT = `Usage: gaia wiki frontmatter [--json]
 
@@ -45,43 +46,15 @@ type RunOptions = {
 const shouldSkipFile = (relPath: string): boolean =>
   SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
 
-const walkMarkdown = (root: string, dir: string): string[] => {
-  const entries = readdirSync(dir, {withFileTypes: true});
-  const out: string[] = [];
-
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      out.push(...walkMarkdown(root, full));
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      out.push(path.relative(root, full));
-    }
-  }
-
-  return out;
-};
-
 const hasField = (
   frontmatter: ReturnType<typeof parseFrontmatter>['frontmatter'],
   field: string
 ): boolean => Object.hasOwn(frontmatter, field) && frontmatter[field] !== null;
 
 export const findFrontmatterGaps = (cwd: string): readonly Gap[] => {
-  const wikiDir = path.join(cwd, 'wiki');
-
-  try {
-    statSync(wikiDir);
-  } catch {
-    return [];
-  }
-
   const gaps: Gap[] = [];
-  const files = walkMarkdown(cwd, wikiDir).toSorted((a, b) =>
-    a.localeCompare(b)
-  );
 
-  for (const filePath of files) {
+  for (const filePath of collectWikiMarkdown(cwd)) {
     if (!shouldSkipFile(filePath)) {
       const content = readFileSync(path.join(cwd, filePath), 'utf8');
       const {frontmatter} = parseFrontmatter(content);
