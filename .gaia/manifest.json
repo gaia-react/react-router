@@ -56,6 +56,7 @@
     ".claude/hooks/lib/gaia-active-plan.sh": "owned",
     ".claude/hooks/lib/gaia-ci-defer.sh": "owned",
     ".claude/hooks/lib/gaia-version.sh": "owned",
+    ".claude/hooks/lib/jq-availability.sh": "owned",
     ".claude/hooks/lib/reader-operands.sh": "owned",
     ".claude/hooks/lib/red-ledger.sh": "owned",
     ".claude/hooks/lib/repo-scope.sh": "owned",
@@ -677,7 +678,7 @@
     "wiki/overview.md": "wiki-owned",
     "wiki/README.md": "wiki-owned"
   },
-  "generated": "2026-09-07T14:12:31.030Z",
+  "generated": "2026-09-09T01:43:56.355Z",
   "regions": [
     {
       "endMarker": "<!-- gaia:audit-remit:end -->",

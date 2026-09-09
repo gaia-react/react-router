@@ -51,35 +51,26 @@ set -euo pipefail
 
 payload=$(cat)
 
-# jq is not optional here, and its absence must not fall through to the tool
-# call. Under the errexit armed above, a missing jq ends the agent_type read
-# below at status 127, and PreToolUse reads 127 as a non-blocking error: the
-# refused edit proceeds with no denial and no diagnostic, a fail-open in a
-# hook whose header commits to the opposite. `deny` cannot carry this
-# refusal, since it builds its JSON response with jq, so this arm writes a
-# plain-text reason and exits 2, the exit-code block contract, which needs no
-# interpreter at all.
+# jq-availability arm, the shape this hook originated and the whole PreToolUse
+# layer now shares. What it buys, and the contract the literal satisfies, live
+# in .claude/hooks/lib/jq-availability.sh.
 #
-# It refuses NARROWLY. This gate binds `code-audit-*` members only, and with no
-# jq the payload's agent_type cannot be read, so an unconditional refusal here
-# would deny every Edit/Write/MultiEdit and every Bash call in every session,
-# the install command that repairs the machine among them: a session with no
-# way out from inside it. The raw payload is tested instead for the literal
-# `code-audit-`, which a bound member's agent_type must contain. Its ABSENCE
-# proves the payload carries no such agent_type and the call sits outside this
-# gate's remit, so it is allowed exactly as a parsed non-member is. Its
-# presence is not proof of membership -- an ordinary Bash command naming a
+# The literal is `code-audit-`, which a bound member's agent_type must contain.
+# Its ABSENCE proves the payload carries no such agent_type and the call sits
+# outside this gate's remit, so it is allowed exactly as a parsed non-member is.
+# Its presence is not proof of membership -- an ordinary Bash command naming a
 # member satisfies it too -- and that over-deny is the same safe direction the
 # tokenizer below takes everywhere else.
-if ! command -v jq >/dev/null 2>&1; then
-  case "$payload" in
-    *code-audit-*)
-      printf 'BLOCKED: jq is not on PATH, so this call cannot be checked against the self-heal repair boundary (.claude/hooks/lib/audit-selfheal-paths.sh). Fail-loud, not fail-open -- install jq and retry.\n' >&2
-      exit 2
-      ;;
-  esac
-  exit 0
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+set +e
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+set -e
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: block-selfheal-paths.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
 fi
+gaia_require_jq 'the self-heal repair boundary (.claude/hooks/lib/audit-selfheal-paths.sh)' "$payload" - 'code-audit-'
 
 # Cheapest possible filter first: the common case is "no agent_type at all"
 # (the main session). Read it before anything else and exit before sourcing

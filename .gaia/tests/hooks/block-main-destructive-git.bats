@@ -32,6 +32,10 @@ setup() {
   # a real copy so the foreign-repo bypass resolves.
   mkdir -p "$REPO/.claude/hooks/lib"
   cp "$HOOKS_SRC/lib/repo-scope.sh" "$REPO/.claude/hooks/lib/repo-scope.sh"
+  # The jq-availability arm runs ahead of the repo-scope load and refuses when
+  # it cannot find its own library, so a staged tree without it answers every
+  # case here with that refusal instead of the decision under test.
+  cp "$HOOKS_SRC/lib/jq-availability.sh" "$REPO/.claude/hooks/lib/jq-availability.sh"
 
   # A second, distinct repo for the foreign-repo case.
   FOREIGN=$(mktemp -d -t block-main-foreign-XXXXXX)
@@ -263,6 +267,7 @@ stage_hook_tree() {
   mkdir -p "$STAGED_ROOT/.claude/hooks/lib" "$STAGED_ROOT/.gaia/scripts"
   cp "$HOOK_ABS" "$STAGED_ROOT/.claude/hooks/"
   cp "$HOOKS_SRC/lib/repo-scope.sh" "$STAGED_ROOT/.claude/hooks/lib/"
+  cp "$HOOKS_SRC/lib/jq-availability.sh" "$STAGED_ROOT/.claude/hooks/lib/"
   cp "${HOOKS_SRC%/.claude/hooks}/.gaia/scripts/main-root-lib.sh" "$STAGED_ROOT/.gaia/scripts/"
   git -C "$STAGED_ROOT" init --quiet --initial-branch=main
   git -C "$STAGED_ROOT" config user.email "test@example.com"

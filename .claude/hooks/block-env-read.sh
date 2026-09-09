@@ -115,6 +115,22 @@ DENY_JSON
 fi
 
 payload=$(cat)
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+set +e
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+set -e
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: block-env-read.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the dotenv read guard' "$payload" tool_input 'env' 'set' 'export -p' 'declare -p' 'compgen -v'
+# `env` subsumes both `.env` and `printenv`, and the two flag-carrying dump
+# spellings are given whole so an ordinary `export FOO=1` does not refuse.
+
 tool_name=$(jq -r '.tool_name // empty' <<<"$payload")
 
 DENY_READ_TOOL="BLOCKED: reading '.env' / '.env.*' files is denied to protect local secrets. Only '.env.example' is readable. This guard is heuristic defense-in-depth, not a sandbox."

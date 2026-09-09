@@ -89,6 +89,7 @@ count_autocommits() {
   MAIN="$(gaia_new_main gaia-c302-main)"
   gaia_copy_real "$MAIN" \
     .claude/hooks/block-worktree-path-mismatch.sh \
+    .claude/hooks/lib/jq-availability.sh \
     .gaia/scripts/main-root-lib.sh \
     .gaia/scripts/state-registry-lib.sh
   gaia_copy_registry "$MAIN"
@@ -119,6 +120,7 @@ count_autocommits() {
   MAIN="$(gaia_new_main gaia-c303-main)"
   gaia_copy_real "$MAIN" \
     .claude/hooks/block-worktree-path-mismatch.sh \
+    .claude/hooks/lib/jq-availability.sh \
     .gaia/scripts/main-root-lib.sh \
     .gaia/scripts/state-registry-lib.sh
   gaia_copy_registry "$MAIN"
@@ -1284,6 +1286,7 @@ SH
   printf 'project_name: "gaia"\n' > "$MAIN/.serena/project.yml"
   gaia_copy_real "$MAIN" \
     .claude/hooks/block-serena-cross-tree-activation.sh \
+    .claude/hooks/lib/jq-availability.sh \
     .gaia/scripts/main-root-lib.sh
   gaia_commit_all "$MAIN" "add serena activation guard"
 
