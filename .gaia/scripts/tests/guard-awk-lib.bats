@@ -712,6 +712,52 @@ scan_fixture_repo() {
   grep -qF -- "nothing was scanned" <<<"$output"
 }
 
+# `git ls-files` resolves against the working directory rather than the
+# repository, so from a subdirectory the union silently narrows to that subtree
+# and a consuming gate reports clean having read a fraction of the tree.
+# `--show-prefix` is empty only at the top level, and it answers without
+# comparing two paths, so a symlinked checkout (`/var` -> `/private/var`, which
+# every `mktemp -d` fixture here sits behind) cannot make a correct invocation
+# look wrong.
+#
+# The subtree deliberately holds a tracked `*.sh`, so the narrowed union comes
+# back POPULATED and the empty-surface refusal never fires. A subtree that
+# happened to match nothing would exit non-zero by luck, which is what the
+# consuming gates rest on today and is not a guard.
+@test "a call from below the repository root is refused rather than silently narrowed" {
+  local repo
+  repo="$(scan_fixture_repo)"
+  mkdir -p "$repo/sub"
+  printf 'x\n' > "$repo/sub/nested.sh"
+  git -C "$repo" add -A
+  run bash -c "cd '$repo/sub' && . '$LIB' && gaia_guard_scan_files probe shell && printf '%s\n' \"\${GAIA_GUARD_SCAN_FILES[@]}\""
+  # Status 2, never 1: a caller may tolerate an empty surface where one is a
+  # legitimate tree, and must never tolerate a surface narrowed to whichever
+  # directory it happened to be run from.
+  [ "$status" -eq 2 ]
+  grep -qF -- "probe: ERROR" <<<"$output" || return 1
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  # The prefix is in the message because it is the only thing telling the
+  # operator which subtree the surface would have narrowed to.
+  grep -qF -- "'sub'" <<<"$output" || return 1
+  grep -qxF -- "nested.sh" <<<"$output" && return 1
+  true
+}
+
+# The control for the refusal above: the same accessor over the same fixture,
+# one directory up. Without it the refusal could pass by refusing everywhere.
+@test "a call from the repository root still resolves the whole surface" {
+  local repo
+  repo="$(scan_fixture_repo)"
+  mkdir -p "$repo/sub"
+  printf 'x\n' > "$repo/sub/nested.sh"
+  git -C "$repo" add -A
+  run bash -c "cd '$repo' && . '$LIB' && gaia_guard_scan_files probe shell && printf '%s\n' \"\${GAIA_GUARD_SCAN_FILES[@]}\""
+  [ "$status" -eq 0 ]
+  grep -qxF -- "tool.sh" <<<"$output" || return 1
+  grep -qxF -- "sub/nested.sh" <<<"$output" || return 1
+}
+
 # The refusing set is named FIRST and a resolvable set follows it, which is what
 # makes this fail against a check hoisted out of the per-set loop. Reading only
 # the last named set's status leaves this call returning 0 with the `shell` set
