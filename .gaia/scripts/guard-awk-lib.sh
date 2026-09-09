@@ -833,9 +833,10 @@ _gaia_guard_scan_set() {
 #      about its own surface. This is the ONLY status a caller may tolerate,
 #      and only where an empty surface is a legitimate tree for it.
 #   2  the call itself is wrong: a set name this library does not know, no set
-#      named at all, or one named twice. Either way the guard would scan a
-#      surface other than the one it asked for and still report clean, which is
-#      the discovery-stage failure `.claude/rules/guards-must-fail.md` names.
+#      named at all, one named twice, or a working directory below the
+#      repository root. Any of them leaves the guard scanning a surface other
+#      than the one it asked for and still reporting clean, which is the
+#      discovery-stage failure `.claude/rules/guards-must-fail.md` names.
 #   3  the discovery machinery failed: a named set's own `git ls-files`, the
 #      sort, or the scratch file each of them needs. Distinct from 1 because
 #      the repairs differ, and distinct from a partial result because a set
@@ -874,7 +875,32 @@ gaia_guard_scan_files() {
   fi
   shift
 
-  local scan_tmp sorted_tmp name status seen f
+  local scan_tmp sorted_tmp name status seen f scan_prefix
+
+  # Every set below resolves through `git ls-files`, which resolves against the
+  # working directory rather than the repository, so from a subdirectory the
+  # union silently narrows to that subtree and the consuming gate reports clean
+  # having read a fraction of the tree. The refusal sits in this accessor rather
+  # than at each call site so that every consumer inherits it from one place;
+  # a copy per gate is the shape that leaves the next consumer to be found
+  # later, having reported clean in the meantime.
+  #
+  # `--show-prefix` is empty only at the top level, and it answers without
+  # comparing two paths, so a symlinked checkout (`/var` -> `/private/var`,
+  # which every bats fixture under `mktemp -d` sits behind) cannot make a
+  # correct invocation look wrong.
+  #
+  # A `--show-prefix` that FAILS is deliberately not refused here. It fails only
+  # outside a work tree, and there each set's own `git ls-files` fails too and
+  # returns 3 naming the set that failed, which is a status a caller is told
+  # means something different from this one. Refusing it here would rename an
+  # outcome that is already distinguished and already driven by a fixture.
+  if scan_prefix="$(git rev-parse --show-prefix 2>/dev/null)" && [ -n "$scan_prefix" ]; then
+    printf '%s: ERROR: run from the repository root; from %s the surface would silently narrow to that subtree; nothing was scanned\n' \
+      "$label" "'${scan_prefix%/}'" >&2
+    return 2
+  fi
+
   scan_tmp="$(mktemp -t gaia-guard-scan-XXXXXX)" || {
     printf '%s: ERROR: could not create a scratch file for the scan surface; nothing was scanned\n' "$label" >&2
     return 3
