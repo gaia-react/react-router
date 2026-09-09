@@ -61,6 +61,21 @@ type CorpusScan = {
    * `null` when it carries none.
    */
   findOffense: (source: string) => null | number;
+  /**
+   * Corpus entries this guard does not read, beyond `declaringModule`, as a
+   * predicate over the same spelling `declaringModule` uses.
+   *
+   * A predicate rather than a list of names, because the cases that need it are
+   * classes rather than entries: a corpus whose own test files carry the
+   * declaration as fixture data is exempt by shape, and enumerating those files
+   * would be a second list to keep in step. Omit it, as the callers that need
+   * no such class do, and only the declaring module is spared.
+   *
+   * Every exemption is a hole in the guard, so a caller passing this owes the
+   * reason at its own site: what it spares, and why sparing it does not spare
+   * the drift the guard exists to catch.
+   */
+  isExempt?: (relative: string) => boolean;
 };
 
 type UniquenessGuard = {
@@ -94,7 +109,11 @@ export const scanCorpus = (
 
   return {
     offenses: sources
-      .filter((relative) => relative !== guard.declaringModule)
+      .filter(
+        (relative) =>
+          relative !== guard.declaringModule &&
+          !(guard.isExempt?.(relative) ?? false)
+      )
       .flatMap((relative) => {
         const absolute = path.join(guard.corpusRoot, relative);
         const line = guard.findOffense(readFileSync(absolute, 'utf8'));
