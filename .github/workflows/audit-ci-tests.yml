@@ -666,11 +666,21 @@ jobs:
               # glob, matching how this list names its other `.sh` entries. Note
               # that a filter output is evaluated independently of its siblings,
               # so `code:` listing any of these does nothing for this output.
+              #
+              # The last entry is a transitive one and is here for the same
+              # reason as the rest: hook-registration.sh unconditionally sources
+              # hook-registration-lib.sh for the regex its assertion matches
+              # hook names with, so an edit confined to that lib changes what
+              # this suite asserts. workflow-filter-coverage.bats does not read
+              # transitive inputs, by its own header, so nothing derives this
+              # entry and it is kept by hand like the others. A reader adding a
+              # dependency to the helper owes this list the same walk.
               - '.claude/settings.json'
               - '.claude/hooks/block-env-read.sh'
               - '.claude/hooks/block-secrets-read.sh'
               - '.claude/hooks/lib/reader-operands.sh'
               - '.gaia/tests/helpers/hook-registration.sh'
+              - '.gaia/scripts/hook-registration-lib.sh'
               # manifest-and-enable.bats git-greps EVERY committed file of these
               # four types for a raw top-level sandbox enable, in both the flat
               # key form and the nested object form, so its read set is

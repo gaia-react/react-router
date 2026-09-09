@@ -9,10 +9,13 @@
 #   . "$REPO_ROOT/.gaia/tests/helpers/hook-registration.sh"
 #   . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/hook-registration.sh"
 #
-# This is a CROSS-DIRECTORY helper, alongside `files.sh` and `path.sh` and
-# distinct from the per-suite-directory `.gaia/tests/lib/helpers/` and
-# `.gaia/tests/hooks/helpers/`, which hold executable fixture builders invoked
-# as subprocesses rather than functions to source.
+# This is a CROSS-DIRECTORY helper, alongside `files.sh` and `path.sh`. What
+# separates this directory from the per-suite-directory `.gaia/tests/lib/helpers/`
+# and `.gaia/tests/hooks/helpers/` is REACH, not how a file there is invoked:
+# a suite in any bats directory may source what lives here, while those two
+# serve their own directory's suites. Both of them already mix invocation
+# styles, holding sourced function helpers beside executable fixture builders,
+# so a distinction drawn on subprocess-versus-source would describe neither.
 #
 # API:
 #   hook_registered SETTINGS EVENT_FILTER HOOK_NAME
@@ -21,10 +24,15 @@
 # where it was written. Registration is asserted from outside that directory
 # too: `.gaia/tests/sandbox/spec-028-composition.bats` pins the read-side .env
 # guard's registrations and sources no hooks-suite harness. While the function
-# was reachable only from that harness, the one form available to such a suite
-# was a hand-written jq predicate over the command spelling, so the tree held
-# two independent forms of a single predicate and a change to the sanctioned
-# registration command form reddened one while the other stayed green (#1911).
+# was reachable only from that harness, a suite outside it had no shared form to
+# reach for, so the one thing left was a hand-written jq predicate over the
+# command spelling: a change to the sanctioned registration command form reds a
+# hand-written predicate while every `hook_registered` call site stays green,
+# and the maintainer sent there by that red has nothing pointing at the shared
+# assertion (#1911). Reachability is what this move fixes. It does not follow
+# that every hand-written predicate is now gone, and nothing here should be read
+# as claiming so; `git grep` for the suites that read a registration and do not
+# call `hook_registered` is what answers that.
 #
 # The function was already dependency-light and location-independent by design
 # -- it needs `GAIA_HOOK_NAME_RE` and its three arguments, and takes SETTINGS as

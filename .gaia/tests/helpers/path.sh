@@ -13,9 +13,12 @@
 # depth is that suite's own rather than a constant to copy.
 #
 # This is a CROSS-DIRECTORY helper, alongside `files.sh` and distinct from the
-# per-suite-directory `.gaia/tests/lib/helpers/` and `.gaia/tests/hooks/helpers/`,
-# which hold executable fixture builders invoked as subprocesses rather than
-# functions to source.
+# per-suite-directory `.gaia/tests/lib/helpers/` and `.gaia/tests/hooks/helpers/`
+# by REACH rather than by how a file there is invoked: a suite in any bats
+# directory may source what lives here, while those two serve their own
+# directory's suites. Both of them already mix invocation styles, holding sourced
+# function helpers beside executable fixture builders, so a distinction drawn on
+# subprocess-versus-source would describe neither.
 #
 # API:
 #   path_dir_provides DIR NAME  - true when DIR/NAME is something bash's PATH
