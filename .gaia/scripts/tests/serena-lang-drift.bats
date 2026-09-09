@@ -43,6 +43,8 @@ refute_contains() {
 
 setup() {
   THIS_DIR="$(cd "$(dirname "$BATS_TEST_FILENAME")" && pwd)"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$( cd "$THIS_DIR/../../.." && pwd )/.gaia/tests/helpers/path.sh"
   LIB="$THIS_DIR/../lib/serena-lang.sh"
   CHECK_SRC="$THIS_DIR/../check-updates.sh"
   [ -f "$LIB" ] || skip "serena-lang.sh missing"
@@ -302,11 +304,7 @@ JSON
   local cache="$s/.gaia/local/cache/shared/update-check.json"
   # A symlink farm of the tools the refresher needs, deliberately WITHOUT jq,
   # so `command -v jq` fails and the printf write branch runs.
-  local farm="$TMPROOT/nojq012"; mkdir -p "$farm"
-  local t p
-  for t in git date mkdir mktemp mv rm find wc tr sed grep awk ls stat sort head tail cut dirname cat env bash; do
-    p="$(command -v "$t" 2>/dev/null)" && ln -sf "$p" "$farm/$t"
-  done
+  local farm; farm="$(path_allowlist git date mkdir mktemp mv rm find wc tr sed grep awk ls stat sort head tail cut dirname cat env bash)"
   # Sanity: jq is not reachable through the farm.
   run env PATH="$farm" bash -c 'command -v jq'
   [ "$status" -ne 0 ]

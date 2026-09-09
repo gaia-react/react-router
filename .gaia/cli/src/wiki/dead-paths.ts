@@ -9,10 +9,11 @@
  * Output: newline-separated `wiki/path:line  dead-path` entries. Exit 0
  * always; finding rot is informational, not a failure.
  */
-import {readdirSync, readFileSync, statSync} from 'node:fs';
+import {readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
+import {collectWikiMarkdown} from './util/markdown-corpus.js';
 
 export const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
 
@@ -50,7 +51,7 @@ const SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
  * one is not rot a human can act on, and that rule owns the reasoning.
  *
  * `wiki/.state.json` is outside that correspondence and has no counterpart in
- * the rule. It is a defensive non-markdown entry that `walkMarkdown` can never
+ * the rule. It is a defensive non-markdown entry the markdown corpus can never
  * yield, so neither adding it to that prose rule nor deleting it here follows
  * from the sentence above.
  *
@@ -196,23 +197,6 @@ const isTrackedPath = (token: string): boolean => {
 const shouldSkipFile = (relPath: string): boolean =>
   SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
 
-const walkMarkdown = (root: string, dir: string): string[] => {
-  const entries = readdirSync(dir, {withFileTypes: true});
-  const out: string[] = [];
-
-  for (const entry of entries) {
-    const full = path.join(dir, entry.name);
-
-    if (entry.isDirectory()) {
-      out.push(...walkMarkdown(root, full));
-    } else if (entry.isFile() && entry.name.endsWith('.md')) {
-      out.push(path.relative(root, full));
-    }
-  }
-
-  return out;
-};
-
 const pathExists = (root: string, candidate: string): boolean => {
   try {
     statSync(path.join(root, candidate));
@@ -267,21 +251,10 @@ const collectDeadPathsInFile = (ctx: FileContext): readonly DeadRef[] => {
   );
 };
 
-export const findDeadPaths = (cwd: string): readonly DeadRef[] => {
-  const wikiDir = path.join(cwd, 'wiki');
-
-  try {
-    statSync(wikiDir);
-  } catch {
-    return [];
-  }
-
-  const files = walkMarkdown(cwd, wikiDir);
-
-  return files
+export const findDeadPaths = (cwd: string): readonly DeadRef[] =>
+  collectWikiMarkdown(cwd)
     .filter((filePath) => !shouldSkipFile(filePath))
     .flatMap((filePath) => collectDeadPathsInFile({cwd, filePath}));
-};
 
 export const run = (
   argv: readonly string[],

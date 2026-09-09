@@ -19,6 +19,8 @@
 
 setup() {
   THIS_DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" && pwd )"
+  # shellcheck source=.gaia/tests/helpers/path.sh
+  . "$( cd "$THIS_DIR/../../.." && pwd )/.gaia/tests/helpers/path.sh"
   SCRIPT="$THIS_DIR/../post-findings-block.sh"
   [ -x "$SCRIPT" ] || skip "post-findings-block.sh not executable"
   command -v jq >/dev/null 2>&1 || skip "jq required"
@@ -184,15 +186,13 @@ STUB
 # last for sourcing audit-key-lib.sh, .gaia/scripts/audit-key-lib.sh).
 minimal_path() {
   local omit="$1"
-  local d="$SANDBOX/minimal-bin-${omit}"
-  mkdir -p "$d"
+  local cmd
+  local names=()
   for cmd in bash jq git mktemp sort cat head sed rm mkdir printf gh dirname; do
     [ "$cmd" = "$omit" ] && continue
-    local real
-    real="$(command -v "$cmd" 2>/dev/null || true)"
-    [ -n "$real" ] && ln -sf "$real" "$d/$cmd"
+    names+=("$cmd")
   done
-  printf '%s' "$d"
+  path_allowlist "${names[@]}"
 }
 
 run_script() {

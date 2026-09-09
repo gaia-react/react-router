@@ -2,6 +2,7 @@
 
 setup() {
   . "$BATS_TEST_DIRNAME/helpers/run-hook.sh"
+  . "$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)/.gaia/tests/helpers/path.sh"
   HELPERS="$BATS_TEST_DIRNAME/helpers"
   HOOK="$BATS_TEST_DIRNAME/../../../.claude/hooks/wiki-drift-check.sh"
   # Hook is invoked relative to its own repo. Resolve to absolute.
@@ -199,16 +200,12 @@ EOF
   # unavailable" the PATH below carries no jq at all -- only symlinks to the
   # handful of external binaries the drain block itself needs (head, rm) plus
   # bash to run the hook.
-  nojq_bin=$(mktemp -d -t gaia-drift-nojq-XXXXXX)
-  ln -sf "$(command -v bash)" "$nojq_bin/bash"
-  ln -sf "$(command -v head)" "$nojq_bin/head"
-  ln -sf "$(command -v rm)" "$nojq_bin/rm"
+  nojq_bin="$(path_allowlist bash head rm)"
 
   run bash -c 'PATH="$1" bash "$2" < /dev/null' _ "$nojq_bin" "$HOOK_ABS"
   [ "$status" -eq 0 ]
   grep -qF -- '[wiki base] fast-forward of main to origin/main refused' <<<"$output" || return 1
   [ ! -f .gaia/local/cache/shared/wiki-base-catchup.report ] || return 1
-  rm -rf "$nojq_bin"
 }
 
 @test "no report file is a silent no-op" {
