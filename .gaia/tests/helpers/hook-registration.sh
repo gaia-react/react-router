@@ -13,9 +13,8 @@
 # separates this directory from the per-suite-directory `.gaia/tests/lib/helpers/`
 # and `.gaia/tests/hooks/helpers/` is REACH, not how a file there is invoked:
 # a suite in any bats directory may source what lives here, while those two
-# serve their own directory's suites. Both of them already mix invocation
-# styles, holding sourced function helpers beside executable fixture builders,
-# so a distinction drawn on subprocess-versus-source would describe neither.
+# serve their own directory's suites, whatever invocation style a file in them
+# happens to use.
 #
 # API:
 #   hook_registered SETTINGS EVENT_FILTER HOOK_NAME

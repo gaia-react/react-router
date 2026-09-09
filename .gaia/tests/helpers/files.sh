@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 # Shared bats primitives for asserting that a file did not change.
 #
-# Sourced from a suite's `setup()`, in any of the three bats directories:
+# Sourced from a suite's `setup()`, from any bats directory:
 #   . "$REPO_ROOT/.gaia/tests/helpers/files.sh"
 #
-# This is a CROSS-DIRECTORY helper, distinct from the per-suite-directory
+# This is a CROSS-DIRECTORY helper, alongside `path.sh` and
+# `hook-registration.sh` and distinct from the per-suite-directory
 # `.gaia/tests/lib/helpers/` and `.gaia/tests/hooks/helpers/` by REACH rather
 # than by how a file there is invoked: a suite in any bats directory may source
-# what lives here, while those two serve their own directory's suites. Both of
-# them already mix invocation styles, holding sourced function helpers beside
-# executable fixture builders, so a distinction drawn on subprocess-versus-source
-# would describe neither. Suites under `.gaia/scripts/tests/`, `.gaia/tests/lib/`
-# and `.gaia/tests/hooks/` all use this one.
+# what lives here, while those two serve their own directory's suites, whatever
+# invocation style a file in them happens to use. Suites under
+# `.gaia/scripts/tests/`, `.gaia/tests/lib/` and `.gaia/tests/hooks/` all use
+# this one.
 #
 # API:
 #   snapshot_file FILE           - copy FILE's bytes aside; print the copy's path
