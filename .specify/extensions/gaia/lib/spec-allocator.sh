@@ -88,10 +88,24 @@ _remote_tags_raw=""
 # repo_root is the value whose trustworthiness is in question here, so loading
 # a library by it would decide correctness with the input under test.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#
+# Each load is bracketed against a target that is present but UNPARSEABLE, and
+# the probe under it decides the degrade. A bare `.` under errexit abandons the
+# shell AT the load, exit 2 with no diagnostic, so none of the refusals written
+# below would run; and a trailing `|| true` does not save it on stock macOS
+# /bin/bash 3.2.57, which aborts before the arm is ever evaluated. An
+# interrupted update, an unresolved merge conflict, and a truncated write all
+# leave exactly that state on disk.
 # shellcheck source=/dev/null
-. "${_lib_dir}/with-ledger-lock.sh"
+set +e; [ -f "${_lib_dir}/with-ledger-lock.sh" ] && . "${_lib_dir}/with-ledger-lock.sh" 2>/dev/null; set -e
+type with_ledger_lock >/dev/null 2>&1 || {
+  echo "spec-allocator: the shared ledger mutex is unusable; refuse to allocate (would risk duplicate SPEC ids)" >&2
+  exit 4
+}
+# No probe of its own: the gaia_resolve_specs_dir call below already refuses
+# when the function is absent, which is the degrade this load owes.
 # shellcheck source=../../../../.gaia/scripts/ledger-path-lib.sh
-. "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null || true
+set +e; [ -f "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" ] && . "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null; set -e
 
 require_git() {
   if ! git -C "$repo_root" rev-parse --git-dir >/dev/null 2>&1; then

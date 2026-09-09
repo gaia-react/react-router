@@ -32,8 +32,17 @@ allocator="${repo_root%/}/.specify/extensions/gaia/lib/spec-allocator.sh"
 # question here, so loading a library by it would decide correctness with the
 # input under test.
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+#
+# Bracketed against a target that is present but UNPARSEABLE. A bare `.` under
+# errexit abandons the shell AT the load, exit 2 with no diagnostic, and a
+# trailing `|| true` does not save it on stock macOS /bin/bash 3.2.57, which
+# aborts before the arm is ever evaluated: the refusal written below would never
+# run. An interrupted update, an unresolved merge conflict, and a truncated
+# write all leave exactly that state on disk. No probe of its own here, because
+# the gaia_resolve_specs_dir call below already refuses when the function is
+# absent, which is the degrade this load owes.
 # shellcheck source=../../../../.gaia/scripts/ledger-path-lib.sh
-. "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null || true
+set +e; [ -f "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" ] && . "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null; set -e
 
 if ! git -C "$repo_root" rev-parse --git-dir >/dev/null 2>&1; then
   echo "spec-renumber: $repo_root is not a git repository" >&2
