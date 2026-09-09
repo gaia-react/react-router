@@ -61,12 +61,28 @@ describe('scanCorpus', () => {
     expect(path.isAbsolute(offenses[0] ?? '')).toBe(false);
   });
 
-  // The one exemption the scan carries. Without it the shared declaration is
-  // reported as a copy of itself, which reads as the guard working.
+  // The exemption every scan carries, and the only one a caller cannot opt out
+  // of. Without it the shared declaration is reported as a copy of itself,
+  // which reads as the guard working.
   test('exempts the declaring module', () => {
     seed(corpusRoot, DECLARING_MODULE, 'const declared = MARKER;');
 
     expect(scan().offenses).toEqual([]);
+  });
+
+  test('exempts what the caller predicate spares, and nothing else', () => {
+    seed(corpusRoot, 'spared.ts', 'const spared = MARKER;');
+    seed(corpusRoot, 'copy.ts', 'const copied = MARKER;');
+
+    const {offenses} = scanCorpus({
+      corpusRoot,
+      declaringModule: DECLARING_MODULE,
+      findOffense: findMarker,
+      isExempt: (relative) => relative === 'spared.ts',
+    });
+
+    expect(offenses).toHaveLength(1);
+    expect(offenses[0]?.endsWith('copy.ts:1')).toBe(true);
   });
 
   test('reports nothing when no file carries the offense', () => {
