@@ -28,6 +28,12 @@ setup() {
   STATUSLINE_SRC=$(cd "$BATS_TEST_DIRNAME/../../statusline" && pwd)
   SCRIPTS_SRC=$(cd "$BATS_TEST_DIRNAME/../../scripts" && pwd)
 
+  # The delimiters of the marker-strip transform in .gaia/release-scrub.yml
+  # that governs shell files, the surface stripped_copy below is pointed at.
+  # marker-strip.test.ts holds these to that transform.
+  MAINTAINER_START='# gaia:maintainer-only:start'
+  MAINTAINER_END='# gaia:maintainer-only:end'
+
   MAIN=$(mktemp -d -t gaia-sl-main-XXXXXX)
   git -C "$MAIN" init --quiet --initial-branch=main
   git -C "$MAIN" config user.email "test@example.com"
@@ -77,12 +83,33 @@ run_statusline() {
 }
 
 # Write a copy of MAIN's script with every maintainer-only block removed, the
-# same inclusive line range `gaia-maintainer release scrub` strips at bundle
-# time, and print its path. This is what an adopter actually runs.
+# same text `gaia-maintainer release scrub` produces at bundle time, and print
+# its path. This is what an adopter actually runs.
+#
+# The agreement with the shipped parser (`stripMarkerBlocks` in
+# `.gaia/cli/src/release/marker-strip.ts`) is PINNED, not conventional:
+# `.gaia/cli/src/release/marker-strip.test.ts` runs this exact awk against the
+# real parser over a fixture corpus, and asserts every suite carrying it holds
+# it verbatim. Sibling suites carry the same block, so a change here belongs in
+# all of them.
+#
+# The `sed` range this replaces was not that text. A range checks its end
+# address only from the line AFTER the start matches, so a line carrying both
+# markers opened a range and swallowed to the next end or to EOF, where the
+# shipped parser drops that one line alone. `gaia-statusline.sh` carries only a
+# plain pair today, so the two agreed; nothing went red if a one-line marker
+# was ever added.
 stripped_copy() {
   local dst="$MAIN/.gaia/statusline/gaia-statusline-stripped.sh"
-  sed '/# gaia:maintainer-only:start/,/# gaia:maintainer-only:end/d' \
-    "$MAIN/.gaia/statusline/gaia-statusline.sh" > "$dst"
+  awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END" '
+    {
+      has_s = index($0, s) > 0
+      has_e = index($0, e) > 0
+      if (!skip && has_s) { if (!has_e) skip = 1; next }
+      if (skip) { if (has_e) skip = 0; next }
+      print
+    }
+  ' "$MAIN/.gaia/statusline/gaia-statusline.sh" > "$dst"
   printf '%s' "$dst"
 }
 

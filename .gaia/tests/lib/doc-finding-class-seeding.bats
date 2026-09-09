@@ -87,22 +87,35 @@ assert_assignment_line() {
 # leaves on an adopter clone. Group I reads a member through this rather than
 # reading the file directly, because a route stated only inside those markers
 # is present in the maintainer tree and absent everywhere it is needed.
+#
+# The agreement with the shipped parser (`stripMarkerBlocks` in
+# `.gaia/cli/src/release/marker-strip.ts`) is PINNED, not conventional:
+# `.gaia/cli/src/release/marker-strip.test.ts` runs this exact awk against the
+# real parser over a fixture corpus, and asserts every suite carrying it holds
+# it verbatim. Sibling suites carry the same block, so a change here belongs in
+# all of them. The delimiters differ from theirs and that is the point of
+# parameterizing them: the members this reads are markdown, governed by the
+# HTML-comment marker-strip transform rather than the shell one.
 strip_maintainer_only() {
-  # Rule order mirrors marker-strip.ts's own branch order, including the two
-  # cases a naive start/end pair gets wrong: a line carrying BOTH markers is a
-  # self-contained block and drops alone rather than opening one, and an
-  # end-without-start line is kept, not swallowed.
-  awk '
-    skip == 1 && /gaia:maintainer-only:end/ { skip = 0; next }
-    skip == 1 { next }
-    /gaia:maintainer-only:start/ && /gaia:maintainer-only:end/ { next }
-    /gaia:maintainer-only:start/ { skip = 1; next }
-    { print }
+  awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END" '
+    {
+      has_s = index($0, s) > 0
+      has_e = index($0, e) > 0
+      if (!skip && has_s) { if (!has_e) skip = 1; next }
+      if (skip) { if (has_e) skip = 0; next }
+      print
+    }
   ' "$1"
 }
 
 setup() {
   ROOT="$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)"
+
+  # The delimiters of the marker-strip transform in .gaia/release-scrub.yml
+  # that governs markdown, the surface strip_maintainer_only above is pointed
+  # at. marker-strip.test.ts holds these to that transform.
+  MAINTAINER_START='<!-- gaia:maintainer-only:start -->'
+  MAINTAINER_END='<!-- gaia:maintainer-only:end -->'
 
   FRONTEND="$ROOT/.claude/agents/code-audit-frontend.md"
   WORKFLOWS="$ROOT/.claude/agents/code-audit-github-workflows.md"

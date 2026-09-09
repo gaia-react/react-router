@@ -20,6 +20,11 @@ setup() {
   RESOLVER="$REPO_ROOT/.gaia/scripts/resolve-audit-members.sh"
   SPAWN="$REPO_ROOT/.gaia/scripts/resolve-audit-spawn.sh"
   HOOK="$REPO_ROOT/.claude/hooks/pr-merge-audit-check.sh"
+  # The delimiters of the marker-strip transform in .gaia/release-scrub.yml that
+  # governs shell files, the surface the strip test below is pointed at.
+  # marker-strip.test.ts holds these to that transform.
+  MAINTAINER_START='# gaia:maintainer-only:start'
+  MAINTAINER_END='# gaia:maintainer-only:end'
 
   # One entry per arm of the allowlist, not just the first. The uniqueness
   # invariant below is what stops a second copy of this set appearing in another
@@ -823,21 +828,41 @@ EOF
 # ---------------------------------------------------------------------------
 
 @test "scrub markers are balanced in audit-scope.sh" {
-  starts="$(grep -c "# gaia:maintainer-only:start" "$SCOPE_LIB")"
-  ends="$(grep -c "# gaia:maintainer-only:end" "$SCOPE_LIB")"
+  starts="$(grep -cF -- "$MAINTAINER_START" "$SCOPE_LIB")"
+  ends="$(grep -cF -- "$MAINTAINER_END" "$SCOPE_LIB")"
   [ "$starts" -eq "$ends" ]
   [ "$starts" -ge 1 ]
-  start_line="$(grep -n "# gaia:maintainer-only:start" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
-  end_line="$(grep -n "# gaia:maintainer-only:end" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
+  start_line="$(grep -nF -- "$MAINTAINER_START" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
+  end_line="$(grep -nF -- "$MAINTAINER_END" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
   [ "$start_line" -lt "$end_line" ]
 }
 
+# The awk below models `stripMarkerBlocks` in
+# `.gaia/cli/src/release/marker-strip.ts`, the parser the release scrub actually
+# runs. The agreement is PINNED, not conventional:
+# `.gaia/cli/src/release/marker-strip.test.ts` runs this exact awk against the
+# real parser over a fixture corpus, and then asserts this file carries the
+# invocation verbatim. Two sibling suites carry the same block
+# (`.gaia/scripts/tests/verify-audit-roster.bats`, `audit-write-clearance.bats`),
+# so a change here belongs in all of them.
+#
+# The two-rule form this replaces diverged from the shipped parser on two shapes
+# audit-scope.sh does not currently carry, which is the only reason it was green:
+# its `/start/` rule fired `next`, so a start and end on ONE line never reached
+# the `/end/` rule and `skip` was never cleared, swallowing the rest of the file;
+# and it DROPPED an end with no open block, where the shipped parser keeps it
+# (`marker-strip.ts:55-57`). Adding either shape to audit-scope.sh would have
+# produced a stripped copy the release scrub does not produce, with nothing red.
 @test "a marker-stripped copy of audit-scope.sh yields exactly the frontend and workflows members" {
   SCRUBBED=$(mktemp -t audit-scope-scrubbed-XXXXXX)
-  awk '
-    /gaia:maintainer-only:start/ { skip = 1; next }
-    /gaia:maintainer-only:end/   { skip = 0; next }
-    !skip { print }
+  awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END" '
+    {
+      has_s = index($0, s) > 0
+      has_e = index($0, e) > 0
+      if (!skip && has_s) { if (!has_e) skip = 1; next }
+      if (skip) { if (has_e) skip = 0; next }
+      print
+    }
   ' "$SCOPE_LIB" > "$SCRUBBED"
 
   EMPTY_ROOT=$(mktemp -d -t audit-scope-noroster-XXXXXX)
