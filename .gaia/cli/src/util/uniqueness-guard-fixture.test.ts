@@ -55,6 +55,10 @@ describe('scanCorpus', () => {
 
     expect(offenses).toHaveLength(1);
     expect(offenses[0]?.endsWith('copy.ts:2')).toBe(true);
+    // A maintainer reading a red guard acts on the path it prints, so it has to
+    // be repo-relative. The suffix above cannot see that: an absolute path ends
+    // the same way, so dropping the relativization would leave it green.
+    expect(path.isAbsolute(offenses[0] ?? '')).toBe(false);
   });
 
   // The one exemption the scan carries. Without it the shared declaration is

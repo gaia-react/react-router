@@ -65,10 +65,11 @@ type CorpusScan = {
 
 type UniquenessGuard = {
   /**
-   * The smallest corpus this guard accepts as having been scanned at all. A
-   * required argument rather than a default, for the reason `collectTreeFiles`
-   * gives for its own extension set: a default is how a caller silently gets a
-   * narrower corpus and reads the resulting empty answer as a clean pass.
+   * The largest corpus this guard reads as a broken scan rather than as one
+   * that ran: a real corpus has to come out strictly larger. A required
+   * argument rather than a default, for the reason `collectTreeFiles` gives for
+   * its own extension set: a default is how a caller silently gets a narrower
+   * corpus and reads the resulting empty answer as a clean pass.
    */
   corpusFloor: number;
   /**
