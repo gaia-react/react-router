@@ -20,6 +20,11 @@ setup() {
   READER="$THIS_DIR/../../../.claude/hooks/lib/audit-clearance.sh"
   DIGEST_LIB="$THIS_DIR/../../../.claude/hooks/lib/audit-digest.sh"
   RESOLVER="$THIS_DIR/../resolve-audit-members.sh"
+  # The delimiters of the marker-strip transform in .gaia/release-scrub.yml that
+  # governs shell files and .gaia/audit-ci.yml, the two shapes scrub_maintainer_only
+  # below is pointed at. marker-strip.test.ts holds these to that transform.
+  MAINTAINER_START='# gaia:maintainer-only:start'
+  MAINTAINER_END='# gaia:maintainer-only:end'
   [ -x "$WRITER" ] || skip "audit-write-clearance.sh not executable"
   [ -f "$DIGEST_LIB" ] || skip "audit-digest.sh not present"
   command -v jq >/dev/null 2>&1 || skip "jq not available"
@@ -474,13 +479,30 @@ member_digest() {
 # roster collapses to the single default member, and the shipped writer
 # produces a valid digest-keyed marker with no maintainer member.
 
-# Strip # gaia:maintainer-only:start ... :end blocks (inclusive), as the
-# bundle-time scrub does to shipped files.
+# Strips maintainer-only blocks from the file named by $1, writing the result to
+# stdout, as the bundle-time scrub does to shipped files.
+#
+# The agreement with the shipped parser (`stripMarkerBlocks` in
+# `.gaia/cli/src/release/marker-strip.ts`) is PINNED, not conventional:
+# `.gaia/cli/src/release/marker-strip.test.ts` runs this exact awk against the
+# real parser over a fixture corpus, and then asserts this file carries the
+# invocation below verbatim. Two sibling suites carry the same block
+# (`verify-audit-roster.bats`, `.gaia/tests/hooks/audit-scope-lib.bats`), so a
+# change here belongs in all of them.
+#
+# The unanchored `/gaia:maintainer-only:start/` pair this replaces was a third
+# marker vocabulary: it fired on the HTML-comment form too, which the transform
+# governing shell files does not use. The constants above are the ones that
+# transform declares, and the guard asserts they still are.
 scrub_maintainer_only() {
-  awk '
-    /gaia:maintainer-only:start/ { skip = 1 }
-    !skip { print }
-    /gaia:maintainer-only:end/   { skip = 0 }
+  awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END" '
+    {
+      has_s = index($0, s) > 0
+      has_e = index($0, e) > 0
+      if (!skip && has_s) { if (!has_e) skip = 1; next }
+      if (skip) { if (has_e) skip = 0; next }
+      print
+    }
   ' "$1"
 }
 
