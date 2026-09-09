@@ -784,8 +784,7 @@ make_other_repo() {
 }
 
 @test "settings.json registers the hook under the Edit|Write|MultiEdit matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Edit|Write|MultiEdit") | .hooks[] | select(.command | endswith("/.claude/hooks/block-worktree-path-mismatch.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Edit|Write|MultiEdit")' block-worktree-path-mismatch.sh
 }
 
 # --- library-load degradation (gaia-react/gaia#1556) ------------------------

@@ -329,13 +329,11 @@ run_write_hook_edit() {
 }
 
 @test "settings.json registers block-env-read.sh under the Read matcher (UAT-008)" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Read") | .hooks[] | select(.command | endswith("/.claude/hooks/block-env-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Read")' block-env-read.sh
 }
 
 @test "settings.json registers block-env-read.sh under the Bash matcher (UAT-008)" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | endswith("/.claude/hooks/block-env-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Bash")' block-env-read.sh
 }
 
 @test "permissions.deny carries no Read() rule at all" {
@@ -441,8 +439,7 @@ run_write_hook_edit() {
 }
 
 @test "settings.json registers block-env-read.sh under the Grep matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Grep") | .hooks[] | select(.command | endswith("/.claude/hooks/block-env-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Grep")' block-env-read.sh
 }
 
 # --- Fail-closed on a grammar-load failure ---

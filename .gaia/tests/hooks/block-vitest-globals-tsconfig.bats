@@ -253,6 +253,5 @@ run_hook_multiedit() {
 }
 
 @test "settings.json registers the hook under the Edit|Write|MultiEdit matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Edit|Write|MultiEdit") | .hooks[] | select(.command | endswith("/.claude/hooks/block-vitest-globals-tsconfig.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Edit|Write|MultiEdit")' block-vitest-globals-tsconfig.sh
 }

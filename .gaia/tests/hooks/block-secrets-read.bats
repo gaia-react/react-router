@@ -345,13 +345,11 @@ run_hook_without_library() {
 }
 
 @test "settings.json registers block-secrets-read.sh under the Read matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Read") | .hooks[] | select(.command | endswith("/.claude/hooks/block-secrets-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Read")' block-secrets-read.sh
 }
 
 @test "settings.json registers block-secrets-read.sh under the Bash matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | endswith("/.claude/hooks/block-secrets-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Bash")' block-secrets-read.sh
 }
 
 @test "permissions.deny carries none of the four replaced Read() globs" {
@@ -425,8 +423,7 @@ run_hook_without_library() {
 }
 
 @test "settings.json registers block-secrets-read.sh under the Grep matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Grep") | .hooks[] | select(.command | endswith("/.claude/hooks/block-secrets-read.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Grep")' block-secrets-read.sh
 }
 
 # --- Fail-closed on a grammar-load failure ---

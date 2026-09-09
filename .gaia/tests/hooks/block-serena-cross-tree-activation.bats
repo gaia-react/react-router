@@ -186,8 +186,7 @@ run_hook_other_tool() {
 }
 
 @test "settings.json registers the hook under the mcp__serena__activate_project matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "mcp__serena__activate_project") | .hooks[] | select(.command | endswith("/.claude/hooks/block-serena-cross-tree-activation.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "mcp__serena__activate_project")' block-serena-cross-tree-activation.sh
 }
 
 # --- library-load degradation (gaia-react/gaia#1556) ------------------------

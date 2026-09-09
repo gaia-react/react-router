@@ -2,8 +2,9 @@
 # shellcheck shell=bash
 #
 # hook-registration-lib.sh: the shared read of `.claude/settings.json`'s
-# PreToolUse registrations, and the shared oracle for whether a registered hook
-# can stop a tool call. Source it; it defines functions and runs nothing.
+# PreToolUse registrations, the shared oracle for whether a registered hook can
+# stop a tool call, and the one spelling of a hook name inside a registration
+# command. Source it; it defines functions and that literal, and runs nothing.
 #
 # Two gates ask the same two questions of the same surface and must not answer
 # them differently: `.gaia/scripts/lint-hook-advisory-classification.sh` (a
@@ -11,6 +12,14 @@
 # `.gaia/scripts/lint-hook-jq-availability.sh` (a blocking hook whose jq arm
 # fails open). A second copy of either question drifts from the first silently,
 # because each gate's own suite passes against its own copy.
+#
+# `GAIA_HOOK_NAME_RE` has a consumer outside those gates, and it fails in a
+# quieter direction than they do. `.gaia/tests/hooks/helpers/run-hook.sh` feeds
+# the literal to jq's `match` builtin to assert that a hook is registered at
+# all, once per registration assertion across the hook suites. Widening the
+# class to admit a path shape a gate needs also widens what every one of those
+# assertions accepts: a wider class still matches, so they stay green while
+# asserting less. Read that consumer before changing the literal.
 #
 # Bash 3.2 compatible. Never `cd`.
 
