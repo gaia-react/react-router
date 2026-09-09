@@ -806,10 +806,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema2) {
   return mergeDefs(schema2._zod.def);
 }
-function getElementAtPath(obj, path57) {
-  if (!path57)
+function getElementAtPath(obj, path59) {
+  if (!path59)
     return obj;
-  return path57.reduce((acc, key) => acc?.[key], obj);
+  return path59.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -1218,11 +1218,11 @@ function explicitlyAborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path57, issues) {
+function prefixIssues(path59, issues) {
   return issues.map((iss) => {
     var _a3;
     (_a3 = iss).path ?? (_a3.path = []);
-    iss.path.unshift(path57);
+    iss.path.unshift(path59);
     return iss;
   });
 }
@@ -1369,16 +1369,16 @@ function flattenError(error51, mapper = (issue2) => issue2.message) {
 }
 function formatError(error51, mapper = (issue2) => issue2.message) {
   const fieldErrors = { _errors: [] };
-  const processError = (error52, path57 = []) => {
+  const processError = (error52, path59 = []) => {
     for (const issue2 of error52.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path57, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path59, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path57, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path59, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path57, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path59, ...issue2.path]);
       } else {
-        const fullpath = [...path57, ...issue2.path];
+        const fullpath = [...path59, ...issue2.path];
         if (fullpath.length === 0) {
           fieldErrors._errors.push(mapper(issue2));
         } else {
@@ -1405,17 +1405,17 @@ function formatError(error51, mapper = (issue2) => issue2.message) {
 }
 function treeifyError(error51, mapper = (issue2) => issue2.message) {
   const result = { errors: [] };
-  const processError = (error52, path57 = []) => {
+  const processError = (error52, path59 = []) => {
     var _a3, _b;
     for (const issue2 of error52.issues) {
       if (issue2.code === "invalid_union" && issue2.errors.length) {
-        issue2.errors.map((issues) => processError({ issues }, [...path57, ...issue2.path]));
+        issue2.errors.map((issues) => processError({ issues }, [...path59, ...issue2.path]));
       } else if (issue2.code === "invalid_key") {
-        processError({ issues: issue2.issues }, [...path57, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path59, ...issue2.path]);
       } else if (issue2.code === "invalid_element") {
-        processError({ issues: issue2.issues }, [...path57, ...issue2.path]);
+        processError({ issues: issue2.issues }, [...path59, ...issue2.path]);
       } else {
-        const fullpath = [...path57, ...issue2.path];
+        const fullpath = [...path59, ...issue2.path];
         if (fullpath.length === 0) {
           result.errors.push(mapper(issue2));
           continue;
@@ -1447,8 +1447,8 @@ function treeifyError(error51, mapper = (issue2) => issue2.message) {
 }
 function toDotPath(_path) {
   const segs = [];
-  const path57 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
-  for (const seg of path57) {
+  const path59 = _path.map((seg) => typeof seg === "object" ? seg.key : seg);
+  for (const seg of path59) {
     if (typeof seg === "number")
       segs.push(`[${seg}]`);
     else if (typeof seg === "symbol")
@@ -14140,13 +14140,13 @@ function resolveRef(ref, ctx) {
   if (!ref.startsWith("#")) {
     throw new Error("External $ref is not supported, only local refs (#/...) are allowed");
   }
-  const path57 = ref.slice(1).split("/").filter(Boolean);
-  if (path57.length === 0) {
+  const path59 = ref.slice(1).split("/").filter(Boolean);
+  if (path59.length === 0) {
     return ctx.rootSchema;
   }
   const defsKey = ctx.version === "draft-2020-12" ? "$defs" : "definitions";
-  if (path57[0] === defsKey) {
-    const key = path57[1];
+  if (path59[0] === defsKey) {
+    const key = path59[1];
     if (!key || !ctx.defs[key]) {
       throw new Error(`Reference not found: ${ref}`);
     }
@@ -31772,8 +31772,42 @@ var run64 = (argv, options = {}) => {
 };
 
 // src/wiki/dead-paths.ts
-import { readdirSync as readdirSync4, readFileSync as readFileSync36, statSync as statSync4 } from "node:fs";
+import { readFileSync as readFileSync36, statSync as statSync5 } from "node:fs";
+import path49 from "node:path";
+
+// src/wiki/util/markdown-corpus.ts
+import { statSync as statSync4 } from "node:fs";
+import path48 from "node:path";
+
+// src/util/tree-walk.ts
+import { readdirSync as readdirSync4 } from "node:fs";
 import path47 from "node:path";
+var normalizeEntry = (entry, separator) => entry.split(separator).join("/");
+var collectTreeFiles = (root, extensions) => readdirSync4(root, { recursive: true, withFileTypes: true }).filter(
+  (entry) => entry.isFile() && extensions.has(path47.extname(entry.name).toLowerCase())
+).map(
+  (entry) => normalizeEntry(
+    path47.relative(root, path47.join(entry.parentPath, entry.name)),
+    path47.sep
+  )
+).toSorted((a, b) => a.localeCompare(b));
+
+// src/wiki/util/markdown-corpus.ts
+var WIKI_DIR = "wiki";
+var MARKDOWN_EXTENSIONS = /* @__PURE__ */ new Set([".md"]);
+var collectWikiMarkdown = (cwd) => {
+  const wikiDir = path48.join(cwd, WIKI_DIR);
+  try {
+    statSync4(wikiDir);
+  } catch {
+    return [];
+  }
+  return collectTreeFiles(wikiDir, MARKDOWN_EXTENSIONS).map(
+    (relativePath) => path48.posix.join(WIKI_DIR, relativePath)
+  );
+};
+
+// src/wiki/dead-paths.ts
 var HELP_TEXT63 = `Usage: gaia wiki dead-paths [--json]
 
   Scan wiki/**/*.md for backticked repo-relative paths under .claude/, .gaia/,
@@ -31825,22 +31859,9 @@ var isTrackedPath = (token) => {
   return TRACKED_PREFIXES.some((prefix) => token.startsWith(prefix));
 };
 var shouldSkipFile = (relPath) => SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
-var walkMarkdown = (root, dir) => {
-  const entries = readdirSync4(dir, { withFileTypes: true });
-  const out = [];
-  for (const entry of entries) {
-    const full = path47.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      out.push(...walkMarkdown(root, full));
-    } else if (entry.isFile() && entry.name.endsWith(".md")) {
-      out.push(path47.relative(root, full));
-    }
-  }
-  return out;
-};
 var pathExists = (root, candidate) => {
   try {
-    statSync4(path47.join(root, candidate));
+    statSync5(path49.join(root, candidate));
     return true;
   } catch {
     return false;
@@ -31859,22 +31880,13 @@ var collectDeadPathsInLine = (ctx, lineNumber, line) => {
   return refs;
 };
 var collectDeadPathsInFile = (ctx) => {
-  const content = readFileSync36(path47.join(ctx.cwd, ctx.filePath), "utf8");
+  const content = readFileSync36(path49.join(ctx.cwd, ctx.filePath), "utf8");
   const lines = content.split("\n");
   return lines.flatMap(
     (line, index) => collectDeadPathsInLine(ctx, index + 1, line)
   );
 };
-var findDeadPaths = (cwd) => {
-  const wikiDir = path47.join(cwd, "wiki");
-  try {
-    statSync4(wikiDir);
-  } catch {
-    return [];
-  }
-  const files = walkMarkdown(cwd, wikiDir);
-  return files.filter((filePath) => !shouldSkipFile(filePath)).flatMap((filePath) => collectDeadPathsInFile({ cwd, filePath }));
-};
+var findDeadPaths = (cwd) => collectWikiMarkdown(cwd).filter((filePath) => !shouldSkipFile(filePath)).flatMap((filePath) => collectDeadPathsInFile({ cwd, filePath }));
 var run65 = (argv, options = {}) => {
   let json3 = false;
   for (const token of argv) {
@@ -32152,8 +32164,8 @@ var run66 = (argv, options = {}) => {
 };
 
 // src/wiki/empty-sections.ts
-import { readdirSync as readdirSync5, readFileSync as readFileSync37, statSync as statSync5 } from "node:fs";
-import path48 from "node:path";
+import { readFileSync as readFileSync37 } from "node:fs";
+import path50 from "node:path";
 
 // src/wiki/util/frontmatter.ts
 var FRONTMATTER_FENCE = "---";
@@ -32238,19 +32250,6 @@ var SKIP_PATHS = /* @__PURE__ */ new Set(["wiki/hot.md", "wiki/log.md"]);
 var ATX_HEADING_PATTERN = /^ {0,3}(#{1,6})(?:\s|$)/u;
 var FENCE_PATTERN = /^\s*(?:```|~~~)/u;
 var shouldSkipFile2 = (relPath) => SKIP_PATHS.has(relPath) || SKIP_PATH_FRAGMENTS2.some((fragment) => relPath.startsWith(fragment));
-var walkMarkdown2 = (root, dir) => {
-  const entries = readdirSync5(dir, { withFileTypes: true });
-  const out = [];
-  for (const entry of entries) {
-    const full = path48.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      out.push(...walkMarkdown2(root, full));
-    } else if (entry.isFile() && entry.name.endsWith(".md")) {
-      out.push(path48.relative(root, full));
-    }
-  }
-  return out;
-};
 var markLastHeadingHasContent = (headings) => {
   const last = headings.at(-1);
   if (last !== void 0) last.hasContent = true;
@@ -32292,23 +32291,12 @@ var findInBody = (body, bodyLineOffset, relPath) => {
     return [{ heading: heading.text, line: heading.line, path: relPath }];
   });
 };
-var findEmptySections = (cwd) => {
-  const wikiDir = path48.join(cwd, "wiki");
-  try {
-    statSync5(wikiDir);
-  } catch {
-    return [];
-  }
-  const files = walkMarkdown2(cwd, wikiDir).toSorted(
-    (a, b) => a.localeCompare(b)
-  );
-  return files.filter((filePath) => !shouldSkipFile2(filePath)).flatMap((filePath) => {
-    const content = readFileSync37(path48.join(cwd, filePath), "utf8");
-    const { body } = parseFrontmatter(content);
-    const offset = content.split("\n").length - body.split("\n").length;
-    return findInBody(body, offset, filePath);
-  });
-};
+var findEmptySections = (cwd) => collectWikiMarkdown(cwd).filter((filePath) => !shouldSkipFile2(filePath)).flatMap((filePath) => {
+  const content = readFileSync37(path50.join(cwd, filePath), "utf8");
+  const { body } = parseFrontmatter(content);
+  const offset = content.split("\n").length - body.split("\n").length;
+  return findInBody(body, offset, filePath);
+});
 var run67 = (argv, options = {}) => {
   let json3 = false;
   for (const token of argv) {
@@ -32356,8 +32344,8 @@ var run67 = (argv, options = {}) => {
 };
 
 // src/wiki/frontmatter.ts
-import { readdirSync as readdirSync6, readFileSync as readFileSync38, statSync as statSync6 } from "node:fs";
-import path49 from "node:path";
+import { readFileSync as readFileSync38 } from "node:fs";
+import path51 from "node:path";
 var HELP_TEXT66 = `Usage: gaia wiki frontmatter [--json]
 
   Scan wiki/**/*.md (excluding wiki/meta/**) for pages missing required
@@ -32369,34 +32357,12 @@ var HELP_TOKENS64 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var REQUIRED_FIELDS = ["type", "status"];
 var SKIP_PATH_FRAGMENTS3 = ["wiki/meta/"];
 var shouldSkipFile3 = (relPath) => SKIP_PATH_FRAGMENTS3.some((fragment) => relPath.startsWith(fragment));
-var walkMarkdown3 = (root, dir) => {
-  const entries = readdirSync6(dir, { withFileTypes: true });
-  const out = [];
-  for (const entry of entries) {
-    const full = path49.join(dir, entry.name);
-    if (entry.isDirectory()) {
-      out.push(...walkMarkdown3(root, full));
-    } else if (entry.isFile() && entry.name.endsWith(".md")) {
-      out.push(path49.relative(root, full));
-    }
-  }
-  return out;
-};
 var hasField = (frontmatter, field) => Object.hasOwn(frontmatter, field) && frontmatter[field] !== null;
 var findFrontmatterGaps = (cwd) => {
-  const wikiDir = path49.join(cwd, "wiki");
-  try {
-    statSync6(wikiDir);
-  } catch {
-    return [];
-  }
   const gaps = [];
-  const files = walkMarkdown3(cwd, wikiDir).toSorted(
-    (a, b) => a.localeCompare(b)
-  );
-  for (const filePath of files) {
+  for (const filePath of collectWikiMarkdown(cwd)) {
     if (!shouldSkipFile3(filePath)) {
-      const content = readFileSync38(path49.join(cwd, filePath), "utf8");
+      const content = readFileSync38(path51.join(cwd, filePath), "utf8");
       const { frontmatter } = parseFrontmatter(content);
       const missing = REQUIRED_FIELDS.filter(
         (field) => !hasField(frontmatter, field)
@@ -32456,7 +32422,7 @@ var run68 = (argv, options = {}) => {
 
 // src/wiki/log-prepend.ts
 import { existsSync as existsSync29, readFileSync as readFileSync39, renameSync as renameSync8, writeFileSync as writeFileSync13 } from "node:fs";
-import path50 from "node:path";
+import path52 from "node:path";
 var HELP_TEXT67 = `Usage: gaia wiki log-prepend --sha <h> --decision <WORTHY|SKIP|RE_ANCHOR> --reason "..."
 
   Prepends one canonical line to wiki/log.md after the frontmatter.
@@ -32557,7 +32523,7 @@ var run69 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const logPath = path50.join(repoRoot, "wiki", "log.md");
+  const logPath = path52.join(repoRoot, "wiki", "log.md");
   if (!existsSync29(logPath)) {
     structuredError({
       code: "log_missing",
@@ -32592,8 +32558,8 @@ var run69 = (argv, options = {}) => {
 };
 
 // src/wiki/near-collisions.ts
-import { existsSync as existsSync30, readdirSync as readdirSync7, statSync as statSync7 } from "node:fs";
-import path51 from "node:path";
+import { existsSync as existsSync30, readdirSync as readdirSync5, statSync as statSync6 } from "node:fs";
+import path53 from "node:path";
 var HELP_TEXT68 = `Usage: gaia wiki near-collisions [--max-distance 3]
 
   Per-domain Levenshtein over slugs. Emits tab-separated rows:
@@ -32639,11 +32605,11 @@ var levenshtein = (a, b) => {
 };
 var isCollectibleSlugFile = (entry) => entry.isFile() && entry.name.endsWith(".md") && !SKIPPED_FILES.has(entry.name) && !entry.name.startsWith("_");
 var collectDomainSlugs = (wikiRoot) => DOMAIN_DIRS.flatMap((domain2) => {
-  const domainDir = path51.join(wikiRoot, domain2);
-  if (!existsSync30(domainDir) || !statSync7(domainDir).isDirectory()) {
+  const domainDir = path53.join(wikiRoot, domain2);
+  if (!existsSync30(domainDir) || !statSync6(domainDir).isDirectory()) {
     return [];
   }
-  const entries = readdirSync7(domainDir, { withFileTypes: true });
+  const entries = readdirSync5(domainDir, { withFileTypes: true });
   const slugs = entries.filter((entry) => isCollectibleSlugFile(entry)).map((entry) => entry.name.replace(/\.md$/u, "")).toSorted(
     (left, right) => left < right ? -1 : left > right ? 1 : 0
   );
@@ -32726,7 +32692,7 @@ var run70 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const wikiRoot = path51.join(repoRoot, "wiki");
+  const wikiRoot = path53.join(repoRoot, "wiki");
   const domainGroups = collectDomainSlugs(wikiRoot);
   const collisions = findCollisions(domainGroups, parsed.flags.maxDistance);
   if (collisions.length === 0) return EXIT_CODES.OK;
@@ -32739,8 +32705,8 @@ var run70 = (argv, options = {}) => {
 };
 
 // src/wiki/page-index.ts
-import { existsSync as existsSync31, readdirSync as readdirSync8, readFileSync as readFileSync40, statSync as statSync8 } from "node:fs";
-import path52 from "node:path";
+import { existsSync as existsSync31, readdirSync as readdirSync6, readFileSync as readFileSync40, statSync as statSync7 } from "node:fs";
+import path54 from "node:path";
 
 // src/wiki/util/wikilinks.ts
 var WIKILINK_PATTERN = /\[\[([^\][]+)\]\]/gu;
@@ -32778,7 +32744,7 @@ var DOMAIN_DIRS2 = [
 ];
 var SKIPPED_FILES2 = /* @__PURE__ */ new Set(["_index.md", "README.md"]);
 var ROOT_LINK_SOURCES = ["index.md", "overview.md", "hot.md"];
-var slugFromPath = (filePath) => path52.basename(filePath, ".md");
+var slugFromPath = (filePath) => path54.basename(filePath, ".md");
 var extractTitle = (body, fallback) => {
   const lines = body.split("\n");
   for (const line of lines) {
@@ -32803,7 +32769,7 @@ var arrayOfStrings = (value) => {
 };
 var isIndexablePage = (entry) => entry.isFile() && entry.name.endsWith(".md") && !SKIPPED_FILES2.has(entry.name) && !entry.name.startsWith("_");
 var readPageRecord = (domainDir, domain2, entry) => {
-  const absPath = path52.join(domainDir, entry.name);
+  const absPath = path54.join(domainDir, entry.name);
   const raw = readFileSync40(absPath, "utf8");
   const { body, frontmatter } = parseFrontmatter(raw);
   const slug = slugFromPath(entry.name);
@@ -32813,7 +32779,7 @@ var readPageRecord = (domainDir, domain2, entry) => {
     body,
     domain: domain2,
     outboundTargets: targets,
-    relativePath: path52.posix.join("wiki", domain2, entry.name),
+    relativePath: path54.posix.join("wiki", domain2, entry.name),
     slug,
     status: stringValue(frontmatter.status),
     tags: arrayOfStrings(frontmatter.tags),
@@ -32822,16 +32788,16 @@ var readPageRecord = (domainDir, domain2, entry) => {
   };
 };
 var collectDomainPages = (wikiRoot, domain2) => {
-  const domainDir = path52.join(wikiRoot, domain2);
-  if (!existsSync31(domainDir) || !statSync8(domainDir).isDirectory()) return [];
-  const entries = readdirSync8(domainDir, { withFileTypes: true });
+  const domainDir = path54.join(wikiRoot, domain2);
+  if (!existsSync31(domainDir) || !statSync7(domainDir).isDirectory()) return [];
+  const entries = readdirSync6(domainDir, { withFileTypes: true });
   return entries.filter((entry) => isIndexablePage(entry)).map((entry) => readPageRecord(domainDir, domain2, entry));
 };
 var collectPages = (wikiRoot) => DOMAIN_DIRS2.flatMap((domain2) => collectDomainPages(wikiRoot, domain2));
 var collectRootLinkSources = (wikiRoot) => ROOT_LINK_SOURCES.filter(
-  (filename) => existsSync31(path52.join(wikiRoot, filename))
+  (filename) => existsSync31(path54.join(wikiRoot, filename))
 ).map((filename) => {
-  const raw = readFileSync40(path52.join(wikiRoot, filename), "utf8");
+  const raw = readFileSync40(path54.join(wikiRoot, filename), "utf8");
   const { body } = parseFrontmatter(raw);
   return extractWikilinks(body);
 });
@@ -32882,7 +32848,7 @@ var printHuman14 = (index) => {
 };
 var computePageIndex = (cwd) => {
   const repoRoot = resolveRepoRoot(cwd);
-  const wikiRoot = path52.join(repoRoot, "wiki");
+  const wikiRoot = path54.join(repoRoot, "wiki");
   const pages = collectPages(wikiRoot);
   const rootSources = collectRootLinkSources(wikiRoot);
   return buildIndex(pages, rootSources);
@@ -32916,7 +32882,7 @@ var run71 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const wikiRoot = path52.join(repoRoot, "wiki");
+  const wikiRoot = path54.join(repoRoot, "wiki");
   const pages = collectPages(wikiRoot);
   const rootSources = collectRootLinkSources(wikiRoot);
   const index = buildIndex(pages, rootSources);
@@ -32937,7 +32903,7 @@ var HELP_TEXT70 = `Usage: gaia wiki orphans [--json]
   title, domain } ] }.
 `;
 var HELP_TOKENS68 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
-var isMaintainerOnly = (path57) => path57.startsWith("wiki/meta/") || path57.startsWith("wiki/entities/");
+var isMaintainerOnly = (path59) => path59.startsWith("wiki/meta/") || path59.startsWith("wiki/entities/");
 var run72 = (argv, options = {}) => {
   let json3 = false;
   for (const token of argv) {
@@ -32994,7 +32960,7 @@ var run72 = (argv, options = {}) => {
 
 // src/wiki/state-bump.ts
 import { existsSync as existsSync32, readFileSync as readFileSync41 } from "node:fs";
-import path53 from "node:path";
+import path55 from "node:path";
 var HELP_TEXT71 = `Usage: gaia wiki state-bump <field> <value>
 
   Updates a single field in wiki/.state.json. Sibling fields and key order
@@ -33065,7 +33031,7 @@ var run73 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const statePath = path53.join(repoRoot, "wiki", ".state.json");
+  const statePath = path55.join(repoRoot, "wiki", ".state.json");
   if (!existsSync32(statePath)) {
     structuredError({
       code: "state_missing",
@@ -33105,7 +33071,7 @@ var run73 = (argv, options = {}) => {
 // src/wiki/state-init.ts
 import { execFileSync as execFileSync7 } from "node:child_process";
 import { existsSync as existsSync33, mkdirSync as mkdirSync18 } from "node:fs";
-import path54 from "node:path";
+import path56 from "node:path";
 var HELP_TEXT72 = `Usage: gaia wiki state-init <sha>
 
   Create wiki/.state.json with {version: 1, last_evaluated_sha,
@@ -33182,8 +33148,8 @@ var run74 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const wikiDir = path54.join(repoRoot, "wiki");
-  const statePath = path54.join(wikiDir, ".state.json");
+  const wikiDir = path56.join(repoRoot, "wiki");
+  const statePath = path56.join(wikiDir, ".state.json");
   if (existsSync33(statePath)) {
     structuredError({
       code: "state_already_exists",
@@ -33207,8 +33173,8 @@ var run74 = (argv, options = {}) => {
 };
 
 // src/wiki/state.ts
-import { existsSync as existsSync34, readdirSync as readdirSync9, readFileSync as readFileSync42, statSync as statSync9 } from "node:fs";
-import path55 from "node:path";
+import { existsSync as existsSync34, readdirSync as readdirSync7, readFileSync as readFileSync42, statSync as statSync8 } from "node:fs";
+import path57 from "node:path";
 var HELP_TEXT73 = `Usage: gaia wiki state [--json]
 `;
 var HELP_TOKENS71 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
@@ -33231,11 +33197,11 @@ var DOMAIN_DIRS3 = [
 var countDomainPages = (wikiRoot) => {
   const counts = {};
   for (const domain2 of DOMAIN_DIRS3) {
-    const domainDir = path55.join(wikiRoot, domain2);
-    if (!existsSync34(domainDir) || !statSync9(domainDir).isDirectory()) {
+    const domainDir = path57.join(wikiRoot, domain2);
+    if (!existsSync34(domainDir) || !statSync8(domainDir).isDirectory()) {
       counts[domain2] = 0;
     } else {
-      const entries = readdirSync9(domainDir, { withFileTypes: true });
+      const entries = readdirSync7(domainDir, { withFileTypes: true });
       let count = 0;
       for (const entry of entries) {
         if (entry.isFile() && entry.name.endsWith(".md") && entry.name !== "_index.md") {
@@ -33320,8 +33286,8 @@ var run75 = (argv, options = {}) => {
     });
     return EXIT_CODES.UNKNOWN_SUBCOMMAND;
   }
-  const wikiRoot = path55.join(repoRoot, "wiki");
-  const statePath = path55.join(wikiRoot, ".state.json");
+  const wikiRoot = path57.join(repoRoot, "wiki");
+  const statePath = path57.join(wikiRoot, ".state.json");
   const stateFile = readStateFile2(statePath);
   const stateSha = stateFile?.last_evaluated_sha ?? "";
   const stateAt = stateFile?.last_evaluated_at ?? "";
@@ -33356,7 +33322,7 @@ var run75 = (argv, options = {}) => {
 
 // src/wiki/sync-await.ts
 import { existsSync as existsSync35, mkdirSync as mkdirSync19, readFileSync as readFileSync43, unlinkSync as unlinkSync2 } from "node:fs";
-import path56 from "node:path";
+import path58 from "node:path";
 var WIKI_SYNC_BRANCH = /^wiki-sync\/\d{4}-\d{2}-\d{2}-[0-9a-f]{7,40}$/u;
 var CEILING_ENV_VAR = "GAIA_WIKI_AWAIT_CEILING_SECONDS";
 var CEILING_DEFAULT_SECONDS = 660;
@@ -33427,8 +33393,8 @@ var lookupPrState = (branch, cwd, runner) => {
   return "closed";
 };
 var stateFilePath2 = (mainRoot, stateDir) => {
-  const dir = stateDir ?? path56.join(mainRoot, ...STATE_DIR_SEGMENTS);
-  return path56.join(dir, STATE_FILENAME2);
+  const dir = stateDir ?? path58.join(mainRoot, ...STATE_DIR_SEGMENTS);
+  return path58.join(dir, STATE_FILENAME2);
 };
 var readAwaitState = (filePath, now) => {
   if (!existsSync35(filePath)) return null;
@@ -33444,7 +33410,7 @@ var readAwaitState = (filePath, now) => {
 };
 var writeAwaitState = (filePath, state) => {
   try {
-    mkdirSync19(path56.dirname(filePath), { recursive: true });
+    mkdirSync19(path58.dirname(filePath), { recursive: true });
     atomicWriteFileSync(filePath, `${JSON.stringify(state)}
 `);
   } catch {
