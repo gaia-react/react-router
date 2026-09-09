@@ -13,7 +13,11 @@ import {readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
-import {collectWikiMarkdown} from './util/markdown-corpus.js';
+import {
+  collectWikiMarkdown,
+  isGeneratedContentExempt,
+  isWikiScanExempt,
+} from './util/markdown-corpus.js';
 
 export const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
 
@@ -45,25 +49,19 @@ const TRACKED_PREFIXES = [
 const SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
 
 /**
- * Wiki files whose own citations are exempt from the scan. The three markdown
- * members match the Exceptions list in `.claude/rules/wiki-style.md`, and keep
- * those in step: none of the three is hand-edited prose, so a dead citation in
- * one is not rot a human can act on, and that rule owns the reasoning.
+ * This scan's own exemption, on top of the two shared tiers it takes from
+ * `util/markdown-corpus.js`.
  *
- * `wiki/.state.json` is outside that correspondence and has no counterpart in
- * the rule. It is a defensive non-markdown entry the markdown corpus can never
- * yield, so neither adding it to that prose rule nor deleting it here follows
- * from the sentence above.
+ * `wiki/.state.json` has no counterpart in either shared tier and none in
+ * `.claude/rules/wiki-style.md`. It is a defensive non-markdown entry the
+ * markdown corpus can never yield, so neither promoting it to the shared
+ * vocabulary nor deleting it here follows from anything the shared tiers say.
+ * Matched by prefix, as it always has been.
  *
- * `HELP_TEXT` above restates the markdown members in prose. Nothing in the
- * language couples the two, so a test asserts it in both directions.
+ * Exported for the help-text drift guard in the tests, which reads it beside
+ * the two shared tiers to reconstruct what this scan actually skips.
  */
-export const SKIP_PATH_FRAGMENTS = [
-  'wiki/log.md',
-  'wiki/hot.md',
-  'wiki/meta/',
-  'wiki/.state.json',
-] as const;
+export const LOCAL_EXEMPT_PREFIX = 'wiki/.state.json';
 
 /**
  * Repo-relative prefixes that resolve to gitignored runtime artifacts. Wiki
@@ -194,8 +192,15 @@ const isTrackedPath = (token: string): boolean => {
   return TRACKED_PREFIXES.some((prefix) => token.startsWith(prefix));
 };
 
+// A dead citation is a content finding, so this scan takes the shared
+// generated-content tier alongside the base, then its own entry above.
+//
+// `HELP_TEXT` restates the markdown members of these three in prose. Nothing in
+// the language couples the two, so a test asserts it in both directions.
 const shouldSkipFile = (relPath: string): boolean =>
-  SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
+  isWikiScanExempt(relPath) ||
+  isGeneratedContentExempt(relPath) ||
+  relPath.startsWith(LOCAL_EXEMPT_PREFIX);
 
 const pathExists = (root: string, candidate: string): boolean => {
   try {

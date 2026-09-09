@@ -9,9 +9,13 @@ import {
   ADOPTER_OWNED_SENTINELS,
   findDeadPaths,
   HELP_TEXT,
+  LOCAL_EXEMPT_PREFIX,
   run,
-  SKIP_PATH_FRAGMENTS,
 } from './dead-paths.js';
+import {
+  GENERATED_CONTENT_EXEMPT_PATHS,
+  WIKI_SCAN_EXEMPT_PREFIXES,
+} from './util/markdown-corpus.js';
 
 type Sandbox = {
   cleanup: () => void;
@@ -293,13 +297,25 @@ describe('wiki dead-paths', () => {
     // either can gain or lose a member the other never does (#1878). Both
     // directions are asserted: one of them alone leaves half the drift silent.
     //
-    // Array to prose. Every entry is checked unless named below, so a new one
-    // is covered by default rather than by remembering to widen a predicate.
-    // `wiki/.state.json` is named because the markdown corpus collects `.md`
-    // files only: no non-markdown entry can ever match a scanned path, so it is
-    // unreachable and correctly absent from the help text.
-    const notNamedInHelp = new Set(['wiki/.state.json']);
-    const documented = SKIP_PATH_FRAGMENTS.filter(
+    // Array to prose. Every entry of the list below is checked unless named as
+    // an exception, so widening a tier is covered by default. What is NOT
+    // covered, and this is the honest limit of this direction: the list is
+    // rebuilt here from the same three sources `shouldSkipFile` composes, so a
+    // FOURTH source added there reaches neither this list nor the help text and
+    // both directions stay green. The prose-to-array direction below is the
+    // mechanically coupled half; this half is a hand-kept mirror of a
+    // three-part composition.
+    //
+    // `wiki/.state.json` is named as an exception because the markdown corpus
+    // collects `.md` files only: no non-markdown entry can ever match a scanned
+    // path, so it is unreachable and correctly absent from the help text.
+    const exempt: readonly string[] = [
+      ...GENERATED_CONTENT_EXEMPT_PATHS,
+      ...WIKI_SCAN_EXEMPT_PREFIXES,
+      LOCAL_EXEMPT_PREFIX,
+    ];
+    const notNamedInHelp = new Set([LOCAL_EXEMPT_PREFIX]);
+    const documented = exempt.filter(
       (fragment) => !notNamedInHelp.has(fragment)
     );
 
@@ -321,8 +337,28 @@ describe('wiki dead-paths', () => {
     expect(namedInHelp).toHaveLength(documented.length);
 
     for (const fragment of namedInHelp) {
-      expect(SKIP_PATH_FRAGMENTS).toContain(fragment);
+      expect(exempt).toContain(fragment);
     }
+  });
+
+  test('scans a page whose path merely starts with an exempt page name', () => {
+    // The two generated pages are matched exactly rather than by prefix
+    // (#1891), which narrows what this scan skips: a page that only starts
+    // with one of their names is ordinary hand-edited prose and its dead
+    // citations are real rot. The prefix form this scan used before would
+    // have swallowed it.
+    sandbox.writeFile(
+      'wiki/log.md-archive.md',
+      '# Archive\n\nSee `.claude/hooks/gone.sh`.\n'
+    );
+
+    expect(findDeadPaths(sandbox.root)).toEqual([
+      {
+        filePath: 'wiki/log.md-archive.md',
+        line: 3,
+        path: '.claude/hooks/gone.sh',
+      },
+    ]);
   });
 
   test('detects dead paths under .gaia/ and app/ as well as .claude/', () => {

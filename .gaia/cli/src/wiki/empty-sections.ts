@@ -25,7 +25,11 @@ import path from 'node:path';
 import {EXIT_CODES} from '../exit.js';
 import {structuredError} from '../stderr.js';
 import {parseFrontmatter} from './util/frontmatter.js';
-import {collectWikiMarkdown} from './util/markdown-corpus.js';
+import {
+  collectWikiMarkdown,
+  isGeneratedContentExempt,
+  isWikiScanExempt,
+} from './util/markdown-corpus.js';
 
 const HELP_TEXT = `Usage: gaia wiki empty-sections [--json]
 
@@ -38,9 +42,6 @@ const HELP_TEXT = `Usage: gaia wiki empty-sections [--json]
 `;
 
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
-
-const SKIP_PATH_FRAGMENTS = ['wiki/meta/'] as const;
-const SKIP_PATHS = new Set(['wiki/hot.md', 'wiki/log.md']);
 
 const ATX_HEADING_PATTERN = /^ {0,3}(#{1,6})(?:\s|$)/u;
 const FENCE_PATTERN = /^\s*(?:```|~~~)/u;
@@ -55,9 +56,11 @@ type RunOptions = {
   cwd?: string;
 };
 
+// An empty section is a content finding, so this scan takes the shared
+// generated-content tier alongside the base: a missing body in a page that is
+// regenerated is not something a human edits back in.
 const shouldSkipFile = (relPath: string): boolean =>
-  SKIP_PATHS.has(relPath) ||
-  SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
+  isWikiScanExempt(relPath) || isGeneratedContentExempt(relPath);
 
 type Heading = {
   hasContent: boolean;
