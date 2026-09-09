@@ -11,6 +11,19 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-09 2b72247b WORTHY - sync playbook gains Step 5c shipped-surface boundary check -> wiki/decisions/Wiki Management.md new Shipped-surface boundary check section
+- 2026-09-09 4cf1a9cc WORTHY - shared jq-availability arm closes fail-open across blocking PreToolUse hooks -> wiki/concepts/Claude Hooks.md 'Shared jq-availability decision' section already added inline
+- 2026-09-09 9a456ba3 SKIP - internal refactor routing four hand-rolled CLI tree walks through collectTreeFiles, no documented-contract change
+- 2026-09-09 d93b964d SKIP - tests-only
+- 2026-09-09 d6aa6d83 SKIP - internal CLI test-fixture consolidation for uniqueness guards, no documented-contract change
+- 2026-09-09 7abb756c SKIP - tests-only
+- 2026-09-09 cc4a5c8a SKIP - brought dead-paths scanner in line with pre-existing wiki-style.md hot.md exemption claim, no new wiki fact
+- 2026-09-09 10f68dfc SKIP - tests-only
+- 2026-09-09 aa81e38d SKIP - tests-only
+- 2026-09-09 2df85cb7 SKIP - tests-only
+- 2026-09-09 87d9ac8c SKIP - tests-only
+- 2026-09-09 30cca068 WORTHY - dead-paths scan gains GITIGNORED_LOCAL_FILES exemption -> wiki/decisions/Wiki Management.md dead-paths bullet already updated inline
+- 2026-09-09 f1ab27f4 SKIP - prior wiki sync's own commit (advances state/log), no new content to catalogue
 - 2026-09-08 d4e4d58 SKIP - errexit-source guard scan_roots widened to .github, page deliberately defers guard-surface detail to the guard's own header (precedent: log 4a55dc40)
 - 2026-09-08 2ed6816 SKIP - internal refactor consolidating whole-tree guard walks into a shared module, no CHANGELOG entry, no documented-contract change
 - 2026-09-08 51e8428 WORTHY - dead-path scan gains HYPOTHETICAL_EXAMPLE_PATHS exemption -> wiki/decisions/Wiki Management.md dead-paths bullet updated
