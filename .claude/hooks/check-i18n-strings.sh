@@ -7,6 +7,10 @@ set -euo pipefail
 trap 'exit 0' ERR
 
 payload=$(cat)
+# Advisory, so this stands down rather than refusing: the arm a blocking hook
+# takes instead is .claude/hooks/lib/jq-availability.sh.
+command -v jq >/dev/null 2>&1 || exit 0
+
 file_path=$(jq -r '.tool_input.file_path // ""' <<<"$payload" 2>/dev/null || echo "")
 
 # Only check page and component files

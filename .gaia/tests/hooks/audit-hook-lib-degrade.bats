@@ -57,7 +57,9 @@
 # which is what BASH_SOURCE-based resolution reads, against a control copy
 # beside a real `lib`. Same argv, same stdin: an absent library must not change
 # the hook's verdict at this point, because both paths reach the same
-# downstream precondition.
+# downstream precondition. The one library that does change it is the
+# jq-availability arm, which a blocking hook may not run without; that refusal
+# is asserted as its own outcome rather than exempted, in the test below.
 
 setup() {
   REPO_ROOT=$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)
@@ -269,6 +271,24 @@ lib_degrade_candidates() {
     if [ -z "$degraded_out" ]; then
       printf 'hook %s produced no output with lib absent\n' "$hook" >&2
       return 1
+    fi
+
+    # One library is the exception, and it is an exception by design rather than
+    # a verdict slipping through. A blocking hook may not run without its
+    # jq-availability arm (.claude/hooks/lib/jq-availability.sh): with the arm
+    # unloadable the hook cannot read its payload at all, so it refuses instead
+    # of proceeding. That refusal IS its own reporting path, which is what this
+    # test is really about, and it is recognised by the message it prints rather
+    # than by a list of hook names, so a hook that grows the arm is covered with
+    # no edit here. The status is asserted rather than waved past: only 2 blocks,
+    # and any other non-zero would be the fail-open this arm exists to close.
+    if grep -qF -- 'cannot load lib/jq-availability.sh' <<<"$degraded_out"; then
+      if [ "$degraded_rc" -ne 2 ]; then
+        printf 'hook %s: the jq-availability arm reported but exited %s, and only 2 blocks\n' \
+          "$hook" "$degraded_rc" >&2
+        return 1
+      fi
+      continue
     fi
 
     # An absent library did not change the verdict.

@@ -145,6 +145,18 @@ Four residuals survive the shared decision, all fail-closed:
 - A dollar-quoted word (`$'…'`) is unmodelled; the decision abandons suppression on one rather than approximate it.
 - The tokenizer's bounded read of the first command's opening characters can itself create an arm no data proof removes, when truncation at that bound leaves a word reading as the verb.
 
+### Shared jq-availability decision
+
+A hook reads its payload with `jq`. On a machine with no `jq` on `PATH` that read ends the script at status 127 before the payload has been looked at, and the PreToolUse contract blocks only on exit 2 and treats every other non-zero status as a non-blocking error. So the call the hook was written to deny proceeds, with no denial and no diagnostic, and the whole fail-closed layer goes inert at once while the advisory hooks correctly no-op.
+
+Every blocking PreToolUse hook therefore reaches one shared arm before its first `jq` call, and refuses with exit 2 rather than falling through. The refusal cannot route through a hook's own `deny()` helper, which builds its JSON response with `jq`; the exit-code contract needs no interpreter at all.
+
+The arm refuses **narrowly** where the hook's matcher can reach the `jq` install itself. A hook that cannot read its payload also cannot tell whether the call is one it binds, so an unconditional refusal on a `Bash`-matcher hook would deny every command in the session including the one that repairs the machine. Such a hook passes the literals whose absence from the raw payload proves the call sits outside its remit; absence allows. Presence is not proof of membership, and that over-deny is the safe direction. A hook whose matcher cannot reach the install refuses unconditionally within that matcher.
+
+An **advisory** hook takes the opposite arm and stands down, because a lost reminder costs less than a blocked session.
+
+`.claude/hooks/lib/jq-availability.sh` owns the arm and the literal contract; each hook states beside its own call which spellings its literals cannot reach. `.gaia/scripts/lint-hook-jq-availability.sh` holds the layer to it, deriving its subject set from the PreToolUse registrations so a newly registered hook carries the obligation the moment it is registered, and carrying the blocking-versus-advisory question in the same shared oracle the advisory-classification gate reads.
+
 ### Wiki coherence (multiple events)
 
 The wiki sync system is convergent: the user's already-paid-for Claude session does the work via `/gaia-wiki sync`. Hooks only keep Claude _informed_; they never spawn `claude -p` sub-processes. See [[Wiki Sync]] for the full design.

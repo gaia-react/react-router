@@ -344,6 +344,12 @@
       "why": "Reads the tracked .gaia/VERSION file at a path its caller supplies; derives no root of its own and touches no tree-scoped state."
     },
     {
+      "hook": ".claude/hooks/lib/jq-availability.sh",
+      "scope": "any",
+      "state": [],
+      "why": "A pure decision over its own parameters: it asks PATH whether jq resolves and tests the raw payload string it is handed against the caller's binding literals, reading no file and writing none, so there is no root to resolve and no .gaia/local state to belong to."
+    },
+    {
       "hook": ".claude/hooks/lib/reader-operands.sh",
       "scope": "any",
       "state": [],

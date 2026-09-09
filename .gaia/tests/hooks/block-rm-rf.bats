@@ -1392,8 +1392,13 @@ assert_position_preserving() {
 stage_rmrf_tree() {
   STAGED_ROOT="$BATS_TEST_TMPDIR/staged"
   rm -rf "$STAGED_ROOT"
-  mkdir -p "$STAGED_ROOT/.claude/hooks" "$STAGED_ROOT/.gaia/scripts"
+  mkdir -p "$STAGED_ROOT/.claude/hooks/lib" "$STAGED_ROOT/.gaia/scripts"
   cp "$HOOK_ABS" "$STAGED_ROOT/.claude/hooks/"
+  # The jq-availability arm runs ahead of everything these fixtures degrade, and
+  # refuses when it cannot load its own library, so a staged tree without it
+  # would answer every case below with that refusal rather than with the
+  # degrade under test.
+  cp "$HOOKS_SRC/lib/jq-availability.sh" "$STAGED_ROOT/.claude/hooks/lib/"
   cp "${HOOKS_SRC%/.claude/hooks}/.gaia/scripts/main-root-lib.sh" \
      "${HOOKS_SRC%/.claude/hooks}/.gaia/scripts/state-registry-lib.sh" \
      "$STAGED_ROOT/.gaia/scripts/"

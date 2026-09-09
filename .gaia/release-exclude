@@ -184,6 +184,10 @@
 .gaia/scripts/list-tracked-paths.sh
 # Deterministic lint over GAIA's own hook layer; every runner (shell-lint.sh and its sibling bats suite) is release-excluded, so an adopter clone would carry a check nothing invokes. The repaired hooks themselves ship.
 .gaia/scripts/lint-hook-cwd-relative-loads.sh
+# Deterministic lint over GAIA's own hook layer, withheld on the same terms as its two siblings above: every runner is release-excluded, so an adopter clone would carry a check nothing invokes. The shared arm it enforces (.claude/hooks/lib/jq-availability.sh) and the hooks reaching it both ship.
+.gaia/scripts/lint-hook-jq-availability.sh
+# The PreToolUse registration read and blocking oracle the two hook-layer gates share. Both consumers are withheld above, so an adopter clone would carry a library nothing sources.
+.gaia/scripts/hook-registration-lib.sh
 
 # --- 2. Maintainer-only wiki content ---
 # Internal vault administration files and team-specific knowledge that

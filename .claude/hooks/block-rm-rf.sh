@@ -91,9 +91,10 @@
 # of the above: it turns on the destructive flag, which the guard already required,
 # and never on whether a token sits in command position, which it cannot know.
 #
-# `jq` is a hard dependency: without it the hook exits non-zero, which Claude
-# Code treats as a non-blocking error, so the command proceeds unguarded
-# (loudly, on stderr, never bricking the session).
+# `jq` is a hard dependency, and its absence refuses rather than falling through:
+# the arm in `main` denies any command carrying the literal `rm` while jq is off
+# PATH, and allows every other command so the install that repairs the machine
+# still runs. .claude/hooks/lib/jq-availability.sh owns the shape.
 #
 # This is heuristic defense-in-depth behind settings.json permissions, not a
 # sandbox. It is the second layer, never the first.
@@ -269,10 +270,11 @@ main() {
   set -euo pipefail
 
   # Declared, not assigned: `local x=$(cmd)` would mask a non-zero status behind
-  # `local`'s own exit code and defeat the errexit above, which is what carries the
-  # fail-open on a missing jq. The file is sourceable, so scoping these also keeps a
-  # caller that invokes `main` from having its own globals clobbered.
-  local payload cmd rm_segments rm_segment tokens tok i first_seg
+  # `local`'s own exit code and defeat the errexit above, so a jq that failed for
+  # a reason the arm below does not cover would read as a successful empty parse.
+  # The file is sourceable, so scoping these also keeps a caller that invokes
+  # `main` from having its own globals clobbered.
+  local payload cmd rm_segments rm_segment tokens tok i first_seg _jq_lib_dir
   # rm_whitelist is INITIALIZED, not merely declared: it is assigned only inside the
   # `command -v` branch below, so an unreadable registry left it unset and the read at
   # the absolute-path arm died on `set -u` before any deny arm ran. That made the
@@ -283,6 +285,24 @@ main() {
   local gaia_scripts rm_whitelist=""
 
   payload=$(cat)
+  # jq-availability arm: refuse loudly rather than fail open when the interpreter
+  # this hook reads its payload with is absent. What that buys, and the contract
+  # the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+  _jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+  set +e
+  # shellcheck source=lib/jq-availability.sh
+  [ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+  set -e
+  if ! type gaia_require_jq >/dev/null 2>&1; then
+    printf 'BLOCKED: block-rm-rf.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+    exit 2
+  fi
+  gaia_require_jq 'the dangerous-rm guard' "$payload" 'rm'
+  # The literal cannot reach the quote- and backslash-split spellings the
+  # tokenizer below resolves (`r\m`, `r""m`), so those are allowed while jq is
+  # absent. Strictly better than the status quo it replaces, which allowed every
+  # spelling, and closing it needs the tokenizer this arm runs ahead of.
+
   cmd=$(jq -r '.tool_input.command // empty' <<<"$payload")
 
   [[ -n "$cmd" ]] || exit 0

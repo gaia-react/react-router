@@ -65,6 +65,21 @@
 set -uo pipefail
 
 payload=$(cat)
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: block-spec-plan-chain.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the spec-to-plan chain guard' "$payload" 'gaia-plan' 'plan.md'
+# The literals are the DENY side only. A spec session running with no jq
+# therefore records no stamp, so the plan it is barred from is allowed once jq
+# returns. Stamping is the allow side, and refusing on it would deny the very
+# sessions this hook exists to let through.
 
 event=$(jq -r '.hook_event_name // empty' <<<"$payload" 2>/dev/null) || exit 0
 session=$(jq -r '.session_id // empty' <<<"$payload" 2>/dev/null) || exit 0
