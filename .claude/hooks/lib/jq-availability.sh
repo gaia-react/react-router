@@ -49,6 +49,13 @@
 # payload that carries the key nowhere falls back to the whole document rather
 # than to an empty one, because an empty haystack would allow instead of refuse.
 #
+# That prefix strip is the first of two narrowing stages, so "a field emitted
+# after the key stays in the surface" holds for every such field except one. The
+# second stage drops the model-authored `description` field's own value, from
+# either side of the key, because no caller predicate reads it. The in-body
+# comment at that cut owns the reasoning, the ordering hazard it exists to close,
+# and the shapes it does not reach.
+#
 # The literal set is a reading of the caller's own binding predicate rather than
 # a policy choice about it, so it belongs at the call site and never here. Each
 # caller states beside its call which spellings its literals cannot reach.
@@ -124,10 +131,12 @@ gaia_require_jq() {
       # description. That is the session with no way out the literals exist to
       # prevent.
       #
-      # LAST occurrence, and both expansions pick the same one: a command whose
-      # own text carries the field name leaves the real description standing,
-      # which only widens the haystack, while cutting at the first would drop
-      # real command text, the under-deny direction.
+      # LAST occurrence, and both expansions pick the same one. In an object,
+      # which is every shape the harness emits here, a payload whose own text
+      # carries the field name leaves the real description standing, which only
+      # widens the haystack, while cutting at the first would drop real command
+      # text, the under-deny direction. The limit below is why that sentence
+      # names the object shapes rather than every payload.
       #
       # The pattern is the quoted KEY alone, with no leading comma and no
       # trailing colon, because the separators are not stable: a compact encoder
@@ -136,11 +145,20 @@ gaia_require_jq() {
       # for both, and for a payload that carries no description at all the case
       # below matches nothing and leaves the haystack whole.
       #
-      # HONEST LIMIT of the value scan: it ends the value at the first `"` after
-      # the opening one, so a description carrying an escaped quote ends it early
-      # and leaves the remainder of the prose in the haystack. That is the
-      # widening direction, the same one an unstripped description produces, and
-      # it costs a denial rather than an allow.
+      # HONEST LIMITS of the value scan, one in each direction. It ends the value
+      # at the first `"` after the opening one, so a description carrying an
+      # escaped quote ends early and leaves the remainder of the prose in the
+      # haystack: the widening direction, the same one an unstripped description
+      # produces, costing a denial rather than an allow.
+      #
+      # The other runs the under-deny way. The scan assumes the token it matched
+      # is a KEY and drops the quoted run after it. Where the token is instead a
+      # bare quoted VALUE followed by a sibling quoted run, an array of strings
+      # being the shape that does that, the sibling is what gets eaten, and a
+      # binding literal sitting there goes with it. No payload the harness emits
+      # reaches it: JSON escapes a quoted word inside a command to
+      # `\"description\"`, which the case guard does not match, and in an object
+      # only the following key NAME is eaten, never its value.
       #
       # The two sides are joined with a space so the seam cannot spell a literal
       # that neither side carries on its own.
