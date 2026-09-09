@@ -168,7 +168,7 @@ Because the run aborts before Step 8/9, no `CONSOLIDATE_TRIGGERED` line is emitt
 
 Skip the step entirely when Step 5b's `CONTENT_CHANGES` is empty. An all-SKIP run authored no page and owes neither obligation.
 
-It sits here, ahead of Step 6 and Step 7, so an abort has the same shape as Step 5b's: state not advanced, nothing committed, nothing pushed. Standalone, Step 7 opens the pull request itself; in the full chain the router opens one at the end. Running before Step 7 is ahead of the pull request either way.
+It sits here, ahead of Step 6 and Step 7, so an abort has the same shape as Step 5b's, state not advanced, nothing committed, nothing pushed, and so it runs ahead of the pull request whichever caller opens one. Step 7 owns that split.
 
 ### 5c.1 Stage the authored pages first
 
@@ -187,11 +187,16 @@ bash .gaia/tests/distribution/lib/build-staging.sh "$staging"
 
 This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of the pull request. That job is advisory by its own design and never gates a merge, so what this step buys is not a gate but the report arriving while the run that wrote the prose is still holding it. The output directory has to exist and be empty, hence a fresh `mktemp -d` per attempt rather than a reused path.
 
-**Read the output, not the exit status alone.** Exit 1 is not a synonym for "leak": the script also spends it on a missing or non-executable `.gaia/cli/gaia-maintainer`, an output directory that is absent or non-empty, and a failure of its own tracked-path discovery or exclude-regex compile. Branch on what the output carries, not on a list of statuses:
+**Branch on the section header the output carries, never on the exit status.** Exit 1 is not a synonym for "leak": the script spends it on three different report sections and on several environment faults alike, so the status alone cannot tell a prose defect from a missing binary.
 
 - **Exit 0** is clean. Proceed to 5c.4.
-- **Exit 1 carrying `leaks (N):` lines**, each shaped `[<check-id>] <path>:<line>  <match>`, is the repair case 5c.3 owns.
-- **Every other exit** is an environment fault, not prose. Stated as a complement deliberately: the script runs under `set -e`, so a failing tool's own status propagates rather than being normalized, and an rsync or version-control failure surfaces as that tool's number. Enumerating the statuses would leave a reader holding an unlisted one with no branch. The commonest fault is a missing or non-executable maintainer binary, which the script names along with the `pnpm -C .gaia/cli bundle` that produces it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome, so looping there spends three attempts and then aborts a sync over a build artifact.
+- **Exit 1 carrying any of the three report sections** is the repair case 5c.3 owns, and each attempt counts against its bound:
+  - `leaks (N):`, lines shaped `[<check-id>] <path>:<line>  <match>`, a release-scrub check.
+  - `unbalanced markers (N):`, lines shaped `<path>:<line>  <reason>`, a maintainer-only marker pair that does not close. **This section prints alongside the literal line `leaks: none`**, so a run keyed on the word "leak" reads it as clean-but-failing and finds no branch. 5c.3's own first repair is what produces it, since adding a marker pair is how a block gets unbalanced.
+  - `runtime-dependency leaks (N):`, a shipped script reaching for something the bundle does not carry.
+- **Everything else** is an environment fault, not prose: exit 1 with none of those sections, and any other exit at all. Stated as a complement deliberately, because the script runs under `set -e` and a failing tool's own status propagates rather than being normalized, so an rsync or version-control failure surfaces as that tool's number and an enumeration would leave a reader holding an unlisted one. The commonest fault is a missing or non-executable maintainer binary, which the script names along with the `pnpm -C .gaia/cli bundle` that produces it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome.
+
+Getting that split wrong in either direction costs a run. Reading a repair case as an environment fault loops without bound on something a page edit would fix, because this arm is the one that says editing cannot help; reading an environment fault as a repair case spends three attempts editing prose and then aborts a sync over a build artifact.
 
 Leave the staging tree where `mktemp` put it, exactly as the CI step does. Removing it needs a recursive delete of an absolute path, which `.claude/hooks/` denies, so a cleanup line here would read as a prescribed step that is refused every time it runs.
 
