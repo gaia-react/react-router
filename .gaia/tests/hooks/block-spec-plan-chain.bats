@@ -336,17 +336,11 @@ assert_allowed() {
   local settings="${HOOKS_SRC%/hooks}/settings.json"
   # PreToolUse: the Skill arm (stamp + deny), the Bash arm (stamp), the Read arm
   # (deny). SessionStart: the /clear release.
-  local matchers
-  matchers=$(jq -r '
-    .hooks.PreToolUse[]
-    | select(.hooks[].command | test("block-spec-plan-chain"))
-    | .matcher' "$settings")
-  [[ "$matchers" == *"Skill"* ]]
-  [[ "$matchers" == *"Bash"* ]]
-  [[ "$matchers" == *"Read"* ]]
-
-  run jq -e '
-    .hooks.SessionStart[]
-    | select(.hooks[].command | test("block-spec-plan-chain"))' "$settings"
-  [ "$status" -eq 0 ]
+  hook_registered "$settings" \
+    '.hooks.PreToolUse[] | select(.matcher == "Skill")' block-spec-plan-chain.sh
+  hook_registered "$settings" \
+    '.hooks.PreToolUse[] | select(.matcher == "Bash")' block-spec-plan-chain.sh
+  hook_registered "$settings" \
+    '.hooks.PreToolUse[] | select(.matcher == "Read")' block-spec-plan-chain.sh
+  hook_registered "$settings" '.hooks.SessionStart[]' block-spec-plan-chain.sh
 }

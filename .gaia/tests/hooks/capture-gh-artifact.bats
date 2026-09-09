@@ -323,8 +323,8 @@ any_breadcrumb_exists() {
 # ---------- Registration ----------
 
 @test "registered in .claude/settings.json's PostToolUse Bash matcher" {
-  jq -r '.hooks.PostToolUse[] | select(.matcher == "Bash") | .hooks[].command' \
-    "$REPO_ROOT/.claude/settings.json" | grep -qF ".claude/hooks/capture-gh-artifact.sh"
+  hook_registered "$REPO_ROOT/.claude/settings.json" \
+    '.hooks.PostToolUse[] | select(.matcher == "Bash")' capture-gh-artifact.sh
 }
 
 @test "the hook file is executable" {
