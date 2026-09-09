@@ -94,19 +94,31 @@ const BATS_AWK_INVOCATION =
  */
 const BATS_AWK_BLOCK = `${BATS_AWK_INVOCATION} '${AWK_PROGRAM}'`;
 
+const MARKER_STRIP_TRANSFORMS = loadConfig(
+  path.join(REPO_ROOT, '.gaia/release-scrub.yml')
+).transforms.filter((transform) => transform.type === 'marker-strip');
+
 /**
  * Every marker-strip transform's delimiter pair, keyed by start marker.
  * `.gaia/release-scrub.yml` declares more than one: the shell-and-YAML
  * transform and the `.prettierignore` one share the `#`-comment spellings,
  * while the markdown transform uses HTML-comment spellings. A suite is held to
  * membership in this set rather than to one chosen transform, because which
- * transform governs a suite is decided by the files that suite strips.
+ * transform governs a suite is decided by the files that suite strips, which
+ * no parse of the suite recovers.
+ *
+ * Membership alone is weaker than naming the governing transform, in exactly
+ * one direction: two transforms declare the `#` pair, so a shell transform
+ * that respelled while `.prettierignore` kept the old pair would leave the key
+ * in this map and every shell-stripping suite passing. The last test in this
+ * file closes that direction by pinning the shell transform's own pair.
  */
 const DECLARED_DELIMITERS = new Map(
-  loadConfig(path.join(REPO_ROOT, '.gaia/release-scrub.yml'))
-    .transforms.filter((transform) => transform.type === 'marker-strip')
-    .map((transform) => [transform.start, transform.end])
+  MARKER_STRIP_TRANSFORMS.map((transform) => [transform.start, transform.end])
 );
+
+/** The glob naming the transform that governs shell files. */
+const SH_TRANSFORM_GLOB = '**/*.sh';
 
 /** The pair governing shell files, the corpus below runs against it. */
 const START_MARKER = '# gaia:maintainer-only:start';
@@ -271,8 +283,24 @@ describe('marker-strip lockstep (#1742)', () => {
       const start = START_DECLARATION.exec(text)?.groups?.value;
       const end = END_DECLARATION.exec(text)?.groups?.value;
 
+      // Both sides are guarded: `get` on an absent key and an unmatched END
+      // declaration both yield undefined, so asserting only their equality
+      // would certify a suite that declares neither.
       expect(start).toBeDefined();
+      expect(end).toBeDefined();
       expect(DECLARED_DELIMITERS.get(start ?? '')).toBe(end);
     }
   );
+
+  // The membership check above cannot see a respelling of the shell transform
+  // alone, because `.prettierignore` declares the same pair and keeps the key
+  // alive. This pins the transform the corpus actually runs against.
+  test('the transform governing shell files declares the pair the corpus uses', () => {
+    const shellTransform = MARKER_STRIP_TRANSFORMS.find((transform) =>
+      transform.paths.includes(SH_TRANSFORM_GLOB)
+    );
+
+    expect(shellTransform?.start).toBe(START_MARKER);
+    expect(shellTransform?.end).toBe(END_MARKER);
+  });
 });
