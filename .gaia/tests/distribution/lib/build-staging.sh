@@ -10,8 +10,13 @@
 #
 # Exit codes:
 #   0; staged tree clean (scrub passed, runtime-deps passed)
-#   1; bad usage, missing binary, scrub leak, runtime-deps leak
-#   2; unexpected (rsync/git failure, IO error)
+#   anything else; a failure. Some are this script's own refusals, which
+#     each print a diagnostic naming the cause; the rest are propagated by
+#     the `set -e` below and carry whatever status the failing command
+#     spends, in some cases silently, a filter that selects no lines among
+#     them. The only boundary a caller can rely on is zero versus non-zero,
+#     so branch on that and read stderr: no particular value is this
+#     script's to promise, and any list of them here would go short.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
