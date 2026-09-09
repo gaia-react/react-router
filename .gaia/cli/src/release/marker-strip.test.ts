@@ -28,11 +28,17 @@
  *    pass against a spelling the release retired. The pair is per suite
  *    because the surfaces differ: a suite stripping shell reads the
  *    `#`-comment transform, one stripping markdown the HTML-comment transform.
+ * 4. The marker-strip transform governing shell files declares the pair the
+ *    corpus's own literals spell, so the corpus is provably pointed at the
+ *    transform it claims to test. Assertion 3 cannot say this: it asks only
+ *    that SOME transform declare a suite's pair, and two of them declare the
+ *    `#` pair.
  *
  * The corpus runs against one delimiter pair rather than every declared pair,
  * and that is not a gap: both sides take their markers as parameters, so the
- * state machine cannot branch on the spelling. Assertion 1 proves the machine
- * and assertion 3 proves the spellings, each once.
+ * state machine cannot branch on the spelling. Assertion 1 proves the machine,
+ * assertion 3 proves each suite's spellings, and assertion 4 proves the pair
+ * the corpus itself runs against, each once.
  *
  * # What it does not catch
  *
@@ -107,11 +113,12 @@ const MARKER_STRIP_TRANSFORMS = loadConfig(
  * transform governs a suite is decided by the files that suite strips, which
  * no parse of the suite recovers.
  *
- * Membership alone is weaker than naming the governing transform, in exactly
- * one direction: two transforms declare the `#` pair, so a shell transform
- * that respelled while `.prettierignore` kept the old pair would leave the key
- * in this map and every shell-stripping suite passing. The last test in this
- * file closes that direction by pinning the shell transform's own pair.
+ * Membership is a weaker statement than naming the governing transform, and
+ * this map's shape is why: it is keyed by start marker, and two transforms
+ * declare the `#` start, so `get` returns whichever of them the YAML lists
+ * last. A value read out of here is therefore not safe to pin a transform
+ * against. The last test in this file names the shell transform directly and
+ * pins both halves of its pair against literals instead.
  */
 const DECLARED_DELIMITERS = new Map(
   MARKER_STRIP_TRANSFORMS.map((transform) => [transform.start, transform.end])
@@ -120,15 +127,17 @@ const DECLARED_DELIMITERS = new Map(
 /** The glob naming the transform that governs shell files. */
 const SH_TRANSFORM_GLOB = '**/*.sh';
 
-/** The pair governing shell files, the corpus below runs against it. */
+/**
+ * The pair governing shell files, the corpus below runs against it. Both halves
+ * are literals rather than lookups into `DECLARED_DELIMITERS`: that map is keyed
+ * by start marker and two transforms declare this start, so a value read out of
+ * it is whichever of them the YAML lists last, which would make an assertion
+ * pinning the shell transform against it compare a value with itself. Literals
+ * are what let the last test in this file assert both halves against the config
+ * and have either half fail.
+ */
 const START_MARKER = '# gaia:maintainer-only:start';
-const END_MARKER = DECLARED_DELIMITERS.get(START_MARKER);
-
-if (END_MARKER === undefined) {
-  throw new Error(
-    `no marker-strip transform in .gaia/release-scrub.yml declares ${START_MARKER}; that config moved, not the strip`
-  );
-}
+const END_MARKER = '# gaia:maintainer-only:end';
 
 /**
  * The suites carrying the model, discovered rather than listed: a hand-kept
@@ -292,14 +301,18 @@ describe('marker-strip lockstep (#1742)', () => {
     }
   );
 
-  // The membership check above cannot see a respelling of the shell transform
-  // alone, because `.prettierignore` declares the same pair and keeps the key
-  // alive. This pins the transform the corpus actually runs against.
+  // The membership check above asserts that each suite's pair is declared by
+  // some marker-strip transform; it does not say which one governs the corpus.
+  // This names that transform and pins both halves of its pair against the
+  // literals above, so respelling either half of it reds here. `toBeDefined`
+  // carries the case the pins cannot describe: no transform governs shell files
+  // at all, which is the config moving rather than the pair being respelled.
   test('the transform governing shell files declares the pair the corpus uses', () => {
     const shellTransform = MARKER_STRIP_TRANSFORMS.find((transform) =>
       transform.paths.includes(SH_TRANSFORM_GLOB)
     );
 
+    expect(shellTransform).toBeDefined();
     expect(shellTransform?.start).toBe(START_MARKER);
     expect(shellTransform?.end).toBe(END_MARKER);
   });
