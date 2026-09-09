@@ -92,7 +92,7 @@ gaia_require_jq() {
   shift 3
 
   if [ "$#" -gt 0 ]; then
-    local haystack="$payload" needle matched=0
+    local haystack="$payload" needle matched=0 cut_head cut_tail
     if [ "$region_key" != '-' ]; then
       case "$payload" in
         # The key is quoted separately inside the strip so it is matched as a
@@ -107,18 +107,52 @@ gaia_require_jq() {
       # by "latest", `env` by "environment". Left in, it denies the jq install
       # on the wording of its own description.
       #
-      # SHORTEST suffix, deliberately. `%` cuts at the LAST occurrence, so a
-      # command whose own text carries the field name only widens the haystack;
-      # `%%` would cut at the first and could drop real command text, which is
-      # the under-deny direction.
+      # TWO-SIDED, not a suffix strip, and that is the whole of why the shape is
+      # what it is. Cutting from the key to the end of the region holds only
+      # while `description` is emitted after the field the predicate reads.
+      # Emitted FIRST, that cut takes the command or path with it: nothing any
+      # binding literal would match survives in the haystack, nothing matches,
+      # and the arm allows. That is the fail-open direction on the guard whose
+      # purpose is to close it, and its trigger is emitted key order, which GAIA
+      # does not control. Keeping the text on BOTH sides and dropping only the
+      # field's own value holds for either order.
+      #
+      # Giving up and leaving the description in on an unexpected shape is NOT
+      # the safe fallback it looks like: the description is model-authored prose,
+      # so it carries the literals as substrings almost unconditionally, and
+      # leaving it in denies the jq install on the wording of its own
+      # description. That is the session with no way out the literals exist to
+      # prevent.
+      #
+      # LAST occurrence, and both expansions pick the same one: a command whose
+      # own text carries the field name leaves the real description standing,
+      # which only widens the haystack, while cutting at the first would drop
+      # real command text, the under-deny direction.
       #
       # The pattern is the quoted KEY alone, with no leading comma and no
       # trailing colon, because the separators are not stable: a compact encoder
       # writes `,"description":` while a pretty-printing one writes a newline and
       # indent between the comma and the key. Matching the key by itself holds
-      # for both, and for a payload that carries no description at all the strip
-      # matches nothing and leaves the haystack whole.
-      haystack="${haystack%\"description\"*}"
+      # for both, and for a payload that carries no description at all the case
+      # below matches nothing and leaves the haystack whole.
+      #
+      # HONEST LIMIT of the value scan: it ends the value at the first `"` after
+      # the opening one, so a description carrying an escaped quote ends it early
+      # and leaves the remainder of the prose in the haystack. That is the
+      # widening direction, the same one an unstripped description produces, and
+      # it costs a denial rather than an allow.
+      #
+      # The two sides are joined with a space so the seam cannot spell a literal
+      # that neither side carries on its own.
+      case "$haystack" in
+        *'"description"'*)
+          cut_head="${haystack%\"description\"*}"
+          cut_tail="${haystack##*\"description\"}"
+          cut_tail="${cut_tail#*\"}"
+          cut_tail="${cut_tail#*\"}"
+          haystack="$cut_head $cut_tail"
+          ;;
+      esac
     fi
     haystack=$(printf '%s' "$haystack" | tr '[:upper:]' '[:lower:]')
     for needle in "$@"; do
