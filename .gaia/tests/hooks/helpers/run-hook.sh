@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # Shared harness for the .gaia/tests/hooks bats suites: one quote-safe hook
-# invocation, one assertion form per decision mechanism, and one assertion that
-# a hook is registered in `.claude/settings.json` at all.
+# invocation, one assertion form per decision mechanism, and a re-export of
+# `hook_registered`, the assertion that a hook is registered in
+# `.claude/settings.json` at all, which lives in the cross-directory helper
+# because suites outside this directory assert registration too.
 #
 # The directive below is the one thing this file needs that a suite does not:
 # `status` and `output` are set by bats' own `run`, which is invisible to the
@@ -51,14 +53,17 @@
 # hook purely for its side effect. Keep the two in step by name; a change to
 # the invocation below almost certainly applies there too.
 
-# `GAIA_HOOK_NAME_RE`, which the registration assertion at the foot of this file
-# matches with, comes from the gates' own library rather than a copy here: it is
-# the one spelling of a hook name inside a registration command, and a copy of it
-# would drift from the original silently, because each holder keeps passing
-# against the copy it reads. Rooted at this file's own on-disk location, so it
-# resolves however a suite is invoked.
-# shellcheck source=../../../scripts/hook-registration-lib.sh
-. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../../scripts/hook-registration-lib.sh"
+# `hook_registered` is defined in the cross-directory helper rather than here,
+# and re-exported by this source line, so the suites below keep calling it
+# unchanged. It moved because registration is asserted from outside this
+# directory too, by a suite that sources no part of this harness; leaving it
+# here left such a suite no form but a hand-written predicate over the command
+# spelling, which is the drift #1911 records. The helper carries the reasoning
+# and the `hook-registration-lib.sh` source line the function depends on.
+# Rooted at this file's own on-disk location, so it resolves however a suite is
+# invoked.
+# shellcheck source=../../helpers/hook-registration.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../helpers/hook-registration.sh"
 
 # invoke_hook PAYLOAD HOOK
 # Pipes PAYLOAD to HOOK, capturing status/output through bats' `run`.
@@ -120,37 +125,8 @@ assert_asked_by_json() {
 }
 
 # --- registration: is the hook wired into settings.json at all? ------------
-# Separate from the three mechanisms above: those drive a hook and read its
-# verdict, this one reads the file that decides whether the hook is reached.
-#
-# It answers REGISTRATION and nothing else, deliberately. Whether a registration
-# names its script in a form that resolves independently of the shell's working
-# directory is a different question, and it already has an owner:
-# .gaia/scripts/check-hook-command-rooting.sh tests it as a property over every
-# registered command, under .gaia/tests/whole-tree-invariants.sh, and
-# .claude/rules/maintainers/hook-registration.md states the sanctioned form in
-# prose. A suite that pinned the spelling here instead would hold a second,
-# weaker copy of that claim, one that goes green against itself while the form
-# it encodes moves, which is exactly what having the form named once prevents.
-#
-# hook_registered SETTINGS EVENT_FILTER HOOK_NAME
-# Asserts that the entries EVENT_FILTER selects in the settings file SETTINGS
-# carry a command that runs HOOK_NAME. EVENT_FILTER is a jq expression,
-# `.hooks.PreToolUse[] | select(.matcher == "Bash")` for a matcher-scoped event
-# or `.hooks.PostCompact[]` for one registered without a matcher; HOOK_NAME is
-# the bare script name. Fails when the event key is absent, when the filter
-# selects nothing, and when nothing it selects runs the hook, so an assertion
-# cannot pass over an empty set.
-#
-# SETTINGS is an argument rather than the `SETTINGS_ABS` every suite here
-# already resolves, because a suite whose only remaining read of that variable
-# happened inside this function would assign it and never mention it again,
-# which is an unused-variable warning at the `.bats` severity floor.
-hook_registered() {
-  local settings="$1" filter="$2" hook="$3"
-  run jq -e --arg re "$GAIA_HOOK_NAME_RE" --arg hook "$hook" \
-    "[ $filter | .hooks[] | .command // empty ] |
-       any([match(\$re; \"g\").string] | any(. == \".claude/hooks/\" + \$hook))" \
-    "$settings"
-  [ "$status" -eq 0 ]
-}
+# `hook_registered` arrives from `.gaia/tests/helpers/hook-registration.sh`,
+# sourced at the head of this file, and is documented there. It is separate from
+# the three mechanisms above in the same way it always was: those drive a hook
+# and read its verdict, it reads the file that decides whether the hook is
+# reached.

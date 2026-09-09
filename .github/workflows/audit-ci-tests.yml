@@ -658,13 +658,19 @@ jobs:
               # if that glob is ever narrowed.
               - 'wiki/concepts/OS Sandbox.md'
               # spec-028-composition.bats asserts the .env deny entries the
-              # settings file carries and the hook that backs them. The settings
-              # file is already covered by '**/*.json'; the hook is
-              # LOAD-BEARING, being .sh. Note that a filter output is evaluated
-              # independently of its siblings, so `code:` listing either of these
-              # does nothing for this output.
+              # settings file carries, the hooks that back them, the shared
+              # operand grammar those hooks load, and the shared registration
+              # assertion it makes them through. The settings file is already
+              # covered by '**/*.json'; every one of the rest is LOAD-BEARING,
+              # being .sh, and each is named rather than reached by a directory
+              # glob, matching how this list names its other `.sh` entries. Note
+              # that a filter output is evaluated independently of its siblings,
+              # so `code:` listing any of these does nothing for this output.
               - '.claude/settings.json'
               - '.claude/hooks/block-env-read.sh'
+              - '.claude/hooks/block-secrets-read.sh'
+              - '.claude/hooks/lib/reader-operands.sh'
+              - '.gaia/tests/helpers/hook-registration.sh'
               # manifest-and-enable.bats git-greps EVERY committed file of these
               # four types for a raw top-level sandbox enable, in both the flat
               # key form and the nested object form, so its read set is
