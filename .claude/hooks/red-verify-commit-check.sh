@@ -60,7 +60,29 @@ set -uo pipefail
 
 input=$(cat)
 
-command -v jq >/dev/null 2>&1 || exit 0
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literal below satisfies, live in .claude/hooks/lib/jq-availability.sh.
+# No errexit bracket around the source, unlike the armed hooks that run under
+# `set -e`: this one deliberately does not, per the header above.
+#
+# The literal is `git`, read off this gate's own command-position scan below,
+# which requires the segment's command word to be `git` AND the segment to carry
+# a `commit` token. Either is a necessary condition, and naming the command word
+# alone is the narrower refusal, the same choice block-no-verify.sh makes
+# against the same predicate. Its ABSENCE proves the call is not a commit and it
+# is allowed; presence is not proof of membership, and that over-deny is the
+# safe direction. What it cannot reach is a spelling the shell assembles
+# (`g\it commit`), which the arm's own header already names as the accepted
+# residual.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: red-verify-commit-check.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the RED-verify commit gate' "$input" tool_input 'git'
 
 tool_name=$(echo "$input" | jq -r '.tool_name // ""' 2>/dev/null)
 [ "$tool_name" = "Bash" ] || exit 0

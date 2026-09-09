@@ -101,7 +101,32 @@ set -uo pipefail
 
 input=$(cat)
 
-command -v jq >/dev/null 2>&1 || exit 0
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literal below satisfies, live in .claude/hooks/lib/jq-availability.sh.
+# No errexit bracket around the source, unlike the armed hooks that run under
+# `set -e`: this one deliberately does not, per the header above.
+#
+# This gate is the sharpest instance of the class: it denies `gh pr merge` until
+# every dispatched audit member has cleared, so standing down on a missing
+# interpreter cleared the merge silently.
+#
+# The literal is `gh`, read off this gate's own arming predicate
+# (`gate_verb_frag` below, `gh[[:space:]]+pr[[:space:]]+merge`): every call this
+# gate binds invokes `gh`, so the ABSENCE of `gh` from the command proves the
+# call sits outside the remit and it is allowed, exactly as a parsed non-merge
+# is. Presence is not proof of membership -- an ordinary command carrying `gh`
+# inside a word satisfies it too -- and that over-deny is the safe direction.
+# What it cannot reach is a spelling the shell assembles (`g\h pr merge`), which
+# the arm's own header already names as the accepted residual.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: pr-merge-audit-check.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the PR merge audit gate' "$input" tool_input 'gh'
 
 tool_name=$(echo "$input" | jq -r '.tool_name // ""' 2>/dev/null)
 [ "$tool_name" = "Bash" ] || exit 0

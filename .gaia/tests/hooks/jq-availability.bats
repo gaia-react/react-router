@@ -52,8 +52,9 @@ without_jq() {
 # built to carry every binding literal any hook here passes, as a substring, in a
 # path shape a real machine could have: a "platform" directory supplies the rm
 # literal, a "git-svc" one the git literal, a ".venv" the env literal, a
-# "settings" the process-dump literal, and so on down to .pem, .key and
-# manifest.json.
+# "settings" the process-dump literal, a ".github" one the gh literal, a
+# "ripgrep" checkout the grep and rg literals, a "storage" one the ag literal,
+# and so on down to .pem, .key and manifest.json.
 #
 # So an arm matching its literals against the whole document denies every
 # still-allowed case below, the jq install among them, which is the session with
@@ -64,7 +65,7 @@ without_jq() {
 # binds on the top-level agent_type, so it scans the whole document by design and
 # is correct to; poisoning the ambient fields with its literal would assert the
 # opposite of that hook's contract.
-readonly AMBIENT_CWD="/Users/you/work/platform/git-svc/.venv/settings/test-credentials/secrets"
+readonly AMBIENT_CWD="/Users/you/work/platform/git-svc/.github/ripgrep/storage/.venv/settings/test-credentials/secrets"
 readonly AMBIENT_TRANSCRIPT="/Users/you/.claude/projects/gaia-plan/manifest.json.d/server.pem/id.key/plan.md.log"
 
 # The key order mirrors the harness: every ambient field precedes tool_input.
@@ -327,6 +328,95 @@ readonly INSTALL_CMD="brew install jq"
   local json
   json=$(bash_payload "$INSTALL_CMD")
   without_jq block-selfheal-paths.sh "$json"
+  assert_allowed_by_exit
+}
+
+# The four merge-gate members and the two other Bash-matcher gates converted off
+# the `|| exit 0` stand-down. Each in-remit case names the verb its own predicate
+# binds on, so a conversion that dropped its literal would green the refusal here
+# and red the install beside it.
+
+@test "jq absent: audit-disposition-check refuses a merge attempt" {
+  local json
+  json=$(bash_payload "gh pr merge 42 --squash")
+  without_jq audit-disposition-check.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: audit-disposition-check allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq audit-disposition-check.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: pr-merge-audit-check refuses a merge attempt" {
+  local json
+  json=$(bash_payload "gh pr merge 42 --squash")
+  without_jq pr-merge-audit-check.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: pr-merge-audit-check allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq pr-merge-audit-check.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: worthiness-presence-check refuses a merge attempt" {
+  local json
+  json=$(bash_payload "gh pr merge 42 --squash")
+  without_jq worthiness-presence-check.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: worthiness-presence-check allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq worthiness-presence-check.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: distribution-preflight-check refuses a PR creation" {
+  local json
+  json=$(bash_payload "gh pr create --title x --body y")
+  without_jq distribution-preflight-check.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: distribution-preflight-check allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq distribution-preflight-check.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: red-verify-commit-check refuses a commit" {
+  local json
+  json=$(bash_payload "git commit -m 'wire the parser'")
+  without_jq red-verify-commit-check.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: red-verify-commit-check allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq red-verify-commit-check.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: serena-code-search-guard refuses a shell symbol search" {
+  local json
+  json=$(bash_payload "grep -r useBreakpoint app")
+  without_jq serena-code-search-guard.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: serena-code-search-guard allows the jq install" {
+  local json
+  json=$(bash_payload "$INSTALL_CMD")
+  without_jq serena-code-search-guard.sh "$json"
   assert_allowed_by_exit
 }
 

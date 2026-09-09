@@ -28,8 +28,8 @@
 # without reading it, which is the outcome the exit-127 path produces by
 # accident. So this gate does not ask whether an availability guard EXISTS; it
 # asks whether the guard a blocking hook carries can still refuse. A gate keyed
-# on the presence of `command -v jq` would report clean over every hook in the
-# baseline below.
+# on the presence of `command -v jq` would have reported clean over all six of
+# the hooks the baseline below tracked until they were converted.
 #
 # THE TWO POSTURES, and which hook takes which:
 #   blocking  -- the hook can stop a tool call, so it must reach the shared arm
@@ -70,20 +70,20 @@ readonly PROG="lint-hook-jq-availability"
 readonly SETTINGS=".claude/settings.json"
 
 # Blocking PreToolUse hooks whose jq arm still stands the hook down instead of
-# refusing. Every one of them predates the shared arm, each needs a binding
-# literal derived from its own predicate, and several gate the merge this gate
-# runs inside, so they are tracked rather than converted in the change that
-# introduced the arm. Tracked at gaia-react/gaia#1901.
+# refusing. EMPTY, and the emptiness is the point: the six that predated the
+# shared arm were converted at gaia-react/gaia#1901, so every blocking hook this
+# gate reaches now refuses rather than standing down, and the obligation is
+# carried entirely by the check below rather than half by a list.
+#
+# It stays as a named variable rather than being deleted with its last entry,
+# because the shape is what a future conversion needs: a hook that cannot be
+# converted in the change that registers it goes here, tracked by issue, and is
+# read out again by the exact-assert below.
 #
 # The list is asserted EXACT below: an entry that no longer fails is reported so
 # it must be deleted here, which is what keeps a baseline from quietly becoming
 # a permanent exemption.
-BASELINE="audit-disposition-check.sh
-distribution-preflight-check.sh
-pr-merge-audit-check.sh
-red-verify-commit-check.sh
-serena-code-search-guard.sh
-worthiness-presence-check.sh"
+BASELINE=""
 
 # uses_jq <hook_script_path>
 #

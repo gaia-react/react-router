@@ -97,10 +97,23 @@
 # inertness guard below stays regardless, so a maintainer checkout with no built
 # binary is also a clean no-op.
 #
-# FAIL-OPEN on every uncertainty: no maintainer binary (adopter clone), no jq,
-# no git, an unresolvable base ref, a non-JSON report, or any exit >= 2 from the
+# FAIL-OPEN on every uncertainty: no maintainer binary (adopter clone), no git,
+# an unresolvable base ref, a non-JSON report, or any exit >= 2 from the
 # checker. The gate exists to save a round trip, never to block a maintainer out
 # of their own PR; CI is the authority that actually fails the build.
+#
+# ONE UNCERTAINTY IS NOT ON THAT LIST, and it used to be: a missing jq. This
+# hook can stop a tool call, which makes it blocking to the shared oracle
+# .gaia/scripts/lint-hook-jq-availability.sh reads, and a blocking hook that
+# cannot read its payload has decided the call is allowed without reading it,
+# which is the outcome the unguarded exit-127 path produced by accident. So the
+# arm below refuses instead. The refusal is narrowed to a command naming `gh`,
+# so the command that installs jq still runs, and this hook reaches no adopter
+# clone at all, which bounds the whole cost to a maintainer on a machine where
+# every other blocking hook is already refusing for the same reason
+# (gaia-react/gaia#1901). Nothing else about the CI-is-authoritative posture
+# moves: on a machine WITH jq every arm below still fails open exactly as
+# listed, and this hook still writes no marker and clears no gate.
 
 # -e is intentionally omitted: we must not abort before writing the deny JSON.
 # All error-prone commands are individually guarded (|| true, 2>/dev/null).
@@ -108,7 +121,28 @@ set -uo pipefail
 
 input=$(cat)
 
-command -v jq >/dev/null 2>&1 || exit 0
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literal below satisfies, live in .claude/hooks/lib/jq-availability.sh.
+# No errexit bracket around the source, unlike the armed hooks that run under
+# `set -e`: this one deliberately does not, per the header above.
+#
+# The literal is `gh`, read off this gate's own arming predicate (`verb_frag`
+# below, `gh[[:space:]]+pr[[:space:]]+create`): every call this gate binds
+# invokes `gh`, so the ABSENCE of `gh` from the command proves the call sits
+# outside the remit and it is allowed, exactly as a parsed non-create is.
+# Presence is not proof of membership -- an ordinary command carrying `gh`
+# inside a word satisfies it too -- and that over-deny is the safe direction.
+# What it cannot reach is a spelling the shell assembles (`g\h pr create`),
+# which the arm's own header already names as the accepted residual.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: distribution-preflight-check.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the distribution preflight gate' "$input" tool_input 'gh'
 
 tool_name=$(printf '%s' "$input" | jq -r '.tool_name // ""' 2>/dev/null)
 [ "$tool_name" = "Bash" ] || exit 0

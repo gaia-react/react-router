@@ -302,32 +302,58 @@ write_hook() {
 
 # --- the baseline cannot rot -------------------------------------------------
 
+# stage_check_with_baseline <hook-basename>: a copy of the gate carrying one
+# baseline entry, and echo its path.
+#
+# The two tests below exercise the exact-assert over BASELINE, and that assert
+# needs a non-empty baseline to have anything to assert over. The live one is
+# empty: gaia-react/gaia#1901 converted its last six entries, and parking a
+# fake entry in the shipped gate to feed a test would be exactly the standing
+# exemption the assert exists to prevent. So they drive a COPY of the gate with
+# the BASELINE literal substituted and nothing else touched, beside a copy of
+# the library the gate loads from its own on-disk location. Every predicate
+# under test is the real one byte for byte, because the copy is the gate.
+stage_check_with_baseline() {
+  local entry="$1" dir staged
+  dir="$BATS_TEST_TMPDIR/staged-check-$entry"
+  mkdir -p "$dir"
+  cp "$SCRIPT_DIR/hook-registration-lib.sh" "$dir/hook-registration-lib.sh"
+  staged="$dir/lint-hook-jq-availability.sh"
+  sed 's/^BASELINE=""$/BASELINE="'"$entry"'"/' "$CHECK" >"$staged"
+  # Non-vacuity: a substitution that matched nothing leaves the copy with an
+  # empty baseline, which greens both tests below for the wrong reason.
+  grep -qxF -- "BASELINE=\"$entry\"" "$staged"
+  printf '%s' "$staged"
+}
+
 @test "red: a baseline entry that no longer fails is reported so it gets deleted" {
   # A baseline whose entries are never re-checked becomes a permanent exemption,
   # and the next hook to regress under one of those names is waved through. The
-  # fixture repairs a real baselined hook in place.
-  local dir entry
+  # fixture repairs the baselined hook in place.
+  local dir entry staged
   dir="$(make_fixture baseline-repaired)"
-  entry="pr-merge-audit-check.sh"
+  entry="baselined-gate.sh"
+  staged="$(stage_check_with_baseline "$entry")"
   write_hook "$dir" armed.sh armed
   write_hook "$dir" "$entry" armed
   write_settings "$dir" PreToolUse armed.sh "$entry"
 
-  run bash "$CHECK" "$dir"
+  run bash "$staged" "$dir"
   [ "$status" -eq 1 ]
   grep -qF -- 'baseline entries that no longer fail' <<<"$output"
   grep -qF -- "$entry" <<<"$output"
 }
 
 @test "clean: a baselined hook that still fails is carried, not reported" {
-  local dir entry
+  local dir entry staged
   dir="$(make_fixture baseline-live)"
-  entry="pr-merge-audit-check.sh"
+  entry="baselined-gate.sh"
+  staged="$(stage_check_with_baseline "$entry")"
   write_hook "$dir" armed.sh armed
   write_hook "$dir" "$entry" standdown
   write_settings "$dir" PreToolUse armed.sh "$entry"
 
-  run bash "$CHECK" "$dir"
+  run bash "$staged" "$dir"
   [ "$status" -eq 0 ]
 }
 
