@@ -307,12 +307,12 @@ write_hook() {
 #
 # The two tests below exercise the exact-assert over BASELINE, and that assert
 # needs a non-empty baseline to have anything to assert over. The live one is
-# empty: gaia-react/gaia#1901 converted its last six entries, and parking a
-# fake entry in the shipped gate to feed a test would be exactly the standing
-# exemption the assert exists to prevent. So they drive a COPY of the gate with
-# the BASELINE literal substituted and nothing else touched, beside a copy of
-# the library the gate loads from its own on-disk location. Every predicate
-# under test is the real one byte for byte, because the copy is the gate.
+# empty, and parking a fake entry in the shipped gate to feed a test would be
+# exactly the standing exemption the assert exists to prevent. So they drive a
+# COPY of the gate with the BASELINE literal substituted and nothing else
+# touched, beside a copy of the library the gate loads from its own on-disk
+# location. Every predicate under test is the real one byte for byte, because
+# the copy is the gate.
 stage_check_with_baseline() {
   local entry="$1" dir staged
   dir="$BATS_TEST_TMPDIR/staged-check-$entry"

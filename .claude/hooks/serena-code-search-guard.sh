@@ -70,15 +70,18 @@ input=$(cat)
 # satisfies it -- and that over-deny is the safe direction for the Bash matcher,
 # which is the one that reaches the jq install.
 #
-# WHAT THE LITERALS CANNOT REACH, and why that is the right direction here. A
-# Grep-tool payload carries a pattern, and nothing about a bare identifier names
-# any of the three, so an in-remit Grep call is ALLOWED rather than refused when
-# jq is gone. That is under-deny on the Grep half, and it is deliberate: this
-# hook is a routing nudge whose own published posture is that every ambiguity
-# resolves toward allowing the search (header above), so a missed reminder is
-# the cost its contract already accepts, while refusing every Grep call on a
-# machine with no jq would trade that reminder for a blocked session. The
-# fail-closed half of the layer is the Bash branch, and the literals cover it.
+# WHAT THE LITERALS DO TO THE GREP HALF, which is not what they do to the Bash
+# half. A Grep-tool payload carries a pattern and a path rather than a command,
+# so the three meet it by accident or not at all: `ag` is two characters and
+# sits inside `Page`, `Manager`, `Storage`, so a Grep for one of those is
+# refused, while a Grep for `useBreakpoint` is allowed. Both directions are
+# acceptable here and only one of them would be on the Bash half. The refusal is
+# the same over-deny the Bash half already accepts, and it is recoverable,
+# because the install command still passes. The allow is under-deny, and it is
+# what this hook's own published posture already spends: a routing nudge whose
+# every ambiguity resolves toward allowing the search (header above), so a
+# missed reminder costs less than a blocked session. The fail-closed half of the
+# layer is the Bash branch, and there the three are the command words themselves.
 _jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
 # shellcheck source=lib/jq-availability.sh
 [ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null

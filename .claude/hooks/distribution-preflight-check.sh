@@ -102,18 +102,18 @@
 # checker. The gate exists to save a round trip, never to block a maintainer out
 # of their own PR; CI is the authority that actually fails the build.
 #
-# ONE UNCERTAINTY IS NOT ON THAT LIST, and it used to be: a missing jq. This
-# hook can stop a tool call, which makes it blocking to the shared oracle
+# ONE UNCERTAINTY IS DELIBERATELY NOT ON THAT LIST: a missing jq. This hook can
+# stop a tool call, which makes it blocking to the shared oracle
 # .gaia/scripts/lint-hook-jq-availability.sh reads, and a blocking hook that
 # cannot read its payload has decided the call is allowed without reading it,
-# which is the outcome the unguarded exit-127 path produced by accident. So the
-# arm below refuses instead. The refusal is narrowed to a command naming `gh`,
-# so the command that installs jq still runs, and this hook reaches no adopter
-# clone at all, which bounds the whole cost to a maintainer on a machine where
-# every other blocking hook is already refusing for the same reason
-# (gaia-react/gaia#1901). Nothing else about the CI-is-authoritative posture
-# moves: on a machine WITH jq every arm below still fails open exactly as
-# listed, and this hook still writes no marker and clears no gate.
+# which is the outcome an unguarded payload read produces by accident when it
+# dies at status 127. So the arm below refuses instead. The refusal is narrowed
+# to a command naming `gh`, so the command that installs jq still runs, and this
+# hook reaches no adopter clone at all, which bounds the whole cost to a
+# maintainer on a machine where every other blocking hook is refusing for the
+# same reason. Nothing else about the CI-is-authoritative posture moves: on a
+# machine WITH jq every arm below fails open exactly as listed, and this hook
+# writes no marker and clears no gate.
 
 # -e is intentionally omitted: we must not abort before writing the deny JSON.
 # All error-prone commands are individually guarded (|| true, 2>/dev/null).

@@ -52,9 +52,12 @@ without_jq() {
 # built to carry every binding literal any hook here passes, as a substring, in a
 # path shape a real machine could have: a "platform" directory supplies the rm
 # literal, a "git-svc" one the git literal, a ".venv" the env literal, a
-# "settings" the process-dump literal, a ".github" one the gh literal, a
-# "ripgrep" checkout the grep and rg literals, a "storage" one the ag literal,
-# and so on down to .pem, .key and manifest.json.
+# "settings" the process-dump literal, a "highlights" one the gh literal, an
+# "org-mirror" one the rg literal, a "ripgrep" checkout the grep literal, a
+# "storage" one the ag literal, and so on down to .pem, .key and manifest.json.
+# Read each of those as the contiguous run it has to be: `.github` spells no
+# `gh` and `ripgrep` spells no `rg`, and a segment chosen for how it looks
+# rather than for what it contains leaves the tests below unable to fail.
 #
 # So an arm matching its literals against the whole document denies every
 # still-allowed case below, the jq install among them, which is the session with
@@ -65,7 +68,7 @@ without_jq() {
 # binds on the top-level agent_type, so it scans the whole document by design and
 # is correct to; poisoning the ambient fields with its literal would assert the
 # opposite of that hook's contract.
-readonly AMBIENT_CWD="/Users/you/work/platform/git-svc/.github/ripgrep/storage/.venv/settings/test-credentials/secrets"
+readonly AMBIENT_CWD="/Users/you/work/platform/git-svc/highlights/org-mirror/ripgrep/storage/.venv/settings/test-credentials/secrets"
 readonly AMBIENT_TRANSCRIPT="/Users/you/.claude/projects/gaia-plan/manifest.json.d/server.pem/id.key/plan.md.log"
 
 # The key order mirrors the harness: every ambient field precedes tool_input.
@@ -331,10 +334,9 @@ readonly INSTALL_CMD="brew install jq"
   assert_allowed_by_exit
 }
 
-# The four merge-gate members and the two other Bash-matcher gates converted off
-# the `|| exit 0` stand-down. Each in-remit case names the verb its own predicate
-# binds on, so a conversion that dropped its literal would green the refusal here
-# and red the install beside it.
+# The gates converted off the `|| exit 0` stand-down, each in-remit case naming
+# the verb that gate's own predicate binds on, so a conversion that dropped its
+# literal would green the refusal here and red the install beside it.
 
 @test "jq absent: audit-disposition-check refuses a merge attempt" {
   local json
