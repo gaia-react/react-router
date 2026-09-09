@@ -8,8 +8,8 @@
  * than finding the module. `sonarjs/no-identical-functions` stayed silent
  * through every copy, and no threshold on it would have closed the class:
  * ESLint rules run per file, so that rule never compares functions across
- * files at all. Byte-identical walks live in this tree today with
- * `pnpm lint:cli` green. The shell-side scanners reach no TypeScript.
+ * files at all. A byte-identical copy planted in a second module therefore
+ * keeps `pnpm lint:cli` green. The shell-side scanners reach no TypeScript.
  *
  * The failure a sixth copy produces is invisible at the call site. A guard's
  * corpus is exactly the set it is trusted to have scanned, so a private walk
@@ -43,21 +43,19 @@
  * Some are walks the shared module genuinely does not serve.
  * `release/scrub.ts`'s `walkFiles` and `audit-template-dogfood.test.ts`'s
  * `collect` take every file whatever its extension, a mode `collectTreeFiles`
- * deliberately has no parameter for, and `adopter-ci-action-pins.test.ts`'s
- * `collectPins` threads a path prefix down the descent and reads each file as
- * it goes.
+ * deliberately has no parameter for.
  *
- * The rest are not. `wiki/dead-paths.ts`, `wiki/empty-sections.ts` and
- * `wiki/frontmatter.ts` hold byte-identical `walkMarkdown` copies, and
- * `release/runtime-deps.ts` holds `walkSh`. Each filters by extension per
- * entry, prunes no directory, and applies its own skip filter after the walk
- * returns, which is exactly the `collectTreeFiles(root, extensions)` contract.
- * Those sit outside this guard because the match shape does not read them, not
- * because they were measured and found to differ, and consolidating them is
- * real work this guard does not do.
+ * `adopter-ci-action-pins.test.ts`'s `collectPins` is not one of those. It
+ * accumulates a prefix joined to each relative path, which is what
+ * `collectTreeFiles` already returns, so the shared walk expresses it. Its one
+ * real divergence is that it reads every non-directory entry, where the shared
+ * walk reports regular files only, so a symlinked workflow file would drop out
+ * of the pin set on consolidation. It sits outside this guard because the
+ * match shape does not read it, not because it was measured and found to
+ * differ, and consolidating it is real work this guard does not do.
  *
- * So reaching that shape would owe an allowlist for the first group while the
- * second group ought to go red, and telling the two apart means deciding where
+ * So reaching that shape would owe an allowlist for the first group while
+ * `collectPins` ought to go red, and telling the two apart means deciding where
  * a function body starts and ends in arbitrary source, which is a tokenizer,
  * and a tokenizer is the argument for reading this from the TypeScript AST
  * rather than from lines at all.
