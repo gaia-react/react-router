@@ -185,16 +185,25 @@ staging="$(mktemp -d -t gaia-wiki-staging-XXXXXX)"
 bash .gaia/tests/distribution/lib/build-staging.sh "$staging"
 ```
 
-This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of the pull request. That job is advisory by its own design and never gates a merge, so what this step buys is not a gate but the report arriving while the run that wrote the prose is still holding it. The output directory has to exist and be empty, hence a fresh `mktemp -d` per attempt rather than a reused path. Exit 0 is clean. Exit 1 lists each leak as `[<check-id>] <path>:<line>  <match>`.
+This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of the pull request. That job is advisory by its own design and never gates a merge, so what this step buys is not a gate but the report arriving while the run that wrote the prose is still holding it. The output directory has to exist and be empty, hence a fresh `mktemp -d` per attempt rather than a reused path.
+
+**Read the output, not the exit status alone.** Exit 1 is not a synonym for "leak": the script also spends it on a missing or non-executable `.gaia/cli/gaia-maintainer`, an output directory that is absent or non-empty, and a failure of its own tracked-path discovery or exclude-regex compile, and it spends exit 2 on an unexpected IO or replication failure. Three outcomes, and only one of them is 5c.3's:
+
+- **Exit 0** is clean. Proceed to 5c.4.
+- **Exit 1 with `leaks (N):` lines**, each shaped `[<check-id>] <path>:<line>  <match>`, is the repair case 5c.3 owns.
+- **Any other exit-1 diagnostic, and every exit 2**, is an environment fault, not prose. The commonest is a stale bundle, which the script names along with the `pnpm -C .gaia/cli bundle` that fixes it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome, so looping there spends three attempts and then aborts a sync over a stale binary.
 
 Leave the staging tree where `mktemp` put it, exactly as the CI step does. Removing it needs a recursive delete of an absolute path, which `.claude/hooks/` denies, so a cleanup line here would read as a prescribed step that is refused every time it runs.
 
 ### 5c.3 Repair, then re-run
 
-A leak is generated prose pointing at something the adopter never receives: a release-excluded path, a wikilink or a bare Title-Case mention of a release-excluded page, a sibling-monorepo prefix. The check names which one. The run that wrote the prose is the one positioned to repair it, so repair rather than abort:
+A leak is anything one of `.gaia/release-scrub.yml`'s checks flags in a page this run wrote, and each reported line names the check id that flagged it, so read that id rather than inferring the kind from the match. Do not work from a remembered list of checks: the file holds more of them than the common cases below, and several are scoped to every shipped path. The kinds a generated wiki page trips most often are a pointer at something the adopter never receives, a release-excluded path, a wikilink or a bare Title-Case mention of a release-excluded page, or a sibling-monorepo prefix.
 
-- Wrap the citation in the `gaia:maintainer-only` HTML-comment marker pair when the fact is real but maintainer-only. The bundle-time scrub strips the block, so the page keeps the fact and the adopter copy loses the dangling pointer. `.claude/rules/wiki-style.md` spells the pair; this playbook names it instead, because the scrub matches those two comments as literal strings, so a copy of the start marker written inside a maintainer-only block closes that block early and leaves the rest of it shipping.
-- Otherwise rewrite the sentence to name something an adopter clone has, or drop the pointer. Follow `.claude/rules/wiki-style.md`, which prefers naming what owns a fact over restating it, and a pointer that survives the scrub is usually the shorter sentence anyway.
+The run that wrote the prose is the one positioned to repair it, so repair rather than abort. Which repair depends on what the check id says is wrong:
+
+- **A real fact that is maintainer-only**: wrap the citation in the `gaia:maintainer-only` HTML-comment marker pair. The bundle-time scrub strips the block, so the page keeps the fact and the adopter copy loses the dangling pointer. `.claude/rules/wiki-style.md` spells the pair; this playbook names it instead, because the scrub matches those two comments as literal strings, and a copy of the **end** marker written inside a maintainer-only block closes that block early. That fails loudly rather than quietly, as an `end_without_start` unbalanced marker when the real end marker is reached, but it fails the whole scrub, so keep the literal end marker out of wrapped prose. A literal start marker inside a block is inert.
+- **A pointer an adopter clone cannot follow**: rewrite the sentence to name something their clone has, or drop the pointer. Follow `.claude/rules/wiki-style.md`, which prefers naming what owns a fact over restating it, and a pointer that survives the scrub is usually the shorter sentence anyway.
+- **Neither of those**: some checks flag something a marker would hide rather than fix, and wrapping them is the wrong repair even though it clears the check. An absolute filesystem literal is the worked case: wrapping it leaves a machine-specific path in a shipped page, which `.claude/rules/repo-relative-paths.md` bans outright, so make the path repo-relative instead. Read what the check id is actually asserting before reaching for the markers.
 
 Re-stage and re-run 5c.1 and 5c.2 after each repair. **Bound this at three attempts.** On a third red, abort exactly as Step 5b aborts: do not run Step 6, do not run Step 7, leave the tree as it stands, and print the leak list in place of the Step 8 summary. Prose that survives three repairs is a judgment call about what the page should say, and that belongs to the maintainer.
 
@@ -206,15 +215,15 @@ A page this run **created** is a newly-shipping file, and `Distribution Audit` i
 git diff --cached --name-only --diff-filter=A -z -- wiki/ | tr '\0' '\n'
 ```
 
-`-z` with the `tr` back to newlines for the same reason Step 9b needs it: under git's default `core.quotePath` a path carrying a non-ASCII byte prints C-quoted, and here that would misname the page in the line below.
+`-z` with the `tr` back to newlines for the same reason Step 9b needs it: under git's default `core.quotePath` a path carrying a non-ASCII byte prints C-quoted, and here that would misname the page in the field below.
 
-For each created page, print one line immediately above the Step 8 summary block:
+When the listing is non-empty, carry it **inside** the Step 8 summary block, as one more field in the same shape as that block's own `ADRs created:` line and directly beneath it:
 
 ```
-DISTRIBUTION ANSWER OWED: <path>  (run /distribution-audit on this branch before the PR merges)
+  Distribution answers owed: <path>[, <path>…]  (run /distribution-audit on this branch before the PR merges)
 ```
 
-Adjacent to the block rather than inside it, the same placement Step 3b's classifier warning takes and for the same reason: Step 8's summary is a fixed template with no slot for this, and this playbook runs in a dispatched subagent whose only delivery is what it prints, so a line not printed here reaches nobody.
+Inside the block rather than above it, and that placement is the delivery, not a formatting preference. This playbook runs in a dispatched subagent whose only channel to a human is what it prints, and the router's dispatch prompt is literal: it asks for the Step 8 summary block and the `CONSOLIDATE_TRIGGERED` line, and nothing else. A line printed above the block is preamble under that prompt, so the subagent that obeys its dispatch drops it, and the obligation reaches nobody at exactly the moment it matters. A field inside the block is part of what the prompt already asks for, so it survives. Add the field only when a page was created; a run that created none prints the block unchanged.
 <!-- gaia:maintainer-only:end -->
 
 ## Step 6: Advance state file
