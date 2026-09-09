@@ -13,10 +13,12 @@
 # there; a path the scan reads and the filter misses reports green having run
 # this assertion zero times, which is the failure this gate exists to prevent,
 # one level up. That obligation is discharged once and for all rather than per
-# root: the scan surface is every tracked `*.sh`, and the filter already carries
-# a `**/*.sh` entry that matches exactly it, so no widening of this scan can
-# outrun the filter and the second edit a root used to owe is gone with the
-# roots.
+# root: the scan surface is a SUBSET of every tracked `*.sh`, and the filter
+# already carries a `**/*.sh` entry, so no widening of this scan can outrun the
+# filter and the second edit a root used to owe is gone with the roots. Subset
+# rather than equality is what makes the discharge sound: the filter arms on
+# strictly more than the scan reads, and arming on more can only over-trigger
+# the job, never leave a scanned path unarmed.
 # `Shell Lint` runs the same scan a second way through .gaia/tests/shell-lint.sh;
 # it is advisory rather than required, so it reports a regression without
 # blocking the merge. Also runnable directly:
@@ -35,10 +37,14 @@
 # so it sees a library's own loads whether or not any consumer parse-checked the
 # library, and no future round can leave a residual it cannot see inside the
 # scan surface below. The closure stops at that surface, which is every tracked
-# `*.sh` in the repository: a load in an UNTRACKED file, or in one that is not a
-# `.sh` at all, is outside this check whatever sources it. That qualifier is the
-# honest form of the claim, and it no longer names a directory anyone has to
-# remember to widen.
+# `*.sh` outside `.husky/` and outside any `tests/` directory: a load in an
+# UNTRACKED file, in one that is not a `.sh` at all, or in one the `tests/`
+# prune removes, is outside this check whatever sources it. The prune is the
+# qualifier worth reading twice, because it costs more than the fixtures it
+# exists for: `.gaia/tests/distribution/` is a real maintainer harness rather
+# than a bats corpus, and its unbracketed loads sit outside this closure. That
+# qualifier is the honest form of the claim, and it no longer names a directory
+# anyone has to remember to widen.
 #
 # Reference fixes: .claude/hooks/block-no-verify.sh (flat bracket, a file that
 # arms errexit itself) and .claude/hooks/lib/verb-arming.sh (state-preserving

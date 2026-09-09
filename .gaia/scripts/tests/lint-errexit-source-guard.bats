@@ -570,10 +570,18 @@ plant() {
 # is what keeps the narrowing from passing as a pass; the fixture's own
 # `mktemp -d` path sits behind a symlink, which is what the prefix test (rather
 # than a path comparison) is there to survive.
+#
+# The only hit is planted OUTSIDE the subdirectory the run starts in, and the
+# subdirectory itself is clean. That arrangement is what makes the negative
+# assertion live: strip the refusal and this run narrows to a clean subtree and
+# prints `clean` at exit 0, which is the drift being pinned. A hit planted
+# inside the subdirectory would be found by the narrowed scan, so the run would
+# exit non-zero and never print `clean`, and the assertion could not fire.
 @test "refuses to scan from a subdirectory rather than narrowing to it" {
   new_fixture
-  plant .claude/hooks/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .claude/hooks/lib/helper.sh\n'
-  plant .claude/hooks/lib/helper.sh $'helper() { :; }\n'
+  plant .claude/hooks/ok.sh $'#!/usr/bin/env bash\nset -euo pipefail\necho ok\n'
+  plant .gaia/scripts/bad.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .gaia/scripts/helper.sh\n'
+  plant .gaia/scripts/helper.sh $'helper() { :; }\n'
   run bash -c "cd '$TMP/.claude/hooks' && bash '$LINTER'"
   [ "$status" -eq 2 ]
   grep -qF -- "run from the repository root" <<<"$output"
