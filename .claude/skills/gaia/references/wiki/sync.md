@@ -57,7 +57,7 @@ When `health.inert` is `true`, the rule table has stopped matching the subjects 
 
 **`inert` is not sufficient on its own.** It only trips once the sample is large enough for a rate to mean anything, and a routine sync evaluates far fewer commits than that, so on most runs it is structurally `false` and reading it tells you nothing. Read `deferral_rate` directly whenever `inert` is `false`: a high share on a small window is the same defect caught earlier, and it is worth investigating rather than waiting for a backlog big enough to trip the flag. (Do not restate the CLI's threshold or sample floor here. They live in the classifier, and a copy in prose is the drift this check exists to catch.)
 
-Do not treat either signal as a reason to skip the sync. Keep going, and **print the CLI's stderr warning verbatim on its own line immediately above the Step 8 summary block** (or, when the rate is high but `inert` is `false`, a one-line note naming `deferred`/`evaluated` and the rate). Step 8's summary is a fixed template with no slot for this, so it is printed adjacent to the block rather than inside it. That printed line is the whole delivery: this playbook runs in a dispatched subagent whose output goes to the router, so anything not printed here reaches nobody. The fix itself is in the classifier's rule table or its `gaia.wikiClassify` path vocabulary (`package.json`), never in this playbook.
+Do not treat either signal as a reason to skip the sync. Keep going, and **carry the CLI's stderr warning verbatim into Step 8's `Classifier health:` field** (or, when the rate is high but `inert` is `false`, a one-line note naming `deferred`/`evaluated` and the rate). That field is the whole delivery: this playbook runs in a dispatched subagent, and the router asks it for the Step 8 summary block and the `CONSOLIDATE_TRIGGERED` line and nothing else, so a warning printed beside the block is preamble that an obedient run drops and it reaches nobody. Inside the block it survives. The fix itself is in the classifier's rule table or its `gaia.wikiClassify` path vocabulary (`package.json`), never in this playbook.
 
 A high `worthy_rate` with a low `deferral_rate` is not a fault. It means the rules are discriminating and this repo's commits genuinely are wiki-relevant, which is the expected shape for a repo whose own source is the thing the wiki documents.
 
@@ -187,11 +187,11 @@ bash .gaia/tests/distribution/lib/build-staging.sh "$staging"
 
 This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of the pull request. That job is advisory by its own design and never gates a merge, so what this step buys is not a gate but the report arriving while the run that wrote the prose is still holding it. The output directory has to exist and be empty, hence a fresh `mktemp -d` per attempt rather than a reused path.
 
-**Read the output, not the exit status alone.** Exit 1 is not a synonym for "leak": the script also spends it on a missing or non-executable `.gaia/cli/gaia-maintainer`, an output directory that is absent or non-empty, and a failure of its own tracked-path discovery or exclude-regex compile, and it spends exit 2 on an unexpected IO or replication failure. Three outcomes, and only one of them is 5c.3's:
+**Read the output, not the exit status alone.** Exit 1 is not a synonym for "leak": the script also spends it on a missing or non-executable `.gaia/cli/gaia-maintainer`, an output directory that is absent or non-empty, and a failure of its own tracked-path discovery or exclude-regex compile. Branch on what the output carries, not on a list of statuses:
 
 - **Exit 0** is clean. Proceed to 5c.4.
-- **Exit 1 with `leaks (N):` lines**, each shaped `[<check-id>] <path>:<line>  <match>`, is the repair case 5c.3 owns.
-- **Any other exit-1 diagnostic, and every exit 2**, is an environment fault, not prose. The commonest is a stale bundle, which the script names along with the `pnpm -C .gaia/cli bundle` that fixes it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome, so looping there spends three attempts and then aborts a sync over a stale binary.
+- **Exit 1 carrying `leaks (N):` lines**, each shaped `[<check-id>] <path>:<line>  <match>`, is the repair case 5c.3 owns.
+- **Every other exit** is an environment fault, not prose. Stated as a complement deliberately: the script runs under `set -e`, so a failing tool's own status propagates rather than being normalized, and an rsync or version-control failure surfaces as that tool's number. Enumerating the statuses would leave a reader holding an unlisted one with no branch. The commonest fault is a missing or non-executable maintainer binary, which the script names along with the `pnpm -C .gaia/cli bundle` that produces it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome, so looping there spends three attempts and then aborts a sync over a build artifact.
 
 Leave the staging tree where `mktemp` put it, exactly as the CI step does. Removing it needs a recursive delete of an absolute path, which `.claude/hooks/` denies, so a cleanup line here would read as a prescribed step that is refused every time it runs.
 
@@ -217,13 +217,13 @@ git diff --cached --name-only --diff-filter=A -z -- wiki/ | tr '\0' '\n'
 
 `-z` with the `tr` back to newlines for the same reason Step 9b needs it: under git's default `core.quotePath` a path carrying a non-ASCII byte prints C-quoted, and here that would misname the page in the field below.
 
-When the listing is non-empty, carry it **inside** the Step 8 summary block, as one more field in the same shape as that block's own `ADRs created:` line and directly beneath it:
+When the listing is non-empty, it fills Step 8's `Distribution answers owed:` field:
 
 ```
   Distribution answers owed: <path>[, <path>…]  (run /distribution-audit on this branch before the PR merges)
 ```
 
-Inside the block rather than above it, and that placement is the delivery, not a formatting preference. This playbook runs in a dispatched subagent whose only channel to a human is what it prints, and the router's dispatch prompt is literal: it asks for the Step 8 summary block and the `CONSOLIDATE_TRIGGERED` line, and nothing else. A line printed above the block is preamble under that prompt, so the subagent that obeys its dispatch drops it, and the obligation reaches nobody at exactly the moment it matters. A field inside the block is part of what the prompt already asks for, so it survives. Add the field only when a page was created; a run that created none prints the block unchanged.
+That field is a conditional slot in the Step 8 template, so a run that created no page omits the line and prints the block otherwise unchanged. Step 8 owns why the delivery has to ride inside the block rather than beside it, and this step does not restate the reasoning.
 <!-- gaia:maintainer-only:end -->
 
 ## Step 6: Advance state file
@@ -268,10 +268,18 @@ Wiki sync complete.
   Skipped:  {N_skipped}
   Pages edited: {list}
   ADRs created: {list, if any}
+  Classifier health: {Step 3b's warning, if any}
+<!-- gaia:maintainer-only:start -->
+  Distribution answers owed: {Step 5c.4's list, if any}
+<!-- gaia:maintainer-only:end -->
   State advanced to {head_sha}.
 ```
 
 `{baseline}` is `state_sha` on the normal path and `suggested_base` on the recovery path, the ref the range was actually evaluated from.
+
+Every field between `Pages edited:` and the state line is conditional: print it only when the step that owns it produced a value, and omit the whole line otherwise. `ADRs created:` already works this way, and `Classifier health:` is the same shape, owned by Step 3b.
+
+**Those fields exist because this block is the only channel out.** The router dispatches this playbook as a subagent and asks it, literally, for the Step 8 summary block and the `CONSOLIDATE_TRIGGERED` line, and for nothing else. A line printed above or below the block is preamble or narration under that prompt, so a run that obeys its dispatch drops it and the signal reaches nobody. Anything a step needs to deliver to a human therefore rides inside this block, which is what these slots are for. A step that needs a new one adds a field here rather than printing beside the block.
 
 (On the no-op path from Step 1's drift=0 branch: print `Wiki already in sync at {short_sha}.` instead of the block above.)
 
@@ -321,10 +329,15 @@ Wiki sync complete.
   Skipped:  2
   Pages edited: wiki/decisions/auth-strategy.md, wiki/modules/Sessions.md
   ADRs created: wiki/decisions/auth-strategy.md
+<!-- gaia:maintainer-only:start -->
+  Distribution answers owed: wiki/decisions/auth-strategy.md  (run /distribution-audit on this branch before the PR merges)
+<!-- gaia:maintainer-only:end -->
   State advanced to def456.
 
 CONSOLIDATE_TRIGGERED: true
 ```
+
+This example carries the conditional fields that happened to apply on that run. A run that created no page, or whose classifier reported nothing, omits the corresponding lines.
 
 The router reads the last line and decides whether to invoke consolidate. The gate itself never invokes consolidate directly, it stays a read-only check.
 
