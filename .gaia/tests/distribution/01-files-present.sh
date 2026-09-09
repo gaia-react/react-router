@@ -194,12 +194,10 @@ if [ "${#HOOKCAP_ERRORS[@]}" -eq 0 ] && [ -e "$STAGING/.gaia/hook-capabilities.j
   # out of the substitution so the set stays complete and the command fails the
   # comparison as itself.
   #
-  # The honest limit: this changes what the comparison reads, not what it
-  # prints. The mismatch arm below emits a fixed string naming neither set's
-  # contents, so an operator sees the same output either way and still re-runs
-  # the pipeline by hand to learn which element differs. What the guard buys
-  # here is a complete registered set; naming the offending command is the
-  # checker's job, and its BAD-REGISTRATION arm does that.
+  # When the mismatch does fire, the arm below emits a fixed string naming
+  # neither set's contents, so it reports that a set differs and not which
+  # command lost a path. Naming that command is the checker's job, and its
+  # BAD-REGISTRATION arm does it.
   # .gaia/scripts/check-hook-capabilities.sh refuses the same shape on the same
   # ground, through its own BAD-REGISTRATION arm.
   HOOKCAP_REDUCE='/\$\(.*\$\(/! s|^"\$\(.*\)/(.*)"$|\1|'
