@@ -168,7 +168,7 @@ Because the run aborts before Step 8/9, no `CONSOLIDATE_TRIGGERED` line is emitt
 
 Skip the step entirely when Step 5b's `CONTENT_CHANGES` is empty. An all-SKIP run authored no page and owes neither obligation.
 
-Skip it too when the tree does not carry the oracle. The check needs `.gaia/tests/distribution/lib/build-staging.sh` and the `.gaia/cli/gaia-maintainer` binary it calls, both maintainer-only, and a tree holding this playbook without them cannot run it at all; the reachable case is a smoke-test scaffold that copies this file verbatim into a fixture repo. Record `oracle absent, boundary check skipped` in Step 8's `Leaks not repaired:` field and go on to Step 6. This is not 5c.2's environment fault, which is a maintainer's own stale binary and is fixable where it stands.
+Skip it too when the tree does not carry the oracle. The check needs `.gaia/tests/distribution/lib/build-staging.sh` and the `.gaia/cli/gaia-maintainer` binary it calls, both maintainer-only, and a tree holding this playbook without them cannot run it at all; the reachable case is a smoke-test scaffold that copies this file verbatim into a fixture repo. Record `oracle absent, boundary check skipped` in Step 8's `Leaks not repaired:` field and go on to Step 6. 5c.4's obligation stands down with it, though 5c.4 needs no oracle of its own: the fixture repo that reaches this case opens no pull request, so an obligation recorded there would name a check that never runs. This is not 5c.2's environment fault, which is a maintainer's own stale binary and is fixable where it stands.
 
 It sits here, ahead of Step 6 and Step 7, so an abort has the same shape as Step 5b's, state not advanced, nothing committed, nothing pushed, and so it runs ahead of the pull request whichever caller opens one. Step 7 owns that split.
 
@@ -196,7 +196,7 @@ This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of t
   - `leaks (N):`, lines shaped `[<check-id>] <path>:<line>  <match>`, a release-scrub check. Split the reported lines by who wrote the file. The ones naming a page this run wrote are the repair case and spend attempts against the bound. The rest are pre-existing, because the scrub reads the whole staged tree and no page this run could edit will clear a leak it did not cause: carry those into Step 8's `Leaks not repaired:` field and spend no attempt on them, so a report holding nothing else, including a re-run still red on nothing else, leaves 5c for 5c.4 rather than for the bound.
   - `unbalanced markers (N):`, lines shaped `<path>:<line>  <reason>`, a maintainer-only marker pair that does not close. **This section prints alongside the literal line `leaks: none`**, so a run keyed on the word "leak" reads it as clean-but-failing and finds no branch. 5c.3's own first repair is what produces it, since adding a marker pair is how a block gets unbalanced.
 - **Exit 1 carrying `runtime-dependency leaks (N):`** is a shipped script reaching for something the bundle does not carry, and no wiki page can be the cause or the cure. That section comes from a separate verb whose scan set is `.sh` files under the shipped script directories, and `wiki/` is not one of them, so a sync that authored only pages cannot have produced it and no page edit will clear it. It is a pre-existing defect in a shipped script and belongs to whoever owns that script, so carry the section into Step 8's `Leaks not repaired:` field, spend no attempt against 5c.3's bound, and proceed to 5c.4.
-- **Everything else** is an environment fault, not prose: exit 1 with none of those sections, and any other exit at all. Stated as a complement deliberately, because the script runs under `set -e` and a failing tool's own status propagates rather than being normalized, so an rsync or version-control failure surfaces as that tool's number and an enumeration would leave a reader holding an unlisted one. The commonest fault is a missing or non-executable maintainer binary, which the script names along with the `pnpm -C .gaia/cli bundle` that produces it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome.
+- **Everything else** is an environment fault, not prose: exit 1 with none of those sections, and any other exit at all. Stated as a complement deliberately, because the script runs under `set -e` and a failing tool's own status propagates rather than being normalized, so an rsync or version-control failure surfaces as that tool's number and an enumeration would leave a reader holding an unlisted one. The commonest fault is a missing or non-executable maintainer binary, which the script names along with the `pnpm -C .gaia/cli bundle` that produces it, and which it deliberately does not rebuild for you. Fix the environment once, re-run, and do not count the attempt against 5c.3's bound: no edit to a wiki page can change the outcome. **A second consecutive fault ends the arm.** Record the failing invocation's status and its output in Step 8's `Leaks not repaired:` field and go on to 5c.4, the same record-and-continue the oracle-absent stand-down above takes. This arm needs an ending of its own because neither bound beside it reaches it: 5c.3's counts repair attempts and this arm spends none, and the script retries nothing and normalizes nothing, so a fault that survived one fix re-propagates identically for as long as a reader is willing to re-run it.
 
 Getting the repair/environment split wrong in either direction costs a run. Reading a repair case as an environment fault loops without bound on something a page edit would fix, because this arm is the one that says editing cannot help; reading an environment fault as a repair case spends three attempts editing prose and then aborts a sync over a build artifact.
 
@@ -230,7 +230,7 @@ When the listing is non-empty, it fills Step 8's `Distribution answers owed:` fi
   Distribution answers owed: <path>[, <path>…]  (run /distribution-audit on this branch before the PR merges)
 ```
 
-That field is a conditional slot in the Step 8 template, so a run that created no page omits the line and prints the block otherwise unchanged. Step 8 owns why the delivery has to ride inside the block rather than beside it, and this step does not restate the reasoning.
+Step 8 owns why the delivery has to ride inside the block rather than beside it, and this step does not restate the reasoning.
 <!-- gaia:maintainer-only:end -->
 
 ## Step 6: Advance state file
@@ -277,7 +277,7 @@ Wiki sync complete.
   ADRs created: {list, if any}
   Classifier health: {Step 3b's warning, if any}
 <!-- gaia:maintainer-only:start -->
-  Leaks not repaired: {Step 5c.2's pre-existing lines, if any}
+  Leaks not repaired: {Step 5c's unrepairable lines and its stand-downs, if any}
   Distribution answers owed: {Step 5c.4's list, if any}
 <!-- gaia:maintainer-only:end -->
   State advanced to {head_sha}.
@@ -285,7 +285,11 @@ Wiki sync complete.
 
 `{baseline}` is `state_sha` on the normal path and `suggested_base` on the recovery path, the ref the range was actually evaluated from.
 
-Every field between `Pages edited:` and the state line is conditional: print it only when the step that owns it produced a value, and omit the whole line otherwise. `ADRs created:` already works this way, and `Classifier health:` is the same shape, owned by Step 3b. The two `gaia:maintainer-only` comment lines are not fields and are never printed: they bound the maintainer-only ones for the bundle scrub, here and in the 9d example alike.
+Every field between `Pages edited:` and the state line is conditional: print it only when the step that owns it produced a value, and omit the whole line otherwise. `ADRs created:` already works this way, and `Classifier health:` is the same shape, owned by Step 3b.
+
+<!-- gaia:maintainer-only:start -->
+The two `gaia:maintainer-only` comment lines are not fields and are never printed: they bound the maintainer-only fields for the bundle scrub, here and in the 9d example alike.
+<!-- gaia:maintainer-only:end -->
 
 **Those fields exist because this block is the only channel out.** The router dispatches this playbook as a subagent and asks it, literally, for the Step 8 summary block and the `CONSOLIDATE_TRIGGERED` line, and for nothing else. A line printed above or below the block is preamble or narration under that prompt, so a run that obeys its dispatch drops it and the signal reaches nobody. Anything a step needs to deliver to a human therefore rides inside this block, which is what these slots are for. A step that needs a new one adds a field here rather than printing beside the block.
 
