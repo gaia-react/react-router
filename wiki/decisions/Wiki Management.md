@@ -4,7 +4,7 @@ status: active
 priority: 1
 date: 2026-05-07
 created: 2026-05-07
-updated: 2026-09-08
+updated: 2026-09-09
 tags: [decision, wiki, cli]
 ---
 
@@ -43,6 +43,12 @@ The wiki is critical infrastructure; it decays when drift between code and docum
 - `finish` (after lint): pushes the branch, opens one PR for all stage commits, enables auto-merge, and takes one bounded wait on the merge. When it lands inside that wait, `finish` cleans up locally; on the common path the merge gate outlasts the wait, so it returns to base with the local cleanup outstanding for `sync await` or the session-start janitor. Drops the branch if it is empty. Leaves an aborted dirty tree in place for review. No-op for in-place runs on a feature branch.
 
 Standalone `/gaia-wiki sync`, `/gaia-wiki consolidate`, and `/gaia-wiki lint` are unaffected; the chain commands are invoked only by the no-arg `/gaia-wiki` full-chain wrapper.
+
+<!-- gaia:maintainer-only:start -->
+## Shipped-surface boundary check
+
+`wiki/` ships, so a page `/gaia-wiki sync` authors is a newly-shipping file the moment it's created. Before landing, sync stages its own authored pages and runs the release-staging build against them, the same check CI's advisory shipped-surface leak check runs, moved ahead of the pull request rather than discovered after it's open. It repairs what a page's own prose caused (a pointer at a release-excluded path, a wikilink to a release-excluded page), bounded at three attempts, and records what it can't repair or what a newly-created page still owes the distribution manifest in the sync summary instead of staying silent about it.
+<!-- gaia:maintainer-only:end -->
 
 ## State file
 
