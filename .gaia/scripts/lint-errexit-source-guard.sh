@@ -9,11 +9,16 @@
 # .gaia/scripts/tests/lint-errexit-source-guard.bats runs in the `Audit CI Tests`
 # scripts shard, a declared-required context; it fails when this scan finds a
 # hit and self-tests the detector against known-bad fixtures. That job's `code`
-# filter is what arms it, so EVERY root the scan below walks has to be named
-# there, by a glob broad enough to cover the whole root; a path the scan reads
-# and the filter misses reports green having run this assertion zero times,
-# which is the failure this gate exists to prevent, one level up. Adding a root
-# to the scan below is therefore always two edits, here and in that filter.
+# filter is what arms it, so every path the scan below reads has to be named
+# there; a path the scan reads and the filter misses reports green having run
+# this assertion zero times, which is the failure this gate exists to prevent,
+# one level up. That obligation is discharged once and for all rather than per
+# root: the scan surface is a SUBSET of every tracked `*.sh`, and the filter
+# already carries a `**/*.sh` entry, so no widening of this scan can outrun the
+# filter and the second edit a root used to owe is gone with the roots. Subset
+# rather than equality is what makes the discharge sound: the filter arms on
+# strictly more than the scan reads, and arming on more can only over-trigger
+# the job, never leave a scanned path unarmed.
 # `Shell Lint` runs the same scan a second way through .gaia/tests/shell-lint.sh;
 # it is advisory rather than required, so it reports a regression without
 # blocking the merge. Also runnable directly:
@@ -30,10 +35,16 @@
 # RECURSE, so each round's fix left a residual one source level deeper, and each
 # round found it there. This check works on the errexit-reachable source CLOSURE,
 # so it sees a library's own loads whether or not any consumer parse-checked the
-# library, and no future round can leave a residual it cannot see INSIDE the
-# scan roots below. The closure stops at those roots, so a load in a file they
-# do not cover is outside this check whatever sources it; the qualifier is the
-# honest form of the claim, and widening the roots is what changes it.
+# library, and no future round can leave a residual it cannot see inside the
+# scan surface below. The closure stops at that surface, which is every tracked
+# `*.sh` outside `.husky/` and outside any `tests/` directory: a load in an
+# UNTRACKED file, in one that is not a `.sh` at all, or in one the `tests/`
+# prune removes, is outside this check whatever sources it. The prune is the
+# qualifier worth reading twice, because it costs more than the fixtures it
+# exists for: `.gaia/tests/distribution/` is a real maintainer harness rather
+# than a bats corpus, and its unbracketed loads sit outside this closure. That
+# qualifier is the honest form of the claim, and it no longer names a directory
+# anyone has to remember to widen.
 #
 # Reference fixes: .claude/hooks/block-no-verify.sh (flat bracket, a file that
 # arms errexit itself) and .claude/hooks/lib/verb-arming.sh (state-preserving
@@ -82,71 +93,98 @@
 
 set -euo pipefail
 
-# Scan surface: the hook bodies and their libraries, plus every script under
-# each scan root (recursive). `find` (not a `**` glob) keeps the recursive walk
-# portable to bash 3.2, which has no globstar. Paths stay cwd-relative so the
-# printed file:line is repo-relative when the linter runs from the repo root.
+# Scan surface: every tracked `*.sh` outside `.husky/` and outside any `tests/`
+# directory, derived from the shared library rather than enumerated here. The
+# `.husky` half is the shared `shell` set's own pathspec, which excludes the
+# directory the `husky` set owns; the `tests/` half is applied below. Paths come
+# back repo-relative, so the printed file:line is repo-relative.
 #
-# The roots are a variable rather than literal `find` arguments because the set
-# differs between this repo and an adopter's. A root that ships must stay on the
-# base assignment; one that does not must be appended inside a maintainer-only
-# block, or the release runtime-dependency check reads it as a shipped script
-# reaching for a path the bundle does not carry, and fails the staging build.
+# It was a hand-listed root array until gaia-react/gaia#1880, and that array
+# missed a root three recounts running: #1846 hit the class in `.github` and
+# handed the question back, #1870 answered it for `.github` alone, and #1880
+# found eleven more instances one root further out, under
+# `.specify/extensions/gaia/lib`, every one of them in a file that SHIPS to
+# adopters. An enumeration maintained by hand is wrong the moment the tree
+# grows, and a guard whose SCOPE is enumerated has the same defect as a guard
+# whose CRITERIA are. Deriving the surface is what makes a fourth miss
+# impossible rather than merely unexpected, and it is the majority idiom among
+# the sibling `lint-*.sh` gates: they reach their surfaces through this same
+# shared library, through their own `git ls-files` pathspecs, through the
+# committed manifest, or through the hook registrations, and a hand-listed root
+# array is the rare shape rather than the usual one. Grepping for
+# `gaia_guard_scan_files` and `ls-files` finds most of them but not all, since
+# the manifest and registration readers derive without either, so the leftovers
+# of that grep are not the hand-listed set and reading the leftovers is what
+# separates the two. The switch was measured to be surface-equivalent over the
+# roots the array already named -- the tracked set and the old `find` walk
+# agreed file for file -- so it changed nothing about what is scanned except
+# adding the roots the array was missing.
 #
-# Every `tests/` directory under a root is excluded below: their bats fixtures
-# deliberately plant broken loads, and a check that reads its own negative
-# fixtures as findings can never be clean. The prune is one `! -path '*/tests/*'`
-# rather than a per-root list, so it covers `.gaia/scripts/tests` and
-# `.github/audit/tests` alike and needs no edit when a root is added.
+# The old array carried a rule about where a root may be written, base
+# assignment for a root that ships and a maintainer-only block for one that does
+# not, so that the release runtime-dependency check would not read a shipped
+# script as reaching for a path the bundle does not carry. Derivation retires
+# that rule rather than restating it: the surface is whatever the tree in front
+# of the guard tracks, so an adopter clone resolves its own and there is no
+# assignment left to place wrongly.
 #
-# `.github` is a root because its `audit/` scripts run under `set -e` on CI and
-# load `gaia-version.sh` the same way the hooks do; leaving it out is what let
-# two instances of this class sit unreached while the repair for a third landed
-# next to them (gaia-react/gaia#1870). It is also what makes that repair
-# defensible: the bats matrix is ubuntu-only, so a revert to the `|| true` shape
-# reds only on a local macOS run, and nothing but this scan would catch it.
+# The `tests/` prune is applied HERE rather than in the shared library, because
+# four other gates consume the same `shell` set and none of them wants one.
+# Their bats fixtures deliberately plant broken loads, and a check that reads
+# its own negative fixtures as findings can never be clean. One `*/tests/*`
+# case rather than a per-directory list, so it covers `.gaia/scripts/tests` and
+# `.github/audit/tests` alike and needs no edit when shell appears somewhere new.
 #
-# `.specify/extensions/gaia/lib` is knowingly NOT a root, and that is a deferred
-# decision rather than a settled one: it carries 11 live instances of this class
-# in files that ship, so widening to it is a repair of its own rather than a
-# root list edit. gaia-react/gaia#1880 tracks the choice between widening and
-# recording why not. Naming it here is what keeps the omission legible; the
-# closure qualifier above already says a load outside these roots is outside
-# this check, and this is the one directory currently known to sit there.
-scan_roots=(.claude/hooks .gaia/scripts .github)
+# Script-relative, never cwd-relative: every fixture test runs this guard with
+# cwd inside a throwaway repo that carries no `.gaia/scripts/`. Bracketed
+# against an unparseable target because this file arms errexit itself, which is
+# the flat shape this very guard demands of such a load.
+_gaia_guard_lib_dir="${BASH_SOURCE[0]%/*}"
+if [ "$_gaia_guard_lib_dir" = "${BASH_SOURCE[0]}" ]; then _gaia_guard_lib_dir="."; fi
+# shellcheck source=.gaia/scripts/guard-awk-lib.sh
+set +e; [ -f "$_gaia_guard_lib_dir/guard-awk-lib.sh" ] && . "$_gaia_guard_lib_dir/guard-awk-lib.sh" 2>/dev/null; set -e
+type gaia_guard_scan_files >/dev/null 2>&1 || {
+  echo "lint-errexit-source-guard: guard-awk-lib.sh is missing beside this script" >&2
+  exit 2
+}
 
-# A root that is absent or renamed makes the walk below yield the OTHER root's
-# files, and the only guard on the result fires when every root is empty, so the
-# check would report clean having read half the surface it claims to cover.
-for r in ${scan_roots[@]+"${scan_roots[@]}"}; do
-  if [ ! -d "$r" ]; then
-    echo "lint-errexit-source-guard: scan root missing: $r" >&2
-    exit 1
-  fi
+# `git ls-files` resolves against the working directory, not the repository, so
+# from a subdirectory the surface silently narrows to that subtree and the scan
+# reports clean having read a fraction of the tree. That is the same
+# partial-surface-reads-clean failure the old root array's missing-root
+# assertion refused, and losing it with the array would trade one silent
+# narrowing for another. `--show-prefix` is empty only at the top level, and it
+# answers without comparing two paths, so a symlinked checkout (`/var` ->
+# `/private/var`, which every bats fixture under `mktemp -d` sits behind) cannot
+# make a correct invocation look wrong.
+if ! scan_prefix="$(git rev-parse --show-prefix 2>/dev/null)"; then
+  echo "lint-errexit-source-guard: not inside a git work tree, so the scan surface cannot be resolved; nothing was scanned" >&2
+  exit 2
+fi
+if [ -n "$scan_prefix" ]; then
+  echo "lint-errexit-source-guard: run from the repository root; from '${scan_prefix%/}' the surface would silently narrow to that subtree" >&2
+  exit 2
+fi
+
+# The library's own status is carried out rather than flattened to 1: 1 says the
+# tree was read and held no tracked shell at all, 3 says it was never read, and
+# an operator handed 1 for the second would look at the tree instead of at the
+# discovery. The status is read directly rather than through a substitution,
+# which would swallow it.
+gaia_guard_scan_files "lint-errexit-source-guard" shell || exit $?
+
+scan_files=()
+for scan_candidate in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
+  case "$scan_candidate" in */tests/*) continue ;; esac
+  scan_files[${#scan_files[@]}]="$scan_candidate"
 done
 
-# The assertion above covers one cause of a partial walk. Three more reach the
-# same silent end, because a walk inside a process substitution discards both
-# `find`'s diagnostics and its exit status while the other root keeps the count
-# guard below quiet: a root that is a SYMLINK to a directory satisfies `-d` but
-# is not descended without `-H`; a root whose mode denies read; and an unreadable
-# SUBDIRECTORY under a readable root, which no root-level assertion can catch.
-# Capturing the walk lets its status fail the run instead, which is the posture
-# the assertion above already chose.
-scan_files=()
-found="$(find -H ${scan_roots[@]+"${scan_roots[@]}"} -type f -name '*.sh' \
-  ! -path '*/tests/*' | LC_ALL=C sort)" || {
-  echo "lint-errexit-source-guard: the scan walk failed; refusing to report on a partial surface" >&2
-  exit 1
-}
-while IFS= read -r f; do
-  [ -n "$f" ] && scan_files+=("$f")
-done <<EOF
-$found
-EOF
-
+# Distinct from the library's own empty-union refusal above, which fires when
+# the tree carries no tracked shell at all. This one fires when it carries some
+# and the prune took every file, a surface the scan below would otherwise report
+# clean having opened nothing.
 if [ "${#scan_files[@]}" -eq 0 ]; then
-  echo "lint-errexit-source-guard: no files under: ${scan_roots[*]}" >&2
+  echo "lint-errexit-source-guard: every tracked shell file sits under a tests/ directory; nothing was scanned" >&2
   exit 1
 fi
 

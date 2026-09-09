@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 # Tests for .gaia/scripts/lint-errexit-source-guard.sh: the static gate that
 # flags a `source` / `.` reachable with errexit armed and not bracketed against
-# a present-but-unparseable target. The gate scans .claude/hooks/**/*.sh,
-# .gaia/scripts/**/*.sh and .github/**/*.sh, excluding tests/.
+# a present-but-unparseable target. The gate scans every TRACKED *.sh outside
+# .husky/ and outside any tests/ directory.
 #
 # Three jobs: prove the detector fires on each known-bad shape (unguarded load,
 # flat restore in a sourced file, a suspend that never restores), prove it stays
@@ -18,7 +18,9 @@
 #
 # Assertion style: bash-3.2-safe per .claude/rules/bats-assertions.md.
 # The linter is invoked as `bash "$LINTER"` from a fixture cwd, matching how CI
-# runs it from the repo root; its scan roots are cwd-relative.
+# runs it from the repo root. It resolves its surface with `git ls-files`
+# relative to cwd, so every fixture is a real git repository with its files
+# added; an unadded file is invisible to the gate by construction.
 
 setup() {
   THIS_DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" && pwd )"
@@ -32,24 +34,26 @@ teardown() {
   return 0
 }
 
-# new_fixture: an empty tmp repo with EVERY scan root present. Sets $TMP.
-# All three are created because the linter refuses on the first absent root
-# before it scans anything, so a fixture short one root reds every test in this
-# file on that refusal rather than on the shape the test plants.
+# new_fixture: an initialized, empty git repo. Sets $TMP. No directory is
+# seeded: the gate derives its surface from the index rather than from a fixed
+# set of directories, so a fixture owes only the files its own test plants.
 new_fixture() {
   TMP="$(mktemp -d -t errexit-source-lint-XXXXXX)"
-  mkdir -p "$TMP/.claude/hooks/lib" "$TMP/.gaia/scripts" "$TMP/.github/audit"
+  git -C "$TMP" init -q .
 }
 
-# plant <relpath> <body>: write <body> to $TMP/<relpath>.
+# plant <relpath> <body>: write <body> to $TMP/<relpath> and TRACK it. The add
+# is what puts the file on the gate's surface; a written-but-unadded file is
+# invisible to it, which is the limit "ignores an untracked shell file" pins.
 plant() {
   mkdir -p "$TMP/$(dirname "$1")"
   printf '%s\n' "$2" > "$TMP/$1"
+  git -C "$TMP" add -A
 }
 
 # 1. The real scanned tree is clean (regression gate)
 
-@test "the real scanned tree (.claude/hooks + .gaia/scripts + .github) passes the lint" {
+@test "the real scanned tree passes the lint" {
   run bash -c "cd '$REPO_ROOT' && bash '$LINTER'"
   [ "$status" -eq 0 ]
 }
@@ -495,13 +499,12 @@ plant() {
   grep -qF -- ".claude/hooks/probe.sh:4" <<<"$output"
 }
 
-# 11b. The .github root is walked, not merely asserted present
+# 11b. The surface reaches past the hook and script directories
 
-# The root was added to catch the two CI audit scripts that load gaia-version.sh
-# under errexit (gaia-react/gaia#1870). A root that is present but never
-# descended reports clean forever, indistinguishable from a real pass, so this
-# plants the class under .github/ and requires the hit.
-@test "walks the .github root rather than only asserting it exists" {
+# A directory that is never descended reports clean forever, indistinguishable
+# from a real pass, so each of these plants the class somewhere the gate's
+# former hand-listed root array did or did not name and requires the hit.
+@test "reaches a load under .github" {
   new_fixture
   plant .github/audit/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .github/audit/lib.sh\n'
   plant .github/audit/lib.sh $'helper() { :; }\n'
@@ -511,7 +514,7 @@ plant() {
   grep -qF -- "unguarded load" <<<"$output"
 }
 
-@test "excludes tests/ under the .github root the same way it does elsewhere" {
+@test "excludes tests/ under .github the same way it does elsewhere" {
   new_fixture
   plant .github/audit/tests/fixture.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .github/audit/lib.sh\n'
   plant .github/audit/lib.sh $'helper() { :; }\n'
@@ -519,22 +522,93 @@ plant() {
   [ "$status" -eq 0 ]
 }
 
-@test "fails loudly when the .github scan root is absent" {
+# The directory the former root array missed for three recounts running, and the
+# reason the surface is derived rather than listed. It is not a stand-in for an
+# arbitrary path: eleven live instances of this class sat here, in files that
+# ship to adopters, while the gate reported clean.
+@test "reaches a load under .specify, which no scan root ever named" {
   new_fixture
-  rm -rf "$TMP/.github"
+  plant .specify/extensions/gaia/lib/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .specify/extensions/gaia/lib/helper.sh\n'
+  plant .specify/extensions/gaia/lib/helper.sh $'helper() { :; }\n'
   run bash -c "cd '$TMP' && bash '$LINTER'"
   [ "$status" -eq 1 ]
-  grep -qF -- "scan root missing: .github" <<<"$output"
+  grep -qF -- ".specify/extensions/gaia/lib/probe.sh:3" <<<"$output"
+  grep -qF -- "unguarded load" <<<"$output"
 }
 
-# 12. A scan root that vanishes must fail the check, not shrink it
+# 12. A surface that resolves to nothing must fail the check, not report clean
 
-@test "fails loudly when a scan root is absent rather than scanning what remains" {
+# The former root array failed loudly on a root that had vanished, because a
+# walk short one root reports clean having read half the tree. Derivation
+# retires that failure and inherits the same obligation in two shapes: a tree
+# holding no tracked shell at all, refused by the shared library, and one whose
+# shell all sits under tests/, refused at the call site after the prune.
+
+# Each greps the half that distinguishes its own refusal, not the "nothing was
+# scanned" tail both of them print. On the shared tail alone either test would
+# pass on the other's message, so a call-site refusal that regressed into the
+# library's wording would leave both green and neither shape pinned.
+
+@test "fails loudly when the tree carries no tracked shell at all" {
   new_fixture
-  rm -rf "$TMP/.claude"
+  plant README.md $'not shell\n'
   run bash -c "cd '$TMP' && bash '$LINTER'"
   [ "$status" -eq 1 ]
-  grep -qF -- "scan root missing: .claude/hooks" <<<"$output"
+  grep -qF -- "no tracked files matched the scan surface (shell)" <<<"$output"
+}
+
+@test "fails loudly when the tests/ prune takes every tracked shell file" {
+  new_fixture
+  plant .gaia/scripts/tests/fixture.sh $'#!/usr/bin/env bash\nset -euo pipefail\necho ok\n'
+  run bash -c "cd '$TMP' && bash '$LINTER'"
+  [ "$status" -eq 1 ]
+  grep -qF -- "every tracked shell file sits under a tests/ directory" <<<"$output"
+}
+
+# The derived surface resolves against the working directory, so a run from a
+# subdirectory would otherwise scan that subtree and report clean. The refusal
+# is what keeps the narrowing from passing as a pass; the fixture's own
+# `mktemp -d` path sits behind a symlink, which is what the prefix test (rather
+# than a path comparison) is there to survive.
+#
+# The only hit is planted OUTSIDE the subdirectory the run starts in, and the
+# subdirectory itself is clean. That arrangement is what makes the negative
+# assertion live: strip the refusal and this run narrows to a clean subtree and
+# prints `clean` at exit 0, which is the drift being pinned. A hit planted
+# inside the subdirectory would be found by the narrowed scan, so the run would
+# exit non-zero and never print `clean`, and the assertion could not fire.
+@test "refuses to scan from a subdirectory rather than narrowing to it" {
+  new_fixture
+  plant .claude/hooks/ok.sh $'#!/usr/bin/env bash\nset -euo pipefail\necho ok\n'
+  plant .gaia/scripts/bad.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .gaia/scripts/helper.sh\n'
+  plant .gaia/scripts/helper.sh $'helper() { :; }\n'
+  run bash -c "cd '$TMP/.claude/hooks' && bash '$LINTER'"
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output"
+  grep -qF -- "clean" <<<"$output" && return 1
+  true
+}
+
+@test "refuses when it is not inside a git work tree at all" {
+  TMP="$(mktemp -d -t errexit-source-lint-XXXXXX)"
+  mkdir -p "$TMP/.claude/hooks"
+  printf '%s\n' 'helper() { :; }' > "$TMP/.claude/hooks/helper.sh"
+  run bash -c "cd '$TMP' && GIT_CEILING_DIRECTORIES='$TMP' bash '$LINTER'"
+  [ "$status" -eq 2 ]
+  grep -qF -- "not inside a git work tree" <<<"$output"
+}
+
+# The honest limit of the derived surface, stated as a test so it cannot be
+# mistaken for coverage: the gate reads the index, so a file that exists on disk
+# and is not tracked is outside the check whatever sources it.
+@test "ignores an untracked shell file" {
+  new_fixture
+  plant .gaia/scripts/seed.sh $'seed() { :; }\n'
+  mkdir -p "$TMP/.claude/hooks/lib"
+  printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' '. .claude/hooks/lib/helper.sh' > "$TMP/.claude/hooks/probe.sh"
+  printf '%s\n' 'helper() { :; }' > "$TMP/.claude/hooks/lib/helper.sh"
+  run bash -c "cd '$TMP' && bash '$LINTER'"
+  [ "$status" -eq 0 ]
 }
 
 # 13. The decoy and the real load on ONE line
@@ -573,33 +647,30 @@ plant() {
   grep -qF -- ".claude/hooks/probe.sh:4" <<<"$output"
 }
 
-# 14. A walk that could not read the whole surface fails rather than shrinking
+# 14. A surface that could not be READ fails rather than shrinking
 
-@test "fails loudly when a scan root is a symlink the walk would not descend" {
-  new_fixture
-  mkdir -p "$TMP/real-hooks/lib"
-  printf '%s\n' '#!/usr/bin/env bash' 'set -euo pipefail' '. .claude/hooks/lib/helper.sh' > "$TMP/real-hooks/bad.sh"
-  printf '%s\n' 'helper() { :; }' > "$TMP/real-hooks/lib/helper.sh"
-  rm -rf "$TMP/.claude/hooks"
-  ln -s "$TMP/real-hooks" "$TMP/.claude/hooks"
-  run bash -c "cd '$TMP' && bash '$LINTER'"
-  [ "$status" -eq 1 ]
-  grep -qF -- ".claude/hooks/bad.sh:3" <<<"$output"
-}
-
-@test "fails loudly when a subdirectory under a readable root cannot be read" {
+# Two shapes used to reach this: a scan root that was a symlink no `find -H`
+# descended, and a subdirectory whose mode denied read. The first is gone with
+# the walk -- the surface is the index, which git resolves without descending
+# anything, so a symlinked directory contributes its own blob and no contents,
+# and the limit that leaves is the untracked one pinned above. The second
+# survives the switch, because a path can be in the index and still be
+# unopenable, and it is the one that matters: a file counted into the surface
+# and silently skipped is the partial scan this whole section exists to refuse.
+@test "fails loudly when a tracked file on the surface cannot be read" {
   # Mode bits do not restrict root, so the unreadable state this asserts cannot
   # be created in a root container.
   [ "$(id -u)" -ne 0 ] || skip "chmod 000 does not restrict root"
   new_fixture
   plant .claude/hooks/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\necho ok\n'
-  mkdir -p "$TMP/.gaia/scripts/sub"
-  printf '%s\n' 'helper() { :; }' > "$TMP/.gaia/scripts/sub/helper.sh"
+  plant .gaia/scripts/sub/helper.sh $'helper() { :; }\n'
   chmod 000 "$TMP/.gaia/scripts/sub"
   run bash -c "cd '$TMP' && bash '$LINTER'"
   chmod 755 "$TMP/.gaia/scripts/sub"
-  [ "$status" -eq 1 ]
-  grep -qF -- "refusing to report on a partial surface" <<<"$output"
+  [ "$status" -ne 0 ]
+  grep -qF -- ".gaia/scripts/sub/helper.sh" <<<"$output"
+  grep -qF -- "clean" <<<"$output" && return 1
+  true
 }
 
 # 15. An unquoted argument-position dot is a decoy too

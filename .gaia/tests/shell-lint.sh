@@ -481,8 +481,10 @@ fi
 # hook is exit 2 -- a deny on every matching call, including the edit that would
 # repair the library. It works on the errexit-reachable source closure rather
 # than on one file, so it sees a library's own loads whether or not a consumer
-# parse-checked the library. Run from the repo root so its cwd-relative scan
-# roots resolve and the file:line it prints is repo-relative.
+# parse-checked the library. Run from the repo root because it derives its
+# surface with `git ls-files`, which resolves against the working directory: the
+# guard refuses outright on a non-empty `--show-prefix` rather than scanning the
+# subtree, so a run from anywhere else fails here instead of reporting clean.
 echo "--> lint-errexit-source-guard (unbracketed source under errexit)"
 if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-errexit-source-guard.sh"); then
   status=1

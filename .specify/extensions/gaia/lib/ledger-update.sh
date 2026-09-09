@@ -13,8 +13,9 @@
 # the lock env knobs (GAIA_LEDGER_LOCK_*).
 #
 # Exit codes: 0 ok, 2 usage, 4 ledger or row missing OR lock-acquisition
-# timeout (could not safely apply the ledger write), 5 invalid patch JSON,
-# 6 non-canonical status value in the patch.
+# timeout OR the shared mutex library unusable (could not safely apply the
+# ledger write), 5 invalid patch JSON, 6 non-canonical status value in the
+# patch.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then
@@ -27,10 +28,23 @@ spec_id="$2"
 patch="$3"
 
 _lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Each load is bracketed against a target that is present but UNPARSEABLE, and
+# the probe under it decides the degrade. A bare `.` under errexit abandons the
+# shell AT the load, exit 2 with no diagnostic, so none of the refusals written
+# below would run; and a trailing `|| true` does not save it on stock macOS
+# /bin/bash 3.2.57, which aborts before the arm is ever evaluated. An
+# interrupted update, an unresolved merge conflict, and a truncated write all
+# leave exactly that state on disk.
 # shellcheck source=/dev/null
-. "${_lib_dir}/with-ledger-lock.sh"
+set +e; [ -f "${_lib_dir}/with-ledger-lock.sh" ] && . "${_lib_dir}/with-ledger-lock.sh" 2>/dev/null; set -e
+type with_ledger_lock >/dev/null 2>&1 || {
+  echo "ledger-update: the shared ledger mutex is unusable; refuse to write (an unserialized write can tear the ledger)" >&2
+  exit 4
+}
+# No probe of its own: the gaia_resolve_specs_dir call below already refuses
+# when the function is absent, which is the degrade this load owes.
 # shellcheck source=../../../../.gaia/scripts/ledger-path-lib.sh
-. "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null || true
+set +e; [ -f "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" ] && . "${_lib_dir}/../../../../.gaia/scripts/ledger-path-lib.sh" 2>/dev/null; set -e
 
 # repo_root names the tree this write runs in; the ledger it writes is
 # main's, because the state registry declares specs/ main-only. Resolve
