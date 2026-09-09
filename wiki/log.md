@@ -11,6 +11,18 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-09 30772cd7 SKIP - errexit-source guard scan-surface derivation, internal lint-guard implementation fix, no dedicated wiki page for this guard
+- 2026-09-09 c3600d9e SKIP - tests-only
+- 2026-09-09 84a00c1e SKIP - hook_registered lifted to shared .gaia/tests/helpers/, tests-only infra
+- 2026-09-09 7e1b4c04 WORTHY - worktree dispatched-arm git-specific refusal documented -> wiki/concepts/Worktrees.md updated inline by the commit itself
+- 2026-09-09 ec430ce0 SKIP - last six jq stand-downs converted to shared refusal; Claude Hooks.md already describes the mechanism without enumerating hook count
+- 2026-09-09 26e581a1 SKIP - check-hook-capabilities.sh registration-strip bugfix, internal correctness only, described mechanism unchanged
+- 2026-09-09 a412d7c2 SKIP - unified wiki-scanner exemption vocabulary in CLI; Wiki Management.md already delegates via pointer form, no enumeration to update
+- 2026-09-09 6388d37c SKIP - tests-only
+- 2026-09-09 5f63a008 SKIP - prior wiki sync's own commit, no new content to catalogue
+- 2026-09-09 b5eadf69 SKIP - jq-availability arm's internal description-cut bugfix, mechanism already documented generically in Claude Hooks.md
+- 2026-09-09 bd14da51 SKIP - hook_registered test-harness helper, tests-only infra, no documented-contract change
+- 2026-09-09 25b80836 SKIP - tests-only
 - 2026-09-09 1e74ab09 SKIP - prior wiki sync's own commit (advances state/log), no new content to catalogue
 - 2026-09-09 2b72247b WORTHY - sync playbook gains Step 5c shipped-surface boundary check -> wiki/decisions/Wiki Management.md new Shipped-surface boundary check section
 - 2026-09-09 4cf1a9cc WORTHY - shared jq-availability arm closes fail-open across blocking PreToolUse hooks -> wiki/concepts/Claude Hooks.md 'Shared jq-availability decision' section already added inline
