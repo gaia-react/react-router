@@ -11,8 +11,10 @@
 
 input=$(cat /dev/stdin)
 # jq-availability arm: refuse loudly rather than fail open when the interpreter
-# this hook reads its payload with is absent. What that buys, and the contract
-# the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+# this hook reads its payload with is absent. This matcher cannot reach the jq
+# install itself, so the refusal is unconditional within it and the call below
+# passes no binding literal; the contract lives in
+# .claude/hooks/lib/jq-availability.sh.
 _jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
 # shellcheck source=lib/jq-availability.sh
 [ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null

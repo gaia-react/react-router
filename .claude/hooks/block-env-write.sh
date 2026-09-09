@@ -6,8 +6,10 @@ set -euo pipefail
 
 payload=$(cat)
 # jq-availability arm: refuse loudly rather than fail open when the interpreter
-# this hook reads its payload with is absent. What that buys, and the contract
-# the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+# this hook reads its payload with is absent. This matcher cannot reach the jq
+# install itself, so the refusal is unconditional within it and the call below
+# passes no binding literal; the contract lives in
+# .claude/hooks/lib/jq-availability.sh.
 _jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
 set +e
 # shellcheck source=lib/jq-availability.sh

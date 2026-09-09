@@ -73,6 +73,17 @@ GAIA_JQ_AVAILABILITY_SH=1
 # Returns 0 when jq is on PATH. Otherwise exits: 2 with a reason on stderr when
 # the call is inside the caller's remit, 0 when the literals prove it is not.
 gaia_require_jq() {
+  # Arity is checked before the locals below read $3, and it refuses rather than
+  # returning. A caller that omits an argument would otherwise expand an unset
+  # positional under the `set -u` every armed hook arms, ending the hook at
+  # status 1 -- which PreToolUse reads as a non-blocking error, so a mis-arity
+  # call would fail open in exactly the way a missing call does. Refusing here
+  # makes a wrong call loud instead of silent.
+  if [ "$#" -lt 3 ]; then
+    printf 'BLOCKED: gaia_require_jq was called with %s argument(s) and needs at least 3 (subject, payload, region key). Fail-loud, not fail-open -- fix the call site.\n' "$#" >&2
+    exit 2
+  fi
+
   if command -v jq >/dev/null 2>&1; then
     return 0
   fi
@@ -89,6 +100,25 @@ gaia_require_jq() {
         # read a glob metacharacter in the key as one.
         *"\"$region_key\""*) haystack="${payload#*\""$region_key"\"}" ;;
       esac
+      # Cutting the ambient HEAD is only half of it. Inside tool_input the Bash
+      # tool carries a model-authored `description` beside the command, and no
+      # caller predicate reads it, so it is the same class of field as `cwd` one
+      # level deeper: `rm` is satisfied by "Confirm", "form" or "terms", `test`
+      # by "latest", `env` by "environment". Left in, it denies the jq install
+      # on the wording of its own description.
+      #
+      # SHORTEST suffix, deliberately. `%` cuts at the LAST occurrence, so a
+      # command whose own text carries the field name only widens the haystack;
+      # `%%` would cut at the first and could drop real command text, which is
+      # the under-deny direction.
+      #
+      # The pattern is the quoted KEY alone, with no leading comma and no
+      # trailing colon, because the separators are not stable: a compact encoder
+      # writes `,"description":` while a pretty-printing one writes a newline and
+      # indent between the comma and the key. Matching the key by itself holds
+      # for both, and for a payload that carries no description at all the strip
+      # matches nothing and leaves the haystack whole.
+      haystack="${haystack%\"description\"*}"
     fi
     haystack=$(printf '%s' "$haystack" | tr '[:upper:]' '[:lower:]')
     for needle in "$@"; do

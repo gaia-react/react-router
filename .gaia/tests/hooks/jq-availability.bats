@@ -73,9 +73,17 @@ ambient() {
     '{session_id: "0193-fixture", transcript_path: $t, cwd: $c, hook_event_name: "PreToolUse"}'
 }
 
+# The Bash tool's tool_input carries a model-authored `description` beside the
+# command, and no caller predicate reads it, so it is the same class of field as
+# the ambient head one level deeper. This one carries every literal any
+# Bash-matcher caller passes -- "Confirm" holds rm, "latest" holds test,
+# "environment" holds env, "setup" holds the dump spelling -- so an arm that
+# stops cutting it denies the jq install on the wording of its own description.
+readonly AMBIENT_DESCRIPTION="Confirm the latest environment setup, gitignore and permissions"
+
 bash_payload() {
-  jq -n --argjson a "$(ambient)" --arg c "$1" \
-    '$a + {tool_name: "Bash", tool_input: {command: $c}}'
+  jq -n --argjson a "$(ambient)" --arg c "$1" --arg d "$AMBIENT_DESCRIPTION" \
+    '$a + {tool_name: "Bash", tool_input: {command: $c, description: $d}}'
 }
 
 edit_payload() {
@@ -312,6 +320,20 @@ readonly INSTALL_CMD="brew install jq"
 }
 
 # --- the arm's own library is unreachable ------------------------------------
+
+@test "a mis-arity call refuses rather than dying at a non-blocking status" {
+  # A caller that omits an argument would expand an unset positional under the
+  # errexit-and-nounset every armed hook arms, ending it at status 1, which
+  # PreToolUse reads as a NON-BLOCKING error: the same fail-open a missing call
+  # produces, reached by a different edit. The arm checks its own arity so a
+  # wrong call is loud.
+  local lib
+  lib="$HOOKS_SRC/lib/jq-availability.sh"
+  run bash -c 'set -euo pipefail; . "$1"; gaia_require_jq "only one arg"' _ "$lib"
+  [ "$status" -eq 2 ]
+  grep -qF -- 'BLOCKED' <<<"$output"
+  grep -qF -- 'needs at least 3' <<<"$output"
+}
 
 @test "the library missing refuses too, rather than running the hook unguarded" {
   # A hook resolves the library from its own on-disk location, so a copy in a
