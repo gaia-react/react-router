@@ -17,8 +17,10 @@
 # bundled-hooks inventory guard (.gaia/scripts/lint-hook-wiki-inventory.sh),
 # the wiki cached-version guard (.gaia/scripts/lint-wiki-cached-version.sh),
 # the hook advisory-classification guard
-# (.gaia/scripts/lint-hook-advisory-classification.sh), and the hook
-# cwd-relative-load guard (.gaia/scripts/lint-hook-cwd-relative-loads.sh).
+# (.gaia/scripts/lint-hook-advisory-classification.sh), the hook
+# cwd-relative-load guard (.gaia/scripts/lint-hook-cwd-relative-loads.sh), and
+# the hook jq-availability guard
+# (.gaia/scripts/lint-hook-jq-availability.sh).
 # Exit 0 when clean, 1 on any finding at or above the severity floor, and 1 on
 # a pass that cannot run at all (no shellcheck binary, an empty *.sh discovery
 # set, an unusable bash-3.2 interpreter). A red gate is therefore not always a
@@ -677,6 +679,17 @@ fi
 # same property it exists to enforce, and its own suite pins that.
 echo "--> lint-hook-cwd-relative-loads (a hook locating framework code from the working directory)"
 if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-hook-cwd-relative-loads.sh"); then
+  status=1
+fi
+
+# Fold in the hook jq-availability guard, for the reason its siblings ride here:
+# a `payload=$(jq -r ...)` read is well-formed to the static checker, and it is
+# well-formed, right up to the point where jq is not installed, the read ends the
+# hook at 127, and the PreToolUse contract reads every status but 2 as a
+# non-blocking error. The refused call proceeds with no denial and no diagnostic,
+# across the whole fail-closed layer at once.
+echo "--> lint-hook-jq-availability (a blocking hook standing down on a missing jq)"
+if ! (cd "$REPO_ROOT" && bash "$REPO_ROOT/.gaia/scripts/lint-hook-jq-availability.sh"); then
   status=1
 fi
 

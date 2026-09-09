@@ -59,16 +59,12 @@
 # to move an entry that is not an entry. The span test has no such fallback: a
 # bullet with no leading code span is graded not at all.
 #
-# THE ORACLE, and its one deliberate asymmetry. A hook BLOCKS when it is
-# registered on PreToolUse and its body, comments excluded, either emits a
-# `permissionDecision` or exits 2 -- the two mechanisms by which a PreToolUse
-# hook stops a tool call. PostToolUse, Stop, SessionStart and the rest cannot
-# stop anything, so a hook registered only on those is never blocking here
-# whatever its exit codes. The `exit 2` half reads text rather than control
-# flow, so a literal 2 inside a heredoc or a string over-classifies. That
-# direction is the safe one: over-classifying can only red a hook that is ALSO
-# filed as advisory, where a human then reads both and settles it, while
-# under-classifying returns a page silently wrong about whether an action stops.
+# THE ORACLE. Which registrations this gate reads, what makes a hook count as
+# blocking, and which direction that reading errs in, all live in
+# .gaia/scripts/hook-registration-lib.sh, which this gate shares with the jq
+# availability gate. Both questions are the same for both gates, so neither
+# carries its own copy of the answer. What this gate adds on top of it is the
+# entry parse above and the verdict below.
 #
 # Fail-closed by construction, at each stage guards-must-fail.md names:
 #   discovery -- settings.json missing, unparseable, registering no PreToolUse
@@ -90,60 +86,17 @@ readonly SETTINGS=".claude/settings.json"
 # returned on the ordinary path, with the frame already popped.
 BLOCKING_FILE=''
 
-# The one spelling of a hook name inside a registration command, named once.
-readonly HOOK_NAME_RE='\.claude/hooks/[A-Za-z0-9_./-]+\.sh'
-
-# pretooluse_hooks <repo_root>
-#
-# Print every hook script registered under `.hooks.PreToolUse` as its path
-# relative to `.claude/hooks/`, one per line, sorted and deduplicated.
-pretooluse_hooks() {
-  local root="$1"
-  jq -r '
-    .hooks.PreToolUse // []
-    | .[]
-    | .hooks[]?
-    | .command // empty
-  ' "$root/$SETTINGS" 2>/dev/null |
-    grep -F '.claude/hooks/' |
-    grep -oE "$HOOK_NAME_RE" |
-    sed -e 's#^\.claude/hooks/##' |
-    sort -u
-}
-
-# blocks <hook_script_path>
-#
-# Succeed when the script can stop a tool call: it emits a permissionDecision,
-# or it exits 2. Full-line comments are excluded, which is load-bearing rather
-# than tidy -- at least one advisory hook here carries the string `exit 2` in a
-# paragraph of its header explaining a failure mode it does NOT cause, and
-# grading that as a block would misfile a correctly-filed advisory hook.
-#
-# ONE awk PASS, not a `grep -v | grep -q` pipeline, and the reason is a fail-open
-# this check was caught by on its first run against the live tree. `grep -q`
-# exits at its first match and closes the pipe under it; the upstream grep then
-# takes SIGPIPE and returns 141, and `set -o pipefail` promotes that to the
-# pipeline's status. The function returned non-zero ON A MATCH, so every hook
-# whose upstream lost that race classified as advisory and the check reported
-# clean over the very defect it was written for. A single process cannot lose
-# that race.
-#
-# The `exit 2` test pads the line on both sides so the surrounding-character
-# class needs no anchor alternation: with a leading and trailing space, a bare
-# `exit 2` matches and `exit 22` cannot.
-blocks() {
-  awk '
-    {
-      line = $0
-      sub(/^[[:space:]]+/, "", line)
-      if (line ~ /^#/) next
-      if (index(line, "permissionDecision")) { found = 1; exit }
-      probe = " " line " "
-      if (probe ~ /[^A-Za-z0-9_]exit 2[^0-9]/) { found = 1; exit }
-    }
-    END { exit(found ? 0 : 1) }
-  ' "$1"
-}
+# The PreToolUse registration read and the blocking oracle are shared with
+# .gaia/scripts/lint-hook-jq-availability.sh, which asks a different question of
+# the same two answers. Rooted at this script's own on-disk location so it
+# resolves however the gate is invoked.
+_gaia_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)" || _gaia_lib_dir=''
+if [ -z "$_gaia_lib_dir" ] || [ ! -f "$_gaia_lib_dir/hook-registration-lib.sh" ]; then
+  printf '%s: cannot load hook-registration-lib.sh beside this script\n' "$PROG" >&2
+  exit 2
+fi
+# shellcheck source=hook-registration-lib.sh
+. "$_gaia_lib_dir/hook-registration-lib.sh"
 
 # advisory_entries <page_path>
 #
@@ -278,7 +231,7 @@ main() {
   trap 'exit 143' TERM
 
   local registered hook
-  registered="$(pretooluse_hooks "$root")"
+  registered="$(gaia_pretooluse_hooks "$root")"
   if [ -z "$registered" ]; then
     printf '%s: discovery found no hook registered on PreToolUse in %s.\n' "$PROG" "$SETTINGS" >&2
     printf 'This tree registers dozens; an empty set is a broken read of the registration\n' >&2
@@ -293,7 +246,7 @@ main() {
     # with its own owner; skipping it here keeps this check speaking only about
     # classification.
     [ -f "$root/.claude/hooks/$hook" ] || continue
-    if blocks "$root/.claude/hooks/$hook"; then
+    if gaia_hook_blocks "$root/.claude/hooks/$hook"; then
       printf '%s\n' "$hook" >>"$BLOCKING_FILE"
     fi
   done <<EOF

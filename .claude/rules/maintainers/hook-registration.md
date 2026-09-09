@@ -32,6 +32,16 @@ bash .gaia/scripts/audit-rules-changed-complete.sh
 
 Run both before opening the pull request. The second walks tracked files, so `git add` the new file first or it reports green on one it cannot see. The first walks the directory itself and catches an untracked hook either way.
 
+## jq-availability obligation
+
+**Every hook registered on `PreToolUse` that parses its payload with `jq` needs a jq-availability arm.** A blocking hook reaches the shared arm and refuses; an advisory one stands down. Which of the two a hook is, why the refusal is narrowed on a `Bash`-matcher hook, and what the shared arm's literal contract is, live in `.claude/hooks/lib/jq-availability.sh` and [[Claude Hooks]]; this rule states only that the obligation exists and what enforces it:
+
+```bash
+bash .gaia/scripts/lint-hook-jq-availability.sh
+```
+
+Like the manifests above, the obligated set is derived from the registration rather than from a second list, so a newly registered hook carries it the moment it is registered. It folds into `.gaia/tests/shell-lint.sh`, so a missing arm reds on the pull request that registers the hook.
+
 ## Capability obligation
 
 **Every hook the `hooks` block of `.claude/settings.json` registers needs an entry in `.gaia/hook-capabilities.json`.** The entry declares every capability the hook reaches for beyond itself and a `why`. The obligated set is derived from the registration at run time, so a newly registered hook carries a new obligation the moment it is registered, with no second list to remember to edit. A registration with no entry, an entry no registration names, and two entries naming one hook are each a finding:
