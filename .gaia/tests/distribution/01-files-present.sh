@@ -186,7 +186,36 @@ if [ "${#HOOKCAP_ERRORS[@]}" -eq 0 ] && [ -e "$STAGING/.gaia/hook-capabilities.j
   # .gaia/scripts/check-hook-command-rooting.sh owns that shape and holds
   # settings.json to it; a registration that is not rooted passes through
   # unchanged and still has to match the manifest on its own.
-  REGISTERED_HOOKS="$(jq -r '(.hooks // {}) | to_entries[]? | (.value // [])[]? | (.hooks // [])[]? | .command // empty' "$STAGING/.claude/settings.json" 2>/dev/null | sed -E 's|^"\$\(.*\)/(.*)"$|\1|' | LC_ALL=C sort -u)"
+  #
+  # `.*` is greedy, so a command carrying more than one substitution matches
+  # too, with the capture keeping only its LAST path: every earlier path would
+  # leave REGISTERED_HOOKS with nothing said, and the comparison below would
+  # then run against an incomplete set and report a set mismatch, which sends
+  # a reader to the manifest rather than to the command that lost a path. The
+  # address guard holds such a command out of the substitution so it survives
+  # whole and fails the comparison as itself.
+  # .gaia/scripts/check-hook-capabilities.sh refuses the same shape on the same
+  # ground, through its own BAD-REGISTRATION arm.
+  HOOKCAP_REDUCE='/\$\(.*\$\(/! s|^"\$\(.*\)/(.*)"$|\1|'
+
+  # Pin the reduction against the shape it must refuse and the shape it must
+  # still reduce, driving the expression the pipeline below uses rather than a
+  # second copy of it: a copy is what lets a fixture stay green while the
+  # reducer beside it diverges. The substitutions in these fixtures are the
+  # subject under test rather than something to evaluate, so they stay literal.
+  # shellcheck disable=SC2016
+  REDUCE_PROBE="$(printf '%s\n' \
+    '"$(git rev-parse --show-toplevel)/.claude/hooks/single.sh"' \
+    '"$(git rev-parse --show-toplevel)/.claude/hooks/a.sh" && "$(git rev-parse --show-toplevel)/.claude/hooks/b.sh"' \
+    | sed -E "$HOOKCAP_REDUCE")"
+  # shellcheck disable=SC2016
+  REDUCE_EXPECT="$(printf '%s\n' \
+    '.claude/hooks/single.sh' \
+    '"$(git rev-parse --show-toplevel)/.claude/hooks/a.sh" && "$(git rev-parse --show-toplevel)/.claude/hooks/b.sh"')"
+  [ "$REDUCE_PROBE" = "$REDUCE_EXPECT" ] \
+    || HOOKCAP_ERRORS+=("registration reduction is unsound: it does not leave a multi-substitution command whole, or no longer reduces a single-substitution one")
+
+  REGISTERED_HOOKS="$(jq -r '(.hooks // {}) | to_entries[]? | (.value // [])[]? | (.hooks // [])[]? | .command // empty' "$STAGING/.claude/settings.json" 2>/dev/null | sed -E "$HOOKCAP_REDUCE" | LC_ALL=C sort -u)"
 
   if [ "$MANIFEST_HOOKS" != "$REGISTERED_HOOKS" ]; then
     HOOKCAP_ERRORS+=("staged hook-capabilities.json entry set != staged settings.json hook registrations")
