@@ -79,10 +79,7 @@
  * scan skips there. Mirrors `module-docblock-placement.test.ts`.
  */
 import {describe, expect, test} from 'vitest';
-import {existsSync, readFileSync} from 'node:fs';
-import path from 'node:path';
-import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
-import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
+import {CLI_SRC, testDeclaredOnce} from './util/uniqueness-guard-fixture.js';
 
 const REGEX_METACHARACTERS = new Set([
   '$',
@@ -149,17 +146,8 @@ const findEscapeSetDeclaration = (source: string): null | number => {
   return null;
 };
 
-/**
- * The declaring module, relative to `.gaia/cli/src` and spelled the way
- * `collectTreeFiles` reports an entry. Any other spelling makes the comparison
- * below miss, and the miss reports the shared declaration itself as a copy of
- * itself, which reads as the guard working.
- */
+/** The one module allowed to declare an escape set. */
 const DECLARING_MODULE = 'util/escape-regexp.ts';
-
-const repoRoot = resolveRepoRootFromImportMeta(import.meta.url);
-const cliSrc = path.join(repoRoot, '.gaia', 'cli', 'src');
-const sourcesPresent = existsSync(cliSrc);
 
 // Assembled rather than written out, for the reason the docblock gives: a
 // literal fixture would be an offense in this very file.
@@ -174,40 +162,12 @@ const GLOB_ESCAPER_SET = '.+^$()[\\]{}|\\\\';
 const PATH_METACHARACTER_DETECTOR_SET = '$*?[{';
 
 describe('escapeRegExp uniqueness', () => {
-  // Maintainer-only guard: `sourcesPresent` is false on an adopter clone,
-  // where `.gaia/cli/src` is release-excluded.
-  test.skipIf(!sourcesPresent)(
-    'no file outside the declaring module declares an escape set',
-    () => {
-      const sources = collectTreeFiles(cliSrc, TS_SOURCE_EXTENSIONS);
-
-      // A scan that reaches nothing reports nothing, so the empty result below
-      // would read as a clean corpus. `.gaia/cli/src` has held hundreds of
-      // `.ts` files for the life of the CLI; a count this low means the walk
-      // or the extension filter broke, not that the tree shrank.
-      expect(sources.length).toBeGreaterThan(50);
-
-      const copies = sources
-        .filter((relative) => relative !== DECLARING_MODULE)
-        .flatMap((relative) => {
-          const line = findEscapeSetDeclaration(
-            readFileSync(path.join(cliSrc, relative), 'utf8')
-          );
-
-          return line === null ? [] : [`.gaia/cli/src/${relative}:${line}`];
-        });
-
-      expect(copies).toEqual([]);
-    }
-  );
-
-  // The corpus above is expected to be empty, so on its own it would green just
-  // as loudly with a detector that matches nothing. This is the one assertion
-  // driven against the live declaration the guard is written for.
-  test.skipIf(!sourcesPresent)('the declaring module itself matches', () => {
-    const source = readFileSync(path.join(cliSrc, DECLARING_MODULE), 'utf8');
-
-    expect(findEscapeSetDeclaration(source)).not.toBeNull();
+  testDeclaredOnce({
+    corpusFloor: 50,
+    corpusRoot: CLI_SRC,
+    declaringModule: DECLARING_MODULE,
+    findOffense: findEscapeSetDeclaration,
+    offense: 'declares an escape set',
   });
 
   // No `skipIf`: these run against assembled strings, so they hold on any clone
