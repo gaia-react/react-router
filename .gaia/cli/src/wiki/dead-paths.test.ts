@@ -5,7 +5,13 @@ import {tmpdir} from 'node:os';
 import path from 'node:path';
 import {ADOPTER_OWNED_SENTINELS as GIT_TRACKED_SENTINELS} from '../release/manifest.js';
 import {ADOPTER_OWNED_SENTINELS as RELEASE_SENTINELS} from '../release/runtime-deps.js';
-import {ADOPTER_OWNED_SENTINELS, findDeadPaths, run} from './dead-paths.js';
+import {
+  ADOPTER_OWNED_SENTINELS,
+  findDeadPaths,
+  HELP_TEXT,
+  run,
+  SKIP_PATH_FRAGMENTS,
+} from './dead-paths.js';
 
 type Sandbox = {
   cleanup: () => void;
@@ -265,10 +271,14 @@ describe('wiki dead-paths', () => {
     expect(findDeadPaths(sandbox.root)).toEqual([]);
   });
 
-  test('skips wiki/log.md and wiki/meta/** by design', () => {
+  test('skips wiki/log.md, wiki/hot.md and wiki/meta/** by design', () => {
     sandbox.writeFile(
       'wiki/log.md',
       '# Log\n\nDeleted `.claude/hooks/old.sh` (historical record).\n'
+    );
+    sandbox.writeFile(
+      'wiki/hot.md',
+      '# Hot\n\nRecent work moved `.claude/hooks/moved.sh` (session cache).\n'
     );
     sandbox.writeFile(
       'wiki/meta/lint-report.md',
@@ -276,6 +286,43 @@ describe('wiki dead-paths', () => {
     );
 
     expect(findDeadPaths(sandbox.root)).toEqual([]);
+  });
+
+  test('the help text and the skip list agree, in both directions', () => {
+    // The help prose and the array are two hand-written copies of one set, and
+    // either can gain or lose a member the other never does (#1878). Both
+    // directions are asserted: one of them alone leaves half the drift silent.
+    //
+    // Array to prose. Every entry is checked unless named below, so a new one
+    // is covered by default rather than by remembering to widen a predicate.
+    // `wiki/.state.json` is named because `walkMarkdown` collects `.md` files
+    // only: no non-markdown entry can ever match a scanned path, so it is
+    // unreachable and correctly absent from the help text.
+    const notNamedInHelp = new Set(['wiki/.state.json']);
+    const documented = SKIP_PATH_FRAGMENTS.filter(
+      (fragment) => !notNamedInHelp.has(fragment)
+    );
+
+    for (const fragment of documented) {
+      expect(HELP_TEXT).toContain(fragment);
+    }
+
+    // Prose to array. Dropping an entry from the array leaves the help
+    // promising an exclusion the scan no longer applies, and readers then see
+    // dead-path findings for a file the documented contract excludes. Read the
+    // exclusion sentence back and require every file it names to still be in
+    // the array; a trailing `**` is prose glob notation for the directory
+    // prefix the array stores.
+    const sentence = /Excludes ([^(]+)\(/.exec(HELP_TEXT)?.[1] ?? '';
+    const namedInHelp = [...sentence.matchAll(/wiki\/[\w./*-]+/g)].map(
+      (match) => match[0].replaceAll('*', '')
+    );
+
+    expect(namedInHelp).toHaveLength(documented.length);
+
+    for (const fragment of namedInHelp) {
+      expect(SKIP_PATH_FRAGMENTS).toContain(fragment);
+    }
   });
 
   test('detects dead paths under .gaia/ and app/ as well as .claude/', () => {
