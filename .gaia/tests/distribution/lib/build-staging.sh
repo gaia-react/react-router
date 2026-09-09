@@ -3,8 +3,9 @@
 # shell expansion.
 # shellcheck disable=SC2016
 # Build a release-staging tree from the source repo into <output-dir>.
-# Pure replication of `.github/workflows/release.yml` Stage + Scrub +
-# Runtime-deps phases. Read-only on the source repo.
+# Replicates `.github/workflows/release.yml`; each phase block below says what
+# it replicates, and a list of them here would go stale the next time a phase
+# is added. Read-only on the source repo.
 #
 # Usage: build-staging.sh <output-dir>
 #
@@ -101,9 +102,11 @@ rsync -a --files-from="$INCLUDE" "$PROJECT_ROOT/" "$OUTPUT_DIR/"
 # on log content the adopter never receives.
 ( cd "$OUTPUT_DIR" && "$PROJECT_ROOT/.gaia/cli/gaia-maintainer" release scrub-wiki )
 
-# Phase 3; Scrub. Same invocation as release.yml line 82. Runs after
-# scrub-wiki so the leak-check scans the reset log.md/hot.md (see above).
+# Phase 3; Scrub. Same invocation as release.yml's "Bundle-time scrub
+# (marker-strip + leak-check)" step. Runs after scrub-wiki so the leak-check
+# scans the reset log.md/hot.md (see above).
 "$PROJECT_ROOT/.gaia/cli/gaia-maintainer" release scrub "$OUTPUT_DIR"
 
-# Phase 4; Runtime-deps. Same invocation as release.yml line 87.
+# Phase 4; Runtime-deps. Same invocation as release.yml's "Verify runtime
+# dependencies" step.
 "$PROJECT_ROOT/.gaia/cli/gaia-maintainer" release runtime-deps --staging "$OUTPUT_DIR"

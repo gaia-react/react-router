@@ -1,5 +1,5 @@
 /**
- * The corpus scan the `*-uniqueness` guards under `.gaia/cli/src` share.
+ * The corpus scan the declared-once guards under `.gaia/cli/src` share.
  *
  * Each of those guards asserts that one declaration exists in exactly one
  * module, and each needs the same scaffold around its own detector: resolve the
@@ -13,11 +13,13 @@
  * lowered or a root narrowed in one copy leaves the other's untouched and
  * reports nothing, so a guard whose corpus has quietly shrunk still greens.
  *
- * Scoped to the uniqueness pair on purpose. The other whole-tree guards that
- * scan this corpus (`module-docblock-placement.test.ts`,
- * `command-reachability.test.ts`) have no declaring module and no
- * self-check, so serving them here would parameterize this on a property half
- * its callers do not have.
+ * Admission is a property, not a filename or a count: a guard belongs here when
+ * it has a declaring module and a self-check against that declaration. Callers
+ * are whatever `testDeclaredOnce` resolves to, and they are not confined to one
+ * directory or to any naming convention. The other whole-tree guards that scan
+ * this corpus (`module-docblock-placement.test.ts`,
+ * `command-reachability.test.ts`) have neither, so serving them here would
+ * parameterize this on a property some of its callers do not have.
  *
  * Test-only, and reached only from `*.test.ts` files: it imports vitest, and
  * the shipped binaries are bundled from `src/index.ts` and
@@ -61,6 +63,21 @@ type CorpusScan = {
    * `null` when it carries none.
    */
   findOffense: (source: string) => null | number;
+  /**
+   * Corpus entries this guard does not read, beyond `declaringModule`, as a
+   * predicate over the same spelling `declaringModule` uses.
+   *
+   * A predicate rather than a list of names, because the cases that need it are
+   * classes rather than entries: a corpus whose own test files carry the
+   * declaration as fixture data is exempt by shape, and enumerating those files
+   * would be a second list to keep in step. Omit it, as the callers that need
+   * no such class do, and only the declaring module is spared.
+   *
+   * Every exemption is a hole in the guard, so a caller passing this owes the
+   * reason at its own site: what it spares, and why sparing it does not spare
+   * the drift the guard exists to catch.
+   */
+  isExempt?: (relative: string) => boolean;
 };
 
 type UniquenessGuard = {
@@ -94,7 +111,11 @@ export const scanCorpus = (
 
   return {
     offenses: sources
-      .filter((relative) => relative !== guard.declaringModule)
+      .filter(
+        (relative) =>
+          relative !== guard.declaringModule &&
+          !(guard.isExempt?.(relative) ?? false)
+      )
       .flatMap((relative) => {
         const absolute = path.join(guard.corpusRoot, relative);
         const line = guard.findOffense(readFileSync(absolute, 'utf8'));

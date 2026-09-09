@@ -522,6 +522,37 @@ true'
   grep -qF -- 'BAD-REGISTRATION "$(git rev-parse --show-toplevel)/cat b.sh | bash"' <<<"$output"
 }
 
+# Both capture groups in the rooted pattern are greedy, so on a command
+# carrying two substitutions the first runs to the LAST `)/` and the second
+# keeps only the final path. The reduction then answers "the path this names"
+# with one path for a command that names more, and every earlier path leaves
+# the obligated set with no diagnostic: a hook Claude Code runs prompt-free,
+# obligated to declare nothing. It slips the arm above precisely because what
+# survives the strip is a well-formed bare path. A command the strip cannot
+# account for in full has to reach BAD-REGISTRATION whole, which is the answer
+# .claude/rules/maintainers/hook-registration.md already gives for a shape the
+# anchored pattern cannot reduce: the registration is rewritten, not the
+# reducer widened to derive obligations from a spelling no prose sanctions.
+@test "a registration carrying two command substitutions is BAD-REGISTRATION, not reduced to its last path" {
+  repo="$(make_fixture_repo rooted-registration-two-substitutions)"
+  write_registrations "$repo" \
+    PreToolUse '"$(git rev-parse --show-toplevel)/.claude/hooks/a.sh" && "$(git rev-parse --show-toplevel)/.claude/hooks/b.sh"' \
+    PreToolUse '"$(git rev-parse --show-toplevel)/.claude/hooks/c.sh" | "$(git rev-parse --show-toplevel)/.claude/hooks/d.sh"'
+  write_manifest "$repo" '[]'
+  run bash "$CHECK" "$repo"
+  [ "$status" -eq 1 ]
+  # Per input, and on the whole entry: the separator is absorbed into the
+  # greedy first group, so `&&` and `|` reduce alike and neither is evidence
+  # for the other.
+  grep -qF -- 'BAD-REGISTRATION "$(git rev-parse --show-toplevel)/.claude/hooks/a.sh" && "$(git rev-parse --show-toplevel)/.claude/hooks/b.sh"' <<<"$output"
+  grep -qF -- 'BAD-REGISTRATION "$(git rev-parse --show-toplevel)/.claude/hooks/c.sh" | "$(git rev-parse --show-toplevel)/.claude/hooks/d.sh"' <<<"$output"
+  # And nothing is obligated out of either command. The defect's signature is
+  # that the last path survives as a clean obligation, so a test counting only
+  # BAD-REGISTRATION lines would green while the drop stayed silent.
+  grep -qE -- '^NO-ENTRY \.claude/hooks/[abcd]\.sh$' <<<"$output" && return 1
+  true
+}
+
 # ========== UAT-021, BAD-REGISTRATION on a script-less registration, with a clearing arm ==========
 
 @test "UAT-021: an inline pipeline and a non-shell interpreter registration are each BAD-REGISTRATION; naming a script clears it" {

@@ -31584,6 +31584,13 @@ import { statSync as statSync6 } from "node:fs";
 import path46 from "node:path";
 var WIKI_DIR = "wiki";
 var MARKDOWN_EXTENSIONS = /* @__PURE__ */ new Set([".md"]);
+var WIKI_SCAN_EXEMPT_PREFIXES = ["wiki/meta/"];
+var GENERATED_CONTENT_EXEMPT_PATHS = /* @__PURE__ */ new Set([
+  "wiki/hot.md",
+  "wiki/log.md"
+]);
+var isWikiScanExempt = (relativePath) => WIKI_SCAN_EXEMPT_PREFIXES.some((prefix) => relativePath.startsWith(prefix));
+var isGeneratedContentExempt = (relativePath) => GENERATED_CONTENT_EXEMPT_PATHS.has(relativePath);
 var collectWikiMarkdown = (cwd) => {
   const wikiDir = path46.join(cwd, WIKI_DIR);
   try {
@@ -31615,12 +31622,7 @@ var TRACKED_PREFIXES = [
   "wiki/"
 ];
 var SIBLING_REPO_PATTERN = /(?:^|\/)(studio|website)\//;
-var SKIP_PATH_FRAGMENTS = [
-  "wiki/log.md",
-  "wiki/hot.md",
-  "wiki/meta/",
-  "wiki/.state.json"
-];
+var LOCAL_EXEMPT_PREFIX = "wiki/.state.json";
 var RUNTIME_PREFIXES2 = [".gaia/local/"];
 var GITIGNORED_LOCAL_FILES = /* @__PURE__ */ new Set([
   ".claude/settings.local.json"
@@ -31647,7 +31649,7 @@ var isTrackedPath = (token) => {
   if (SIBLING_REPO_PATTERN.test(token)) return true;
   return TRACKED_PREFIXES.some((prefix) => token.startsWith(prefix));
 };
-var shouldSkipFile = (relPath) => SKIP_PATH_FRAGMENTS.some((fragment) => relPath.startsWith(fragment));
+var shouldSkipFile = (relPath) => isWikiScanExempt(relPath) || isGeneratedContentExempt(relPath) || relPath.startsWith(LOCAL_EXEMPT_PREFIX);
 var pathExists = (root, candidate) => {
   try {
     statSync7(path47.join(root, candidate));
@@ -32034,11 +32036,9 @@ var HELP_TEXT55 = `Usage: gaia wiki empty-sections [--json]
   --json, emits { "empty": [ { path, line, heading } ] }.
 `;
 var HELP_TOKENS53 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
-var SKIP_PATH_FRAGMENTS2 = ["wiki/meta/"];
-var SKIP_PATHS = /* @__PURE__ */ new Set(["wiki/hot.md", "wiki/log.md"]);
 var ATX_HEADING_PATTERN = /^ {0,3}(#{1,6})(?:\s|$)/u;
 var FENCE_PATTERN = /^\s*(?:```|~~~)/u;
-var shouldSkipFile2 = (relPath) => SKIP_PATHS.has(relPath) || SKIP_PATH_FRAGMENTS2.some((fragment) => relPath.startsWith(fragment));
+var shouldSkipFile2 = (relPath) => isWikiScanExempt(relPath) || isGeneratedContentExempt(relPath);
 var markLastHeadingHasContent = (headings) => {
   const last = headings.at(-1);
   if (last !== void 0) last.hasContent = true;
@@ -32144,13 +32144,11 @@ var HELP_TEXT56 = `Usage: gaia wiki frontmatter [--json]
 `;
 var HELP_TOKENS54 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var REQUIRED_FIELDS = ["type", "status"];
-var SKIP_PATH_FRAGMENTS3 = ["wiki/meta/"];
-var shouldSkipFile3 = (relPath) => SKIP_PATH_FRAGMENTS3.some((fragment) => relPath.startsWith(fragment));
 var hasField = (frontmatter, field) => Object.hasOwn(frontmatter, field) && frontmatter[field] !== null;
 var findFrontmatterGaps = (cwd) => {
   const gaps = [];
   for (const filePath of collectWikiMarkdown(cwd)) {
-    if (!shouldSkipFile3(filePath)) {
+    if (!isWikiScanExempt(filePath)) {
       const content = readFileSync41(path49.join(cwd, filePath), "utf8");
       const { frontmatter } = parseFrontmatter(content);
       const missing = REQUIRED_FIELDS.filter(
