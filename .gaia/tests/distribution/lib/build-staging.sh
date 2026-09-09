@@ -3,8 +3,9 @@
 # shell expansion.
 # shellcheck disable=SC2016
 # Build a release-staging tree from the source repo into <output-dir>.
-# Pure replication of `.github/workflows/release.yml` Stage + Scrub +
-# Runtime-deps phases. Read-only on the source repo.
+# Replicates `.github/workflows/release.yml`; each phase block below names what
+# it mirrors and where it deviates, and a list of them here would go stale the
+# next time a phase is added. Read-only on the source repo.
 #
 # Usage: build-staging.sh <output-dir>
 #
