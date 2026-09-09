@@ -161,6 +161,62 @@ model is narrating edits without performing them, escalate the model.
 
 Because the run aborts before Step 8/9, no `CONSOLIDATE_TRIGGERED` line is emitted. The router (`references/wiki.md` → "Full chain") already treats an absent trigger line as a known-incomplete state and skips consolidate and lint, so an abort fails the whole chain safely without further wiring.
 
+<!-- gaia:maintainer-only:start -->
+## Step 5c: Shipped-surface boundary check
+
+`wiki/` ships, so a page this run authored is a shipped file and carries two boundary obligations no other step in this playbook checks. Both are properties of authoring a page at all rather than of what a given page says, so they recur on every sync that writes one. Both are also maintainer-repo concerns: an adopter clone produces no release tarball and answers no distribution manifest, which is why this whole step is maintainer-only and an adopter sync goes from Step 5b straight to Step 6.
+
+Skip the step entirely when Step 5b's `CONTENT_CHANGES` is empty. An all-SKIP run authored no page and owes neither obligation.
+
+It sits here, ahead of Step 6 and Step 7, so an abort has the same shape as Step 5b's: state not advanced, nothing committed, nothing pushed. Standalone, Step 7 opens the pull request itself; in the full chain the router opens one at the end. Running before Step 7 is ahead of the pull request either way.
+
+### 5c.1 Stage the authored pages first
+
+```bash
+git add -- wiki/
+```
+
+This is load-bearing, not tidiness. The staging build discovers its input with `git ls-files` (through `.gaia/scripts/list-tracked-paths.sh`), which reads the index, so a page this run just created is invisible to it while the page is untracked. Run the check against an unstaged page and it reports clean over an input set that never held the page, which is indistinguishable from a real pass and is the exact failure `.claude/rules/guards-must-fail.md` names for an index-reading discovery. Step 7 runs the same `git add wiki` itself, so staging here changes nothing about what lands.
+
+### 5c.2 Run the staging build
+
+```bash
+staging="$(mktemp -d -t gaia-wiki-staging-XXXXXX)"
+bash .gaia/tests/distribution/lib/build-staging.sh "$staging"
+```
+
+This is the same oracle CI's `Shipped-surface leak check` runs, moved ahead of the pull request. That job is advisory by its own design and never gates a merge, so what this step buys is not a gate but the report arriving while the run that wrote the prose is still holding it. The output directory has to exist and be empty, hence a fresh `mktemp -d` per attempt rather than a reused path. Exit 0 is clean. Exit 1 lists each leak as `[<check-id>] <path>:<line>  <match>`.
+
+Leave the staging tree where `mktemp` put it, exactly as the CI step does. Removing it needs a recursive delete of an absolute path, which `.claude/hooks/` denies, so a cleanup line here would read as a prescribed step that is refused every time it runs.
+
+### 5c.3 Repair, then re-run
+
+A leak is generated prose pointing at something the adopter never receives: a release-excluded path, a wikilink or a bare Title-Case mention of a release-excluded page, a sibling-monorepo prefix. The check names which one. The run that wrote the prose is the one positioned to repair it, so repair rather than abort:
+
+- Wrap the citation in the `gaia:maintainer-only` HTML-comment marker pair when the fact is real but maintainer-only. The bundle-time scrub strips the block, so the page keeps the fact and the adopter copy loses the dangling pointer. `.claude/rules/wiki-style.md` spells the pair; this playbook names it instead, because the scrub matches those two comments as literal strings, so a copy of the start marker written inside a maintainer-only block closes that block early and leaves the rest of it shipping.
+- Otherwise rewrite the sentence to name something an adopter clone has, or drop the pointer. Follow `.claude/rules/wiki-style.md`, which prefers naming what owns a fact over restating it, and a pointer that survives the scrub is usually the shorter sentence anyway.
+
+Re-stage and re-run 5c.1 and 5c.2 after each repair. **Bound this at three attempts.** On a third red, abort exactly as Step 5b aborts: do not run Step 6, do not run Step 7, leave the tree as it stands, and print the leak list in place of the Step 8 summary. Prose that survives three repairs is a judgment call about what the page should say, and that belongs to the maintainer.
+
+### 5c.4 Record the distribution answer a new page owes
+
+A page this run **created** is a newly-shipping file, and `Distribution Audit` is a declared-required check: it reds when a pull request carries a newly-shipping file `.gaia/manifest.json` does not answer. Ship-or-withhold is a human decision by design, so this step records the obligation and never discharges it. List the created pages:
+
+```bash
+git diff --cached --name-only --diff-filter=A -z -- wiki/ | tr '\0' '\n'
+```
+
+`-z` with the `tr` back to newlines for the same reason Step 9b needs it: under git's default `core.quotePath` a path carrying a non-ASCII byte prints C-quoted, and here that would misname the page in the line below.
+
+For each created page, print one line immediately above the Step 8 summary block:
+
+```
+DISTRIBUTION ANSWER OWED: <path>  (run /distribution-audit on this branch before the PR merges)
+```
+
+Adjacent to the block rather than inside it, the same placement Step 3b's classifier warning takes and for the same reason: Step 8's summary is a fixed template with no slot for this, and this playbook runs in a dispatched subagent whose only delivery is what it prints, so a line not printed here reaches nobody.
+<!-- gaia:maintainer-only:end -->
+
 ## Step 6: Advance state file
 
 Run:
@@ -274,5 +330,8 @@ The router reads the last line and decides whether to invoke consolidate. The ga
 
 - **Mid-sync interruption.** If you've edited some pages but not all, do NOT advance state. Commit only the partial wiki edits with subject `wiki: partial sync (interrupted at {short_sha})` and stop. The next sync resumes from the original `last_evaluated_sha`, not the partial one.
 - **Fabrication guard abort (Step 5b).** WORTHY commits were classified but the decided edits are absent from the working tree. State is not advanced and nothing is committed, so the next sync re-evaluates the same range from the unchanged `last_evaluated_sha`. Distinct from a mid-sync interruption: here the gap is between decided and written, not started and finished.
+  <!-- gaia:maintainer-only:start -->
+- **Boundary-check abort (Step 5c).** Generated prose points at a surface the adopter bundle does not carry, and three repair attempts did not clear it. State is not advanced and nothing is committed, so the next sync re-evaluates the same range. The authored pages stay in the working tree, staged, for the maintainer to repair by hand; the leak list names each file and line.
+  <!-- gaia:maintainer-only:end -->
 - **Merge conflict on `wiki/log.md`.** Two sync runs on different branches will both prepend to the log. Resolve by keeping both lines, sorted newest-first.
 - **`wiki/.state.json` is corrupted or invalid JSON.** Stop and surface to the user. Do not auto-rewrite, they may have made manual edits worth preserving.
