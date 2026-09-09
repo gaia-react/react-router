@@ -11,6 +11,7 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-09 1e74ab09 SKIP - prior wiki sync's own commit (advances state/log), no new content to catalogue
 - 2026-09-09 2b72247b WORTHY - sync playbook gains Step 5c shipped-surface boundary check -> wiki/decisions/Wiki Management.md new Shipped-surface boundary check section
 - 2026-09-09 4cf1a9cc WORTHY - shared jq-availability arm closes fail-open across blocking PreToolUse hooks -> wiki/concepts/Claude Hooks.md 'Shared jq-availability decision' section already added inline
 - 2026-09-09 9a456ba3 SKIP - internal refactor routing four hand-rolled CLI tree walks through collectTreeFiles, no documented-contract change
