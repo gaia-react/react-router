@@ -109,10 +109,7 @@
  * scan skips there. Mirrors `escape-regexp-uniqueness.test.ts`.
  */
 import {describe, expect, test} from 'vitest';
-import {existsSync, readFileSync} from 'node:fs';
-import path from 'node:path';
-import {resolveRepoRootFromImportMeta} from './util/repo-root-fixture.js';
-import {collectTreeFiles, TS_SOURCE_EXTENSIONS} from './util/tree-walk.js';
+import {CLI_SRC, testDeclaredOnce} from './util/uniqueness-guard-fixture.js';
 
 /**
  * A directory read carrying the `recursive` option as a true literal.
@@ -143,17 +140,8 @@ const findRecursiveWalk = (source: string): null | number => {
     );
 };
 
-/**
- * The declaring module, relative to `.gaia/cli/src` and spelled the way
- * `collectTreeFiles` reports an entry. Any other spelling makes the comparison
- * below miss, and the miss reports the shared walk itself as a copy of itself,
- * which reads as the guard working.
- */
+/** The one module allowed to walk a tree recursively. */
 const DECLARING_MODULE = 'util/tree-walk.ts';
-
-const repoRoot = resolveRepoRootFromImportMeta(import.meta.url);
-const cliSrc = path.join(repoRoot, '.gaia', 'cli', 'src');
-const sourcesPresent = existsSync(cliSrc);
 
 // Assembled rather than written out, for the reason the docblock gives: a
 // literal fixture would be an offense in this very file. This is the only place
@@ -173,40 +161,12 @@ const nestedRecursiveCall = (helper: string): string =>
   [helper, '(path.join(dir, name), {', RECURSIVE_OPTION, '});'].join('');
 
 describe('tree walk uniqueness', () => {
-  // Maintainer-only guard: `sourcesPresent` is false on an adopter clone,
-  // where `.gaia/cli/src` is release-excluded.
-  test.skipIf(!sourcesPresent)(
-    'no file outside the declaring module walks a tree recursively',
-    () => {
-      const sources = collectTreeFiles(cliSrc, TS_SOURCE_EXTENSIONS);
-
-      // A scan that reaches nothing reports nothing, so the empty result below
-      // would read as a clean corpus. `.gaia/cli/src` has held hundreds of
-      // `.ts` files for the life of the CLI; a count this low means the walk or
-      // the extension filter broke, not that the tree shrank.
-      expect(sources.length).toBeGreaterThan(50);
-
-      const copies = sources
-        .filter((relative) => relative !== DECLARING_MODULE)
-        .flatMap((relative) => {
-          const line = findRecursiveWalk(
-            readFileSync(path.join(cliSrc, relative), 'utf8')
-          );
-
-          return line === null ? [] : [`.gaia/cli/src/${relative}:${line}`];
-        });
-
-      expect(copies).toEqual([]);
-    }
-  );
-
-  // The corpus above is expected to be empty, so on its own it would green just
-  // as loudly with a detector that matches nothing. This is the one assertion
-  // driven against the live declaration the guard is written for.
-  test.skipIf(!sourcesPresent)('the declaring module itself matches', () => {
-    const source = readFileSync(path.join(cliSrc, DECLARING_MODULE), 'utf8');
-
-    expect(findRecursiveWalk(source)).not.toBeNull();
+  testDeclaredOnce({
+    corpusFloor: 50,
+    corpusRoot: CLI_SRC,
+    declaringModule: DECLARING_MODULE,
+    findOffense: findRecursiveWalk,
+    offense: 'walks a tree recursively',
   });
 
   // No `skipIf`: these run against assembled strings, so they hold on any clone

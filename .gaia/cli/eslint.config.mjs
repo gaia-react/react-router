@@ -52,6 +52,18 @@ export default defineConfig([
     },
   },
   {
+    // A `*-fixture.ts` module is test-support code reached only from suites, so
+    // it may import the test runner. The shared preset exempts test and story
+    // files by name; this extends the same reasoning to a fixture, which is the
+    // same surface under a different name, and whose imports never enter the
+    // esbuild bundles, built from `src/index.ts` and `src/index.maintainer.ts`.
+    files: ['src/**/*-fixture.ts'],
+    name: 'gaia-cli/test-fixture-modules',
+    rules: {
+      'import-x/no-extraneous-dependencies': 'off',
+    },
+  },
+  {
     // testing-library targets React Testing Library; the CLI's Vitest suites
     // are Node unit tests. render-result-naming-convention false-fires on the
     // CLI's own render* helpers.
