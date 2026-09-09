@@ -14,9 +14,9 @@
 # because each gate's own suite passes against its own copy.
 #
 # `GAIA_HOOK_NAME_RE` has a consumer outside those gates, and it fails in a
-# quieter direction than they do. `.gaia/tests/hooks/helpers/run-hook.sh` feeds
-# the literal to jq's `match` builtin to assert that a hook is registered at
-# all, once per registration assertion across the hook suites. Widening the
+# quieter direction than they do. `.gaia/tests/helpers/hook-registration.sh`
+# feeds the literal to jq's `match` builtin to assert that a hook is registered
+# at all, once per registration assertion across the bats suites. Widening the
 # class to admit a path shape a gate needs also widens what every one of those
 # assertions accepts: a wider class still matches, so they stay green while
 # asserting less. Read that consumer before changing the literal.

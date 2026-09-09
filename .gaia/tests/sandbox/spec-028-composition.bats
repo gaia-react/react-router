@@ -16,6 +16,11 @@
 setup() {
   REPO_ROOT=$(cd "$BATS_TEST_DIRNAME/../../.." && pwd)
   SETTINGS="$REPO_ROOT/.claude/settings.json"
+  # The cross-directory helper, not the hooks-suite harness that also re-exports
+  # it: `hook_registered` was written to need only its arguments, so reaching it
+  # through `.gaia/tests/hooks/helpers/run-hook.sh` would pull that whole
+  # harness in for one function that was deliberately built not to need it.
+  . "$REPO_ROOT/.gaia/tests/helpers/hook-registration.sh"
 }
 
 @test "UAT-015: settings.json keeps the write-side rule, no Read() rule, and no no-op Write rule" {
@@ -94,7 +99,7 @@ setup() {
   local hook="$REPO_ROOT/.claude/hooks/block-env-read.sh"
   local secrets_hook="$REPO_ROOT/.claude/hooks/block-secrets-read.sh"
   local lib="$REPO_ROOT/.claude/hooks/lib/reader-operands.sh"
-  local matcher
+  local matcher event
 
   [ -f "$hook" ]
   [ -x "$hook" ]
@@ -106,17 +111,15 @@ setup() {
   # as a count of registrations: a count says nothing about WHICH surfaces are
   # covered, so dropping one and adding another elsewhere keeps it green, and it
   # goes stale the moment a matcher is added.
+  #
+  # Through the shared `hook_registered` rather than a predicate over the
+  # command's spelling. The spelling has its own owner
+  # (.gaia/scripts/check-hook-command-rooting.sh); a copy here would be a second
+  # form of one predicate, green against itself while the sanctioned form moves.
   for matcher in Read Grep Bash; do
-    run jq -e --arg m "$matcher" '
-      .hooks.PreToolUse[] | select(.matcher == $m) | .hooks[]
-      | select(.command | endswith("/.claude/hooks/block-env-read.sh\""))
-    ' "$SETTINGS"
-    [ "$status" -eq 0 ]
-    run jq -e --arg m "$matcher" '
-      .hooks.PreToolUse[] | select(.matcher == $m) | .hooks[]
-      | select(.command | endswith("/.claude/hooks/block-secrets-read.sh\""))
-    ' "$SETTINGS"
-    [ "$status" -eq 0 ]
+    event=".hooks.PreToolUse[] | select(.matcher == \"$matcher\")"
+    hook_registered "$SETTINGS" "$event" block-env-read.sh
+    hook_registered "$SETTINGS" "$event" block-secrets-read.sh
   done
 
   # The variant family (.env.local, .env.production, ...) is the gap the hook
