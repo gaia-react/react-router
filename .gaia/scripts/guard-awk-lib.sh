@@ -885,11 +885,13 @@ gaia_guard_scan_files() {
   # a copy per gate is the shape that leaves the next consumer to be found
   # later, having reported clean in the meantime.
   #
-  # One call site keeps its own copy regardless, and it is not redundant with
-  # this one: `lint-errexit-source-guard.sh` refuses a `--show-prefix` that
-  # FAILS as well, the arm this accessor deliberately omits just below. Its
-  # message is worded separately and pinned by its own suite, so rewording the
-  # refusal here does not reach it.
+  # One call site keeps its own copy regardless, and exactly half of it still
+  # earns its place. `lint-errexit-source-guard.sh` also refuses a
+  # `--show-prefix` that FAILS, the arm this accessor deliberately omits just
+  # below, and nothing else refuses that. Its non-empty-prefix arm is redundant
+  # with this one: that gate forwards this status verbatim, so its own suite
+  # cannot red on that arm's removal, because both the status and the message
+  # the suite pins would still arrive from here.
   #
   # `--show-prefix` is empty only at the top level, and it answers without
   # comparing two paths, so a symlinked checkout (`/var` -> `/private/var`,
