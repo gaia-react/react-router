@@ -13,8 +13,9 @@
 # the lock env knobs (GAIA_LEDGER_LOCK_*).
 #
 # Exit codes: 0 ok, 2 usage, 4 ledger or row missing OR lock-acquisition
-# timeout (could not safely apply the ledger write), 5 invalid patch JSON,
-# 6 non-canonical status value in the patch.
+# timeout OR the shared mutex library unusable (could not safely apply the
+# ledger write), 5 invalid patch JSON, 6 non-canonical status value in the
+# patch.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then

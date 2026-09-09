@@ -87,9 +87,11 @@
 
 set -euo pipefail
 
-# Scan surface: every tracked shell script in the repository, derived from the
-# shared library rather than enumerated here. Paths come back repo-relative, so
-# the printed file:line is repo-relative when the linter runs from the repo root.
+# Scan surface: every tracked `*.sh` outside `.husky/` and outside any `tests/`
+# directory, derived from the shared library rather than enumerated here. The
+# `.husky` half is the shared `shell` set's own pathspec, which excludes the
+# directory the `husky` set owns; the `tests/` half is applied below. Paths come
+# back repo-relative, so the printed file:line is repo-relative.
 #
 # It was a hand-listed root array until gaia-react/gaia#1880, and that array
 # missed a root three recounts running: #1846 hit the class in `.github` and
@@ -99,9 +101,15 @@ set -euo pipefail
 # adopters. An enumeration maintained by hand is wrong the moment the tree
 # grows, and a guard whose SCOPE is enumerated has the same defect as a guard
 # whose CRITERIA are. Deriving the surface is what makes a fourth miss
-# impossible rather than merely unexpected, and it is the majority idiom here:
-# of the seventeen `lint-*.sh` gates, fourteen derive their surface and three
-# hand-listed one. The switch was measured to be surface-equivalent over the
+# impossible rather than merely unexpected, and it is the majority idiom among
+# the sibling `lint-*.sh` gates: they reach their surfaces through this same
+# shared library, through their own `git ls-files` pathspecs, through the
+# committed manifest, or through the hook registrations, and a hand-listed root
+# array is the rare shape rather than the usual one. Grepping for
+# `gaia_guard_scan_files` and `ls-files` finds most of them but not all, since
+# the manifest and registration readers derive without either, so the leftovers
+# of that grep are not the hand-listed set and reading the leftovers is what
+# separates the two. The switch was measured to be surface-equivalent over the
 # roots the array already named -- the tracked set and the old `find` walk
 # agreed file for file -- so it changed nothing about what is scanned except
 # adding the roots the array was missing.
@@ -133,6 +141,24 @@ type gaia_guard_scan_files >/dev/null 2>&1 || {
   echo "lint-errexit-source-guard: guard-awk-lib.sh is missing beside this script" >&2
   exit 2
 }
+
+# `git ls-files` resolves against the working directory, not the repository, so
+# from a subdirectory the surface silently narrows to that subtree and the scan
+# reports clean having read a fraction of the tree. That is the same
+# partial-surface-reads-clean failure the old root array's missing-root
+# assertion refused, and losing it with the array would trade one silent
+# narrowing for another. `--show-prefix` is empty only at the top level, and it
+# answers without comparing two paths, so a symlinked checkout (`/var` ->
+# `/private/var`, which every bats fixture under `mktemp -d` sits behind) cannot
+# make a correct invocation look wrong.
+if ! scan_prefix="$(git rev-parse --show-prefix 2>/dev/null)"; then
+  echo "lint-errexit-source-guard: not inside a git work tree, so the scan surface cannot be resolved; nothing was scanned" >&2
+  exit 2
+fi
+if [ -n "$scan_prefix" ]; then
+  echo "lint-errexit-source-guard: run from the repository root; from '${scan_prefix%/}' the surface would silently narrow to that subtree" >&2
+  exit 2
+fi
 
 # The library's own status is carried out rather than flattened to 1: 1 says the
 # tree was read and held no tracked shell at all, 3 says it was never read, and

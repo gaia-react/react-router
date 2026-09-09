@@ -26,8 +26,9 @@
 # provenance, not lifecycle); this chokepoint never touches `source`.
 #
 # Exit codes: 0 ok, 2 usage, 4 ledger or row missing OR lock-acquisition
-# timeout (could not safely apply the ledger write), 5 invalid patch JSON,
-# 6 non-canonical status value in the patch.
+# timeout OR the shared mutex library unusable (could not safely apply the
+# ledger write), 5 invalid patch JSON, 6 non-canonical status value in the
+# patch.
 set -euo pipefail
 
 if [ "$#" -ne 3 ]; then

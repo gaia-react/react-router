@@ -1,8 +1,8 @@
 #!/usr/bin/env bats
 # Tests for .gaia/scripts/lint-errexit-source-guard.sh: the static gate that
 # flags a `source` / `.` reachable with errexit armed and not bracketed against
-# a present-but-unparseable target. The gate scans every TRACKED *.sh in the
-# repository, excluding tests/.
+# a present-but-unparseable target. The gate scans every TRACKED *.sh outside
+# .husky/ and outside any tests/ directory.
 #
 # Three jobs: prove the detector fires on each known-bad shape (unguarded load,
 # flat restore in a sourced file, a suspend that never restores), prove it stays
@@ -544,12 +544,17 @@ plant() {
 # holding no tracked shell at all, refused by the shared library, and one whose
 # shell all sits under tests/, refused at the call site after the prune.
 
+# Each greps the half that distinguishes its own refusal, not the "nothing was
+# scanned" tail both of them print. On the shared tail alone either test would
+# pass on the other's message, so a call-site refusal that regressed into the
+# library's wording would leave both green and neither shape pinned.
+
 @test "fails loudly when the tree carries no tracked shell at all" {
   new_fixture
   plant README.md $'not shell\n'
   run bash -c "cd '$TMP' && bash '$LINTER'"
   [ "$status" -eq 1 ]
-  grep -qF -- "nothing was scanned" <<<"$output"
+  grep -qF -- "no tracked files matched the scan surface (shell)" <<<"$output"
 }
 
 @test "fails loudly when the tests/ prune takes every tracked shell file" {
@@ -557,7 +562,32 @@ plant() {
   plant .gaia/scripts/tests/fixture.sh $'#!/usr/bin/env bash\nset -euo pipefail\necho ok\n'
   run bash -c "cd '$TMP' && bash '$LINTER'"
   [ "$status" -eq 1 ]
-  grep -qF -- "nothing was scanned" <<<"$output"
+  grep -qF -- "every tracked shell file sits under a tests/ directory" <<<"$output"
+}
+
+# The derived surface resolves against the working directory, so a run from a
+# subdirectory would otherwise scan that subtree and report clean. The refusal
+# is what keeps the narrowing from passing as a pass; the fixture's own
+# `mktemp -d` path sits behind a symlink, which is what the prefix test (rather
+# than a path comparison) is there to survive.
+@test "refuses to scan from a subdirectory rather than narrowing to it" {
+  new_fixture
+  plant .claude/hooks/probe.sh $'#!/usr/bin/env bash\nset -euo pipefail\n. .claude/hooks/lib/helper.sh\n'
+  plant .claude/hooks/lib/helper.sh $'helper() { :; }\n'
+  run bash -c "cd '$TMP/.claude/hooks' && bash '$LINTER'"
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output"
+  grep -qF -- "clean" <<<"$output" && return 1
+  true
+}
+
+@test "refuses when it is not inside a git work tree at all" {
+  TMP="$(mktemp -d -t errexit-source-lint-XXXXXX)"
+  mkdir -p "$TMP/.claude/hooks"
+  printf '%s\n' 'helper() { :; }' > "$TMP/.claude/hooks/helper.sh"
+  run bash -c "cd '$TMP' && GIT_CEILING_DIRECTORIES='$TMP' bash '$LINTER'"
+  [ "$status" -eq 2 ]
+  grep -qF -- "not inside a git work tree" <<<"$output"
 }
 
 # The honest limit of the derived surface, stated as a test so it cannot be
