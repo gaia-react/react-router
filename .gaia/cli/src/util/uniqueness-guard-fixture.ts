@@ -1,5 +1,5 @@
 /**
- * The corpus scan the `*-uniqueness` guards under `.gaia/cli/src` share.
+ * The corpus scan the declared-once guards under `.gaia/cli/src` share.
  *
  * Each of those guards asserts that one declaration exists in exactly one
  * module, and each needs the same scaffold around its own detector: resolve the
@@ -13,11 +13,13 @@
  * lowered or a root narrowed in one copy leaves the other's untouched and
  * reports nothing, so a guard whose corpus has quietly shrunk still greens.
  *
- * Scoped to the uniqueness pair on purpose. The other whole-tree guards that
- * scan this corpus (`module-docblock-placement.test.ts`,
- * `command-reachability.test.ts`) have no declaring module and no
- * self-check, so serving them here would parameterize this on a property half
- * its callers do not have.
+ * Admission is a property, not a filename or a count: a guard belongs here when
+ * it has a declaring module and a self-check against that declaration. Callers
+ * are whatever `testDeclaredOnce` resolves to, and they are not confined to one
+ * directory or to any naming convention. The other whole-tree guards that scan
+ * this corpus (`module-docblock-placement.test.ts`,
+ * `command-reachability.test.ts`) have neither, so serving them here would
+ * parameterize this on a property some of its callers do not have.
  *
  * Test-only, and reached only from `*.test.ts` files: it imports vitest, and
  * the shipped binaries are bundled from `src/index.ts` and

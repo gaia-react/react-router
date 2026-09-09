@@ -13,10 +13,14 @@
  * does NOT take the generated-content tier its two sibling scanners take.
  * `wiki/hot.md` and `wiki/log.md` do follow the frontmatter convention, and
  * their renderers emit the floor on purpose, so a gap on one is a real break
- * in a renderer rather than noise about a regenerated file. This scan is the
- * only thing that would surface it before `gaia wiki log-prepend` fails on it.
+ * in a renderer rather than noise about a regenerated file.
  *
-
+ * Nothing downstream catches that break. `gaia wiki log-prepend` reads
+ * `wiki/log.md` and fails only when the fence itself is missing or unclosed;
+ * it never reads a field, so a missing `type` or `status` passes it, and it
+ * never looks at `wiki/hot.md` at all. This scan is the only detector, which
+ * is why it keeps reading both pages.
+ *
  * Output: one `path: missing a, b` line per gap, or a clean message. With
  * `--json`, emits { "gaps": [ { path, missing } ] }. Exit 0 always; gaps
  * are informational, not a failure.
