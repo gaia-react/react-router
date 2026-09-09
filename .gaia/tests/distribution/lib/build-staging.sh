@@ -10,11 +10,14 @@
 #
 # Exit codes:
 #   0; staged tree clean (scrub passed, runtime-deps passed)
-#   1; bad usage, missing binary, scrub leak, runtime-deps leak
-#   anything else; the failing command's own status, propagated by the
-#     `set -e` below rather than normalized. rsync and the version-control
-#     commands surface their own numbers, so this arm is stated as a
-#     complement: an enumeration would leave a caller holding an unlisted
+#   1; a refusal. Either this script's own, each of which prints a
+#     diagnostic naming its cause, or one propagated from a release verb
+#     that also spends 1. Read the diagnostic rather than the status: exit
+#     1 alone does not say which refusal it was.
+#   anything else; a failing command's own status, propagated by the
+#     `set -e` below rather than normalized, so it means whatever that
+#     command's own contract says it means. Stated as a complement
+#     deliberately: an enumeration would leave a caller holding an unlisted
 #     status with no branch for it.
 set -euo pipefail
 
