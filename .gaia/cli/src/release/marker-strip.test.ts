@@ -2,10 +2,9 @@
  * Lockstep guard for the maintainer-only marker strip (#1742).
  *
  * `stripMarkerBlocks` is the parser the release scrub actually runs, and the
- * bats suites `MODEL_SUITES` names carry hand-written awk models of it so they
- * can strip a script and then RUN the stripped copy without taking a
- * dependency on the maintainer CLI. Nothing held those models to the parser:
- * a change to the TypeScript
+ * bats suites carry hand-written awk models of it so they can strip a script
+ * and then RUN the stripped copy without taking a dependency on the maintainer
+ * CLI. Nothing held those models to the parser: a change to the TypeScript
  * state machine left every model behind with nothing red, and the suites would
  * go on certifying a stripped copy the release scrub does not produce.
  *
@@ -18,19 +17,36 @@
  *
  * # What it asserts
  *
- * 1. `stripMarkerBlocks` and `AWK_PROGRAM` agree byte-for-byte over a fixture
- *    corpus covering every branch of the state machine.
- * 2. Every suite carries `BATS_AWK_BLOCK` verbatim, so a model that drifts
- *    from the program this file just proved faithful goes red here.
- * 3. Each suite's marker constants equal the delimiters of the one
- *    marker-strip transform that governs shell files, read out of
- *    `.gaia/release-scrub.yml` through the scrub's own loader, so a suite
- *    cannot strip and pass against a retired spelling.
+ * 1. `stripMarkerBlocks` and `AWK_PROGRAM` produce identical bytes over a
+ *    fixture corpus covering every branch of the state machine, with one
+ *    named exemption `UNTERMINATED_START` documents.
+ * 2. Every suite carrying the model holds `BATS_AWK_BLOCK` verbatim, so a
+ *    model that drifts from the program this file just proved faithful goes
+ *    red here.
+ * 3. Every such suite declares a delimiter pair that a marker-strip transform
+ *    in `.gaia/release-scrub.yml` actually uses, so a suite cannot strip and
+ *    pass against a spelling the release retired. The pair is per suite
+ *    because the surfaces differ: a suite stripping shell reads the
+ *    `#`-comment transform, one stripping markdown the HTML-comment transform.
  *
- * Assertion 3 is why the suites keep their own constants rather than gaining a
- * shell helper that reads the config: a copy of that YAML walk in every one of
- * them would recreate, in the fix, exactly the drifting-duplicate class this
- * issue is about.
+ * The corpus runs against one delimiter pair rather than every declared pair,
+ * and that is not a gap: both sides take their markers as parameters, so the
+ * state machine cannot branch on the spelling. Assertion 1 proves the machine
+ * and assertion 3 proves the spellings, each once.
+ *
+ * # What it does not catch
+ *
+ * Discovery reads the git index, so a model in a suite that is written but not
+ * yet staged is not enrolled. That fails in the safe direction: CI audits the
+ * committed tree, so the suite is enrolled by the time it can gate anything,
+ * and the miss is bounded to the authoring session that added it.
+ *
+ * A model written in some other shape entirely, a `sed` range or an awk with
+ * its own variable names, carries no `BATS_AWK_INVOCATION` and so is not
+ * discovered. That residue is not decidable by text: recognizing an arbitrary
+ * hand-rolled strip needs a reader. What the guard does guarantee is that a
+ * site converted to this invocation stays converted, and converting a site is
+ * what enrolls it.
  *
  * Maintainer-only by construction: `.gaia/cli/src` is release-excluded, so an
  * adopter clone carries neither `marker-strip.ts` nor this test.
@@ -61,60 +77,66 @@ const AWK_PROGRAM = `
   `;
 
 /**
+ * The invocation's head, which is what identifies a suite as carrying a model.
+ * Discovery keys on this rather than on the whole block below, and the split is
+ * load-bearing: keyed on the whole block, a suite whose awk body drifted would
+ * simply stop being discovered, its two assertions would vanish, and the guard
+ * would go green over a smaller set while still naming itself for every model.
+ * Keyed on the head, that suite stays in the set and reds.
+ */
+const BATS_AWK_INVOCATION =
+  'awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END"';
+
+/**
  * The whole invocation as it is written in each suite, built from
  * `AWK_PROGRAM` so the text this file proves faithful and the text it pins into
  * the suites cannot become two different things.
  */
-const BATS_AWK_BLOCK = `awk -v s="$MAINTAINER_START" -v e="$MAINTAINER_END" '${AWK_PROGRAM}'`;
-
-/** The suites carrying a model of the strip, each read once. */
-const MODEL_SUITES = [
-  '.gaia/scripts/tests/verify-audit-roster.bats',
-  '.gaia/scripts/tests/audit-write-clearance.bats',
-  '.gaia/tests/hooks/audit-scope-lib.bats',
-].map((suite) => ({
-  suite,
-  text: readFileSync(path.join(REPO_ROOT, suite), 'utf8'),
-}));
+const BATS_AWK_BLOCK = `${BATS_AWK_INVOCATION} '${AWK_PROGRAM}'`;
 
 /**
- * The glob selecting the marker-strip transform that governs shell files. A
- * sibling transform carries the same two delimiter spellings and covers
- * markdown instead, so the transform has to be picked by what it governs
- * rather than by being the first one that declares a `start`.
+ * Every marker-strip transform's delimiter pair, keyed by start marker.
+ * `.gaia/release-scrub.yml` declares more than one: the shell-and-YAML
+ * transform and the `.prettierignore` one share the `#`-comment spellings,
+ * while the markdown transform uses HTML-comment spellings. A suite is held to
+ * membership in this set rather than to one chosen transform, because which
+ * transform governs a suite is decided by the files that suite strips.
  */
-const SH_TRANSFORM_GLOB = '**/*.sh';
+const DECLARED_DELIMITERS = new Map(
+  loadConfig(path.join(REPO_ROOT, '.gaia/release-scrub.yml'))
+    .transforms.filter((transform) => transform.type === 'marker-strip')
+    .map((transform) => [transform.start, transform.end])
+);
+
+/** The pair governing shell files, the corpus below runs against it. */
+const START_MARKER = '# gaia:maintainer-only:start';
+const END_MARKER = DECLARED_DELIMITERS.get(START_MARKER);
+
+if (END_MARKER === undefined) {
+  throw new Error(
+    `no marker-strip transform in .gaia/release-scrub.yml declares ${START_MARKER}; that config moved, not the strip`
+  );
+}
 
 /**
- * The delimiters that transform declares, read through the scrub's own
- * `loadConfig` so this guard sees the config the release sees rather than
- * through a second, indentation-sensitive parser written here.
+ * The suites carrying the model, discovered rather than listed: a hand-kept
+ * list is the arming condition, and a model added to a suite the list does not
+ * name is precisely the drift this guard exists to catch.
  */
-const readShMarkerDelimiters = (): {end: string; start: string} => {
-  const transform = loadConfig(path.join(REPO_ROOT, '.gaia/release-scrub.yml'))
-    .transforms.filter((candidate) => candidate.type === 'marker-strip')
-    .find((candidate) => candidate.paths.includes(SH_TRANSFORM_GLOB));
-
-  if (!transform) {
-    throw new Error(
-      `no marker-strip transform covering ${SH_TRANSFORM_GLOB} in .gaia/release-scrub.yml; that config moved, not the strip`
-    );
+const MODEL_SUITES = execFileSync(
+  'git',
+  ['-C', REPO_ROOT, 'ls-files', '*.bats'],
+  {
+    encoding: 'utf8',
   }
-
-  return {end: transform.end, start: transform.start};
-};
-
-const {end: END_MARKER, start: START_MARKER} = readShMarkerDelimiters();
-
-/**
- * awk terminates its final record with a newline; `stripMarkerBlocks` preserves
- * whatever trailing byte the source had. That is awk's I/O contract rather than
- * the state machine, and it is reachable only on a source with no trailing
- * newline, so it is normalized here instead of being asserted on. Every other
- * byte is compared exactly.
- */
-const normalizeTrailer = (text: string): string =>
-  text === '' || text.endsWith('\n') ? text : `${text}\n`;
+)
+  .split('\n')
+  .filter((suite) => suite !== '')
+  .map((suite) => ({
+    suite,
+    text: readFileSync(path.join(REPO_ROOT, suite), 'utf8'),
+  }))
+  .filter(({text}) => text.includes(BATS_AWK_INVOCATION));
 
 const runReferenceModel = (fixture: string): string =>
   execFileSync(
@@ -122,6 +144,21 @@ const runReferenceModel = (fixture: string): string =>
     ['-v', `s=${START_MARKER}`, '-v', `e=${END_MARKER}`, AWK_PROGRAM],
     {encoding: 'utf8', input: fixture}
   );
+
+/**
+ * The one source shape on which the two sides disagree, held out of the corpus
+ * and asserted on its own below rather than normalized away. `stripMarkerBlocks`
+ * splits on `\n`, so a newline-terminated source yields a trailing empty
+ * element; inside a block that never closes the element is dropped with
+ * everything else, and the output loses its final newline, where awk terminates
+ * its last record regardless. That is the state machine, not awk's output
+ * contract, so it is written down.
+ *
+ * Unreachable through the release path: `scrub.ts` fails the build on any
+ * unbalanced marker, so a source with an unterminated start never reaches the
+ * point where the two outputs would be compared.
+ */
+const UNTERMINATED_START = `a\n${START_MARKER}\nb\n`;
 
 /**
  * Every branch of the state machine, plus the two shapes that made a real
@@ -150,7 +187,6 @@ const FIXTURES: {name: string; source: string}[] = [
     name: 'nested start',
     source: `a\n${START_MARKER}\nb\n${START_MARKER}\nc\n${END_MARKER}\nd\n`,
   },
-  {name: 'unterminated start', source: `a\n${START_MARKER}\nb\n`},
   {
     name: 'marker inside a quoted string',
     source: `a\necho "${START_MARKER}"\nb\n${END_MARKER}\nc\n`,
@@ -166,11 +202,18 @@ const FIXTURES: {name: string; source: string}[] = [
   {name: 'no markers at all', source: 'a\nb\nc\n'},
 ];
 
+/**
+ * A suite's own declaration of each delimiter, matched on its own line rather
+ * than as an adjacent pair: the two are read independently, so a suite may
+ * order or separate them however it likes.
+ */
+const START_DECLARATION = /^ *MAINTAINER_START='(?<value>[^']*)'$/mu;
+const END_DECLARATION = /^ *MAINTAINER_END='(?<value>[^']*)'$/mu;
+
 /** The fixtures that legitimately close no block, by name. */
 const NON_STRIPPING_FIXTURES = new Set([
   'end without start',
   'no markers at all',
-  'unterminated start',
 ]);
 
 describe('marker-strip lockstep (#1742)', () => {
@@ -184,9 +227,8 @@ describe('marker-strip lockstep (#1742)', () => {
   });
 
   // Non-vacuity, per fixture rather than sampled: a source with no start
-  // marker closes no block, and neither does one whose start is never
-  // terminated. Every other fixture has to report a stripped block, or the two
-  // sides below agree on output nobody transformed.
+  // marker closes no block. Every other fixture has to report a stripped
+  // block, or the two sides below agree on output nobody transformed.
   test.each(FIXTURES)(
     'strips exactly as its shape says: $name',
     ({name, source}) => {
@@ -197,15 +239,24 @@ describe('marker-strip lockstep (#1742)', () => {
   );
 
   test.each(FIXTURES)(
-    'stripMarkerBlocks matches the reference model: $name',
+    'stripMarkerBlocks is byte-identical to the reference model: $name',
     ({source}) => {
-      const parsed = stripMarkerBlocks(source, START_MARKER, END_MARKER);
-
-      expect(normalizeTrailer(parsed.output)).toBe(
-        normalizeTrailer(runReferenceModel(source))
+      expect(stripMarkerBlocks(source, START_MARKER, END_MARKER).output).toBe(
+        runReferenceModel(source)
       );
     }
   );
+
+  test('an unterminated start is the one shape the two disagree on', () => {
+    expect(
+      stripMarkerBlocks(UNTERMINATED_START, START_MARKER, END_MARKER).output
+    ).toBe('a');
+    expect(runReferenceModel(UNTERMINATED_START)).toBe('a\n');
+  });
+
+  test('the suite discovery found the models it exists to check', () => {
+    expect(MODEL_SUITES.length).toBeGreaterThan(0);
+  });
 
   test.each(MODEL_SUITES)(
     '$suite carries the reference model verbatim',
@@ -215,10 +266,13 @@ describe('marker-strip lockstep (#1742)', () => {
   );
 
   test.each(MODEL_SUITES)(
-    '$suite takes its markers from the shipped scrub config',
+    '$suite declares delimiters the shipped scrub uses',
     ({text}) => {
-      expect(text).toContain(`MAINTAINER_START='${START_MARKER}'`);
-      expect(text).toContain(`MAINTAINER_END='${END_MARKER}'`);
+      const start = START_DECLARATION.exec(text)?.groups?.value;
+      const end = END_DECLARATION.exec(text)?.groups?.value;
+
+      expect(start).toBeDefined();
+      expect(DECLARED_DELIMITERS.get(start ?? '')).toBe(end);
     }
   );
 });

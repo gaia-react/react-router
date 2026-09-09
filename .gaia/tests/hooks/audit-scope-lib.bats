@@ -828,12 +828,12 @@ EOF
 # ---------------------------------------------------------------------------
 
 @test "scrub markers are balanced in audit-scope.sh" {
-  starts="$(grep -c "# gaia:maintainer-only:start" "$SCOPE_LIB")"
-  ends="$(grep -c "# gaia:maintainer-only:end" "$SCOPE_LIB")"
+  starts="$(grep -cF -- "$MAINTAINER_START" "$SCOPE_LIB")"
+  ends="$(grep -cF -- "$MAINTAINER_END" "$SCOPE_LIB")"
   [ "$starts" -eq "$ends" ]
   [ "$starts" -ge 1 ]
-  start_line="$(grep -n "# gaia:maintainer-only:start" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
-  end_line="$(grep -n "# gaia:maintainer-only:end" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
+  start_line="$(grep -nF -- "$MAINTAINER_START" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
+  end_line="$(grep -nF -- "$MAINTAINER_END" "$SCOPE_LIB" | head -1 | cut -d: -f1)"
   [ "$start_line" -lt "$end_line" ]
 }
 
