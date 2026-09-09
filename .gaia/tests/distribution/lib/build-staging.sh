@@ -11,7 +11,11 @@
 # Exit codes:
 #   0; staged tree clean (scrub passed, runtime-deps passed)
 #   1; bad usage, missing binary, scrub leak, runtime-deps leak
-#   2; unexpected (rsync/git failure, IO error)
+#   anything else; the failing command's own status, propagated by the
+#     `set -e` below rather than normalized. rsync and the version-control
+#     commands surface their own numbers, so this arm is stated as a
+#     complement: an enumeration would leave a caller holding an unlisted
+#     status with no branch for it.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
