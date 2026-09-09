@@ -28,11 +28,17 @@
  *    pass against a spelling the release retired. The pair is per suite
  *    because the surfaces differ: a suite stripping shell reads the
  *    `#`-comment transform, one stripping markdown the HTML-comment transform.
+ * 4. The marker-strip transform governing shell files declares the pair the
+ *    corpus's own literals spell, so the corpus is provably pointed at the
+ *    transform it claims to test. Assertion 3 cannot say this: it asks only
+ *    that SOME transform declare a suite's pair, and two of them declare the
+ *    `#` pair.
  *
  * The corpus runs against one delimiter pair rather than every declared pair,
  * and that is not a gap: both sides take their markers as parameters, so the
- * state machine cannot branch on the spelling. Assertion 1 proves the machine
- * and assertion 3 proves the spellings, each once.
+ * state machine cannot branch on the spelling. Assertion 1 proves the machine,
+ * assertion 3 proves each suite's spellings, and assertion 4 proves the pair
+ * the corpus itself runs against, each once.
  *
  * # What it does not catch
  *
