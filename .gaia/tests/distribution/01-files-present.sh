@@ -190,10 +190,16 @@ if [ "${#HOOKCAP_ERRORS[@]}" -eq 0 ] && [ -e "$STAGING/.gaia/hook-capabilities.j
   # `.*` is greedy, so a command carrying more than one substitution matches
   # too, with the capture keeping only its LAST path: every earlier path would
   # leave REGISTERED_HOOKS with nothing said, and the comparison below would
-  # then run against an incomplete set and report a set mismatch, which sends
-  # a reader to the manifest rather than to the command that lost a path. The
-  # address guard holds such a command out of the substitution so it survives
-  # whole and fails the comparison as itself.
+  # then run against an incomplete set. The address guard holds such a command
+  # out of the substitution so the set stays complete and the command fails the
+  # comparison as itself.
+  #
+  # The honest limit: this changes what the comparison reads, not what it
+  # prints. The mismatch arm below emits a fixed string naming neither set's
+  # contents, so an operator sees the same output either way and still re-runs
+  # the pipeline by hand to learn which element differs. What the guard buys
+  # here is a complete registered set; naming the offending command is the
+  # checker's job, and its BAD-REGISTRATION arm does that.
   # .gaia/scripts/check-hook-capabilities.sh refuses the same shape on the same
   # ground, through its own BAD-REGISTRATION arm.
   HOOKCAP_REDUCE='/\$\(.*\$\(/! s|^"\$\(.*\)/(.*)"$|\1|'
