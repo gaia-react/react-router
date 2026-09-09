@@ -35,7 +35,7 @@
         "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/reader-operands.sh"
       ],
-      "why": "Reads a Read or Bash tool call's payload to deny a command that would read a dotenv file or dump the process environment. Sources the shared reader-operand grammar to decide which tokens in a command name a file a reader would open, which is what lets the grep family be judged without treating its pattern operand as a path. Beyond that source it is pure text inspection of the payload already on stdin: no file write and no network call.",
+      "why": "Reads a Read or Bash tool call's payload to deny a command that would read a dotenv file or dump the process environment. Sources the shared reader-operand grammar to decide which tokens in a command name a file a reader would open, which is what lets the grep family be judged without treating its pattern operand as a path. Beyond that source and the shared jq-availability arm it also sources, it is pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
@@ -61,7 +61,7 @@
         "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies a fourth Code Audit Team dispatch wave in one session by counting each wave's HEAD tree in a session-keyed counter under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that counter's path; reads no marker, makes no network call, and runs no git write.",
+      "why": "Denies a fourth Code Audit Team dispatch wave in one session by counting each wave's HEAD tree in a session-keyed counter under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that counter's path, and the shared jq-availability arm; reads no marker, makes no network call, and runs no git write.",
       "maintainer_only": false
     },
     {
@@ -88,7 +88,7 @@
         "invokes:.gaia/scripts/main-root-lib.sh",
         "network"
       ],
-      "why": "Denies a `git commit` to main/master and a force-push or plain push originating from main/master, by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository, and main-root-lib.sh to resolve the checkout root; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
+      "why": "Denies a `git commit` to main/master and a force-push or plain push originating from main/master, by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository, main-root-lib.sh to resolve the checkout root, and the shared jq-availability arm; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
       "maintainer_only": false
     },
     {
@@ -106,7 +106,7 @@
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "network"
       ],
-      "why": "Denies a `git commit`/`git push` that carries a hook-bypass flag (`--no-verify`, `-n`, `HUSKY=0`, `-c core.hooksPath=`), by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
+      "why": "Denies a `git commit`/`git push` that carries a hook-bypass flag (`--no-verify`, `-n`, `HUSKY=0`, `-c core.hooksPath=`), by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository, and the shared jq-availability arm; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
       "maintainer_only": false
     },
     {
@@ -116,7 +116,7 @@
         "invokes:.gaia/scripts/main-root-lib.sh",
         "invokes:.gaia/scripts/state-registry-lib.sh"
       ],
-      "why": "Denies a dangerous `rm -rf` invocation (root, HOME, cwd, unscoped globs, `.git`, `.claude`, `node_modules`) by matching the intercepted Bash command's own text against a repo registry of safe scratch paths; it issues no filesystem command of its own. Sources main-root-lib.sh to resolve the checkout root and state-registry-lib.sh to read that safe-scratch registry from `.gaia/state-registry.json`.",
+      "why": "Denies a dangerous `rm -rf` invocation (root, HOME, cwd, unscoped globs, `.git`, `.claude`, `node_modules`) by matching the intercepted Bash command's own text against a repo registry of safe scratch paths; it issues no filesystem command of its own. Sources main-root-lib.sh to resolve the checkout root, state-registry-lib.sh to read that safe-scratch registry from `.gaia/state-registry.json`, and the shared jq-availability arm.",
       "maintainer_only": false
     },
     {
@@ -125,7 +125,7 @@
         "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/reader-operands.sh"
       ],
-      "why": "Reads a Read or Bash tool call's payload to deny a command that would read a key, certificate, or credential path. Sources the shared reader-operand grammar for the same reason its dotenv sibling does. Beyond that source it is pure text inspection of the payload already on stdin: no file write and no network call.",
+      "why": "Reads a Read or Bash tool call's payload to deny a command that would read a key, certificate, or credential path. Sources the shared reader-operand grammar for the same reason its dotenv sibling does. Beyond that source and the shared jq-availability arm it also sources, it is pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
@@ -142,7 +142,7 @@
         "invokes:.claude/hooks/lib/audit-selfheal-paths.sh",
         "invokes:.claude/hooks/lib/jq-availability.sh"
       ],
-      "why": "Denies a Code Audit Team member's Edit/Write/MultiEdit or Bash write outside its self-heal boundary, by matching the intercepted payload's target path against the shared refusal set. Sources `.claude/hooks/lib/audit-selfheal-paths.sh`, the one refusal-set definition also read by the CI push gate; it issues no write of its own.",
+      "why": "Denies a Code Audit Team member's Edit/Write/MultiEdit or Bash write outside its self-heal boundary, by matching the intercepted payload's target path against the shared refusal set. Sources `.claude/hooks/lib/audit-selfheal-paths.sh`, the one refusal-set definition also read by the CI push gate, and the shared jq-availability arm; it issues no write of its own.",
       "maintainer_only": false
     },
     {
@@ -151,7 +151,7 @@
         "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies a Serena `activate_project` call whose target resolves to a different checkout of this clone than the one the session works in, by comparing the call's argument against the resolved tree identity. Sources main-root-lib.sh to resolve that identity; it issues no filesystem or network command of its own.",
+      "why": "Denies a Serena `activate_project` call whose target resolves to a different checkout of this clone than the one the session works in, by comparing the call's argument against the resolved tree identity. Sources main-root-lib.sh to resolve that identity, and the shared jq-availability arm; it issues no filesystem or network command of its own.",
       "maintainer_only": false
     },
     {
@@ -161,7 +161,7 @@
         "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies a session that authored a SPEC from going on to plan it in the same session, by stamping and reading a session-keyed sentinel under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that sentinel's path.",
+      "why": "Denies a session that authored a SPEC from going on to plan it in the same session, by stamping and reading a session-keyed sentinel under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that sentinel's path, and the shared jq-availability arm.",
       "maintainer_only": false
     },
     {
@@ -179,7 +179,7 @@
         "invokes:.gaia/scripts/main-root-lib.sh",
         "invokes:.gaia/scripts/state-registry-lib.sh"
       ],
-      "why": "Denies an Edit/Write/MultiEdit whose target path resolves to a checkout other than the linked worktree the session works inside. Sources main-root-lib.sh and state-registry-lib.sh to resolve tree identity and the registry of linked worktrees; it issues no write of its own.",
+      "why": "Denies an Edit/Write/MultiEdit whose target path resolves to a checkout other than the linked worktree the session works inside. Sources main-root-lib.sh and state-registry-lib.sh to resolve tree identity and the registry of linked worktrees, and the shared jq-availability arm; it issues no write of its own.",
       "maintainer_only": false
     },
     {

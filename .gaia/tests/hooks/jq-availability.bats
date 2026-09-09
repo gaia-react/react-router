@@ -86,6 +86,23 @@ bash_payload() {
     '$a + {tool_name: "Bash", tool_input: {command: $c, description: $d}}'
 }
 
+# The same fields with the two tool_input keys swapped. No session produces this
+# order today -- which is exactly why it needs a builder: the arm's description
+# cut must not depend on an emission order GAIA does not control, and the
+# command-first builder above pins nothing about the other order.
+#
+# Both claims the command-first pair makes are re-made against it, and each
+# catches a different way the cut can go wrong. The refusal catches a cut that
+# takes the command out of the haystack along with the description, which is the
+# fail-open direction on the guard whose purpose is to close it. The allow
+# catches a cut that gives up and leaves the description in the haystack, which
+# denies the jq install on the wording of its own description: the session with
+# no way out from inside it.
+bash_payload_description_first() {
+  jq -n --argjson a "$(ambient)" --arg c "$1" --arg d "$AMBIENT_DESCRIPTION" \
+    '$a + {tool_name: "Bash", tool_input: {description: $d, command: $c}}'
+}
+
 edit_payload() {
   jq -n --argjson a "$(ambient)" --arg p "$1" \
     '$a + {tool_name: "Edit", tool_input: {file_path: $p, new_string: "x"}}'
@@ -169,6 +186,20 @@ readonly INSTALL_CMD="brew install jq"
 @test "jq absent: block-bare-test allows the jq install" {
   local json
   json=$(bash_payload "$INSTALL_CMD")
+  without_jq block-bare-test.sh "$json"
+  assert_allowed_by_exit
+}
+
+@test "jq absent: block-bare-test refuses its literal with description emitted first" {
+  local json
+  json=$(bash_payload_description_first "pnpm test")
+  without_jq block-bare-test.sh "$json"
+  assert_blocked_by_exit
+}
+
+@test "jq absent: block-bare-test allows the jq install with description emitted first" {
+  local json
+  json=$(bash_payload_description_first "$INSTALL_CMD")
   without_jq block-bare-test.sh "$json"
   assert_allowed_by_exit
 }
