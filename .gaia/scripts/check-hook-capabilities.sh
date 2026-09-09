@@ -186,11 +186,38 @@ gaia_hookcap_obligated() {
   # repository root. That is what the rooting check is for, and it is why this
   # accepts the form rather than evaluating it.
   local rooted='^"\$\((.*)\)/(.*)"$'
+  # Both groups above are greedy, so a command carrying more than one
+  # substitution still matches: the first group runs to the LAST `)/` and the
+  # second keeps only the final path. That command names more than one script
+  # and the strip can hand back only one, so the reduction is not a reduction
+  # at all -- it is a guess that drops every earlier path out of the obligated
+  # set, and drops it silently, because what survives is a well-formed bare
+  # path that clears the arm below. Recognize the rooted shape only where the
+  # command carries a single substitution; anything else stays whole and
+  # reaches BAD-REGISTRATION as itself.
+  #
+  # The why-not, since obligating every path the command names is the other
+  # available answer: doing that would make this check the de facto
+  # specification for a registration spelling, since it would accept, and
+  # derive obligations from, a shape no prose surface describes. The check
+  # enforces .claude/rules/maintainers/hook-registration.md rather than
+  # extending it, and that page already answers a command the anchored pattern
+  # cannot reduce by rewriting the registration.
+  #
+  # A reader comparing this against .gaia/scripts/hook-registration-lib.sh will
+  # find it yields BOTH paths on such a command, and that is not this refusal
+  # contradicted. That library answers which hooks are registered, for the
+  # gates that classify them, and it reads one event key where this walks them
+  # all; it is not a drop-in for the reduction here and refusing a shape is not
+  # a claim about how a different question should be answered.
+  local multi_rooted='\$\(.*\$\('
   local entry candidate
   while IFS= read -r entry; do
     [ -n "$entry" ] || continue
     candidate="$entry"
-    if [[ $entry =~ $rooted ]]; then
+    # `multi_rooted` is tested first so the `rooted` match is the last `=~` to
+    # run: BASH_REMATCH below is the second test's, not a stale first one's.
+    if [[ ! $entry =~ $multi_rooted ]] && [[ $entry =~ $rooted ]]; then
       candidate="${BASH_REMATCH[2]}"
     fi
     if [[ $candidate =~ $bare ]]; then
