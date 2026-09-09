@@ -587,11 +587,19 @@ golden_run_hook() {
   cp "$HOOK" "$SANDBOX/.claude/hooks/pr-merge-audit-check.sh"
   chmod +x "$SANDBOX/.claude/hooks/pr-merge-audit-check.sh"
 
-  # Seed the shared arming library alone (no lib/ dir otherwise), so the gate
-  # arms normally and reaches ITS OWN classifier-absent deny below rather than
-  # the arming library's pre-arming one: this test is about the classifier
-  # miss, not the arming miss, and the two now have distinct deny text.
+  # Seed the libraries the gate reaches BEFORE its classifier load, and no
+  # others, so it arms normally and reaches ITS OWN classifier-absent deny
+  # below rather than an earlier one. Only jq-availability.sh and
+  # verb-arming.sh can send it to a different arm: the first refuses
+  # fail-loud with its own text, ahead of even the arming library, and the
+  # second denies every Bash tool call with its own. The rest keep the gate on
+  # its ordinary path rather than change which arm it lands on, so a miss
+  # there is invisible to the assertions below: repo-scope.sh is one of the
+  # libraries the classifier deny itself names, so its own miss reads verbatim
+  # as the text grepped for, and an absent verb-arming-walk.sh only degrades
+  # the arming decision to its raw match.
   mkdir -p "$SANDBOX/.claude/hooks/lib"
+  cp "$REPO_ROOT/.claude/hooks/lib/jq-availability.sh" "$SANDBOX/.claude/hooks/lib/jq-availability.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/verb-arming.sh" "$SANDBOX/.claude/hooks/lib/verb-arming.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/verb-arming-walk.sh" "$SANDBOX/.claude/hooks/lib/verb-arming-walk.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/repo-scope.sh" "$SANDBOX/.claude/hooks/lib/repo-scope.sh"

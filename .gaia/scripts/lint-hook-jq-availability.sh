@@ -28,8 +28,8 @@
 # without reading it, which is the outcome the exit-127 path produces by
 # accident. So this gate does not ask whether an availability guard EXISTS; it
 # asks whether the guard a blocking hook carries can still refuse. A gate keyed
-# on the presence of `command -v jq` would report clean over every hook in the
-# baseline below.
+# on the presence of `command -v jq` reports clean over a blocking hook whose
+# arm only ever stands it down.
 #
 # THE TWO POSTURES, and which hook takes which:
 #   blocking  -- the hook can stop a tool call, so it must reach the shared arm
@@ -70,20 +70,19 @@ readonly PROG="lint-hook-jq-availability"
 readonly SETTINGS=".claude/settings.json"
 
 # Blocking PreToolUse hooks whose jq arm still stands the hook down instead of
-# refusing. Every one of them predates the shared arm, each needs a binding
-# literal derived from its own predicate, and several gate the merge this gate
-# runs inside, so they are tracked rather than converted in the change that
-# introduced the arm. Tracked at gaia-react/gaia#1901.
+# refusing. EMPTY, and the emptiness is the point: every blocking hook this gate
+# reaches refuses rather than standing down, so the obligation is carried
+# entirely by the check below rather than half by a list.
+#
+# It stays a named variable rather than going away with its last entry, because
+# the shape is what a conversion that cannot land in one change needs: a hook
+# registered before its arm can be written goes here, tracked by issue, and is
+# read out again by the exact-assert below.
 #
 # The list is asserted EXACT below: an entry that no longer fails is reported so
 # it must be deleted here, which is what keeps a baseline from quietly becoming
 # a permanent exemption.
-BASELINE="audit-disposition-check.sh
-distribution-preflight-check.sh
-pr-merge-audit-check.sh
-red-verify-commit-check.sh
-serena-code-search-guard.sh
-worthiness-presence-check.sh"
+BASELINE=""
 
 # uses_jq <hook_script_path>
 #
@@ -249,10 +248,11 @@ EOF
   # the next hook to regress under that name would be waved through.
   #
   # An entry naming a script the tree does not carry is SKIPPED rather than
-  # reported. The alternative reads every fixture tree this gate is driven
-  # against as six stale entries, since a fixture registers its own hooks and
-  # none of these; and in the real tree a deleted hook leaves an entry that
-  # names nothing and exempts nothing, which is inert rather than dangerous.
+  # reported. The alternative reports every baseline entry as stale against a
+  # fixture tree, since a fixture registers its own hooks and carries none of
+  # the ones a real baseline names; and in the real tree a deleted hook leaves
+  # an entry that names nothing and exempts nothing, which is inert rather than
+  # dangerous.
   local stale='' entry
   while IFS= read -r entry; do
     [ -n "$entry" ] || continue

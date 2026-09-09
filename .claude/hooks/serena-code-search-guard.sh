@@ -37,6 +37,18 @@
 # server (user scope in ~/.claude.json, or project .mcp.json) AND the repo has a
 # tsconfig.json for Serena to index. Adopters without Serena never see it.
 #
+# ONE CASE SITS AHEAD OF THAT, and it is the whole fail-closed layer's, not this
+# hook's alone: with no jq on PATH the registration check below cannot run at
+# all, because it reads its answer with jq. The arm reached first then refuses a
+# command carrying one of its literals rather than standing down, so on such a
+# machine an adopter with no Serena does see it, on every command carrying one
+# (`ls packages/` and `cat package.json` both carry `ag`), until jq is
+# installed. The refusal is what names that install. That is the settled
+# posture for every blocking hook in the layer
+# (.claude/hooks/lib/jq-availability.sh); a jq-less machine is one where nothing
+# here can honor its own preconditions, and saying so loudly beats deciding the
+# call is allowed without reading it.
+#
 # CONSERVATIVE BY DESIGN: fires only on a bare identifier (>= 3 chars, no spaces,
 # quotes, dots, or regex metacharacters) whose scope is not narrowed away from
 # TS/TSX source. Prose, string literals, and real regexes never pass the pattern
@@ -45,9 +57,41 @@
 # No `set -e`: this is a routing guard, not a security gate. On any parse failure
 # the checks resolve empty and the search is allowed.
 
-command -v jq >/dev/null 2>&1 || exit 0   # can't parse input; allow
-
 input=$(cat)
+
+# jq-availability arm: refuse loudly rather than fail open when the interpreter
+# this hook reads its payload with is absent. What that buys, and the contract
+# the literals below satisfy, live in .claude/hooks/lib/jq-availability.sh.
+# No errexit bracket around the source: this hook runs under no `set` options at
+# all, per the header above.
+#
+# The literals are `grep`, `rg` and `ag`, read off the Bash branch's own command
+# word requirement below. Their ABSENCE from the command proves the call is not
+# a shell symbol search and it is allowed, exactly as a tokenized non-match is.
+# Presence is not proof of membership -- `ag` inside "package" or "storage"
+# satisfies it -- and that over-deny is the safe direction for the Bash matcher,
+# which is the one that reaches the jq install.
+#
+# WHAT THE LITERALS DO TO THE GREP HALF, which is not what they do to the Bash
+# half. A Grep-tool payload carries a pattern and a path rather than a command,
+# so the three meet it by accident or not at all: `ag` is two characters and
+# sits inside `Page`, `Manager`, `Storage`, so a Grep for one of those is
+# refused, while a Grep for `useBreakpoint` is allowed. Both directions are
+# acceptable here and only one of them would be on the Bash half. The refusal is
+# the same over-deny the Bash half already accepts, and it is recoverable,
+# because the install command still passes. The allow is under-deny, and it is
+# what this hook's own published posture already spends: a routing nudge whose
+# every ambiguity resolves toward allowing the search (header above), so a
+# missed reminder costs less than a blocked session. The fail-closed half of the
+# layer is the Bash branch, and there the three are the command words themselves.
+_jq_lib_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/lib" 2>/dev/null && pwd)" || _jq_lib_dir=''
+# shellcheck source=lib/jq-availability.sh
+[ -n "$_jq_lib_dir" ] && [ -f "$_jq_lib_dir/jq-availability.sh" ] && . "$_jq_lib_dir/jq-availability.sh" 2>/dev/null
+if ! type gaia_require_jq >/dev/null 2>&1; then
+  printf 'BLOCKED: serena-code-search-guard.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
+  exit 2
+fi
+gaia_require_jq 'the Serena code-search routing guard' "$input" tool_input 'grep' 'rg' 'ag'
 
 tool_name=$(jq -r '.tool_name // ""' <<<"$input" 2>/dev/null)
 

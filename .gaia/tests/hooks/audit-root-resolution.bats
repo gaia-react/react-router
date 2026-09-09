@@ -207,7 +207,7 @@ setup() {
     chmod +x "$MAIN/.claude/hooks/$f"
   done
   for f in audit-scope.sh audit-machinery.sh audit-clearance.sh audit-digest.sh gaia-version.sh audit-base-provenance.sh \
-           verb-arming.sh verb-arming-walk.sh repo-scope.sh; do
+           jq-availability.sh verb-arming.sh verb-arming-walk.sh repo-scope.sh; do
     cp "$REPO_ROOT/.claude/hooks/lib/$f" "$MAIN/.claude/hooks/lib/$f"
   done
   # Read the roster out of .gaia/audit-ci.yml rather than restating it. The
