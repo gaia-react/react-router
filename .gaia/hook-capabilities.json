@@ -13,12 +13,13 @@
         "invokes:.claude/hooks/lib/audit-dispositions.sh",
         "invokes:.claude/hooks/lib/audit-machinery.sh",
         "invokes:.claude/hooks/lib/audit-scope.sh",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "invokes:.claude/hooks/lib/verb-arming-walk.sh",
         "invokes:.claude/hooks/lib/verb-arming.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies `gh pr merge` when the disposition-ledger sidecar for HEAD's frontend content digest disagrees with what a merge marker claims, or is missing where one is expected, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the audit clearance/digest/machinery/scope helpers and the shared repo-scope and main-root libraries to compute the digest and read the sidecar; `network` and its own repo-scope check come from the repo-scope helper's `gh repo view` call, which confirms the intercepted command targets this repository before the gate applies. `fs-write:**` and `tmp` are the audit-clearance/digest helpers' own scratch and ledger writes, at a path their caller supplies rather than one this hook names.",
+      "why": "Denies `gh pr merge` when the disposition-ledger sidecar for HEAD's frontend content digest disagrees with what a merge marker claims, or is missing where one is expected, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the audit clearance/digest/machinery/scope helpers, the shared repo-scope and main-root libraries, and the shared jq-availability arm, to compute the digest and read the sidecar; `network` and its own repo-scope check come from the repo-scope helper's `gh repo view` call, which confirms the intercepted command targets this repository before the gate applies. `fs-write:**` and `tmp` are the audit-clearance/digest helpers' own scratch and ledger writes, at a path their caller supplies rather than one this hook names.",
       "maintainer_only": false
     },
     {
@@ -250,11 +251,12 @@
       "hook": ".claude/hooks/distribution-preflight-check.sh",
       "capabilities": [
         "network",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "invokes:.claude/hooks/lib/verb-arming-walk.sh",
         "invokes:.claude/hooks/lib/verb-arming.sh"
       ],
-      "why": "Denies `gh pr create` when a file this branch newly ships has no ship-or-withhold answer in the committed `.gaia/manifest.json`, so a maintainer learns it locally before the equivalent CI job goes red, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the shared repo-scope helper to exempt a command aimed at a different repository; `network` is that helper's own `gh repo view` call, made to confirm which repository the intercepted command targets. Never itself writes a file or calls `gh` to create or modify anything: it only inspects the manifest already on disk and denies the pending call.",
+      "why": "Denies `gh pr create` when a file this branch newly ships has no ship-or-withhold answer in the committed `.gaia/manifest.json`, so a maintainer learns it locally before the equivalent CI job goes red, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the shared repo-scope helper to exempt a command aimed at a different repository, and the shared jq-availability arm; `network` is that helper's own `gh repo view` call, made to confirm which repository the intercepted command targets. Never itself writes a file or calls `gh` to create or modify anything: it only inspects the manifest already on disk and denies the pending call.",
       "maintainer_only": true
     },
     {
@@ -298,6 +300,7 @@
         "invokes:.claude/hooks/lib/audit-machinery.sh",
         "invokes:.claude/hooks/lib/audit-scope.sh",
         "invokes:.claude/hooks/lib/gaia-version.sh",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "invokes:.claude/hooks/lib/verb-arming-walk.sh",
         "invokes:.claude/hooks/lib/verb-arming.sh",
@@ -305,7 +308,7 @@
         "invokes:.gaia/scripts/main-root-lib.sh",
         "invokes:.gaia/scripts/resolve-audit-members.sh"
       ],
-      "why": "Denies `gh pr merge` until every Code Audit Team member the diff dispatches has cleared HEAD, resolved by content-digest markers under `.gaia/local/audit/`, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the audit clearance/digest/dispositions/machinery/scope and gaia-version helpers, the shared repo-scope helper, the chore-deps-skip and main-root libraries, and `resolve-audit-members.sh` to compute the dispatched set. `network` covers both the repo-scope helper's `gh repo view` call and this hook's own read-only `gh api .../commits/.../status` and `gh pr view` calls, made to read merge-gate state, never to transmit the pull request's own diff or description; `github-write` is not declared because every `gh api` call here carries only `--jq`, no mutating method or field flag. `fs-write:**` and `tmp` are the audit-clearance/digest helpers' own scratch and marker writes, at a path their caller supplies.",
+      "why": "Denies `gh pr merge` until every Code Audit Team member the diff dispatches has cleared HEAD, resolved by content-digest markers under `.gaia/local/audit/`, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources the audit clearance/digest/dispositions/machinery/scope and gaia-version helpers, the shared repo-scope helper, the shared jq-availability arm, the chore-deps-skip and main-root libraries, and `resolve-audit-members.sh` to compute the dispatched set. `network` covers both the repo-scope helper's `gh repo view` call and this hook's own read-only `gh api .../commits/.../status` and `gh pr view` calls, made to read merge-gate state, never to transmit the pull request's own diff or description; `github-write` is not declared because every `gh api` call here carries only `--jq`, no mutating method or field flag. `fs-write:**` and `tmp` are the audit-clearance/digest helpers' own scratch and marker writes, at a path their caller supplies.",
       "maintainer_only": false
     },
     {
@@ -324,11 +327,12 @@
       "hook": ".claude/hooks/red-verify-commit-check.sh",
       "capabilities": [
         "network",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/red-ledger.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies a `git commit` that introduces a newly-passing test with no matching observed failing run on record, by comparing the working-tree and HEAD test-identity sets for each staged test file. Sources `.claude/hooks/lib/red-ledger.sh` for the ledger lookup, the shared repo-scope helper to exempt a foreign-repo command, and main-root-lib.sh for the checkout root; `network` is the repo-scope helper's own `gh repo view` call. It is a ledger lookup and signal recompute only: it never writes a file or re-runs a test.",
+      "why": "Denies a `git commit` that introduces a newly-passing test with no matching observed failing run on record, by comparing the working-tree and HEAD test-identity sets for each staged test file. Sources `.claude/hooks/lib/red-ledger.sh` for the ledger lookup, the shared repo-scope helper to exempt a foreign-repo command, the shared jq-availability arm, and main-root-lib.sh for the checkout root; `network` is the repo-scope helper's own `gh repo view` call. It is a ledger lookup and signal recompute only: it never writes a file or re-runs a test.",
       "maintainer_only": false
     },
     {
@@ -336,9 +340,10 @@
       "capabilities": [
         "fs-write:.gaia/local/cache/shared/serena-guard",
         "fs-write:.gaia/local/cache/shared/serena-guard/**",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies a Grep or shell grep/rg/ag call whose pattern is a bare identifier scoped to indexed TS/TSX source, routing it to Serena's symbol tools instead, with the routing decision cached in a state file under `.gaia/local/cache/shared/serena-guard/`. Sources main-root-lib.sh to resolve the checkout root for that cache path.",
+      "why": "Denies a Grep or shell grep/rg/ag call whose pattern is a bare identifier scoped to indexed TS/TSX source, routing it to Serena's symbol tools instead, with the routing decision cached in a state file under `.gaia/local/cache/shared/serena-guard/`. Sources main-root-lib.sh to resolve the checkout root for that cache path, and the shared jq-availability arm.",
       "maintainer_only": false
     },
     {
@@ -522,6 +527,7 @@
       "hook": ".claude/hooks/worthiness-presence-check.sh",
       "capabilities": [
         "network",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/red-ledger.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
         "invokes:.claude/hooks/lib/verb-arming-walk.sh",
@@ -529,7 +535,7 @@
         "invokes:.claude/hooks/lib/worthiness-ledger.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
-      "why": "Denies `gh pr merge` when an emergent test the pull request changed has no worthiness-ledger line matching its current content, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources `.claude/hooks/lib/red-ledger.sh` and `.claude/hooks/lib/worthiness-ledger.sh` for the ledger lookups, the shared repo-scope helper to exempt a foreign-repo command, and main-root-lib.sh for the checkout root; `network` is the repo-scope helper's own `gh repo view` call. It is a ledger lookup and signal recompute only: it never writes a file or re-runs the worthiness evaluator.",
+      "why": "Denies `gh pr merge` when an emergent test the pull request changed has no worthiness-ledger line matching its current content, once armed through the shared arming decision (`.claude/hooks/lib/verb-arming.sh`, which lazily loads `.claude/hooks/lib/verb-arming-walk.sh` for its data-proving view). Sources `.claude/hooks/lib/red-ledger.sh` and `.claude/hooks/lib/worthiness-ledger.sh` for the ledger lookups, the shared repo-scope helper to exempt a foreign-repo command, the shared jq-availability arm, and main-root-lib.sh for the checkout root; `network` is the repo-scope helper's own `gh repo view` call. It is a ledger lookup and signal recompute only: it never writes a file or re-runs the worthiness evaluator.",
       "maintainer_only": false
     }
   ]

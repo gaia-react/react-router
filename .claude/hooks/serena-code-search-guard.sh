@@ -41,8 +41,10 @@
 # hook's alone: with no jq on PATH the registration check below cannot run at
 # all, because it reads its answer with jq. The arm reached first then refuses a
 # command carrying one of its literals rather than standing down, so on such a
-# machine an adopter with no Serena does see it, once, with the install
-# instruction. That is the settled posture for every blocking hook in the layer
+# machine an adopter with no Serena does see it, on every command carrying one
+# (`ls packages/` and `cat package.json` both carry `ag`), until jq is
+# installed. The refusal is what names that install. That is the settled
+# posture for every blocking hook in the layer
 # (.claude/hooks/lib/jq-availability.sh); a jq-less machine is one where nothing
 # here can honor its own preconditions, and saying so loudly beats deciding the
 # call is allowed without reading it.

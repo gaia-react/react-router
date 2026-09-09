@@ -320,9 +320,14 @@ stage_check_with_baseline() {
   cp "$SCRIPT_DIR/hook-registration-lib.sh" "$dir/hook-registration-lib.sh"
   staged="$dir/lint-hook-jq-availability.sh"
   sed 's/^BASELINE=""$/BASELINE="'"$entry"'"/' "$CHECK" >"$staged"
-  # Non-vacuity: a substitution that matched nothing leaves the copy with an
-  # empty baseline, which greens both tests below for the wrong reason.
-  grep -qxF -- "BASELINE=\"$entry\"" "$staged"
+  # A substitution that matched nothing leaves the copy with an empty baseline,
+  # and both tests below red on their own when it does. What this adds is a
+  # named failure at the cause instead of two assertion mismatches pointing at
+  # a gate that is behaving correctly. `|| return 1` is load-bearing: the
+  # helper is called inside a command substitution, which does not inherit
+  # errexit, so a bare failing grep here would run on to the printf and return
+  # 0 (.claude/rules/bats-assertions.md, Custom checks).
+  grep -qxF -- "BASELINE=\"$entry\"" "$staged" || return 1
   printf '%s' "$staged"
 }
 
