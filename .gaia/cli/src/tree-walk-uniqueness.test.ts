@@ -28,8 +28,8 @@
  * A call to `readdirSync` that passes the `recursive` option as a true literal,
  * in any `.ts` file under `.gaia/cli/src` outside the declaring module.
  *
- * That is the shape four of the five removed copies took, and the one the
- * shared module's own docblock names as what the next author writes. It is also
+ * That is the shape all but one of the copies enumerated above took, and the
+ * one the shared module's own docblock names as what the next author writes. It is also
  * the only recursive-walk shape in this tree with no live instance outside
  * `util/tree-walk.ts`, which is what lets this guard ship with no allowlist
  * beside the declaring-module exemption.
