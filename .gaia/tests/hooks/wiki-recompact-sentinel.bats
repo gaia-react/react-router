@@ -130,8 +130,7 @@ seed_hot_cache() {
 }
 
 @test "settings.json registers the hook under PostCompact" {
-  run jq -e '.hooks.PostCompact[] | .hooks[] | select(.command | endswith("/.claude/hooks/wiki-recompact-sentinel.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PostCompact[]' wiki-recompact-sentinel.sh
 }
 
 @test "the sentinel path matches the one wiki-recompact-inject.sh consumes" {

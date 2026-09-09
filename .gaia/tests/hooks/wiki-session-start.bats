@@ -198,6 +198,5 @@ install_hook() {
 }
 
 @test "settings.json registers the hook under SessionStart startup|resume" {
-  run jq -e '.hooks.SessionStart[] | select(.matcher == "startup|resume") | .hooks[] | select(.command | endswith("/.claude/hooks/wiki-session-start.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.SessionStart[] | select(.matcher == "startup|resume")' wiki-session-start.sh
 }

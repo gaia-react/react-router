@@ -1365,8 +1365,7 @@ assert_position_preserving() {
 }
 
 @test "settings.json registers the hook under the Bash matcher" {
-  run jq -e '.hooks.PreToolUse[] | select(.matcher == "Bash") | .hooks[] | select(.command | endswith("/.claude/hooks/block-rm-rf.sh\""))' "$SETTINGS_ABS"
-  [ "$status" -eq 0 ]
+  hook_registered "$SETTINGS_ABS" '.hooks.PreToolUse[] | select(.matcher == "Bash")' block-rm-rf.sh
 }
 
 # --- an unparseable registry lib degrades, it does not deny everything ---
