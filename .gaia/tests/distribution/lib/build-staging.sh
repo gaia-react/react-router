@@ -10,15 +10,13 @@
 #
 # Exit codes:
 #   0; staged tree clean (scrub passed, runtime-deps passed)
-#   1; a refusal. Either this script's own, each of which prints a
-#     diagnostic naming its cause, or one propagated from a release verb
-#     that also spends 1. Read the diagnostic rather than the status: exit
-#     1 alone does not say which refusal it was.
-#   anything else; a failing command's own status, propagated by the
-#     `set -e` below rather than normalized, so it means whatever that
-#     command's own contract says it means. Stated as a complement
-#     deliberately: an enumeration would leave a caller holding an unlisted
-#     status with no branch for it.
+#   anything else; a failure. Some are this script's own refusals, which
+#     each print a diagnostic naming the cause; the rest are propagated by
+#     the `set -e` below and carry whatever status the failing command
+#     spends, in some cases silently, a filter that selects no lines among
+#     them. The only boundary a caller can rely on is zero versus non-zero,
+#     so branch on that and read stderr: no particular value is this
+#     script's to promise, and any list of them here would go short.
 set -euo pipefail
 
 if [ "$#" -ne 1 ]; then
