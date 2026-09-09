@@ -248,10 +248,11 @@ EOF
   # the next hook to regress under that name would be waved through.
   #
   # An entry naming a script the tree does not carry is SKIPPED rather than
-  # reported. The alternative reads every fixture tree this gate is driven
-  # against as six stale entries, since a fixture registers its own hooks and
-  # none of these; and in the real tree a deleted hook leaves an entry that
-  # names nothing and exempts nothing, which is inert rather than dangerous.
+  # reported. The alternative reports every baseline entry as stale against a
+  # fixture tree, since a fixture registers its own hooks and carries none of
+  # the ones a real baseline names; and in the real tree a deleted hook leaves
+  # an entry that names nothing and exempts nothing, which is inert rather than
+  # dangerous.
   local stale='' entry
   while IFS= read -r entry; do
     [ -n "$entry" ] || continue

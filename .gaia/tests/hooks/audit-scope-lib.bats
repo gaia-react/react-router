@@ -587,11 +587,13 @@ golden_run_hook() {
   cp "$HOOK" "$SANDBOX/.claude/hooks/pr-merge-audit-check.sh"
   chmod +x "$SANDBOX/.claude/hooks/pr-merge-audit-check.sh"
 
-  # Seed the shared arming library alone (no lib/ dir otherwise), so the gate
-  # arms normally and reaches ITS OWN classifier-absent deny below rather than
-  # the arming library's pre-arming one: this test is about the classifier
-  # miss, not the arming miss, and the two now have distinct deny text.
+  # Seed the libraries the gate reaches BEFORE its classifier load, and no
+  # others, so it arms normally and reaches ITS OWN classifier-absent deny
+  # below rather than an earlier one: this test is about the classifier miss,
+  # and each of the earlier misses has its own distinct deny text. The
+  # jq-availability arm is first of them, ahead of even the arming library.
   mkdir -p "$SANDBOX/.claude/hooks/lib"
+  cp "$REPO_ROOT/.claude/hooks/lib/jq-availability.sh" "$SANDBOX/.claude/hooks/lib/jq-availability.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/verb-arming.sh" "$SANDBOX/.claude/hooks/lib/verb-arming.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/verb-arming-walk.sh" "$SANDBOX/.claude/hooks/lib/verb-arming-walk.sh"
   cp "$REPO_ROOT/.claude/hooks/lib/repo-scope.sh" "$SANDBOX/.claude/hooks/lib/repo-scope.sh"

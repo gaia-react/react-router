@@ -7,8 +7,8 @@
 # The suite is per-layer rather than per-hook because the claim is a property of
 # the layer: with no jq on PATH the fail-closed hooks refuse and the advisory
 # ones stand down. A copy of these two assertions in each hook's own suite would
-# be eighteen places for the claim to drift, and the arm they all reach is one
-# function.
+# be one place per hook for the claim to drift, and the arm they all reach is
+# one function.
 #
 # WHAT A FAILURE HERE MEANS. The hook read its payload with jq under errexit and
 # died at status 127, which the PreToolUse contract reads as a NON-BLOCKING
