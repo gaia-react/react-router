@@ -812,10 +812,14 @@ make_other_repo() {
 # interpreter gets a control proving the same staging still DENIES.
 stage_hook_repo() {
   make_repo
-  mkdir -p "$REPO/.claude/hooks" "$REPO/.gaia/scripts"
+  mkdir -p "$REPO/.claude/hooks/lib" "$REPO/.gaia/scripts"
   STAGED_HOOK="$REPO/.claude/hooks/block-worktree-path-mismatch.sh"
   cp "$HOOK_ABS" "$STAGED_HOOK"
   chmod +x "$STAGED_HOOK"
+  # The jq-availability arm loads ahead of both libraries these cases degrade,
+  # and refuses when it cannot find its own, so a staging without it answers
+  # every case below with that refusal rather than the degrade under test.
+  cp "${HOOK_ABS%/*}/lib/jq-availability.sh" "$REPO/.claude/hooks/lib/"
   cp "${MAIN_ROOT_LIB%/*}/main-root-lib.sh" "${MAIN_ROOT_LIB%/*}/state-registry-lib.sh" \
     "$REPO/.gaia/scripts/"
   make_worktree "debt/lib-degrade" "debt/lib-degrade"

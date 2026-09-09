@@ -209,10 +209,14 @@ run_hook_other_tool() {
 # interpreter gets a control proving the same staging still DENIES.
 stage_hook_repo() {
   make_repo
-  mkdir -p "$REPO/.claude/hooks" "$REPO/.gaia/scripts"
+  mkdir -p "$REPO/.claude/hooks/lib" "$REPO/.gaia/scripts"
   STAGED_HOOK="$REPO/.claude/hooks/block-serena-cross-tree-activation.sh"
   cp "$HOOK_ABS" "$STAGED_HOOK"
   chmod +x "$STAGED_HOOK"
+  # The jq-availability arm loads ahead of the resolver these cases degrade, and
+  # refuses when it cannot find its own library, so a staging without it answers
+  # every case below with that refusal rather than the degrade under test.
+  cp "$HOOKS_SRC/lib/jq-availability.sh" "$REPO/.claude/hooks/lib/"
   cp "${HOOKS_SRC%/.claude/hooks}/.gaia/scripts/main-root-lib.sh" "$REPO/.gaia/scripts/"
   make_worktree "debt/lib-degrade" "debt/lib-degrade"
 }

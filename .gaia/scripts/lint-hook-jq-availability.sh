@@ -57,9 +57,9 @@
 #                none blocks, exits 2 rather than reporting clean over it
 #   arming    -- the posture split comes from the shared oracle, not from a list
 #                this gate keeps, so a hook cannot escape by being absent from one
-#   match     -- the arm test is a fixed-string search for the shared function's
-#                name outside comments, so a hook that only NAMES it in a header
-#                paragraph does not satisfy it
+#   match     -- the blocking arm test anchors on the shared function's COMMAND
+#                POSITION, so neither a header paragraph naming it nor the loader
+#                block that mentions it above the call satisfies the check
 #
 # Bash 3.2 compatible. Never `cd` (beyond resolving this script's own location).
 
@@ -108,10 +108,40 @@ uses_jq() {
   ' "$1"
 }
 
+# calls_in_command_position <needle> <hook_script_path>
+#
+# Succeed when the fixed string opens a non-comment line as its command word,
+# i.e. the line begins with it and the next character is whitespace.
+#
+# COMMAND POSITION, not "anywhere on the line", and the difference is the whole
+# assertion. Every armed hook carries a loader block that mentions the shared
+# function several lines above the call, in `if ! type gaia_require_jq ...`, so
+# a search that matched anywhere would be satisfied by the loader alone: a newly
+# registered blocking hook that copies the loader and omits the call would grade
+# clean while its payload read still ends the hook at 127, which is the exact
+# fail-open this gate exists to catch. Anchoring on the command word admits every
+# hook that actually calls it, indented or not, and no hook that only names it.
+calls_in_command_position() {
+  awk -v needle="$1" '
+    {
+      line = $0
+      sub(/^[[:space:]]+/, "", line)
+      if (line ~ /^#/) next
+      if (index(line, needle) == 1 && substr(line, length(needle) + 1, 1) ~ /[[:space:]]/) {
+        found = 1
+        exit
+      }
+    }
+    END { exit(found ? 0 : 1) }
+  ' "$2"
+}
+
 # names_outside_comments <needle> <hook_script_path>
 #
 # Succeed when the fixed string appears on a line that is not a full-line
-# comment. A hook whose header merely discusses the arm does not satisfy it.
+# comment. The advisory arm is a bare `command -v jq` test rather than a call, so
+# it has no command position to anchor on; a hook whose header merely discusses
+# it still does not satisfy this, because a full-line comment is skipped.
 names_outside_comments() {
   awk -v needle="$1" '
     {
@@ -181,7 +211,7 @@ main() {
 
     if gaia_hook_blocks "$path"; then
       blocking=$((blocking + 1))
-      names_outside_comments 'gaia_require_jq' "$path" && continue
+      calls_in_command_position 'gaia_require_jq' "$path" && continue
       if grep -qxF -- "$hook" <<<"$BASELINE"; then
         baselined="$baselined$hook
 "

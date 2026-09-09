@@ -108,7 +108,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-fourth-audit-round.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the three-round audit cap' "$payload" 'code-audit-'
+gaia_require_jq 'the three-round audit cap' "$payload" tool_input 'code-audit-'
 
 event=$(jq -r '.hook_event_name // empty' <<<"$payload" 2>/dev/null) || exit 0
 

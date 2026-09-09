@@ -104,7 +104,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-secrets-read.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the secret-path read guard' "$payload" '.key' '.pem' 'credential' 'secrets'
+gaia_require_jq 'the secret-path read guard' "$payload" tool_input '.key' '.pem' 'credential' 'secrets'
 # Matching is case-insensitive where is_secret_path below is case-sensitive for
 # the extensions, so this arm is the wider of the two and refuses a superset of
 # what the parsed path predicate denies.

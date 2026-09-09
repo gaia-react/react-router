@@ -68,13 +68,15 @@ write_settings() {
 # kind=nudge        never denies, and carries no jq-availability arm
 # kind=nojq         blocking, and never invokes jq, so the gate says nothing
 # kind=namesonly    blocking, and NAMES the shared arm in a comment only
+# kind=loaderonly   blocking, and carries the loader block that MENTIONS the
+#                   shared arm without ever calling it
 write_hook() {
   local dir="$1" name="$2" kind="$3"
   {
     printf '#!/usr/bin/env bash\nset -euo pipefail\npayload=$(cat)\n'
     case "$kind" in
       armed)
-        printf ". lib/jq-availability.sh\ngaia_require_jq 'the fixture guard' \"\$payload\" 'needle'\n"
+        printf ". lib/jq-availability.sh\ngaia_require_jq 'the fixture guard' \"\$payload\" tool_input 'needle'\n"
         printf "cmd=\$(jq -r '.tool_input.command' <<<\"\$payload\")\nexit 2\n"
         ;;
       standdown)
@@ -96,6 +98,15 @@ write_hook() {
         ;;
       namesonly)
         printf '# This header discusses gaia_require_jq without ever calling it.\n'
+        printf "cmd=\$(jq -r '.tool_input.command' <<<\"\$payload\")\nexit 2\n"
+        ;;
+      loaderonly)
+        # The loader block every armed hook copies, with the call line deleted.
+        # It names the shared arm on a non-comment line, so a gate matching the
+        # name anywhere grades it clean while its payload read still dies at 127.
+        printf 'if ! type gaia_require_jq >/dev/null 2>&1; then\n'
+        printf '  printf %s >&2\n' "'BLOCKED: cannot load the arm.\\n'"
+        printf '  exit 2\nfi\n'
         printf "cmd=\$(jq -r '.tool_input.command' <<<\"\$payload\")\nexit 2\n"
         ;;
     esac
@@ -191,6 +202,24 @@ write_hook() {
   run bash "$CHECK" "$dir"
   [ "$status" -eq 1 ]
   grep -qF -- 'talker.sh' <<<"$output"
+}
+
+@test "red: the loader guard alone does not satisfy the blocking arm" {
+  # The match region is the whole assertion. Every armed hook carries a loader
+  # block naming the shared arm several lines above the call, so a gate matching
+  # the name anywhere on the line is satisfied by the loader alone: a hook that
+  # copies the block and omits the call grades clean while its payload read still
+  # ends it at 127, which is the fail-open this gate exists to catch.
+  local dir
+  dir="$(make_fixture red-loaderonly)"
+  write_hook "$dir" armed.sh armed
+  write_hook "$dir" loader.sh loaderonly
+  write_settings "$dir" PreToolUse armed.sh loader.sh
+
+  run bash "$CHECK" "$dir"
+  [ "$status" -eq 1 ]
+  grep -qF -- 'loader.sh' <<<"$output"
+  grep -qF -- 'no gaia_require_jq call reaches its payload read' <<<"$output"
 }
 
 @test "red: an advisory hook with no jq arm at all is reported" {

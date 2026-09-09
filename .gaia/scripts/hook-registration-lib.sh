@@ -20,7 +20,9 @@ fi
 GAIA_HOOK_REGISTRATION_LIB=1
 
 # The one spelling of a hook name inside a registration command, named once.
-GAIA_HOOK_NAME_RE='\.claude/hooks/[A-Za-z0-9_./-]+\.sh'
+# `readonly` is safe under the source guard above: a second source returns before
+# reaching this line, so it can never re-assign a readonly name and error.
+readonly GAIA_HOOK_NAME_RE='\.claude/hooks/[A-Za-z0-9_./-]+\.sh'
 
 # gaia_pretooluse_hooks <repo_root>
 #

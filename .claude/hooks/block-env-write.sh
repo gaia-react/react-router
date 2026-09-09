@@ -17,7 +17,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-env-write.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the dotenv write guard' "$payload"
+gaia_require_jq 'the dotenv write guard' "$payload" tool_input
 
 file_path=$(jq -r '.tool_input.file_path // empty' <<<"$payload")
 [[ -n "$file_path" ]] || exit 0

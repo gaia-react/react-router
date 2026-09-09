@@ -76,7 +76,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-serena-cross-tree-activation.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the cross-tree Serena activation guard' "$payload"
+gaia_require_jq 'the cross-tree Serena activation guard' "$payload" tool_input
 
 tool_name=$(jq -r '.tool_name // empty' <<<"$payload")
 

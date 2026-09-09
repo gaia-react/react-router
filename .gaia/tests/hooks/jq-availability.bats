@@ -46,12 +46,41 @@ without_jq() {
   invoke_hook "$2" "$HOOKS_SRC/$1"
 }
 
+# THE AMBIENT FIELDS ARE THE POINT, not padding. A PreToolUse payload carries
+# session_id, transcript_path and cwd ahead of tool_input, and every one of the
+# three is a filesystem path nobody chose for this purpose. The two below are
+# built to carry every binding literal any hook here passes, as a substring, in a
+# path shape a real machine could have: a "platform" directory supplies the rm
+# literal, a "git-svc" one the git literal, a ".venv" the env literal, a
+# "settings" the process-dump literal, and so on down to .pem, .key and
+# manifest.json.
+#
+# So an arm matching its literals against the whole document denies every
+# still-allowed case below, the jq install among them, which is the session with
+# no way out the literals exist to prevent, reached by the mechanism meant to
+# prevent it. These builders are what make that a red rather than a green.
+#
+# ONE literal is deliberately absent: `code-audit-`. block-selfheal-paths.sh
+# binds on the top-level agent_type, so it scans the whole document by design and
+# is correct to; poisoning the ambient fields with its literal would assert the
+# opposite of that hook's contract.
+readonly AMBIENT_CWD="/Users/you/work/platform/git-svc/.venv/settings/test-credentials/secrets"
+readonly AMBIENT_TRANSCRIPT="/Users/you/.claude/projects/gaia-plan/manifest.json.d/server.pem/id.key/plan.md.log"
+
+# The key order mirrors the harness: every ambient field precedes tool_input.
+ambient() {
+  jq -n --arg c "$AMBIENT_CWD" --arg t "$AMBIENT_TRANSCRIPT" \
+    '{session_id: "0193-fixture", transcript_path: $t, cwd: $c, hook_event_name: "PreToolUse"}'
+}
+
 bash_payload() {
-  jq -n --arg c "$1" '{tool_name: "Bash", tool_input: {command: $c}}'
+  jq -n --argjson a "$(ambient)" --arg c "$1" \
+    '$a + {tool_name: "Bash", tool_input: {command: $c}}'
 }
 
 edit_payload() {
-  jq -n --arg p "$1" '{tool_name: "Edit", tool_input: {file_path: $p, new_string: "x"}}'
+  jq -n --argjson a "$(ambient)" --arg p "$1" \
+    '$a + {tool_name: "Edit", tool_input: {file_path: $p, new_string: "x"}}'
 }
 
 # The command that repairs the machine. Every literal set below is checked

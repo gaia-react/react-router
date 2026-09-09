@@ -47,7 +47,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-bare-test.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the watch-mode test guard' "$payload" 'test'
+gaia_require_jq 'the watch-mode test guard' "$payload" tool_input 'test'
 
 command=$(jq -r '.tool_input.command // ""' <<<"$payload")
 

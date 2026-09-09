@@ -127,7 +127,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-env-read.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the dotenv read guard' "$payload" 'env' 'set' 'export -p' 'declare -p' 'compgen -v'
+gaia_require_jq 'the dotenv read guard' "$payload" tool_input 'env' 'set' 'export -p' 'declare -p' 'compgen -v'
 # `env` subsumes both `.env` and `printenv`, and the two flag-carrying dump
 # spellings are given whole so an ordinary `export FOO=1` does not refuse.
 

@@ -70,7 +70,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-selfheal-paths.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the self-heal repair boundary (.claude/hooks/lib/audit-selfheal-paths.sh)' "$payload" 'code-audit-'
+gaia_require_jq 'the self-heal repair boundary (.claude/hooks/lib/audit-selfheal-paths.sh)' "$payload" - 'code-audit-'
 
 # Cheapest possible filter first: the common case is "no agent_type at all"
 # (the main session). Read it before anything else and exit before sourcing

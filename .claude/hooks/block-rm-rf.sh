@@ -297,7 +297,7 @@ main() {
     printf 'BLOCKED: block-rm-rf.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
     exit 2
   fi
-  gaia_require_jq 'the dangerous-rm guard' "$payload" 'rm'
+  gaia_require_jq 'the dangerous-rm guard' "$payload" tool_input 'rm'
   # The literal cannot reach the quote- and backslash-split spellings the
   # tokenizer below resolves (`r\m`, `r""m`), so those are allowed while jq is
   # absent. Strictly better than the status quo it replaces, which allowed every

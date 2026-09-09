@@ -75,7 +75,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-spec-plan-chain.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the spec-to-plan chain guard' "$payload" 'gaia-plan' 'plan.md'
+gaia_require_jq 'the spec-to-plan chain guard' "$payload" tool_input 'gaia-plan' 'plan.md'
 # The literals are the DENY side only. A spec session running with no jq
 # therefore records no stamp, so the plan it is barred from is allowed once jq
 # returns. Stamping is the allow side, and refusing on it would deny the very

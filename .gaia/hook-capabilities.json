@@ -23,13 +23,16 @@
     },
     {
       "hook": ".claude/hooks/block-bare-test.sh",
-      "capabilities": [],
-      "why": "Reads a Bash tool call's command text to deny a bare `pnpm test`/`npm test` invocation that would start vitest in watch mode and never exit. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads a Bash tool call's command text to deny a bare `pnpm test`/`npm test` invocation that would start vitest in watch mode and never exit. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-env-read.sh",
       "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/reader-operands.sh"
       ],
       "why": "Reads a Read or Bash tool call's payload to deny a command that would read a dotenv file or dump the process environment. Sources the shared reader-operand grammar to decide which tokens in a command name a file a reader would open, which is what lets the grep family be judged without treating its pattern operand as a path. Beyond that source it is pure text inspection of the payload already on stdin: no file write and no network call.",
@@ -37,20 +40,25 @@
     },
     {
       "hook": ".claude/hooks/block-env-write.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write tool call's target path to deny a write aimed at a dotenv file other than the committed `.env.example` placeholder. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write tool call's target path to deny a write aimed at a dotenv file other than the committed `.env.example` placeholder. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-eslint-config-edit.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write/MultiEdit tool call's target path and asks a question when it names an ESLint flat-config file. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write/MultiEdit tool call's target path and asks a question when it names an ESLint flat-config file. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-fourth-audit-round.sh",
       "capabilities": [
         "fs-write:.gaia/local/cache/**",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
       "why": "Denies a fourth Code Audit Team dispatch wave in one session by counting each wave's HEAD tree in a session-keyed counter under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that counter's path; reads no marker, makes no network call, and runs no git write.",
@@ -58,37 +66,45 @@
     },
     {
       "hook": ".claude/hooks/block-invalid-yaml-write.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write/MultiEdit tool call's before/after content to deny a write that newly breaks a YAML region (a `.yml`/`.yaml` file, or Markdown frontmatter) that was valid before the call. Parses the payload's own before/after text in memory; no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write/MultiEdit tool call's before/after content to deny a write that newly breaks a YAML region (a `.yml`/`.yaml` file, or Markdown frontmatter) that was valid before the call. Parses the payload's own before/after text in memory; beyond the shared jq-availability arm it sources, no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-lockfile-edit.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write tool call's target path to deny a direct edit to `pnpm-lock.yaml`. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write tool call's target path to deny a direct edit to `pnpm-lock.yaml`. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-main-destructive-git.sh",
       "capabilities": [
-        "network",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/repo-scope.sh",
-        "invokes:.gaia/scripts/main-root-lib.sh"
+        "invokes:.gaia/scripts/main-root-lib.sh",
+        "network"
       ],
       "why": "Denies a `git commit` to main/master and a force-push or plain push originating from main/master, by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository, and main-root-lib.sh to resolve the checkout root; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-manifest-write.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write/MultiEdit or Bash tool call's payload to deny a write aimed at `.gaia/manifest.json` outside the two sanctioned writers' marker. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write/MultiEdit or Bash tool call's payload to deny a write aimed at `.gaia/manifest.json` outside the two sanctioned writers' marker. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-no-verify.sh",
       "capabilities": [
-        "network",
-        "invokes:.claude/hooks/lib/repo-scope.sh"
+        "invokes:.claude/hooks/lib/jq-availability.sh",
+        "invokes:.claude/hooks/lib/repo-scope.sh",
+        "network"
       ],
       "why": "Denies a `git commit`/`git push` that carries a hook-bypass flag (`--no-verify`, `-n`, `HUSKY=0`, `-c core.hooksPath=`), by matching the intercepted Bash command's own text; it issues no git command of its own. Sources the shared repo-scope helper to exempt a command aimed at a different repository; `network` is the repo-scope helper's own `gh repo view` call, made to confirm which repository the intercepted command targets.",
       "maintainer_only": false
@@ -96,6 +112,7 @@
     {
       "hook": ".claude/hooks/block-rm-rf.sh",
       "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh",
         "invokes:.gaia/scripts/state-registry-lib.sh"
       ],
@@ -105,6 +122,7 @@
     {
       "hook": ".claude/hooks/block-secrets-read.sh",
       "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.claude/hooks/lib/reader-operands.sh"
       ],
       "why": "Reads a Read or Bash tool call's payload to deny a command that would read a key, certificate, or credential path. Sources the shared reader-operand grammar for the same reason its dotenv sibling does. Beyond that source it is pure text inspection of the payload already on stdin: no file write and no network call.",
@@ -112,14 +130,17 @@
     },
     {
       "hook": ".claude/hooks/block-secrets-write.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write tool call's new content to deny a write that carries an obvious secret (a cloud key prefix, a GitHub token, a private-key header, or a suspicious dotenv-style assignment). Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write tool call's new content to deny a write that carries an obvious secret (a cloud key prefix, a GitHub token, a private-key header, or a suspicious dotenv-style assignment). Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-selfheal-paths.sh",
       "capabilities": [
-        "invokes:.claude/hooks/lib/audit-selfheal-paths.sh"
+        "invokes:.claude/hooks/lib/audit-selfheal-paths.sh",
+        "invokes:.claude/hooks/lib/jq-availability.sh"
       ],
       "why": "Denies a Code Audit Team member's Edit/Write/MultiEdit or Bash write outside its self-heal boundary, by matching the intercepted payload's target path against the shared refusal set. Sources `.claude/hooks/lib/audit-selfheal-paths.sh`, the one refusal-set definition also read by the CI push gate; it issues no write of its own.",
       "maintainer_only": false
@@ -127,6 +148,7 @@
     {
       "hook": ".claude/hooks/block-serena-cross-tree-activation.sh",
       "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
       "why": "Denies a Serena `activate_project` call whose target resolves to a different checkout of this clone than the one the session works in, by comparing the call's argument against the resolved tree identity. Sources main-root-lib.sh to resolve that identity; it issues no filesystem or network command of its own.",
@@ -136,6 +158,7 @@
       "hook": ".claude/hooks/block-spec-plan-chain.sh",
       "capabilities": [
         "fs-write:.gaia/local/cache/**",
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh"
       ],
       "why": "Denies a session that authored a SPEC from going on to plan it in the same session, by stamping and reading a session-keyed sentinel under `.gaia/local/cache/`. Sources main-root-lib.sh to resolve the checkout root for that sentinel's path.",
@@ -143,13 +166,16 @@
     },
     {
       "hook": ".claude/hooks/block-vitest-globals-tsconfig.sh",
-      "capabilities": [],
-      "why": "Reads an Edit/Write/MultiEdit tool call's target path and new content to deny an edit that adds `vitest/globals` to a tsconfig file. Pure text inspection of the payload already on stdin: no file write, network call, or invocation of another script.",
+      "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh"
+      ],
+      "why": "Reads an Edit/Write/MultiEdit tool call's target path and new content to deny an edit that adds `vitest/globals` to a tsconfig file. Beyond the shared jq-availability arm it sources, pure text inspection of the payload already on stdin: no file write and no network call.",
       "maintainer_only": false
     },
     {
       "hook": ".claude/hooks/block-worktree-path-mismatch.sh",
       "capabilities": [
+        "invokes:.claude/hooks/lib/jq-availability.sh",
         "invokes:.gaia/scripts/main-root-lib.sh",
         "invokes:.gaia/scripts/state-registry-lib.sh"
       ],

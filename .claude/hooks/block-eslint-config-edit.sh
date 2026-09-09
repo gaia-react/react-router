@@ -78,7 +78,7 @@ if ! type gaia_require_jq >/dev/null 2>&1; then
   printf 'BLOCKED: block-eslint-config-edit.sh cannot load lib/jq-availability.sh, so this call cannot be checked. Fail-loud, not fail-open -- restore the library.\n' >&2
   exit 2
 fi
-gaia_require_jq 'the ESLint flat-config guard' "$payload"
+gaia_require_jq 'the ESLint flat-config guard' "$payload" tool_input
 
 file_path=$(jq -r '.tool_input.file_path // ""' <<<"$payload" 2>/dev/null) || file_path=""
 
