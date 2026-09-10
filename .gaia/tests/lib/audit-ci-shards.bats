@@ -114,8 +114,14 @@ setup() {
   # comment cannot disagree with each other about which pin they mean.
   PATHS_FILTER_PINNED_SHA='ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d'
   PATHS_FILTER_PINNED_TAG='v4.0.3'
+  # The per-leg arming gate W16 to W18 pin, and the concurrency seam it scans
+  # beside the directories the sharder discovers.
+  ARMING_SCRIPT="$REPO_ROOT/.gaia/tests/leg-arming.sh"
+  ARMING_CONCURRENCY_DIR="$REPO_ROOT/.gaia/tests/concurrency"
 
   require_repo_path -f "$WORKFLOW" "audit-ci-tests.yml" || return 1
+  require_repo_path -f "$ARMING_SCRIPT" "leg-arming.sh" || return 1
+  require_repo_path -d "$ARMING_CONCURRENCY_DIR" ".gaia/tests/concurrency" || return 1
   require_repo_path -f "$POLLER_WORKFLOW" "code-review-audit.yml" || return 1
   require_repo_path -f "$CLI_WORKFLOW" "cli-tests.yml" || return 1
   require_repo_path -d "$WORKFLOW_DIR" ".github/workflows/" || return 1
@@ -2809,4 +2815,2214 @@ setup_node_workflows() {
     return 1
   }
   [ -z "$gaps" ] || { echo "$gaps" >&2; return 1; }
+}
+
+# W16 to W18 pin .gaia/tests/leg-arming.sh, the per-leg arming gate (SPEC-078
+# lever two). The helpers below are shared by all of them. Each takes the
+# sharder and the root it resolves against as arguments rather than reading
+# $REPO_ROOT, so a fixture can drive the same code against a tree of its own,
+# the discipline the W10 header sets out.
+
+# arming_legs <workflow>
+#
+# The legs the arming step decides: the `shards` matrix minus `sandbox`, whose
+# steps carry no `code:` conjunct and never reach the script. One per line,
+# LC_ALL=C sorted. The matrix rather than the sharder, because the sharder
+# refuses the concurrency leg outright and so cannot name every leg.
+arming_legs() {
+  local workflow="$1" list rc=0
+  list="$(read_wf matrix "$workflow" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$list" ]; then
+    echo "arming_legs: read no shards matrix from $workflow (exit $rc)" >&2
+    return 1
+  fi
+  printf '%s\n' "$list" | awk '$0 != "" && $0 != "sandbox"' | LC_ALL=C sort -u
+}
+
+# arming_parser_class <workflow>
+#
+# The narrowable class as PyYAML reads it: the `code:` entries of the `shards`
+# job's paths-filter step whose value begins `wiki/`, the script's own prefix
+# test, one per line, LC_ALL=C sorted and deduplicated, the shape
+# `leg-arming.sh class` prints.
+arming_parser_class() {
+  local workflow="$1" list rc=0
+  list="$(read_wf codefilter "$workflow" shards)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "arming_parser_class: could not parse the code: filter in $workflow (exit $rc)" >&2
+    return 1
+  fi
+  printf '%s\n' "$list" | awk 'index($0, "wiki/") == 1' | LC_ALL=C sort -u
+}
+
+# arming_concurrency_leg <sharder> <workflow>
+#
+# The one arming leg the sharder does not name: the leg the concurrency seam's
+# suites resolve to. Derived rather than named, and refused unless exactly one
+# leg answers, so a second unsharded leg cannot be folded into it silently.
+arming_concurrency_leg() {
+  local sharder="$1" workflow="$2" legs ids leg found='' n=0 rc=0
+  legs="$(arming_legs "$workflow")" || return 1
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "arming_concurrency_leg: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  while IFS= read -r leg || [ -n "$leg" ]; do
+    [ -n "$leg" ] || continue
+    if ! grep -qxF -- "$leg" <<<"$ids"; then
+      found="$leg"
+      n=$((n + 1))
+    fi
+  done <<EOF
+$legs
+EOF
+  if [ "$n" -ne 1 ]; then
+    echo "arming_concurrency_leg: $n arming legs are not sharder ids, expected exactly one" >&2
+    return 1
+  fi
+  printf '%s\n' "$found"
+}
+
+# arming_units_file <sharder> <root>
+#
+# The sharder's view of a tree, written to a scratch file whose path is
+# printed: `G<TAB><id><TAB><group ids>` per shard, `F<TAB><id><TAB><path>` per
+# suite it lists, each path absolutized against <root>. A shard that lists
+# nothing, or whose group will not resolve, is a refusal rather than a shard
+# with no suites: the zero-files rule the sharder applies to itself, and the
+# direction the arming script fails in.
+arming_units_file() {
+  local sharder="$1" root="$2" ids id listing group data f abs rc=0
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "arming_units_file: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  data="$(mktemp "$BATS_TEST_TMPDIR/arming-units.XXXXXX")"
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    rc=0
+    listing="$(bash "$sharder" files "$id")" || rc=$?
+    if [ "$rc" -ne 0 ] || [ -z "$listing" ]; then
+      echo "arming_units_file: the sharder listed no suite for shard $id (exit $rc)" >&2
+      return 1
+    fi
+    rc=0
+    group="$(bash "$sharder" group "$id")" || rc=$?
+    if [ "$rc" -ne 0 ] || [ -z "$group" ]; then
+      echo "arming_units_file: the sharder resolved no exchange group for shard $id (exit $rc)" >&2
+      return 1
+    fi
+    printf 'G\t%s\t%s\n' "$id" "$(printf '%s\n' "$group" | paste -sd' ' -)" >>"$data"
+    while IFS= read -r f || [ -n "$f" ]; do
+      [ -n "$f" ] || continue
+      case "$f" in
+        /*) abs="$f" ;;
+        *) abs="$root/$f" ;;
+      esac
+      printf 'F\t%s\t%s\n' "$id" "$abs" >>"$data"
+    done <<EOF
+$listing
+EOF
+  done <<EOF
+$ids
+EOF
+  printf '%s\n' "$data"
+}
+
+# arming_scan_py <mode> <units-file>
+#
+# The arming scan's frozen rules, reimplemented in Python rather than shared
+# with the script, so W16's recomputation is a second implementation and not
+# the script's own code read back. Discovery: every suite in <units-file>; each
+# suite directory's helpers/, lib/ and fixtures/ subtrees, recursively and
+# with no include filter, symlinks skipped as `grep -r` skips them; and the
+# concurrency seam's suites and its lib/ subtree. Attribution: a suite to its
+# shard, a subtree file to every shard holding a suite in that directory, a
+# concurrency-seam file to the concurrency leg.
+#
+#   inputs   one `<kind><TAB><path>` line per input file
+#   w18      the input files W18 reads: every one except a fixtures/ file that
+#            is not shell by extension or shebang, which a suite reads as data
+#            rather than runs to build a path
+#   table    one `<page>|<armed legs>` row per class member: the union of the
+#            exchange groups holding a file that names the page by full path
+#            or bare basename, fixed-string, plus the group holding this suite
+#            (rule 5); every leg when no file names the page, or when the
+#            namer-of-all rule leaves it no namer (rule 7). ARMING_STATS, when
+#            set, receives the discovery counts.
+#
+# Inputs through the environment: ARMING_CONC_DIR, ARMING_CONC_LEG, and for
+# `table` also ARMING_CLASS, ARMING_LEGS and ARMING_ROOT.
+arming_scan_py() {
+  python3 - "$@" <<'PY'
+import glob
+import os
+import re
+import sys
+
+mode, data = sys.argv[1], sys.argv[2]
+env = os.environ
+
+
+def die(msg):
+    sys.stderr.write('arming scan: %s\n' % msg)
+    sys.exit(1)
+
+
+def raise_error(exc):
+    raise exc
+
+
+groups = {}
+suites = []
+with open(data, encoding='utf-8') as handle:
+    for line in handle:
+        kind, sid, value = line.rstrip('\n').split('\t', 2)
+        if kind == 'G':
+            groups[sid] = value.split()
+        else:
+            suites.append((value, sid))
+if not suites:
+    die('the sharder discovered no suite')
+
+inputs = []
+by_dir = {}
+for path, sid in suites:
+    inputs.append((path, 'suite', {sid}))
+    by_dir.setdefault(os.path.dirname(path), set()).add(sid)
+
+
+def walk(top, kind, ids):
+    for dirpath, dirnames, filenames in os.walk(top, onerror=raise_error):
+        dirnames.sort()
+        for name in sorted(filenames):
+            path = os.path.join(dirpath, name)
+            if not os.path.islink(path):
+                inputs.append((path, kind, set(ids)))
+
+
+for directory in sorted(by_dir):
+    for sub in ('helpers', 'lib', 'fixtures'):
+        top = os.path.join(directory, sub)
+        if os.path.isdir(top):
+            walk(top, sub, by_dir[directory])
+
+conc_dir, conc_leg = env['ARMING_CONC_DIR'], env['ARMING_CONC_LEG']
+if not os.path.isdir(conc_dir):
+    die('the concurrency seam %s is not a directory' % conc_dir)
+conc = sorted(glob.glob(os.path.join(glob.escape(conc_dir), '*.bats')))
+if not conc:
+    die('the concurrency seam %s holds no suite' % conc_dir)
+for path in conc:
+    inputs.append((path, 'concurrency', {conc_leg}))
+if os.path.isdir(os.path.join(conc_dir, 'lib')):
+    walk(os.path.join(conc_dir, 'lib'), 'concurrency-lib', [conc_leg])
+
+if mode == 'inputs':
+    for path, kind, _ids in inputs:
+        print('%s\t%s' % (kind, path))
+    sys.exit(0)
+
+if mode == 'w18':
+    shebang = re.compile(r'^#!.*(^|[/ ])(bash|sh|zsh|bats)(\s|$)')
+    for path, kind, _ids in inputs:
+        if kind == 'fixtures' and not path.endswith(('.sh', '.bash', '.bats')):
+            with open(path, 'rb') as handle:
+                first = handle.readline().decode('utf-8', 'replace')
+            if not shebang.match(first):
+                continue
+        print(path)
+    sys.exit(0)
+
+members = [m for m in env['ARMING_CLASS'].split('\n') if m]
+legs = [leg for leg in env['ARMING_LEGS'].split('\n') if leg]
+if not members:
+    die('the narrowable class is empty')
+if not legs:
+    die('the leg set is empty')
+
+check = os.path.join(env['ARMING_ROOT'], '.gaia/tests/lib/audit-ci-shards.bats')
+holders = sorted({sid for path, sid in suites if path == check})
+if len(holders) != 1:
+    die('%d shards list %s, expected exactly one' % (len(holders), check))
+
+
+def group_of(sid):
+    if sid in groups:
+        return groups[sid]
+    if sid == conc_leg:
+        return [conc_leg]
+    die('no exchange group for %s' % sid)
+
+
+needles = [(m.encode('utf-8'), m.rsplit('/', 1)[-1].encode('utf-8')) for m in members]
+names = {}
+for path, _kind, _ids in inputs:
+    if path in names:
+        continue
+    try:
+        with open(path, 'rb') as handle:
+            body = handle.read()
+    except OSError as exc:
+        die('could not read %s (%s)' % (path, exc.__class__.__name__))
+    names[path] = frozenset(
+        i for i, (full, base) in enumerate(needles) if full in body or base in body)
+
+everything = frozenset(range(len(members)))
+rows = []
+for i, member in enumerate(members):
+    named = False
+    contributors = set()
+    for path, _kind, ids in inputs:
+        if i not in names[path]:
+            continue
+        if len(members) > 1 and names[path] == everything:
+            continue
+        named = True
+        contributors |= ids
+    if not named:
+        armed = set(legs)
+    else:
+        armed = set(group_of(holders[0]))
+        for sid in contributors:
+            armed |= set(group_of(sid))
+    rows.append('%s|%s' % (member, ' '.join(sorted(armed))))
+
+stats = env.get('ARMING_STATS', '')
+if stats:
+    with open(stats, 'w', encoding='utf-8') as handle:
+        handle.write('suites %d\n' % len({path for path, _sid in suites}))
+        handle.write('subtree %d\n' % sum(
+            1 for _p, kind, _i in inputs if kind in ('helpers', 'lib', 'fixtures')))
+        handle.write('concurrency %d\n' % sum(
+            1 for _p, kind, _i in inputs if kind.startswith('concurrency')))
+print('\n'.join(rows))
+PY
+}
+
+# arming_recompute <sharder> <root> <workflow> <conc-dir> <conc-leg> [stats-file]
+#
+# W16's recomputation from the tree, one `<page>|<armed legs>` row per page of
+# the class PyYAML reads from <workflow>. See arming_scan_py for the rules.
+#
+# Two kinds of file in the input set name narrowable pages without reading them,
+# and both are counted rather than special-cased. This suite is a discovered
+# `lib` suite, and w16_declared_table names every page, so it is a namer of all
+# and the namer-of-all rule drops it. The committed fixtures under
+# .gaia/tests/lib/fixtures/spec-078/ sit in a fixtures/ subtree beside the `lib`
+# suites and name wiki/.state.json, so they attribute to `lib`. Neither can move
+# an armed set: `lib` holds this suite, which rule 5 arms on every page anyway.
+arming_recompute() {
+  local sharder="$1" root="$2" workflow="$3" conc_dir="$4" conc_leg="$5" stats="${6:-}"
+  local class legs data
+  class="$(arming_parser_class "$workflow")" || return 1
+  legs="$(arming_legs "$workflow")" || return 1
+  data="$(arming_units_file "$sharder" "$root")" || return 1
+  ARMING_CLASS="$class" ARMING_LEGS="$legs" ARMING_ROOT="$root" \
+    ARMING_CONC_DIR="$conc_dir" ARMING_CONC_LEG="$conc_leg" ARMING_STATS="$stats" \
+    arming_scan_py table "$data"
+}
+
+# arming_inputs <sharder> <root> <conc-dir> <conc-leg> [mode]
+#
+# The arming scan's input set through the same discovery arming_recompute
+# scans, so W16 and W18 cannot read different sets. [mode] is `inputs` (the
+# default) or `w18`, as arming_scan_py documents them.
+arming_inputs() {
+  local sharder="$1" root="$2" conc_dir="$3" conc_leg="$4" mode="${5:-inputs}" data
+  data="$(arming_units_file "$sharder" "$root")" || return 1
+  ARMING_CONC_DIR="$conc_dir" ARMING_CONC_LEG="$conc_leg" arming_scan_py "$mode" "$data"
+}
+
+# assert_arming_input_complete <stats-file> <sharder>
+#
+# The recomputation read every suite <sharder> lists, recounted from the
+# sharder rather than from the recomputation's own listing, and read something
+# under both the subtrees and the concurrency seam. A short read is the more
+# dangerous failure: it greens every row it happened to reach.
+assert_arming_input_complete() {
+  local stats="$1" sharder="$2" ids id listing suites subtree conc expected=0 rc=0
+  [ -s "$stats" ] || {
+    echo "the recomputation wrote no discovery counts to $stats" >&2
+    return 1
+  }
+  suites="$(awk '$1 == "suites" { print $2 }' "$stats")"
+  subtree="$(awk '$1 == "subtree" { print $2 }' "$stats")"
+  conc="$(awk '$1 == "concurrency" { print $2 }' "$stats")"
+  rc=0
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "assert_arming_input_complete: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    rc=0
+    listing="$(bash "$sharder" files "$id")" || rc=$?
+    if [ "$rc" -ne 0 ]; then
+      echo "assert_arming_input_complete: the sharder could not list shard $id (exit $rc)" >&2
+      return 1
+    fi
+    expected=$((expected + $(printf '%s\n' "$listing" | awk 'NF { n++ } END { print n + 0 }')))
+  done <<EOF
+$ids
+EOF
+  [ "$expected" -gt 0 ] || {
+    echo "the sharder lists no suite, so the arming scan would read nothing" >&2
+    return 1
+  }
+  [ "$suites" = "$expected" ] || {
+    echo "the recomputation scanned ${suites:-no} discovered suites, and the sharder lists $expected" >&2
+    return 1
+  }
+  [ "${subtree:-0}" -gt 0 ] || {
+    echo "the recomputation read no file under a helpers/, lib/ or fixtures/ subtree" >&2
+    return 1
+  }
+  [ "${conc:-0}" -gt 0 ] || {
+    echo "the recomputation read no file under the concurrency seam" >&2
+    return 1
+  }
+}
+
+# assert_arming_rows_nonempty <table> <label>: <table> has a row, and every row
+# arms at least one leg. A per-page claim over an empty row is true and means
+# nothing, and every row arms at least the leg holding this suite.
+assert_arming_rows_nonempty() {
+  local table="$1" label="$2" line legs n=0 bad=''
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    n=$((n + 1))
+    legs=''
+    case "$line" in
+      *'|'*) legs="${line#*|}" ;;
+    esac
+    [ -n "${legs// /}" ] || bad="$bad ${line%%|*};"
+  done <<EOF
+$table
+EOF
+  [ "$n" -gt 0 ] || {
+    echo "$label has no row at all" >&2
+    return 1
+  }
+  [ -z "$bad" ] || {
+    echo "$label arms no leg for:$bad" >&2
+    return 1
+  }
+}
+
+compare_arming_tables_py() {
+  python3 - <<'PY'
+import os
+
+
+def parse(text, label, problems):
+    rows = {}
+    for line in text.split('\n'):
+        if not line:
+            continue
+        if '|' not in line:
+            problems.append('%s carries a row with no separator: %r' % (label, line))
+            continue
+        page, legs = line.split('|', 1)
+        if page in rows:
+            problems.append('%s carries more than one row for %s' % (label, page))
+        rows[page] = set(legs.split())
+    return rows
+
+
+left_label = os.environ['LEFT_LABEL']
+right_label = os.environ['RIGHT_LABEL']
+problems = []
+left = parse(os.environ['LEFT'], left_label, problems)
+right = parse(os.environ['RIGHT'], right_label, problems)
+for page in sorted(set(left) | set(right)):
+    if page not in right:
+        problems.append('%s: %s has a row for this page and %s has none' % (page, left_label, right_label))
+        continue
+    if page not in left:
+        problems.append('%s: %s has a row for this page and %s has none' % (page, right_label, left_label))
+        continue
+    for leg in sorted(left[page] - right[page]):
+        problems.append('%s: %s arms %s, which %s does not' % (page, left_label, leg, right_label))
+    for leg in sorted(right[page] - left[page]):
+        problems.append('%s: %s arms %s, which %s does not' % (page, right_label, leg, left_label))
+print('\n'.join(problems))
+PY
+}
+
+# compare_arming_tables <left> <right> <left-label> <right-label> [repair]
+#
+# Exact equality of two `<page>|<armed legs>` tables, per page and in both
+# directions: a leg one side arms and the other does not reds from either side,
+# and so does a page only one side has a row for. On a disagreement it names
+# each page and leg, then prints <right> verbatim, so where <right> is the
+# side that is right the repair is a copy.
+compare_arming_tables() {
+  local left="$1" right="$2" left_label="$3" right_label="$4" repair="${5:-}" problems rc=0
+  problems="$(LEFT="$left" RIGHT="$right" LEFT_LABEL="$left_label" \
+    RIGHT_LABEL="$right_label" compare_arming_tables_py)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    echo "compare_arming_tables: the comparison itself failed (exit $rc)" >&2
+    return 1
+  fi
+  [ -n "$problems" ] || return 0
+  printf '%s and %s disagree:\n%s\n' "$left_label" "$right_label" "$problems" >&2
+  printf '%s, verbatim:\n%s\n' "$right_label" "$right" >&2
+  if [ -n "$repair" ]; then
+    printf '%s\n' "$repair" >&2
+  fi
+  return 1
+}
+
+# arming_json_list <path>...: a JSON array of the arguments, the shape the
+# paths-filter step exposes, built by an encoder rather than by hand so a path
+# carrying a quote, a backslash or a newline arrives exactly as written.
+arming_json_list() {
+  python3 -c 'import json, sys; print(json.dumps(sys.argv[1:]))' "$@"
+}
+
+# arming_answer <script> <sharder> <root> <leg> <changed-json> <pr-changed-files> [event]
+#
+# One run of the arming script, stdout only, on the pull-request lane unless
+# [event] says otherwise. Every input the contract names is set explicitly: a
+# CI runner exports GITHUB_EVENT_NAME for its own event, and inheriting it
+# would put every answer on whichever lane the job happened to run on.
+arming_answer() {
+  GITHUB_EVENT_NAME="${7:-pull_request}" CHANGED_FILES_JSON="$5" \
+    PR_CHANGED_FILES="$6" LEG_ID="$4" LEG_ARMING_ROOT="$3" \
+    LEG_ARMING_SHARDER="$2" bash "$1" </dev/null 2>/dev/null
+}
+
+# arming_answer_into <dest> <arming_answer args>...: arming_answer, with its
+# stdout in <dest>.out and its exit status in <dest>.rc.
+arming_answer_into() {
+  local dest="$1" rc=0
+  shift
+  arming_answer "$@" >"$dest.out" || rc=$?
+  printf '%s\n' "$rc" >"$dest.rc"
+}
+
+# arming_script_row <script> <sharder> <root> <page> <legs>
+#
+# The script's own answer for <page> alone on every leg in <legs>, as one
+# `<page>|<legs answering true>` row. The legs run concurrently: each run
+# lists every shard, and a page-by-leg sweep run in series is most of this
+# suite's wall clock. An answer that is not exactly one `true` or `false` line,
+# or a non-zero exit, fails the row rather than reading as either.
+arming_script_row() {
+  local script="$1" sharder="$2" root="$3" page="$4" legs="$5" json dir leg i=0 k rc out row=''
+  json="$(arming_json_list "$page")" || return 1
+  dir="$(mktemp -d "$BATS_TEST_TMPDIR/arming-row.XXXXXX")"
+  while IFS= read -r leg || [ -n "$leg" ]; do
+    [ -n "$leg" ] || continue
+    printf '%s\n' "$leg" >"$dir/$i.leg"
+    arming_answer_into "$dir/$i" "$script" "$sharder" "$root" "$leg" "$json" '' &
+    i=$((i + 1))
+  done <<EOF
+$legs
+EOF
+  wait
+  [ "$i" -gt 0 ] || {
+    echo "arming_script_row: no leg to ask about $page" >&2
+    return 1
+  }
+  k=0
+  while [ "$k" -lt "$i" ]; do
+    leg="$(cat "$dir/$k.leg")"
+    [ -f "$dir/$k.rc" ] || {
+      echo "arming_script_row: the run for $page on $leg recorded no exit status" >&2
+      return 1
+    }
+    rc="$(cat "$dir/$k.rc")"
+    out="$(cat "$dir/$k.out")"
+    if [ "$rc" != 0 ] || [ "$(grep -c '' "$dir/$k.out")" -ne 1 ]; then
+      echo "arming_script_row: $page on $leg exited $rc printing '$out', expected exit 0 and one line" >&2
+      return 1
+    fi
+    case "$out" in
+      true) row="$row $leg" ;;
+      false) ;;
+      *)
+        echo "arming_script_row: $page on $leg printed '$out', neither literal" >&2
+        return 1
+        ;;
+    esac
+    k=$((k + 1))
+  done
+  printf '%s|%s\n' "$page" "${row# }"
+}
+
+# arming_script_table <script> <sharder> <root> <pages> <legs>: one
+# arming_script_row per page, in <pages>' order.
+arming_script_table() {
+  local script="$1" sharder="$2" root="$3" pages="$4" legs="$5" page row rows=''
+  while IFS= read -r page || [ -n "$page" ]; do
+    [ -n "$page" ] || continue
+    row="$(arming_script_row "$script" "$sharder" "$root" "$page" "$legs")" || return 1
+    rows="$rows$row
+"
+  done <<EOF
+$pages
+EOF
+  printf '%s' "$rows"
+}
+
+# memo_sharder <sharder> <dir>
+#
+# A stand-in for <sharder> answering `shards`, and `files` and `group` for each
+# id, from the real sharder's output captured once, and handing any other call
+# to the real sharder. It reaches the arming script through the script's own
+# LEG_ARMING_SHARDER seam. A run's cost is almost all shard listing, and the
+# sharder is a pure function of the tree, so the captured answer is the answer
+# each run would get and nothing the script decides is substituted. Prints the
+# stand-in's path.
+memo_sharder() {
+  local sharder="$1" dir="$2" ids id cmd out rc=0
+  mkdir -p "$dir"
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "memo_sharder: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  printf '%s\n' "$ids" >"$dir/shards"
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    for cmd in files group; do
+      rc=0
+      out="$(bash "$sharder" "$cmd" "$id")" || rc=$?
+      if [ "$rc" -ne 0 ] || [ -z "$out" ]; then
+        echo "memo_sharder: the sharder gave no answer to $cmd $id (exit $rc)" >&2
+        return 1
+      fi
+      printf '%s\n' "$out" >"$dir/$cmd.$id"
+    done
+  done <<EOF
+$ids
+EOF
+  {
+    printf '#!/usr/bin/env bash\n'
+    printf 'memo=%q\n' "$dir"
+    printf 'real=%q\n' "$sharder"
+    cat <<'WRAP'
+answer=''
+case "${1:-}" in
+  shards) [ "$#" -eq 1 ] && answer="$memo/shards" ;;
+  files | group) [ "$#" -eq 2 ] && answer="$memo/$1.$2" ;;
+esac
+if [ -n "$answer" ] && [ -f "$answer" ]; then
+  cat "$answer"
+  exit 0
+fi
+exec bash "$real" "$@"
+WRAP
+  } >"$dir/sharder.sh"
+  printf '%s\n' "$dir/sharder.sh"
+}
+
+# seed_arming_tree <sharder> <root> <workflow>
+#
+# A tree the arming script can place every leg in, driven through the sharder's
+# seams by arming_tree_run. The script arms any leg it cannot place, so without
+# each piece no answer in the tree could be `false`: a stand-in for this suite
+# at the path rule 5 looks for, listed through the lib seam; a concurrency seam
+# holding a suite; local-janitor.bats, which hooks-1 pins by name; and as many
+# plain suites in each weighted directory as the sharder has shards, the count
+# seed_seam_tree derives for the same reason. <workflow> is copied to the path
+# the script's workflow seam defaults to.
+seed_arming_tree() {
+  local sharder="$1" root="$2" workflow="$3" n i d
+  n="$(bash "$sharder" shards | grep -c .)"
+  for d in hooks scripts audit forensics statusline .gaia/tests/lib .gaia/tests/concurrency .github/workflows; do
+    mkdir -p "$root/$d"
+  done
+  i=0
+  while [ "$i" -lt "$n" ]; do
+    printf '#!/usr/bin/env bats\n' >"$root/hooks/plain-$i.bats"
+    printf '#!/usr/bin/env bats\n' >"$root/scripts/plain-$i.bats"
+    i=$((i + 1))
+  done
+  for d in hooks/local-janitor audit/plain forensics/plain statusline/plain \
+    .gaia/tests/lib/audit-ci-shards .gaia/tests/concurrency/plain; do
+    printf '#!/usr/bin/env bats\n' >"$root/$d.bats"
+  done
+  cp "$workflow" "$root/.github/workflows/audit-ci-tests.yml"
+}
+
+# arming_tree_run <root> <command>...: <command> with every sharder directory
+# seam pointed into a tree seed_arming_tree built. The arming script's own
+# seams need nothing here: each defaults to a path under LEG_ARMING_ROOT.
+arming_tree_run() {
+  local root="$1"
+  shift
+  HOOKS_DIR="$root/hooks" SCRIPTS_TESTS_DIR="$root/scripts" \
+    AUDIT_TESTS_DIR="$root/audit" LIB_DIR="$root/.gaia/tests/lib" \
+    FORENSICS_DIR="$root/forensics" STATUSLINE_DIR="$root/statusline" \
+    "$@"
+}
+
+# arming_shard_of <sharder> <root> <file>: the shard whose listing holds
+# <file>, each listed path absolutized against <root>.
+arming_shard_of() {
+  local sharder="$1" root="$2" file="$3" ids id listing f abs rc=0
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "arming_shard_of: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    rc=0
+    listing="$(bash "$sharder" files "$id")" || rc=$?
+    if [ "$rc" -ne 0 ]; then
+      echo "arming_shard_of: the sharder could not list shard $id (exit $rc)" >&2
+      return 1
+    fi
+    while IFS= read -r f || [ -n "$f" ]; do
+      case "$f" in
+        /*) abs="$f" ;;
+        *) abs="$root/$f" ;;
+      esac
+      if [ "$abs" = "$file" ]; then
+        printf '%s\n' "$id"
+        return 0
+      fi
+    done <<EOF
+$listing
+EOF
+  done <<EOF
+$ids
+EOF
+  echo "arming_shard_of: no shard lists $file" >&2
+  return 1
+}
+
+# arming_tree_expected_row <sharder> <root> <page> <suite>...
+#
+# The row the arming script owes <page> in a seeded tree whose namers of it
+# sit in or beside <suite>...: the exchange groups of the shards holding them,
+# plus the group holding the stand-in for this suite, which rule 5 arms
+# unconditionally. A mention under a helpers/ or fixtures/ subtree is passed
+# as a suite in that directory, which is the attribution the script gives it.
+arming_tree_expected_row() {
+  local sharder="$1" root="$2" page="$3" f id group legs='' rc
+  shift 3
+  for f in "$root/.gaia/tests/lib/audit-ci-shards.bats" "$@"; do
+    id="$(arming_shard_of "$sharder" "$root" "$f")" || return 1
+    rc=0
+    group="$(bash "$sharder" group "$id")" || rc=$?
+    if [ "$rc" -ne 0 ] || [ -z "$group" ]; then
+      echo "arming_tree_expected_row: the sharder resolved no group for $id (exit $rc)" >&2
+      return 1
+    fi
+    legs="$legs$group
+"
+  done
+  printf '%s|%s\n' "$page" "$(printf '%s' "$legs" | awk 'NF' | LC_ALL=C sort -u | paste -sd' ' -)"
+}
+
+# write_namer <file> <path>...: a plain suite naming each <path> on a comment
+# line of its own.
+write_namer() {
+  local file="$1" path
+  shift
+  printf '#!/usr/bin/env bats\n' >"$file"
+  for path in "$@"; do
+    printf '# reads %s\n' "$path" >>"$file"
+  done
+}
+
+# drop_wiki_code_entries <workflow> <out> [keep]
+#
+# Writes a copy of <workflow> with every quoted `code:`-list entry whose value
+# begins `wiki/` removed, bare or keyed on a change type, except the one whose
+# value is exactly [keep].
+drop_wiki_code_entries() {
+  KEEP="${3:-}" python3 - "$1" "$2" <<'PY'
+import os
+import re
+import sys
+
+src, out = sys.argv[1], sys.argv[2]
+keep = os.environ['KEEP']
+entry = re.compile(r'^\s*- (?:[A-Za-z|]+: )?[\x27](wiki/[^\x27]*)[\x27]\s*$')
+kept = []
+with open(src, encoding='utf-8') as handle:
+    for line in handle.read().split('\n'):
+        found = entry.match(line)
+        if found and found.group(1) != keep:
+            continue
+        kept.append(line)
+with open(out, 'w', encoding='utf-8') as handle:
+    handle.write('\n'.join(kept))
+PY
+}
+
+# code_entry_line <workflow> <path>: the one line of <workflow> reading
+# exactly `- '<path>'` after its indent. Fails unless exactly one does.
+code_entry_line() {
+  awk -v want="- '$2'" '
+    { s = $0; sub(/^ +/, "", s) }
+    s == want { print; n++ }
+    END { exit n == 1 ? 0 : 1 }
+  ' "$1" || {
+    echo "code_entry_line: $1 does not carry exactly one \`- '$2'\` line" >&2
+    return 1
+  }
+}
+
+# arming_declining_pair <table> <legs>: the first page of <table> and the first
+# leg of <legs> its row does not arm, as `<page>|<leg>`. A lane that must show
+# a `false` beside its `true` picks its input here rather than naming one.
+arming_declining_pair() {
+  local table="$1" legs="$2" line armed leg
+  while IFS= read -r line || [ -n "$line" ]; do
+    [ -n "$line" ] || continue
+    armed=" ${line#*|} "
+    while IFS= read -r leg || [ -n "$leg" ]; do
+      [ -n "$leg" ] || continue
+      case "$armed" in
+        *" $leg "*) ;;
+        *)
+          printf '%s|%s\n' "${line%%|*}" "$leg"
+          return 0
+          ;;
+      esac
+    done <<EOF
+$legs
+EOF
+  done <<EOF
+$table
+EOF
+  echo "arming_declining_pair: every page arms every leg, so no lane can show a false" >&2
+  return 1
+}
+
+# arming_baseline_false <script> <sharder> <root> <changed-json> <leg>: the
+# healthy answer for <changed-json> on <leg> is `false`, exit 0. Each arm that
+# shows the script arming on a condition calls this first on the same input
+# without that condition, so the arm could not pass against a script that arms
+# everything.
+arming_baseline_false() {
+  local out rc=0
+  out="$(arming_answer "$1" "$2" "$3" "$5" "$4" '')" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = false ] && return 0
+  echo "the healthy baseline on leg $5 answered '$out' (exit $rc), expected false, so this arm could not tell arming from narrowing" >&2
+  return 1
+}
+
+# W16 (SPEC-078 lever two; discharges UAT-009 and UAT-019, and holds UAT-011).
+# The arming script narrows a pull request that touches only the `wiki/` pages
+# the `code:` filter names to the legs holding a file that names one of them.
+# Nothing else stops a suite from starting to name such a page on a leg the gate
+# does not arm, which is exactly the silent green the narrowing exists to risk,
+# so this pins the map three ways: the declared table in w16_declared_table, a
+# recomputation from the tree (arming_recompute), and the script's own answer
+# for each page alone on every leg (arming_script_table). Each is compared with
+# the declared table as exact set equality in both directions: an unarmed leg
+# holding a namer reds, and so does a gratuitously armed one.
+#
+# The declared table is the one checked-in list the design permits, the W10
+# shape: a list a both-ways equality check recomputes and compares. It is not
+# redundant with the other two sides, and the reason is what this check can and
+# cannot see. A mention added to a suite in a temp tree is seen identically by
+# the recomputation and by the script, so a tree doctoring can never red those
+# two against each other. The declared table does not move with the tree, which
+# is why the adversarial cases below doctor the table and the script rather than
+# the tree.
+#
+# WHAT THIS DOES NOT CATCH. If the script, the recomputation and the declared
+# table all implement the same wrong rule, all three agree. The table was
+# written from the script's measured answers, so it inherits the script's answer
+# on the day it was written: its value is regression detection, not initial
+# correctness. Initial correctness rests on the script's driven observations and
+# on a verification pass that drives each guard here into its failing state.
+#
+# The class comparison is the one genuinely two-implementation check: the
+# script's awk reader against PyYAML, reading the same workflow. It is also what
+# makes a new `wiki/` entry in `code:` a visible event: the class grows, the
+# class comparison still holds, and the table comparisons red until the new
+# page gets a row.
+#
+# The script's answers are gathered through memo_sharder, whose header carries
+# why that substitutes nothing the script decides. The recomputation, the
+# pagination lane and the degraded-input lanes below run the real sharder.
+
+# w16_declared_table
+#
+# W16's declared side: one `<page>|<armed legs>` row per narrowable page, legs
+# LC_ALL=C sorted, the format compare_arming_tables prints a disagreeing table
+# in, so a repair is a copy of that table.
+w16_declared_table() {
+  cat <<'TABLE'
+wiki/.state.json|concurrency hooks-1 hooks-2 hooks-3 hooks-4 lib misc scripts-1 scripts-2 scripts-3
+wiki/concepts/Audit Disposition and Debt Fix.md|lib scripts-1 scripts-2 scripts-3
+wiki/concepts/Claude Hooks.md|lib scripts-1 scripts-2 scripts-3
+wiki/concepts/Code Review Audit Agent.md|lib
+wiki/concepts/GAIA Audit.md|lib
+wiki/concepts/PR Merge Workflow.md|hooks-2 hooks-3 hooks-4 lib misc scripts-1 scripts-2 scripts-3
+wiki/concepts/Policy-Memory Loop.md|lib
+wiki/concepts/Task Orchestration.md|lib scripts-1 scripts-2 scripts-3
+TABLE
+}
+
+W16_REPAIR='Repair: if the change that moved it is intended, copy that table into w16_declared_table in .gaia/tests/lib/audit-ci-shards.bats; otherwise a suite now names a page on a leg the gate does not arm, or the gate arms a leg holding no namer.'
+
+# assert_arming_class <script> <workflow>
+#
+# The arming script's awk reader and PyYAML read the same narrowable class from
+# <workflow>, as sorted sets; the class is non-empty; and it is as large as the
+# number of `code:` entries whose value begins `wiki/`, counted from the parsed
+# entries rather than written down.
+assert_arming_class() {
+  local script="$1" workflow="$2" parsed entries declared held awk_class err rc=0
+  parsed="$(arming_parser_class "$workflow")" || return 1
+  [ -n "$parsed" ] || {
+    echo "the code: filter in $workflow names no wiki/ entry, so the narrowable class is empty and W16 would compare nothing" >&2
+    return 1
+  }
+  entries="$(read_wf codefilterentries "$workflow" shards)" || {
+    echo "could not read the code: filter's entries from $workflow" >&2
+    return 1
+  }
+  declared="$(printf '%s\n' "$entries" | awk -F'\t' 'index($2, "wiki/") == 1 { n++ } END { print n + 0 }')"
+  held="$(printf '%s\n' "$parsed" | awk 'NF { n++ } END { print n + 0 }')"
+  [ "$held" -eq "$declared" ] || {
+    echo "the code: filter in $workflow declares $declared wiki/ entries and the class holds $held pages" >&2
+    return 1
+  }
+  err="$BATS_TEST_TMPDIR/arming-class.err"
+  awk_class="$(LEG_ARMING_WORKFLOW="$workflow" bash "$script" class 2>"$err")" || rc=$?
+  [ "$rc" -eq 0 ] || {
+    echo "the arming script could not derive the class from $workflow (exit $rc), which PyYAML reads as:" >&2
+    printf '%s\n' "$parsed" >&2
+    cat "$err" >&2
+    return 1
+  }
+  [ "$awk_class" = "$parsed" ] || {
+    echo "the arming script's awk reader and PyYAML read different classes from $workflow" >&2
+    printf 'awk:\n%s\nPyYAML:\n%s\n' "$awk_class" "$parsed" >&2
+    return 1
+  }
+}
+
+# assert_sharder_ids_in_legs <sharder> <legs>: every id the sharder names is an
+# arming leg. W6 pins the matrix against the sharder from the other side; this
+# is the half W16's leg set depends on, since a sharder id outside it would be
+# a leg nothing here asks about.
+assert_sharder_ids_in_legs() {
+  local sharder="$1" legs="$2" ids id missing='' rc=0
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "assert_sharder_ids_in_legs: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    grep -qxF -- "$id" <<<"$legs" || missing="$missing $id"
+  done <<EOF
+$ids
+EOF
+  [ -z "$missing" ] || {
+    echo "sharder ids missing from the arming leg set:$missing" >&2
+    return 1
+  }
+}
+
+# assert_undiscovered <sharder> <root> <dir>: no shard lists a path under
+# <dir>, which must exist and hold a file, so an absent directory cannot pass
+# for an undiscovered one.
+assert_undiscovered() {
+  local sharder="$1" root="$2" dir="$3" ids id listing f abs found='' rc=0
+  [ -d "$dir" ] && [ -n "$(find "$dir" -type f | head -n 1)" ] || {
+    echo "$dir is absent or holds no file, so its being undiscovered proves nothing" >&2
+    return 1
+  }
+  ids="$(bash "$sharder" shards)" || rc=$?
+  if [ "$rc" -ne 0 ] || [ -z "$ids" ]; then
+    echo "assert_undiscovered: the sharder listed no shard id (exit $rc)" >&2
+    return 1
+  fi
+  while IFS= read -r id || [ -n "$id" ]; do
+    [ -n "$id" ] || continue
+    rc=0
+    listing="$(bash "$sharder" files "$id")" || rc=$?
+    if [ "$rc" -ne 0 ]; then
+      echo "assert_undiscovered: the sharder could not list shard $id (exit $rc)" >&2
+      return 1
+    fi
+    while IFS= read -r f || [ -n "$f" ]; do
+      [ -n "$f" ] || continue
+      case "$f" in
+        /*) abs="$f" ;;
+        *) abs="$root/$f" ;;
+      esac
+      case "$abs" in
+        "$dir"/*) found="$found $id:$abs" ;;
+      esac
+    done <<EOF
+$listing
+EOF
+  done <<EOF
+$ids
+EOF
+  [ -z "$found" ] || {
+    echo "the sharder discovers a suite under $dir, where a committed fixture would run as a real suite:$found" >&2
+    return 1
+  }
+}
+
+@test "W16: the arming leg set is the matrix minus sandbox and holds every sharder id" {
+  require_yaml_parser
+  local legs
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  grep -qx sandbox <<<"$legs" && {
+    echo "the arming leg set carries sandbox, whose steps never reach the arming script" >&2
+    return 1
+  }
+  assert_sharder_ids_in_legs "$BATS_SHARDS" "$legs"
+}
+
+@test "W16 adversarial: a sharder id missing from the arming leg set is caught" {
+  require_yaml_parser
+  local legs first doctored
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  first="$(bash "$BATS_SHARDS" shards | sed -n 1p)"
+  doctored="$(printf '%s\n' "$legs" | grep -vxF -- "$first")"
+  assert_doctored "$legs" "$doctored" "dropping the sharder's first id from the leg set" || return 1
+  run assert_sharder_ids_in_legs "$BATS_SHARDS" "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "a leg set missing $first was accepted" >&2
+    return 1
+  }
+  grep -qF -- " $first" <<<"$output"
+}
+
+@test "W16: the declared armed-leg table equals the tree's recomputation" {
+  require_yaml_parser
+  local conc_leg recomputed stats="$BATS_TEST_TMPDIR/w16-scan-counts"
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  recomputed="$(arming_recompute "$BATS_SHARDS" "$REPO_ROOT" "$WORKFLOW" \
+    "$ARMING_CONCURRENCY_DIR" "$conc_leg" "$stats")" || return 1
+  assert_arming_input_complete "$stats" "$BATS_SHARDS" || return 1
+  assert_arming_rows_nonempty "$(w16_declared_table)" 'the declared table' || return 1
+  assert_arming_rows_nonempty "$recomputed" "the tree's recomputation" || return 1
+  compare_arming_tables "$(w16_declared_table)" "$recomputed" \
+    'the declared table' "the tree's recomputation" "$W16_REPAIR"
+}
+
+@test "W16: the declared armed-leg table equals the arming script's answers" {
+  require_yaml_parser
+  local pages legs memo answered
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  memo="$(memo_sharder "$BATS_SHARDS" "$BATS_TEST_TMPDIR/memo")" || return 1
+  answered="$(arming_script_table "$ARMING_SCRIPT" "$memo" "$REPO_ROOT" "$pages" "$legs")" || return 1
+  assert_arming_rows_nonempty "$answered" "the arming script's answers" || return 1
+  compare_arming_tables "$(w16_declared_table)" "$answered" \
+    'the declared table' "the arming script's answers" "$W16_REPAIR"
+}
+
+@test "W16: the arming script's class equals the wiki/ entries PyYAML reads from the code: filter" {
+  require_yaml_parser
+  assert_arming_class "$ARMING_SCRIPT" "$WORKFLOW"
+}
+
+@test "W16: the committed fixture directory holds no path the sharder discovers" {
+  assert_undiscovered "$BATS_SHARDS" "$REPO_ROOT" "$REPO_ROOT/.gaia/tests/lib/fixtures"
+}
+
+@test "W16 adversarial: the undiscovered-fixture check reds on a directory the sharder does discover" {
+  run assert_undiscovered "$BATS_SHARDS" "$REPO_ROOT" "$REPO_ROOT/.gaia/tests/lib"
+  [ "$status" -ne 0 ] || {
+    echo "the lib suite directory passed as undiscovered" >&2
+    return 1
+  }
+  grep -qF -- "lib:$REPO_ROOT/.gaia/tests/lib/" <<<"$output"
+}
+
+@test "W16 adversarial: a leg removed from one declared row reds against the recomputation, naming the page and the leg" {
+  require_yaml_parser
+  local declared recomputed conc_leg row page legs leg doctored recomputed_row
+  declared="$(w16_declared_table)"
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  recomputed="$(arming_recompute "$BATS_SHARDS" "$REPO_ROOT" "$WORKFLOW" \
+    "$ARMING_CONCURRENCY_DIR" "$conc_leg")" || return 1
+  # Sampled on purpose: one row proves the comparison can red, and W16's own
+  # test covers every row. A row with more than one leg, so the doctored row is
+  # still non-empty and the red comes from the comparison, not from emptiness.
+  row="$(printf '%s\n' "$declared" | awk -F'|' 'split($2, legs, " ") > 1 { print; exit }')"
+  [ -n "$row" ] || {
+    echo "no declared row arms more than one leg, so no leg can be removed from one" >&2
+    return 1
+  }
+  page="${row%%|*}"
+  legs="${row#*|}"
+  leg="${legs%% *}"
+  doctored="$(printf '%s\n' "$declared" | awk -F'|' -v page="$page" -v row="$page|${legs#"$leg" }" \
+    '$1 == page { print row; next } { print }')"
+  assert_doctored "$declared" "$doctored" "removing $leg from the row for $page" || return 1
+
+  run compare_arming_tables "$doctored" "$recomputed" 'the declared table' "the tree's recomputation" "$W16_REPAIR"
+  [ "$status" -ne 0 ] || {
+    echo "removing $leg from the declared row for $page was not caught" >&2
+    return 1
+  }
+  grep -qF -- "$page: the tree's recomputation arms $leg, which the declared table does not" <<<"$output" || {
+    echo "the refusal did not name $page and $leg" >&2
+    return 1
+  }
+  # The repair is a copy: the recomputed row for the page is printed verbatim.
+  recomputed_row="$(printf '%s\n' "$recomputed" | awk -F'|' -v page="$page" '$1 == page')"
+  grep -qxF -- "$recomputed_row" <<<"$output" || {
+    echo "the refusal did not print the recomputed table verbatim" >&2
+    return 1
+  }
+}
+
+@test "W16 adversarial: a script doctored to arm a group holding no namer reds against the declared table, naming its legs" {
+  require_yaml_parser
+  local declared ids row id group g hit pick='' page shard armed legs memo line mutated
+  local doctored="$BATS_TEST_TMPDIR/leg-arming.sh" answered declared_row
+  declared="$(w16_declared_table)"
+  ids="$(bash "$BATS_SHARDS" shards)" || return 1
+  # The first page and shard whose exchange group the page's row does not touch
+  # at all, so every leg of that group is a leg the doctored script arms
+  # gratuitously. Sampled on purpose, like the case above.
+  while IFS= read -r row; do
+    [ -n "$row" ] || continue
+    armed=" ${row#*|} "
+    while IFS= read -r id; do
+      [ -n "$id" ] || continue
+      group="$(bash "$BATS_SHARDS" group "$id")" || return 1
+      hit=''
+      while IFS= read -r g; do
+        case "$armed" in
+          *" $g "*) hit=yes ;;
+        esac
+      done <<<"$group"
+      if [ -z "$hit" ]; then
+        pick="${row%%|*}|$id"
+        break 2
+      fi
+    done <<<"$ids"
+  done <<<"$declared"
+  [ -n "$pick" ] || {
+    echo "every declared row touches every exchange group, so no group can be armed gratuitously" >&2
+    return 1
+  }
+  page="${pick%%|*}"
+  shard="${pick#*|}"
+  group="$(bash "$BATS_SHARDS" group "$shard")" || return 1
+
+  # Every namer the scan finds contributes its unit's shards; the doctored copy
+  # adds <shard> to every contribution, arming its whole group for any page
+  # with a namer.
+  line="$(sole_line_matching "$ARMING_SCRIPT" 'contrib\+=\("\$id"\)$')" || return 1
+  mutated="${line%?} '$shard')"
+  assert_doctored "$line" "$mutated" "adding $shard to every namer's contribution" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" "$mutated" "$doctored"
+
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  memo="$(memo_sharder "$BATS_SHARDS" "$BATS_TEST_TMPDIR/memo")" || return 1
+  answered="$(arming_script_row "$doctored" "$memo" "$REPO_ROOT" "$page" "$legs")" || return 1
+  declared_row="$(printf '%s\n' "$declared" | awk -F'|' -v page="$page" '$1 == page')"
+  run compare_arming_tables "$declared_row" "$answered" 'the declared table' "the doctored script's answers"
+  [ "$status" -ne 0 ] || {
+    echo "a script arming $shard's group for $page was not caught" >&2
+    return 1
+  }
+  while IFS= read -r g; do
+    [ -n "$g" ] || continue
+    grep -qF -- "$page: the doctored script's answers arms $g, which the declared table does not" <<<"$output" || {
+      echo "the refusal did not name $g, a leg of the gratuitously armed group" >&2
+      return 1
+    }
+  done <<<"$group"
+}
+
+# The shape adversarial cases use for the class comparison are the ones the two
+# readers really do read differently, confirmed inside each case before the
+# comparison is asked about: a double-quoted scalar carrying an escape the awk
+# reader does not decode, which PyYAML decodes and the awk reader refuses; and a
+# plain scalar folded onto a continuation line that opens with `- `, which
+# PyYAML folds into one path and the awk reader reads as two entries. A plain
+# double-quoted scalar with no escape reads identically in both, so it could
+# not red.
+@test "W16 adversarial: an escaped double-quoted code: entry reds the class comparison" {
+  require_yaml_parser
+  local pages page line mutated doctored="$BATS_TEST_TMPDIR/class-escape.yml"
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | grep -F ' ' | sed -n 1p)"
+  [ -n "$page" ] || {
+    echo "no narrowable page carries a space for the escape to stand in for" >&2
+    return 1
+  }
+  line="$(code_entry_line "$WORKFLOW" "$page")" || return 1
+  mutated="${line%%-*}- \"${page/ /\\x20}\""
+  assert_doctored "$line" "$mutated" "rewriting the entry for $page as an escaped double-quoted scalar" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  # Confirm the divergence before relying on it: PyYAML still reads the page.
+  arming_parser_class "$doctored" | grep -qxF -- "$page" || {
+    echo "PyYAML did not decode the escaped entry back to $page, so the readers do not diverge here" >&2
+    return 1
+  }
+  run assert_arming_class "$ARMING_SCRIPT" "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "an entry the awk reader refuses and PyYAML reads was not caught" >&2
+    return 1
+  }
+  grep -qF -- 'could not derive the class' <<<"$output"
+}
+
+@test "W16 adversarial: a folded plain code: entry that both readers accept but read differently reds the class comparison" {
+  require_yaml_parser
+  local pages page head tail indent line doctored="$BATS_TEST_TMPDIR/class-fold.yml" awk_class
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | grep -F ' ' | sed -n 1p)"
+  [ -n "$page" ] || {
+    echo "no narrowable page carries a space to fold the entry at" >&2
+    return 1
+  }
+  head="${page%% *}"
+  tail="${page#* }"
+  line="$(code_entry_line "$WORKFLOW" "$page")" || return 1
+  indent="${line%%-*}"
+  replace_line "$WORKFLOW" "$line" "$indent- $head
+$indent  - $tail" "$doctored"
+  cmp -s "$WORKFLOW" "$doctored" && {
+    echo "folding the entry for $page changed nothing" >&2
+    return 1
+  }
+
+  # Confirm the divergence before relying on it: both readers succeed, and
+  # they read different paths.
+  arming_parser_class "$doctored" | grep -qxF -- "$head - $tail" || {
+    echo "PyYAML did not fold the entry into '$head - $tail'" >&2
+    return 1
+  }
+  awk_class="$(LEG_ARMING_WORKFLOW="$doctored" bash "$ARMING_SCRIPT" class 2>/dev/null)" || {
+    echo "the awk reader refused the folded entry, so this case would not reach the set comparison" >&2
+    return 1
+  }
+  grep -qxF -- "$head" <<<"$awk_class" || {
+    echo "the awk reader did not read '$head' as an entry of its own" >&2
+    return 1
+  }
+
+  run assert_arming_class "$ARMING_SCRIPT" "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "two readers reading different classes was not caught" >&2
+    return 1
+  }
+  grep -qF -- 'read different classes' <<<"$output"
+}
+
+@test "W16 non-vacuity: an empty narrowable class is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/class-empty.yml"
+  drop_wiki_code_entries "$WORKFLOW" "$doctored"
+  cmp -s "$WORKFLOW" "$doctored" && {
+    echo "dropping the wiki/ code: entries changed nothing" >&2
+    return 1
+  }
+  run assert_arming_class "$ARMING_SCRIPT" "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "an empty narrowable class was accepted" >&2
+    return 1
+  }
+  grep -qF -- 'the narrowable class is empty' <<<"$output"
+}
+
+@test "W16 non-vacuity: a class shorter than the wiki/ entries the code: filter declares is caught" {
+  require_yaml_parser
+  local pages page line doctored="$BATS_TEST_TMPDIR/class-short.yml"
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | grep -F ' ' | sed -n 1p)"
+  line="$(code_entry_line "$WORKFLOW" "$page")" || return 1
+  # A duplicated entry: both readers deduplicate, so the class stays the same
+  # size while the declared entries grow by one.
+  insert_after "$WORKFLOW" "$line" "$line" "$doctored"
+  run assert_arming_class "$ARMING_SCRIPT" "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "a class shorter than its declared entries was accepted" >&2
+    return 1
+  }
+  grep -qF -- 'wiki/ entries and the class holds' <<<"$output"
+}
+
+@test "W16 non-vacuity: a page whose armed set is empty is caught" {
+  local declared row doctored
+  declared="$(w16_declared_table)"
+  row="$(printf '%s\n' "$declared" | sed -n 1p)"
+  doctored="$(printf '%s\n' "$declared" | awk -F'|' -v page="${row%%|*}" '$1 == page { print page "|"; next } { print }')"
+  assert_doctored "$declared" "$doctored" "emptying the row for ${row%%|*}" || return 1
+  run assert_arming_rows_nonempty "$doctored" 'the doctored table'
+  [ "$status" -ne 0 ] || {
+    echo "an empty armed set was accepted" >&2
+    return 1
+  }
+  grep -qF -- "${row%%|*}" <<<"$output"
+}
+
+@test "W16 non-vacuity: a scan reading fewer suites than the sharder lists is caught" {
+  require_yaml_parser
+  local memo dir id victim before conc_leg stats="$BATS_TEST_TMPDIR/short-counts"
+  memo="$(memo_sharder "$BATS_SHARDS" "$BATS_TEST_TMPDIR/memo")" || return 1
+  dir="${memo%/*}"
+  # A short listing from the stand-in, while the recount reads the real sharder.
+  while IFS= read -r id; do
+    if [ "$(grep -c . "$dir/files.$id")" -gt 1 ]; then
+      victim="$dir/files.$id"
+      break
+    fi
+  done <"$dir/shards"
+  [ -n "${victim:-}" ] || {
+    echo "no shard lists more than one suite, so none can be shortened" >&2
+    return 1
+  }
+  before="$(cat "$victim")"
+  sed '$d' "$victim" >"$victim.short"
+  mv "$victim.short" "$victim"
+  assert_doctored "$before" "$(cat "$victim")" "dropping the last suite from $victim" || return 1
+
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  arming_recompute "$memo" "$REPO_ROOT" "$WORKFLOW" "$ARMING_CONCURRENCY_DIR" "$conc_leg" "$stats" >/dev/null || return 1
+  run assert_arming_input_complete "$stats" "$BATS_SHARDS"
+  [ "$status" -ne 0 ] || {
+    echo "a scan that read one suite fewer than the sharder lists was accepted" >&2
+    return 1
+  }
+  grep -qF -- 'discovered suites, and the sharder lists' <<<"$output"
+}
+
+@test "W16 non-vacuity: an empty discovery fails the recomputation rather than reading as no namer" {
+  require_yaml_parser
+  local conc_leg stub="$BATS_TEST_TMPDIR/empty-sharder.sh" empty="$BATS_TEST_TMPDIR/empty-seam"
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  printf '#!/usr/bin/env bash\nexit 0\n' >"$stub"
+  run arming_recompute "$stub" "$REPO_ROOT" "$WORKFLOW" "$ARMING_CONCURRENCY_DIR" "$conc_leg"
+  [ "$status" -ne 0 ] || {
+    echo "a sharder listing no shard produced a table" >&2
+    return 1
+  }
+  grep -qF -- 'the sharder listed no shard id' <<<"$output" || return 1
+
+  mkdir -p "$empty"
+  run arming_recompute "$BATS_SHARDS" "$REPO_ROOT" "$WORKFLOW" "$empty" "$conc_leg"
+  [ "$status" -ne 0 ] || {
+    echo "a concurrency seam holding no suite produced a table" >&2
+    return 1
+  }
+  grep -qF -- 'holds no suite' <<<"$output"
+}
+
+# UAT-011. The weighted groups reshuffle files among their own legs whenever a
+# suite changes size, so a gate keyed on the leg a namer happens to sit on would
+# churn with no change to any reader. Every lookup here resolves through the
+# sharder's `group` command, so a within-group move must leave both the script's
+# answers and the recomputation byte-identical. Built the way the W10 reshuffle
+# cases are: grow an unrelated suite beside the namer until the weighted
+# assignment moves it, bounded, with a failure to move reported rather than
+# skipped.
+@test "W16: a within-group reshuffle leaves a page's armed legs byte-identical (UAT-011)" {
+  require_yaml_parser
+  local root="$BATS_TEST_TMPDIR/arming-reshuffle" legs conc_leg pages page namer
+  local held_before held_after group expected c_before c_after b_all b_before b_after i=0 moved=''
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | sed -n 1p)"
+  seed_arming_tree "$BATS_SHARDS" "$root" "$WORKFLOW"
+  namer="$root/hooks/names-page.bats"
+  write_namer "$namer" "$page"
+
+  held_before="$(arming_tree_run "$root" arming_shard_of "$BATS_SHARDS" "$root" "$namer")" || return 1
+  group="$(bash "$BATS_SHARDS" group "$held_before")" || return 1
+  [ "$(printf '%s\n' "$group" | grep -c .)" -gt 1 ] || {
+    echo "the namer landed on $held_before, a group of one, so no reshuffle can move it and this case proves nothing" >&2
+    return 1
+  }
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$BATS_SHARDS" "$root" "$page" "$namer")" || return 1
+  c_before="$(arming_tree_run "$root" arming_script_row "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs")" || return 1
+  b_all="$(arming_tree_run "$root" arming_recompute "$BATS_SHARDS" "$root" \
+    "$root/.github/workflows/audit-ci-tests.yml" "$root/.gaia/tests/concurrency" "$conc_leg")" || return 1
+  b_before="$(printf '%s\n' "$b_all" | awk -F'|' -v page="$page" '$1 == page')"
+  compare_arming_tables "$expected" "$c_before" "the namer's own group" 'the arming script' || return 1
+  [ "$b_before" = "$c_before" ] || {
+    printf 'the recomputation and the script disagree before the reshuffle:\n%s\n%s\n' "$b_before" "$c_before" >&2
+    return 1
+  }
+
+  while [ "$i" -lt 24 ]; do
+    printf '# pad %s\n' "$i" >>"$root/hooks/plain-0.bats"
+    i=$((i + 1))
+    held_after="$(arming_tree_run "$root" arming_shard_of "$BATS_SHARDS" "$root" "$namer")" || return 1
+    if [ "$held_after" != "$held_before" ]; then
+      moved=yes
+      break
+    fi
+  done
+  [ -n "$moved" ] || {
+    echo "growing an unrelated suite never moved the namer off $held_before, so this case proved nothing about stability" >&2
+    return 1
+  }
+
+  c_after="$(arming_tree_run "$root" arming_script_row "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs")" || return 1
+  b_all="$(arming_tree_run "$root" arming_recompute "$BATS_SHARDS" "$root" \
+    "$root/.github/workflows/audit-ci-tests.yml" "$root/.gaia/tests/concurrency" "$conc_leg")" || return 1
+  b_after="$(printf '%s\n' "$b_all" | awk -F'|' -v page="$page" '$1 == page')"
+  [ "$c_after" = "$c_before" ] || {
+    printf 'the namer moved from %s to %s and the script'"'"'s answers moved with it:\nbefore: %s\nafter:  %s\n' \
+      "$held_before" "$held_after" "$c_before" "$c_after" >&2
+    return 1
+  }
+  [ "$b_after" = "$b_before" ] || {
+    printf 'the namer moved from %s to %s and the recomputation moved with it:\nbefore: %s\nafter:  %s\n' \
+      "$held_before" "$held_after" "$b_before" "$b_after" >&2
+    return 1
+  }
+  # The record the verification pass reads: bats shows it on a failure, or on
+  # a pass under --show-output-of-passing-tests.
+  printf 'namer moved %s -> %s\nbefore: %s\nafter:  %s\n' "$held_before" "$held_after" "$c_before" "$c_after"
+}
+
+# W17 (SPEC-078 lever two; UAT-008, UAT-015, UAT-016, UAT-017, UAT-021,
+# UAT-022). The arming script's lanes, driven directly. Every arm asserts the
+# exit status as well as the answer: the workflow step reads the printed
+# literal, and a non-zero exit there is a failed step rather than an answer, so
+# the fallback is worth nothing unless the script exits 0 on every path. An arm
+# showing the script arming on some condition first shows it narrowing the same
+# input on the same leg without that condition; an arm that only ever observed
+# `true` would pass against a script that arms everything.
+
+# assert_dispatch_lane <script> <sharder> <root> <legs> <expected-count>: the
+# dispatch lane, with every filter output empty, arms each of <legs> and exits
+# 0, over exactly <expected-count> legs and never zero.
+assert_dispatch_lane() {
+  local script="$1" sharder="$2" root="$3" legs="$4" expected="$5" leg out rc n=0
+  while IFS= read -r leg || [ -n "$leg" ]; do
+    [ -n "$leg" ] || continue
+    rc=0
+    out="$(arming_answer "$script" "$sharder" "$root" "$leg" '' '' workflow_dispatch)" || rc=$?
+    [ "$rc" -eq 0 ] || {
+      echo "the dispatch lane exited $rc on leg $leg, expected 0" >&2
+      return 1
+    }
+    [ "$out" = true ] || {
+      echo "the dispatch lane answered '$out' on leg $leg with every filter output empty, expected true" >&2
+      return 1
+    }
+    n=$((n + 1))
+  done <<EOF
+$legs
+EOF
+  [ "$n" -gt 0 ] && [ "$n" -eq "$expected" ] || {
+    echo "the dispatch lane was driven over $n legs, and the matrix declares $expected" >&2
+    return 1
+  }
+}
+
+# assert_dispatch_overrides <script> <sharder> <root> <changed-json> <leg>
+#
+# The dispatch arm is a rule of its own, not the empty-list rule answering for
+# it. With every filter output empty the two reach the same `true`, so the lane
+# above cannot tell them apart: this drives dispatch with a list that narrows
+# <leg> on the pull-request lane, and requires the two empty-list lanes to give
+# different reasons.
+assert_dispatch_overrides() {
+  local script="$1" sharder="$2" root="$3" json="$4" leg="$5" out rc=0 dispatch_reason pr_reason
+  arming_baseline_false "$script" "$sharder" "$root" "$json" "$leg" || return 1
+  out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" '' workflow_dispatch)" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "the dispatch lane answered '$out' (exit $rc) on leg $leg for a list that narrows it, so dispatch is not a rule of its own" >&2
+    return 1
+  }
+  dispatch_reason="$(GITHUB_EVENT_NAME=workflow_dispatch CHANGED_FILES_JSON='' PR_CHANGED_FILES='' \
+    LEG_ID="$leg" LEG_ARMING_ROOT="$root" LEG_ARMING_SHARDER="$sharder" bash "$script" 2>&1 >/dev/null </dev/null)"
+  pr_reason="$(GITHUB_EVENT_NAME=pull_request CHANGED_FILES_JSON='' PR_CHANGED_FILES='' \
+    LEG_ID="$leg" LEG_ARMING_ROOT="$root" LEG_ARMING_SHARDER="$sharder" bash "$script" 2>&1 >/dev/null </dev/null)"
+  [ -n "$dispatch_reason" ] && [ "$dispatch_reason" != "$pr_reason" ] || {
+    echo "the dispatch lane and the empty-list lane give the same reason, so the two conditions are conflated: $dispatch_reason" >&2
+    return 1
+  }
+}
+
+@test "W17: the dispatch lane arms every leg the matrix declares with every filter output empty (UAT-008)" {
+  require_yaml_parser
+  local matrix expected
+  matrix="$(read_wf matrix "$WORKFLOW" shards)" || return 1
+  expected="$(printf '%s\n' "$matrix" | awk 'NF { n++ } END { print n + 0 }')"
+  assert_dispatch_lane "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$matrix" "$expected"
+}
+
+@test "W17: the dispatch lane overrides a narrowing list, and its reason differs from the empty-list lane's" {
+  require_yaml_parser
+  local legs pair json
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  assert_dispatch_overrides "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}"
+}
+
+@test "W17 adversarial: a script with its dispatch arm doctored out reds the dispatch lane" {
+  require_yaml_parser
+  local legs pair json line mutated matrix expected doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  line="$(sole_line_matching "$ARMING_SCRIPT" '= workflow_dispatch \]; then$')" || return 1
+  mutated="${line%%if*}if false; then"
+  assert_doctored "$line" "$mutated" "disabling the dispatch arm" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" "$mutated" "$doctored"
+
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  run assert_dispatch_overrides "$doctored" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}"
+  [ "$status" -ne 0 ] || {
+    echo "a script with no dispatch arm passed the dispatch lane" >&2
+    return 1
+  }
+  grep -qF -- 'dispatch is not a rule of its own' <<<"$output" || return 1
+
+  # Non-vacuity: the per-leg lane reds when it is handed no leg at all.
+  matrix="$(read_wf matrix "$WORKFLOW" shards)" || return 1
+  expected="$(printf '%s\n' "$matrix" | awk 'NF { n++ } END { print n + 0 }')"
+  run assert_dispatch_lane "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" '' "$expected"
+  [ "$status" -ne 0 ] || {
+    echo "the dispatch lane passed over an empty leg set" >&2
+    return 1
+  }
+  grep -qF -- 'driven over 0 legs' <<<"$output"
+}
+
+# assert_pagination_lane <script> <sharder> <root> <changed-json> <leg>
+#
+# The pagination cap in both directions, on a page and leg that narrow to
+# `false` with no count. One below the cap is the arm that matters, and it
+# carries its own message: a rule that fired there would arm every leg on an
+# ordinary pull request, and the narrowing would ship inert with every check
+# still green.
+assert_pagination_lane() {
+  local script="$1" sharder="$2" root="$3" json="$4" leg="$5" out rc
+  rc=0
+  out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" 2999)" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = false ] || {
+    echo "PR_CHANGED_FILES=2999, one below the cap, answered '$out' (exit $rc) on leg $leg: the pagination rule fires below the cap, so an ordinary pull request arms every leg and the narrowing is inert" >&2
+    return 1
+  }
+  rc=0
+  out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" 3000)" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "PR_CHANGED_FILES=3000, at the cap, answered '$out' (exit $rc) on leg $leg, expected true" >&2
+    return 1
+  }
+  rc=0
+  out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" abc)" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = false ] || {
+    echo "a non-decimal PR_CHANGED_FILES answered '$out' (exit $rc) on leg $leg, expected false" >&2
+    return 1
+  }
+  rc=0
+  out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" '')" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = false ] || {
+    echo "an empty PR_CHANGED_FILES answered '$out' (exit $rc) on leg $leg, expected false" >&2
+    return 1
+  }
+}
+
+@test "W17: the pagination cap arms at the cap and not one below it" {
+  require_yaml_parser
+  local legs pair json
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  assert_pagination_lane "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}"
+}
+
+@test "W17 adversarial: a pagination rule doctored into a count reconcile reds one below the cap" {
+  require_yaml_parser
+  local legs pair json line doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  # The reconcile the threshold replaced: compare the count against the parsed
+  # list's length, which arms whenever a changed file matched no filter.
+  line="$(sole_line_matching "$ARMING_SCRIPT" '^  pcf="\$\{PR_CHANGED_FILES:-\}"$')" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" '  if [ -n "${PR_CHANGED_FILES:-}" ] && [ "$PR_CHANGED_FILES" != "${#changed[@]}" ]; then arm reconcile; return 0; fi
+  pcf='"''"'' "$doctored"
+  cmp -s "$ARMING_SCRIPT" "$doctored" && {
+    echo "doctoring the pagination rule changed nothing" >&2
+    return 1
+  }
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  run assert_pagination_lane "$doctored" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}"
+  [ "$status" -ne 0 ] || {
+    echo "a count reconcile passed the pagination lane" >&2
+    return 1
+  }
+  grep -qF -- 'one below the cap' <<<"$output"
+}
+
+@test "W17: an empty changed-file list on the pull-request lane arms, exit 0 (UAT-022)" {
+  require_yaml_parser
+  local legs pair json out rc=0
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  arming_baseline_false "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}" || return 1
+  out="$(arming_answer "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "${pair#*|}" '' '')" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "an empty CHANGED_FILES_JSON on the pull-request lane answered '$out' (exit $rc), expected true and exit 0" >&2
+    return 1
+  }
+}
+
+@test "W17: an unreadable workflow seam arms, exit 0 (UAT-022)" {
+  require_yaml_parser
+  require_non_root
+  local legs pair json copy="$BATS_TEST_TMPDIR/unreadable.yml" out rc=0
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  cp "$WORKFLOW" "$copy"
+  LEG_ARMING_WORKFLOW="$copy" arming_baseline_false "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}" || return 1
+  chmod 000 "$copy"
+  out="$(LEG_ARMING_WORKFLOW="$copy" arming_answer "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "${pair#*|}" "$json" '')" || rc=$?
+  chmod 644 "$copy"
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "an unreadable workflow seam answered '$out' (exit $rc), expected true and exit 0" >&2
+    return 1
+  }
+}
+
+@test "W17: a sharder that exits non-zero arms, exit 0 (UAT-022)" {
+  require_yaml_parser
+  local legs pair json stub="$BATS_TEST_TMPDIR/failing-sharder.sh" out rc=0
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  json="$(arming_json_list "${pair%%|*}")" || return 1
+  arming_baseline_false "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$json" "${pair#*|}" || return 1
+  printf '#!/usr/bin/env bash\nexit 3\n' >"$stub"
+  out="$(arming_answer "$ARMING_SCRIPT" "$stub" "$REPO_ROOT" "${pair#*|}" "$json" '')" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "a sharder exiting 3 answered '$out' (exit $rc), expected true and exit 0" >&2
+    return 1
+  }
+}
+
+@test "W17: a grep hard error in the scan arms, exit 0 (UAT-022)" {
+  require_yaml_parser
+  require_non_root
+  local root="$BATS_TEST_TMPDIR/arming-grep-error" legs pages page expected leg json out rc=0
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | sed -n 1p)"
+  seed_arming_tree "$BATS_SHARDS" "$root" "$WORKFLOW"
+  write_namer "$root/scripts/names-page.bats" "$page"
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$BATS_SHARDS" "$root" "$page" \
+    "$root/scripts/names-page.bats")" || return 1
+  leg="$(arming_declining_pair "$expected" "$legs")" || return 1
+  leg="${leg#*|}"
+  json="$(arming_json_list "$page")" || return 1
+  arming_tree_run "$root" arming_baseline_false "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$json" "$leg" || return 1
+
+  mkdir -p "$root/hooks/fixtures"
+  printf 'unreadable\n' >"$root/hooks/fixtures/locked.txt"
+  chmod 000 "$root/hooks/fixtures/locked.txt"
+  out="$(arming_tree_run "$root" arming_answer "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$leg" "$json" '')" || rc=$?
+  chmod 644 "$root/hooks/fixtures/locked.txt"
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "a scan hitting an unreadable file answered '$out' (exit $rc) on leg $leg, expected true and exit 0" >&2
+    return 1
+  }
+}
+
+# seed_mention_tree <sharder> <root> <workflow> <subtree> <page>: a seeded tree
+# whose one mention of <page> sits in a file under the scripts seam's
+# <subtree> directory, `helpers` or `fixtures`, and in no suite.
+seed_mention_tree() {
+  local sharder="$1" root="$2" workflow="$3" sub="$4" page="$5"
+  seed_arming_tree "$sharder" "$root" "$workflow"
+  mkdir -p "$root/scripts/$sub"
+  printf 'reads %s\n' "$page" >"$root/scripts/$sub/mention-$sub"
+}
+
+# assert_mention_arms <script> <sharder> <root> <page> <legs>
+#
+# The script's row for <page>, in a tree seed_mention_tree built, is exactly the
+# scripts seam's group plus the group rule 5 arms. Exact rather than "the
+# scripts legs answer true": a script that stopped reading the mention would
+# still arm those legs through the empty-namer fallback, and only the legs that
+# must answer `false` tell the two apart.
+assert_mention_arms() {
+  local script="$1" sharder="$2" root="$3" page="$4" legs="$5" expected answered
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$sharder" "$root" "$page" \
+    "$root/scripts/plain-0.bats")" || return 1
+  answered="$(arming_tree_run "$root" arming_script_row "$script" "$sharder" "$root" "$page" "$legs")" || return 1
+  compare_arming_tables "$expected" "$answered" "the mention's own group" 'the arming script'
+}
+
+@test "W17: a narrowable page named only under a suite directory's helpers/ arms that suite's group (UAT-021)" {
+  require_yaml_parser
+  local root="$BATS_TEST_TMPDIR/arming-helpers" legs pages page
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | sed -n 1p)"
+  seed_mention_tree "$BATS_SHARDS" "$root" "$WORKFLOW" helpers "$page"
+  assert_mention_arms "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs"
+}
+
+@test "W17: a narrowable page named only under a suite directory's fixtures/ arms that suite's group (UAT-021)" {
+  require_yaml_parser
+  local root="$BATS_TEST_TMPDIR/arming-fixtures" legs pages page
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | sed -n 1p)"
+  seed_mention_tree "$BATS_SHARDS" "$root" "$WORKFLOW" fixtures "$page"
+  assert_mention_arms "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs"
+}
+
+@test "W17 adversarial: a script that scans suites only reds both the helper-only and the fixture-only arm" {
+  require_yaml_parser
+  local legs pages page line mutated sub doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  line="$(sole_line_matching "$ARMING_SCRIPT" '^ *for sub in helpers lib fixtures; do$')" || return 1
+  mutated="${line%%for*}for sub in no-subtree; do"
+  assert_doctored "$line" "$mutated" "dropping every subtree from the scan" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" "$mutated" "$doctored"
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  page="$(printf '%s\n' "$pages" | sed -n 1p)"
+  for sub in helpers fixtures; do
+    seed_mention_tree "$BATS_SHARDS" "$BATS_TEST_TMPDIR/arming-$sub" "$WORKFLOW" "$sub" "$page"
+    run assert_mention_arms "$doctored" "$BATS_SHARDS" "$BATS_TEST_TMPDIR/arming-$sub" "$page" "$legs"
+    [ "$status" -ne 0 ] || {
+      echo "the $sub-only mention passed against a script that scans suites only" >&2
+      return 1
+    }
+    grep -qF -- 'the arming script arms' <<<"$output" || {
+      echo "the $sub-only arm did not red on a gratuitously armed leg" >&2
+      return 1
+    }
+  done
+}
+
+# assert_all_but_one_arms <script> <sharder> <root> <workflow> <legs>
+#
+# In a seeded tree, a suite naming every narrowable page but one, the page under
+# test among them, still arms its group: the namer-of-all rule excludes at
+# exactly all, and is not a threshold.
+assert_all_but_one_arms() {
+  local script="$1" sharder="$2" root="$3" workflow="$4" legs="$5" class member page expected answered
+  local members=()
+  class="$(arming_parser_class "$workflow")" || return 1
+  while IFS= read -r member || [ -n "$member" ]; do
+    if [ -n "$member" ]; then
+      members+=("$member")
+    fi
+  done <<<"$class"
+  [ "${#members[@]}" -gt 2 ] || {
+    echo "the class has too few members for a file to name all but one of them and still name the page" >&2
+    return 1
+  }
+  page="${members[0]}"
+  seed_arming_tree "$sharder" "$root" "$workflow"
+  write_namer "$root/hooks/names-most.bats" "${members[@]:0:${#members[@]}-1}"
+  write_namer "$root/scripts/names-page.bats" "$page"
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$sharder" "$root" "$page" \
+    "$root/hooks/names-most.bats" "$root/scripts/names-page.bats")" || return 1
+  answered="$(arming_tree_run "$root" arming_script_row "$script" "$sharder" "$root" "$page" "$legs")" || return 1
+  compare_arming_tables "$expected" "$answered" 'every namer of the page' 'the arming script'
+}
+
+@test "W17: a file naming every narrowable page does not arm its group for a page named elsewhere too" {
+  require_yaml_parser
+  local root="$BATS_TEST_TMPDIR/arming-namer-all" legs class member page expected answered
+  local members=()
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  class="$(arming_parser_class "$WORKFLOW")" || return 1
+  while IFS= read -r member || [ -n "$member" ]; do
+    if [ -n "$member" ]; then
+      members+=("$member")
+    fi
+  done <<<"$class"
+  [ "${#members[@]}" -gt 1 ] || {
+    echo "the class has a single member, where the namer-of-all rule is inert by design" >&2
+    return 1
+  }
+  page="${members[0]}"
+  seed_arming_tree "$BATS_SHARDS" "$root" "$WORKFLOW"
+  write_namer "$root/hooks/names-all.bats" "${members[@]}"
+  write_namer "$root/scripts/names-page.bats" "$page"
+  # The whole-class file is the page's only namer in its own group, and the page
+  # has a namer elsewhere, so the empty-namer fallback cannot arm every leg.
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$BATS_SHARDS" "$root" "$page" \
+    "$root/scripts/names-page.bats")" || return 1
+  answered="$(arming_tree_run "$root" arming_script_row "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs")" || return 1
+  compare_arming_tables "$expected" "$answered" 'the namers other than the whole-class file' 'the arming script'
+}
+
+@test "W17: a file naming all but one narrowable page still arms its group" {
+  require_yaml_parser
+  local legs
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  assert_all_but_one_arms "$ARMING_SCRIPT" "$BATS_SHARDS" "$BATS_TEST_TMPDIR/arming-namer-most" "$WORKFLOW" "$legs"
+}
+
+@test "W17: the namer-of-all rule is inert on a single-member class" {
+  require_yaml_parser
+  local root="$BATS_TEST_TMPDIR/arming-single" legs class member page one expected answered
+  local members=()
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  class="$(arming_parser_class "$WORKFLOW")" || return 1
+  while IFS= read -r member || [ -n "$member" ]; do
+    if [ -n "$member" ]; then
+      members+=("$member")
+    fi
+  done <<<"$class"
+  page="${members[0]}"
+  seed_arming_tree "$BATS_SHARDS" "$root" "$WORKFLOW"
+  drop_wiki_code_entries "$WORKFLOW" "$root/.github/workflows/audit-ci-tests.yml" "$page"
+  one="$(LEG_ARMING_ROOT="$root" bash "$ARMING_SCRIPT" class 2>/dev/null)" || {
+    echo "the arming script could not read the single-member fixture's class" >&2
+    return 1
+  }
+  [ "$one" = "$page" ] || {
+    echo "the single-member fixture's class is not exactly $page:" >&2
+    printf '%s\n' "$one" >&2
+    return 1
+  }
+  # Every namer of a single-member class names all of it; the rule is inert, so
+  # the file still arms its group.
+  write_namer "$root/hooks/names-all.bats" "${members[@]}"
+  expected="$(arming_tree_run "$root" arming_tree_expected_row "$BATS_SHARDS" "$root" "$page" \
+    "$root/hooks/names-all.bats")" || return 1
+  answered="$(arming_tree_run "$root" arming_script_row "$ARMING_SCRIPT" "$BATS_SHARDS" "$root" "$page" "$legs")" || return 1
+  compare_arming_tables "$expected" "$answered" "the namer's own group" 'the arming script'
+}
+
+@test "W17 adversarial: a namer-of-all rule doctored into a threshold reds the all-but-one arm" {
+  require_yaml_parser
+  local legs reset tally mutated_reset mutated_tally step="$BATS_TEST_TMPDIR/leg-arming.step.sh"
+  local doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  # Exclude a file that misses at most one member, rather than none.
+  reset="$(sole_line_matching "$ARMING_SCRIPT" '^ *excluded=1$')" || return 1
+  tally="$(sole_line_matching "$ARMING_SCRIPT" '^ *if ! line_in "\$f" ')" || return 1
+  mutated_reset="$reset misses=0"
+  mutated_tally="${tally%; then}"' && [ "$((misses += 1))" -gt 1 ]; then'
+  assert_doctored "$reset" "$mutated_reset" "resetting a miss tally per file" || return 1
+  assert_doctored "$tally" "$mutated_tally" "excluding a file at one miss" || return 1
+  replace_line "$ARMING_SCRIPT" "$reset" "$mutated_reset" "$step"
+  replace_line "$step" "$tally" "$mutated_tally" "$doctored"
+
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  run assert_all_but_one_arms "$doctored" "$BATS_SHARDS" "$BATS_TEST_TMPDIR/arming-threshold" "$WORKFLOW" "$legs"
+  [ "$status" -ne 0 ] || {
+    echo "a threshold namer-of-all rule passed the all-but-one arm" >&2
+    return 1
+  }
+  grep -qF -- 'every namer of the page arms' <<<"$output"
+}
+
+@test "W17: a space-bearing changed path is read whole, and a plain one resolves the same way (UAT-015)" {
+  require_yaml_parser
+  local pages spaced plain legs memo answered declared
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  spaced="$(printf '%s\n' "$pages" | grep -F ' ' | sed -n 1p)"
+  plain="$(printf '%s\n' "$pages" | grep -vF ' ' | sed -n 1p)"
+  [ -n "$spaced" ] && [ -n "$plain" ] || {
+    echo "the class lacks a page with a space or a page without one, so the split cannot be driven" >&2
+    return 1
+  }
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  memo="$(memo_sharder "$BATS_SHARDS" "$BATS_TEST_TMPDIR/memo")" || return 1
+  answered="$(arming_script_table "$ARMING_SCRIPT" "$memo" "$REPO_ROOT" "$spaced
+$plain" "$legs")" || return 1
+  declared="$(w16_declared_table | awk -F'|' -v a="$spaced" -v b="$plain" '$1 == a || $1 == b')"
+  compare_arming_tables "$declared" "$answered" 'the declared table' "the arming script's answers"
+}
+
+@test "W17 adversarial: a word-splitting JSON read reds the space-bearing arm rather than arming everything invisibly" {
+  require_yaml_parser
+  local pages spaced legs memo line mutated answered declared doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  line="$(sole_line_matching "$ARMING_SCRIPT" 'changed\+=\("\$rec"\)$')" || return 1
+  mutated="${line%%changed*}"'changed+=($rec)'
+  assert_doctored "$line" "$mutated" "word-splitting each parsed path" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" "$mutated" "$doctored"
+
+  pages="$(arming_parser_class "$WORKFLOW")" || return 1
+  spaced="$(printf '%s\n' "$pages" | grep -F ' ' | sed -n 1p)"
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  memo="$(memo_sharder "$BATS_SHARDS" "$BATS_TEST_TMPDIR/memo")" || return 1
+  answered="$(arming_script_row "$doctored" "$memo" "$REPO_ROOT" "$spaced" "$legs")" || return 1
+  declared="$(w16_declared_table | awk -F'|' -v a="$spaced" '$1 == a')"
+  run compare_arming_tables "$declared" "$answered" 'the declared table' "the doctored script's answers"
+  [ "$status" -ne 0 ] || {
+    echo "a script word-splitting $spaced passed the space-bearing arm" >&2
+    return 1
+  }
+  grep -qF -- "$spaced: the doctored script's answers arms" <<<"$output"
+}
+
+# assert_hostile_list_contained <script> <sharder> <root> <scratch-dir> <leg>
+#
+# A changed-file list carrying an embedded newline, a single quote and a
+# `$(...)` sequence arms, exits 0 with one line, expands nothing, and leaves
+# $GITHUB_OUTPUT, $GITHUB_ENV and $GITHUB_STEP_SUMMARY, each pointed at a
+# scratch file, untouched. Those files are line-oriented, so a filename echoed
+# into one could append a record of its own.
+assert_hostile_list_contained() {
+  local script="$1" sharder="$2" root="$3" scratch="$4" leg="$5" canary json out rc=0 step_file
+  canary="$scratch/expanded"
+  mkdir -p "$scratch"
+  : >"$scratch/GITHUB_OUTPUT"
+  : >"$scratch/GITHUB_ENV"
+  : >"$scratch/GITHUB_STEP_SUMMARY"
+  json="$(arming_json_list "$(printf 'wiki/concepts/a\nb.md')" "it's.md" "\$(touch $canary).md")" || return 1
+  out="$(GITHUB_OUTPUT="$scratch/GITHUB_OUTPUT" GITHUB_ENV="$scratch/GITHUB_ENV" \
+    GITHUB_STEP_SUMMARY="$scratch/GITHUB_STEP_SUMMARY" \
+    arming_answer "$script" "$sharder" "$root" "$leg" "$json" '')" || rc=$?
+  [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+    echo "the hostile list answered '$out' (exit $rc), expected exactly one true line and exit 0" >&2
+    return 1
+  }
+  for step_file in GITHUB_OUTPUT GITHUB_ENV GITHUB_STEP_SUMMARY; do
+    [ -s "$scratch/$step_file" ] && {
+      echo "the arming script wrote to \$$step_file on a hostile changed-file list:" >&2
+      cat "$scratch/$step_file" >&2
+      return 1
+    }
+  done
+  [ -e "$canary" ] && {
+    echo "a \$(...) sequence in a changed filename was expanded" >&2
+    return 1
+  }
+  true
+}
+
+@test "W17: a hostile changed-file list arms without writing to any step file (UAT-016)" {
+  require_yaml_parser
+  local legs pair
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  assert_hostile_list_contained "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "$BATS_TEST_TMPDIR/hostile" "${pair#*|}"
+}
+
+@test "W17 adversarial: a script echoing a changed filename into GITHUB_OUTPUT is caught" {
+  require_yaml_parser
+  local legs pair line indent doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  line="$(sole_line_matching "$ARMING_SCRIPT" 'changed\+=\("\$rec"\)$')" || return 1
+  indent="${line%%changed*}"
+  insert_after "$ARMING_SCRIPT" "$line" "$indent"'printf "leak=%s\n" "$rec" >>"$GITHUB_OUTPUT"' "$doctored"
+  cmp -s "$ARMING_SCRIPT" "$doctored" && {
+    echo "inserting the leak changed nothing" >&2
+    return 1
+  }
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  run assert_hostile_list_contained "$doctored" "$BATS_SHARDS" "$REPO_ROOT" "$BATS_TEST_TMPDIR/hostile" "${pair#*|}"
+  [ "$status" -ne 0 ] || {
+    echo "a script leaking a filename into GITHUB_OUTPUT passed" >&2
+    return 1
+  }
+  grep -qF -- 'wrote to $GITHUB_OUTPUT' <<<"$output"
+}
+
+# assert_substring_arms <script> <sharder> <root> <page> <legs>: a changed path
+# that merely contains <page> arms each of <legs>, because membership is exact
+# string equality against the class.
+assert_substring_arms() {
+  local script="$1" sharder="$2" root="$3" page="$4" legs="$5" json leg out rc n=0
+  json="$(arming_json_list ".gaia/scripts/$page.sh")" || return 1
+  while IFS= read -r leg || [ -n "$leg" ]; do
+    [ -n "$leg" ] || continue
+    rc=0
+    out="$(arming_answer "$script" "$sharder" "$root" "$leg" "$json" '')" || rc=$?
+    [ "$rc" -eq 0 ] && [ "$out" = true ] || {
+      echo "a path merely containing $page answered '$out' (exit $rc) on leg $leg, expected true: membership is a substring test" >&2
+      return 1
+    }
+    n=$((n + 1))
+  done <<EOF
+$legs
+EOF
+  [ "$n" -gt 0 ] || {
+    echo "the substring lane was driven over no leg" >&2
+    return 1
+  }
+}
+
+@test "W17: a changed path that merely contains a narrowable page arms every leg (UAT-017)" {
+  require_yaml_parser
+  local legs pair
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  assert_substring_arms "$ARMING_SCRIPT" "$BATS_SHARDS" "$REPO_ROOT" "${pair%%|*}" "$legs"
+}
+
+@test "W17 adversarial: a membership test doctored into a substring match is caught" {
+  require_yaml_parser
+  local legs pair line mutated doctored="$BATS_TEST_TMPDIR/leg-arming.sh"
+  line="$(sole_line_matching "$ARMING_SCRIPT" 'if \[ "\$path" = "\$\{class\[\$i\]\}" \]; then$')" || return 1
+  mutated="${line%%if*}"'if [[ "$path" == *"${class[$i]}"* ]]; then'
+  assert_doctored "$line" "$mutated" "turning membership into a substring match" || return 1
+  replace_line "$ARMING_SCRIPT" "$line" "$mutated" "$doctored"
+  legs="$(arming_legs "$WORKFLOW")" || return 1
+  pair="$(arming_declining_pair "$(w16_declared_table)" "$legs")" || return 1
+  # Sampled on purpose: the one leg the page narrows to `false` is the leg a
+  # substring match can disarm, and one is enough to show the lane reds.
+  run assert_substring_arms "$doctored" "$BATS_SHARDS" "$REPO_ROOT" "${pair%%|*}" "${pair#*|}"
+  [ "$status" -ne 0 ] || {
+    echo "a substring membership test passed the substring lane" >&2
+    return 1
+  }
+  grep -qF -- 'membership is a substring test' <<<"$output"
+}
+
+# W18 (SPEC-078 lever two, UAT-010). The arming scan finds a page by literal
+# mention, so a suite reaching a narrowable page through a path it builds at
+# run time is invisible to it, and invisible here means a leg that stops
+# arming for a page one of its suites reads. This fails on a `wiki/`-rooted
+# path whose remainder below `wiki/` is not fully literal, a `$VAR`, `${VAR}`
+# or `$(...)` segment or a `*`, `?` or `[`, in a suite or helper the scan reads,
+# and only where the remainder could match a narrowable page.
+#
+# Exempt, each for a stated reason. A variable PREFIX before a literal remainder
+# (`"$ROOT/wiki/concepts/GAIA Audit.md"`): the scan matches by basename, so it
+# sees it. A single-quoted token: nothing expands inside single quotes, so the
+# text is a pattern or an allowlist rather than a path a suite builds. A
+# `@test` name and a comment: neither builds a path. A fixtures/ file that is
+# not shell: a suite reads it as data rather than runs it, and the literal scan
+# already reaches whatever it names.
+#
+# WHAT THIS DOES NOT CATCH. The reader is shell-shaped and tracks quotes one
+# line at a time, so a path assembled across lines, or by another language's
+# string operations inside a program a heredoc embeds, reads as literal or not
+# at all.
+
+dynamic_wiki_paths_py() {
+  python3 - "$@" <<'PY'
+import os
+import re
+import sys
+
+members = [m for m in os.environ['ARMING_CLASS'].split('\n') if m]
+with open(sys.argv[1], encoding='utf-8') as handle:
+    paths = [p for p in handle.read().split('\n') if p]
+BOUNDARY = set('_.-')
+STOP = set(' \t;|&<>()\'"`')
+
+
+def balanced(line, k, opener, closer):
+    depth = 0
+    while k < len(line):
+        if line[k] == opener:
+            depth += 1
+        elif line[k] == closer:
+            depth -= 1
+            if depth == 0:
+                return k + 1
+        k += 1
+    return k
+
+
+def remainder(line, k, quoted):
+    parts = []
+    dynamic = False
+    n = len(line)
+    while k < n:
+        c = line[k]
+        if quoted and c == '"':
+            break
+        if not quoted and c in STOP:
+            break
+        if c == '\\' and k + 1 < n:
+            parts.append(re.escape(line[k + 1]))
+            k += 2
+            continue
+        if c == '$' and k + 1 < n:
+            nxt = line[k + 1]
+            if nxt == '(':
+                k = balanced(line, k + 1, '(', ')')
+            elif nxt == '{':
+                k = balanced(line, k + 1, '{', '}')
+            elif nxt.isalpha() or nxt == '_':
+                k += 2
+                while k < n and (line[k].isalnum() or line[k] == '_'):
+                    k += 1
+            elif nxt.isdigit() or nxt in '@*#?$!-':
+                k += 2
+            else:
+                parts.append(re.escape(c))
+                k += 1
+                continue
+            parts.append('.*')
+            dynamic = True
+            continue
+        if c in '*?[':
+            parts.append('.*')
+            dynamic = True
+            if c == '[':
+                close = line.find(']', k + 1)
+                k = close + 1 if close > 0 else k + 1
+            else:
+                k += 1
+            continue
+        parts.append(re.escape(c))
+        k += 1
+    return k, dynamic, ''.join(parts)
+
+
+def scan(line):
+    stripped = line.lstrip()
+    if stripped.startswith('#') or stripped.startswith('@test '):
+        return []
+    hits = []
+    single = double = False
+    k = 0
+    n = len(line)
+    while k < n:
+        c = line[k]
+        if single:
+            if c == "'":
+                single = False
+            k += 1
+            continue
+        if c == '\\':
+            k += 2
+            continue
+        if c == "'" and not double:
+            single = True
+            k += 1
+            continue
+        if c == '"':
+            double = not double
+            k += 1
+            continue
+        if c == '#' and not double and (k == 0 or line[k - 1] in ' \t'):
+            break
+        if line.startswith('wiki/', k) and (
+                k == 0 or not (line[k - 1].isalnum() or line[k - 1] in BOUNDARY)):
+            end, dynamic, rx = remainder(line, k + 5, double)
+            if dynamic and any(re.fullmatch('wiki/' + rx, m) for m in members):
+                hits.append(line[k:end])
+            k = max(end, k + 5)
+            continue
+        k += 1
+    return hits
+
+
+scanned = 0
+for path in paths:
+    try:
+        with open(path, encoding='utf-8', errors='replace') as handle:
+            text = handle.read()
+    except OSError as exc:
+        sys.stderr.write('could not read %s (%s)\n' % (path, exc.__class__.__name__))
+        sys.exit(2)
+    scanned += 1
+    for number, line in enumerate(text.split('\n'), 1):
+        for expr in scan(line):
+            print('hit\t%s:%d: %s' % (path, number, expr))
+print('scanned\t%d' % scanned)
+PY
+}
+
+# assert_no_dynamic_wiki_paths <class> <list-file>: no file in <list-file>
+# reaches a member of <class> through a non-literal `wiki/` path, and the
+# detector read every file on the list, which is non-empty.
+assert_no_dynamic_wiki_paths() {
+  local class="$1" list="$2" expected out scanned hits rc=0
+  expected="$(awk 'NF { n++ } END { print n + 0 }' "$list")"
+  [ "$expected" -gt 0 ] || {
+    echo "W18's input set is empty, so it would assert over nothing" >&2
+    return 1
+  }
+  out="$(ARMING_CLASS="$class" dynamic_wiki_paths_py "$list")" || rc=$?
+  [ "$rc" -eq 0 ] || {
+    echo "the dynamic wiki/ path detector failed (exit $rc)" >&2
+    printf '%s\n' "$out" >&2
+    return 1
+  }
+  scanned="$(printf '%s\n' "$out" | awk -F'\t' '$1 == "scanned" { print $2 }')"
+  [ "$scanned" = "$expected" ] || {
+    echo "the detector read ${scanned:-no} files of an input set holding $expected" >&2
+    return 1
+  }
+  hits="$(printf '%s\n' "$out" | awk -F'\t' '$1 == "hit" { print $2 }')"
+  [ -z "$hits" ] || {
+    echo "a suite or helper reaches a narrowable page through a wiki/ path that is not fully literal, which the arming scan cannot see:" >&2
+    printf '%s\n' "$hits" >&2
+    echo "Repair: spell the path literally, or single-quote it where it is a pattern rather than a path." >&2
+    return 1
+  }
+}
+
+@test "W18: no suite or helper in the arming scan's input set reaches a narrowable page through a non-literal wiki/ path (UAT-010)" {
+  require_yaml_parser
+  local conc_leg class list="$BATS_TEST_TMPDIR/w18-files"
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  class="$(arming_parser_class "$WORKFLOW")" || return 1
+  arming_inputs "$BATS_SHARDS" "$REPO_ROOT" "$ARMING_CONCURRENCY_DIR" "$conc_leg" w18 >"$list" || return 1
+  assert_no_dynamic_wiki_paths "$class" "$list" || return 1
+  printf 'W18 read %s files and found no non-literal wiki/ path\n' "$(awk 'NF { n++ } END { print n + 0 }' "$list")"
+}
+
+@test "W18: the detector flags a non-literal remainder and exempts the stated shapes" {
+  require_yaml_parser
+  local class probe="$BATS_TEST_TMPDIR/w18-probe.bats" list="$BATS_TEST_TMPDIR/w18-probe-list"
+  class="$(arming_parser_class "$WORKFLOW")" || return 1
+  # Every line is written from a single-quoted string, so this suite's own text
+  # carries none of the shapes it probes.
+  {
+    printf '%s\n' 'cat "$ROOT/wiki/concepts/GAIA Audit.md"'
+    printf '%s\n' "grep -oE 'wiki/[A-Za-z]+\\.md' \"\$f\""
+    printf '%s\n' '# cat "$ROOT/wiki/concepts/${page}"'
+    printf '%s\n' '@test "every wiki/*.md page" {'
+  } >"$probe"
+  printf '%s\n' "$probe" >"$list"
+  run assert_no_dynamic_wiki_paths "$class" "$list"
+  [ "$status" -eq 0 ] || {
+    echo "an exempt shape was flagged:" >&2
+    printf '%s\n' "$output" >&2
+    return 1
+  }
+  printf '%s\n' 'for f in $ROOT/wiki/concepts/*.md; do' >>"$probe"
+  printf '%s\n' 'cat "$ROOT/wiki/$(page_of "$f")"' >>"$probe"
+  run assert_no_dynamic_wiki_paths "$class" "$list"
+  [ "$status" -ne 0 ] || {
+    echo "a glob and a command substitution below wiki/ were not flagged" >&2
+    return 1
+  }
+  # The expected expressions are single-quoted for the reason the probe lines
+  # are: W18 reads this suite too.
+  grep -qF -- "$probe:5: "'wiki/concepts/*.md' <<<"$output" || return 1
+  grep -qF -- "$probe:6: "'wiki/$(page_of' <<<"$output"
+}
+
+@test "W18 adversarial: a suite reaching a narrowable page through a variable segment is caught, naming the suite and the expression" {
+  require_yaml_parser
+  local conc_leg class inputs suite doctored="$BATS_TEST_TMPDIR/doctored-suite.bats" list="$BATS_TEST_TMPDIR/w18-doctored"
+  conc_leg="$(arming_concurrency_leg "$BATS_SHARDS" "$WORKFLOW")" || return 1
+  class="$(arming_parser_class "$WORKFLOW")" || return 1
+  inputs="$(arming_inputs "$BATS_SHARDS" "$REPO_ROOT" "$ARMING_CONCURRENCY_DIR" "$conc_leg")" || return 1
+  suite="$(printf '%s\n' "$inputs" | awk -F'\t' '$1 == "suite" { print $2; exit }')"
+  [ -n "$suite" ] || {
+    echo "the arming scan discovered no suite to doctor a copy of" >&2
+    return 1
+  }
+  cp "$suite" "$doctored"
+  printf '%s\n' '  cat "$REPO_ROOT/wiki/concepts/${page_name}"' >>"$doctored"
+  assert_doctored "$(cat "$suite")" "$(cat "$doctored")" "appending a variable-segment wiki/ path to a copy of $suite" || return 1
+  printf '%s\n' "$doctored" >"$list"
+  run assert_no_dynamic_wiki_paths "$class" "$list"
+  [ "$status" -ne 0 ] || {
+    echo "a variable segment below wiki/ reaching a narrowable page was not caught" >&2
+    return 1
+  }
+  grep -qF -- "$doctored:" <<<"$output" || {
+    echo "the refusal did not name the doctored suite" >&2
+    return 1
+  }
+  grep -qF -- 'wiki/concepts/${page_name}' <<<"$output"
 }
