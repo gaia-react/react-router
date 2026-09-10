@@ -299,16 +299,29 @@ function segment_reader(s,   toks, m, j, t, w) {
   return ""
 }
 
-# The `set` spellings that arm pipefail. The option run before the -o that
-# carries pipefail is optional and unbounded, and it admits both spellings a set
-# line uses: a short flag cluster, and a long-form -o followed by its option
-# NAME. So set -o pipefail, set -euo pipefail, set -e -o pipefail and
-# set -o errexit -o pipefail all arm it. The bare option name is admitted only
-# directly after a flag token, never on its own: set stops parsing options at
-# its first non-option word, so set a b -o pipefail arms nothing and must not
-# read as if it did.
+# The `set` spellings that arm pipefail, as ONE string both readers share: the
+# predicate below that answers WHETHER a line arms it, and the workflow arm that
+# needs to know WHERE, so it can ask whether that position sits inside a command
+# substitution. Two copies with different trailing boundaries would let the
+# predicate match one occurrence while the locator found an earlier one, and the
+# depth test would then answer about a position the predicate never accepted,
+# reading an armed block as unarmed. That is a false negative, the one direction
+# this gate must not be wrong in, which is why the pattern is bound once rather
+# than written twice.
+#
+# The option run before the -o that carries pipefail is optional and unbounded,
+# and it admits both spellings a set line uses: a short flag cluster, and a
+# long-form -o followed by its option NAME. So set -o pipefail, set -euo
+# pipefail, set -e -o pipefail and set -o errexit -o pipefail all arm it. The
+# bare option name is admitted only directly after a flag token, never on its
+# own: set stops parsing options at its first non-option word, so
+# set a b -o pipefail arms nothing and must not read as if it did.
+BEGIN {
+  PIPEFAIL_RE = "(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)"
+}
+
 function arms_pipefail(s) {
-  return (s ~ /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
+  return (s ~ PIPEFAIL_RE)
 }
 
 # Split one line into pipeline segments and fill hitbuf with the reader heading
@@ -397,11 +410,16 @@ readonly YAML_AWK='
 # scalar rather than a key at all. Sets keyname, keycol and islist; answers 0
 # when the line carries no key to read.
 #
-# The block-scalar half is load-bearing rather than tidiness. A `filters: |`
-# body in .github/workflows/shell-lint.yml holds lines spelled exactly
-# `shell:`, naming a dorny/paths-filter output; read as step keys they would
-# arm two blocks that resolve to the bare default and report a tree that is not
-# there.
+# The block-scalar half is load-bearing rather than tidiness, and it is worth
+# being exact about which case needs it. What it holds is `defaults:` detection
+# and pass-two `run:` detection, both of which read a key at ANY column and so
+# have no column test to fall back on: a `run:` body quoting either word would
+# otherwise be read as the key itself. It is NOT what saves the two lines
+# spelled `shell:` inside the `filters: |` body of
+# .github/workflows/shell-lint.yml, tempting as that reading is. Block-scalar
+# content is necessarily indented deeper than the key that opened it, and that
+# key is already deeper than the step column, so the step-column test decides
+# those two on its own and would still decide them with this half removed.
 function yaml_key(l,   col, rest) {
   if (l ~ /^[[:space:]]*$/) return 0
   col = match(l, /[^ ]/)
@@ -539,8 +557,11 @@ function body(l, n,   i, k) {
   # too: this tree\047s comments quote `$(...)` as prose, and counting those
   # would drift the depth against real code.
   if (bare ~ /^#/) return
-  if (!armed && arms_pipefail(bare)) {
-    match(l, /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail/)
+  # Predicate and locator are handed the SAME string as well as the same
+  # pattern, so RSTART below is the position of the occurrence that just
+  # answered true rather than of some earlier near-miss.
+  if (!armed && arms_pipefail(l)) {
+    match(l, PIPEFAIL_RE)
     if (depth_at(l, RSTART) == 0) armed = 1
   }
   subdepth = depth_at(l, length(l) + 1)
