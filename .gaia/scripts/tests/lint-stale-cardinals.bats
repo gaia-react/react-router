@@ -119,6 +119,50 @@ run_linter() {
   run bash -c "cd '$TMP' && bash '$LINTER' 2>&1"
 }
 
+# --- the working directory the surface resolves against ---------------------
+
+# This gate reaches the shared bats accessor and never the shared scan accessor,
+# so that accessor is the only thing standing between it and a `git ls-files`
+# resolved against cwd. The subtree is seeded on every surface this gate
+# hard-errors on when empty -- its own shell set, its own C-family set, and the
+# accessor's bats set -- so each narrowed set comes back POPULATED and no
+# empty-surface refusal can supply the exit status. That is what leaves the
+# refusal as the only thing this test can be passing on, whatever order the three
+# discoveries run in. The C-family seed sits under `sub/app/` because those
+# pathspecs are rooted at `app/`, and from this cwd that is what they resolve
+# against.
+@test "a run from below the repository root is refused rather than silently narrowed" {
+  fixture_repo
+  fixture_file sub/nested.bats "$( at_test "nested" )"
+  fixture_file sub/nested.sh 'true'
+  fixture_file sub/app/nested.ts 'export const nested = 1;'
+  run bash -c "cd '$TMP/sub' && bash '$LINTER' 2>&1"
+  # Status 2, never 1: 1 is the empty-surface refusal a caller may tolerate where
+  # a suite-less tree is a legitimate one, and this is the narrowing it must not.
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  grep -qF -- "'sub'" <<<"$output" || return 1
+  grep -qF -- "clean" <<<"$output" && return 1
+  true
+}
+
+# The companion to the test above, and the one that pins the discovery ORDER
+# rather than the refusal itself. Here the subtree narrows this gate's own two
+# sets to empty, so each carries a "nothing was scanned" of its own that would
+# fire first if the accessor ran after them -- naming an empty tree for what is
+# really a working directory below the root, the conflation the status vocabulary
+# exists to end. The accessor leads, so the refusal is what the operator gets.
+@test "a below-root run reports the refusal, not an emptied surface's own error" {
+  fixture_repo
+  fixture_file sub/nested.bats "$( at_test "nested" )"
+  run bash -c "cd '$TMP/sub' && bash '$LINTER' 2>&1"
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  grep -qF -- "no tracked shell scripts" <<<"$output" && return 1
+  grep -qF -- "no tracked C-family sources" <<<"$output" && return 1
+  true
+}
+
 # --- the real tree ---------------------------------------------------------
 
 @test "the real tracked tree passes the gate" {

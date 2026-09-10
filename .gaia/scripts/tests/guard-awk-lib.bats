@@ -562,6 +562,56 @@ EOF
   grep -qF -- "a.bats" <<<"$output" || return 1
 }
 
+# bats_fixture_repo: a repo carrying a tracked suite at the root and another in a
+# subtree, so a call made from that subtree comes back POPULATED and the
+# empty-surface refusal never fires. A subtree that happened to hold no suite
+# would exit non-zero by luck, which is what the two bats-only gates rested on
+# and is not a guard.
+bats_fixture_repo() {
+  local repo="$TMP/batsrepo"
+  mkdir -p "$repo/sub"
+  git -C "$repo" init -q .
+  printf 'x\n' > "$repo/root.bats"
+  printf 'x\n' > "$repo/sub/nested.bats"
+  git -C "$repo" add -A
+  printf '%s' "$repo"
+}
+
+# `git ls-files` resolves against the working directory rather than the
+# repository, so from a subdirectory the surface silently narrows to that subtree
+# and a consuming gate reports clean having read a fraction of the tree.
+# `--show-prefix` is empty only at the top level, and it answers without
+# comparing two paths, so a symlinked checkout (`/var` -> `/private/var`, which
+# every `mktemp -d` fixture here sits behind) cannot make a correct invocation
+# look wrong.
+@test "a bats call from below the repository root is refused rather than silently narrowed" {
+  local repo
+  repo="$(bats_fixture_repo)"
+  run bash -c "cd '$repo/sub' && . '$LIB' && gaia_guard_bats_files probe && printf '%s\n' \"\${GAIA_GUARD_BATS_FILES[@]}\""
+  # Status 2, never 1: a caller may tolerate an empty surface where a suite-less
+  # tree is a legitimate one for it, and must never tolerate a surface narrowed
+  # to whichever directory it happened to be run from.
+  [ "$status" -eq 2 ]
+  grep -qF -- "probe: ERROR" <<<"$output" || return 1
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  # The prefix is in the message because it is the only thing telling the
+  # operator which subtree the surface would have narrowed to.
+  grep -qF -- "'sub'" <<<"$output" || return 1
+  grep -qxF -- "nested.bats" <<<"$output" && return 1
+  true
+}
+
+# The control for the refusal above: the same accessor over the same fixture, one
+# directory up. Without it the refusal could pass by refusing everywhere.
+@test "a bats call from the repository root still resolves the whole surface" {
+  local repo
+  repo="$(bats_fixture_repo)"
+  run bash -c "cd '$repo' && . '$LIB' && gaia_guard_bats_files probe && printf '%s\n' \"\${GAIA_GUARD_BATS_FILES[@]}\""
+  [ "$status" -eq 0 ]
+  grep -qxF -- "root.bats" <<<"$output" || return 1
+  grep -qxF -- "sub/nested.bats" <<<"$output" || return 1
+}
+
 # ---- the scan-surface discovery --------------------------------------------
 
 # scan_fixture_repo: a repo carrying one tracked member of every set the helper

@@ -158,7 +158,7 @@ gaia_guard_scan_files lint-grep-ere-escapes shell husky workflows || exit $?
 
 # A separate set from the scan surface above, never a widened pathspec: a tree
 # carrying .sh and no .bats must not pass clean carried by the rest of it.
-gaia_guard_bats_files lint-grep-ere-escapes || exit 1
+gaia_guard_bats_files lint-grep-ere-escapes || exit $?
 
 # scan_file <path>: print one `file:line: message` per divergent escape.
 #
