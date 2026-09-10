@@ -6,8 +6,9 @@
  * (`studio/`, `website/`); those reach outside the GAIA repo and never
  * resolve on a single-repo clone.
  *
- * Output: newline-separated `wiki/path:line  dead-path` entries. Exit 0
- * always; finding rot is informational, not a failure.
+ * Output: newline-separated `wiki/path:line  dead-path` entries, followed by
+ * any `gaia:hypothetical` marker that exempts nothing. Exit 0 always; finding
+ * rot is informational, not a failure.
  */
 import {readFileSync, statSync} from 'node:fs';
 import path from 'node:path';
@@ -27,6 +28,15 @@ export const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
   tarball and never resolve on a single-repo clone. Excludes wiki/log.md,
   wiki/hot.md and wiki/meta/** (generated or append-only files that
   legitimately reference historical paths).
+
+  A citation of a path that is an illustration rather than a real file is
+  exempted on its own line by a trailing marker naming the same path
+  unbackticked, with a reason:
+
+    <!-- gaia:hypothetical .claude/commands/tool.sh: reason it cannot exist -->
+
+  A marker whose line carries no matching dead path, and one with no reason,
+  are both reported alongside the dead paths.
 `;
 
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
@@ -117,36 +127,35 @@ export const ADOPTER_OWNED_SENTINELS: ReadonlySet<string> = new Set([
 ]);
 
 /**
- * Exact repo-relative paths that wiki prose names as illustrations of a file
- * that does not exist and is not meant to. Each entry is a well-formed path
- * whose surrounding sentence depends on it being absent, so without an
- * exemption it is reported as dead on every run forever, putting a permanent
- * floor under the count this scan exists to move.
+ * The in-prose, line-scoped exemption a wiki author writes when a sentence
+ * names a path as an illustration of a file that does not exist and is not
+ * meant to. Written on the citation's own line:
  *
- * Kept distinct from `ADOPTER_OWNED_SENTINELS` rather than folded into it:
- * that set means "absent on this checkout, present on others", which is a
- * different fact these entries would make incoherent.
+ *   `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh: why -->
  *
- * An entry that later becomes a real file is harmless: a path that exists is
- * not dead and the scan would pass it anyway.
+ * The path inside the marker is unbackticked, or `PATH_TOKEN_PATTERN` matches
+ * it as a citation of its own.
  *
- * Both sides of the lookup are normalized to NFC because an accented path has
- * two legal spellings and `Set.has` compares code points: macOS filesystems
- * and some editors hand back NFD (`e` + U+0301) where the entry below is NFC
- * (U+00E9). Without it, re-encoding a wiki page silently returns that page's
- * permanent floor. A fixture typed naturally in an editor arrives as NFC and
- * would not show that, which is why the test carries a deliberate NFD spelling.
+ * A central allowlist is the obvious alternative and it cannot self-scope. The
+ * bundle-time scrub strips a maintainer-only block from a page an adopter
+ * receives, so a list entry covering a line inside one ships in the binary
+ * while the line it exempts does not, and that clone is then blind to a
+ * genuinely dead future citation of the same path. A marker is stripped by the
+ * same scrub that strips its subject, and an adopter writing their own page can
+ * reach for it at all: neither property is available to a list held in this
+ * file, which adopters receive only as a compiled binary.
  *
- * - `.claude/commands/tool.sh` reasons about how an unqualified glob would
- *   route a *future* file to the wrong Code Audit Team member.
- * - `app/components/café.test.ts` is a worked example of C-quoting under the
- *   default `core.quotePath`; creating the file would be absurd.
+ * The mandatory reason and the stale-marker report are `gaia-lint-ignore
+ * <guard>: <reason>`'s two safety properties, taken for the reason that pragma
+ * has them: without the report, an in-prose marker decays exactly as a list
+ * entry does, only less visibly.
+ *
+ * Comparison is on NFC because an accented path has two legal spellings and
+ * string equality compares code points: macOS filesystems and some editors
+ * hand back NFD (`e` + U+0301) where prose typed in an editor is NFC (U+00E9).
+ * Without it, re-encoding a wiki page silently turns a live marker stale.
  */
-const HYPOTHETICAL_EXAMPLE_PATHS: ReadonlySet<string> = new Set(
-  ['.claude/commands/tool.sh', 'app/components/café.test.ts'].map((entry) =>
-    entry.normalize('NFC')
-  )
-);
+const MARKER_PATTERN = /<!--\s*gaia:hypothetical\b([^>]*)-->/g;
 
 const PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 
@@ -179,12 +188,28 @@ type RunOptions = {
   cwd?: string;
 };
 
+/**
+ * A `gaia:hypothetical` marker that exempts nothing: either it names no dead
+ * path on its own line (`unused`), or it gives no reason (`missing-reason`).
+ */
+type StaleMarker = {
+  filePath: string;
+  line: number;
+  marker: string;
+  problem: 'missing-reason' | 'unused';
+};
+
+/** Every finding this scan reports, from one walk of the wiki corpus. */
+type WikiPathScan = {
+  dead: readonly DeadRef[];
+  staleMarkers: readonly StaleMarker[];
+};
+
 const isTrackedPath = (token: string): boolean => {
   if (PLACEHOLDER_PATTERN.test(token)) return false;
   if (!token.includes('/')) return false;
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS.has(token)) return false;
-  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token.normalize('NFC'))) return false;
   if (GITIGNORED_LOCAL_FILES.has(token)) return false;
   if (RUNTIME_PREFIXES.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
@@ -223,43 +248,107 @@ type FileContext = {
   filePath: string;
 };
 
-const collectDeadPathsInLine = (
+type ParsedMarker = {
+  hasReason: boolean;
+  path: string;
+  raw: string;
+};
+
+// The payload is split at its first colon so a reason may itself contain one.
+// A path carries no colon, which is what makes that split unambiguous.
+const parseMarker = (match: RegExpExecArray): ParsedMarker => {
+  const payload = match[1] ?? '';
+  const separator = payload.indexOf(':');
+  const declared = separator === -1 ? payload : payload.slice(0, separator);
+  const reason = separator === -1 ? '' : payload.slice(separator + 1);
+
+  return {
+    hasReason: declared.trim() !== '' && reason.trim() !== '',
+    path: declared.trim().normalize('NFC'),
+    raw: payload.trim(),
+  };
+};
+
+const collectFindingsInLine = (
   ctx: FileContext,
   lineNumber: number,
   line: string
-): readonly DeadRef[] => {
-  if (HISTORICAL_BULLET_PATTERN.test(line)) return [];
+): WikiPathScan => {
+  if (HISTORICAL_BULLET_PATTERN.test(line)) return {dead: [], staleMarkers: []};
 
-  const refs: DeadRef[] = [];
+  // One marker scan per line, and the strip below runs only on the rare line
+  // that carries one; this runs over every line of every wiki page.
+  const markers = [...line.matchAll(MARKER_PATTERN)].map(parseMarker);
+  // A marker with no reason exempts nothing, so its citation still reports.
+  const exempt = new Set(
+    markers.filter((marker) => marker.hasReason).map((marker) => marker.path)
+  );
+  // Markers are cut from the line before the token scan so a reason may quote
+  // a path without that quotation reading as a citation of its own.
+  const scanned =
+    markers.length === 0 ? line : line.replaceAll(MARKER_PATTERN, ' ');
+  const deadTokens = [...scanned.matchAll(PATH_TOKEN_PATTERN)].flatMap(
+    (match) => {
+      const token = match[1];
 
-  for (const match of line.matchAll(PATH_TOKEN_PATTERN)) {
-    const token = match[1];
-
-    if (
-      token !== undefined &&
-      isTrackedPath(token) &&
-      isDeadToken(ctx.cwd, token)
-    ) {
-      refs.push({filePath: ctx.filePath, line: lineNumber, path: token});
+      return (
+          token !== undefined &&
+            isTrackedPath(token) &&
+            isDeadToken(ctx.cwd, token)
+        ) ?
+          [{normalized: token.normalize('NFC'), token}]
+        : [];
     }
-  }
+  );
+  const matched = new Set(
+    deadTokens
+      .filter((found) => exempt.has(found.normalized))
+      .map((found) => found.normalized)
+  );
+  const dead = deadTokens
+    .filter((found) => !exempt.has(found.normalized))
+    .map((found) => ({
+      filePath: ctx.filePath,
+      line: lineNumber,
+      path: found.token,
+    }));
 
-  return refs;
+  const staleMarkers = markers
+    .filter((marker) => !marker.hasReason || !matched.has(marker.path))
+    .map((marker) => ({
+      filePath: ctx.filePath,
+      line: lineNumber,
+      marker: marker.raw,
+      problem:
+        marker.hasReason ? ('unused' as const) : ('missing-reason' as const),
+    }));
+
+  return {dead, staleMarkers};
 };
 
-const collectDeadPathsInFile = (ctx: FileContext): readonly DeadRef[] => {
+const collectFindingsInFile = (ctx: FileContext): WikiPathScan => {
   const content = readFileSync(path.join(ctx.cwd, ctx.filePath), 'utf8');
   const lines = content.split('\n');
-
-  return lines.flatMap((line, index) =>
-    collectDeadPathsInLine(ctx, index + 1, line)
+  const perLine = lines.map((line, index) =>
+    collectFindingsInLine(ctx, index + 1, line)
   );
+
+  return {
+    dead: perLine.flatMap((found) => found.dead),
+    staleMarkers: perLine.flatMap((found) => found.staleMarkers),
+  };
 };
 
-export const findDeadPaths = (cwd: string): readonly DeadRef[] =>
-  collectWikiMarkdown(cwd)
+export const scanWikiPaths = (cwd: string): WikiPathScan => {
+  const perFile = collectWikiMarkdown(cwd)
     .filter((filePath) => !shouldSkipFile(filePath))
-    .flatMap((filePath) => collectDeadPathsInFile({cwd, filePath}));
+    .map((filePath) => collectFindingsInFile({cwd, filePath}));
+
+  return {
+    dead: perFile.flatMap((found) => found.dead),
+    staleMarkers: perFile.flatMap((found) => found.staleMarkers),
+  };
+};
 
 export const run = (
   argv: readonly string[],
@@ -289,17 +378,30 @@ export const run = (
 
   try {
     const cwd = options.cwd ?? process.cwd();
-    const dead = findDeadPaths(cwd);
+    const {dead, staleMarkers} = scanWikiPaths(cwd);
 
     if (json) {
-      process.stdout.write(`${JSON.stringify({dead}, null, 2)}\n`);
+      process.stdout.write(
+        `${JSON.stringify({dead, staleMarkers}, null, 2)}\n`
+      );
 
       return EXIT_CODES.OK;
     }
 
-    if (dead.length === 0) return EXIT_CODES.OK;
+    const lines = [
+      ...dead.map((ref) => `${ref.filePath}:${ref.line}  ${ref.path}`),
+      ...staleMarkers.map(
+        (stale) =>
+          `${stale.filePath}:${stale.line}  ${
+            stale.problem === 'unused' ?
+              'unused gaia:hypothetical marker'
+            : 'malformed gaia:hypothetical marker, no reason given'
+          }: ${stale.marker}`
+      ),
+    ];
 
-    const lines = dead.map((ref) => `${ref.filePath}:${ref.line}  ${ref.path}`);
+    if (lines.length === 0) return EXIT_CODES.OK;
+
     process.stdout.write(`${lines.join('\n')}\n`);
 
     return EXIT_CODES.OK;

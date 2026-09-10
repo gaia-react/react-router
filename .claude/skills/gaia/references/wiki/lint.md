@@ -119,11 +119,31 @@ Run the dead-paths primitive and append a `## #12: Dead repo-relative paths` sec
 .gaia/cli/gaia wiki dead-paths --json
 ```
 
-Returns `{ "dead": [{ "filePath": "...", "line": N, "path": "..." }, ...] }`. Empty array means clean.
+Returns `{ "dead": [{ "filePath": "...", "line": N, "path": "..." }, ...], "staleMarkers": [...] }`. Both arrays empty means clean.
+
+### 3a-i. Exempting an illustration: the `gaia:hypothetical` marker
+
+Some wiki sentences name a path precisely because no such file exists: an example of how a *future* file would be routed, or a worked example of a filename the repo would never really carry. Rewording the path into a `<name>` placeholder is the right move when the sentence is about a shape, and the scan already skips those. It is not available when the sentence turns on the concrete path, and neither is the removed-or-renamed bullet form, which would assert something untrue.
+
+Mark that line instead. The marker sits on the citation's own line and names the same path, unbackticked, with a reason:
+
+```markdown
+… an unqualified glob would route a future `.claude/commands/tool.sh` here … <!-- gaia:hypothetical .claude/commands/tool.sh: the sentence is about how a future file would route, so the file must not exist -->
+```
+
+Three properties are deliberate:
+
+- **The reason is mandatory.** A marker without one exempts nothing: the citation still reports, and the marker itself is reported as malformed. The reason is what a later reader checks the exemption against.
+- **The marker is reported once it stops exempting anything.** If the sentence goes, or the path becomes a real file, the scan reports the marker as unused. An exemption nothing recounts decays into a blind spot for a genuinely dead future citation of the same path.
+- **It is scoped to its one line and to that exact path.** A real citation sitting beside a hypothetical one still reports.
+
+Both reports appear under `staleMarkers`, and on the text output alongside the dead paths. Treat one the way you treat a dead path: fix the line or drop the marker.
+
+The marker travels with the page rather than with the scanner, which is why it works where a list inside the CLI cannot: an adopter can write one, and a marker on a line that never reaches an adopter clone does not reach it either.
 
 ### 3b. Append the section
 
-If `dead.length === 0`:
+If both arrays are empty:
 
 ```markdown
 ## #12: Dead repo-relative paths
@@ -140,9 +160,14 @@ Otherwise:
 
 - `wiki/concepts/Foo.md:23` → `.claude/hooks/old-hook.sh`
 - `wiki/concepts/Bar.md:45` → `.claude/hooks/missing-helper.sh`
+
+⚠ {staleMarkers.length} `gaia:hypothetical` marker(s) exempting nothing:
+
+- `wiki/decisions/Baz.md:88` → unused, the line carries no matching dead path
+- `wiki/decisions/Qux.md:12` → malformed, no reason given
 ```
 
-List every dead reference (one per line). Do not truncate: the count is small enough to be actionable.
+List every dead reference and every stale marker (one per line), and drop whichever heading has no entries. Do not truncate: the counts are small enough to be actionable.
 
 ## Step 4: GAIA check #13: UAT/SPEC narrative-ref drift
 
