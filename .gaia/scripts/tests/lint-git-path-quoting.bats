@@ -89,11 +89,12 @@ run_linter() {
 # 0. The working directory the surface resolves against
 
 # This gate reaches the shared bats accessor and never the shared scan accessor,
-# so nothing else stands between it and a `git ls-files` resolved against cwd.
-# The subtree deliberately holds a tracked suite AND a tracked script, so both
-# narrowed sets come back POPULATED and neither empty-surface refusal fires. A
-# subtree that happened to match nothing would exit non-zero by luck, which is
-# not a guard.
+# so that accessor is the only thing standing between it and a `git ls-files`
+# resolved against cwd. The subtree is seeded on both surfaces this gate
+# hard-errors on when empty -- its own scan set and the accessor's bats set -- so
+# each narrowed set comes back POPULATED and neither empty-surface refusal can
+# supply the exit status. That is what leaves the refusal as the only thing this
+# test can be passing on, whatever order the two discoveries run in.
 @test "a run from below the repository root is refused rather than silently narrowed" {
   fixture_repo
   fixture_file sub/nested.bats $'@test "nested" {\n  true\n}'
@@ -105,6 +106,22 @@ run_linter() {
   grep -qF -- "run from the repository root" <<<"$output" || return 1
   grep -qF -- "'sub'" <<<"$output" || return 1
   grep -qF -- "clean" <<<"$output" && return 1
+  true
+}
+
+# The companion to the test above, and the one that pins the discovery ORDER
+# rather than the refusal itself. Here the subtree narrows this gate's own scan
+# set to empty, so its "nothing was scanned" would fire first if the accessor ran
+# after it -- naming an empty tree for what is really a working directory below
+# the root, the conflation the status vocabulary exists to end. The accessor
+# leads, so the refusal is what the operator gets.
+@test "a below-root run reports the refusal, not an emptied surface's own error" {
+  fixture_repo
+  fixture_file sub/nested.bats $'@test "nested" {\n  true\n}'
+  run bash -c "cd '$TMP/sub' && bash '$LINTER' 2>&1"
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  grep -qF -- "no tracked files matched" <<<"$output" && return 1
   true
 }
 

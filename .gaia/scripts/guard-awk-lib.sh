@@ -799,10 +799,13 @@ GAIA_GUARD_BATS_FILES=()
 # in it.
 #
 #   0  the surface is non-empty and the array holds it.
-#   1  the discovery resolved and the surface came back empty. A hard error
-#      rather than a clean tree: the widened pathspec matching nothing means the
-#      discovery is wrong, and a guard that scanned no suite and printed clean is
-#      the lie-green failure these gates exist to stop. This is the ONLY status a
+#   1  the surface came back empty, whether because the pathspec matched nothing
+#      or because the `git ls-files` behind it failed: the read runs inside a
+#      process substitution, whose status this function cannot see, so the two
+#      arrive here indistinguishable. A hard error either way rather than a clean
+#      tree, since a widened pathspec matching nothing means the discovery is
+#      wrong, and a guard that scanned no suite and printed clean is the
+#      lie-green failure these gates exist to stop. This is the ONLY status a
 #      caller may tolerate, and only where a suite-less tree is a legitimate one
 #      for it.
 #   2  the working directory is below the repository root, which leaves the
@@ -885,8 +888,11 @@ _gaia_guard_scan_set() {
 # gaia_guard_scan_files <guard-label> <set>...: fill GAIA_GUARD_SCAN_FILES with
 # the sorted union of the named tracked sets, having said on stderr what went
 # wrong on any status but 0. The status is the whole point of the shape, so the
-# caller reads it directly (`gaia_guard_scan_files <label> <set>... || exit 1`)
-# rather than through a substitution that would swallow it.
+# caller reads it directly (`gaia_guard_scan_files <label> <set>... || exit $?`)
+# rather than through a substitution that would swallow it, and forwards it
+# rather than flattening it: the statuses below carry different repairs, so a
+# caller that collapses them to 1 tells the operator the tree read clean-empty
+# when the discovery never ran at all.
 #
 # On any status but 0 the array is empty, never the surface a previous call left
 # in it. That is a property of every refusing status below rather than of any one

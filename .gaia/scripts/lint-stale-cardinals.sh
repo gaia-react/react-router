@@ -236,6 +236,17 @@ type gaia_guard_bats_files >/dev/null 2>&1 || {
   exit 2
 }
 
+# A separate set from scan_files below, never a widened pathspec: a tree carrying
+# .sh and no .bats must not pass clean carried by the rest of the surface.
+#
+# It leads the three discoveries because it is the only one carrying the
+# below-root refusal, and every one of them resolves against the working
+# directory. Run second, its refusal is unreachable from a subtree that narrows
+# one of the others to empty: that surface's own "nothing was scanned" fires
+# first and tells the operator the tree is empty when the working directory is
+# the real cause, which is the conflation this status vocabulary exists to end.
+gaia_guard_bats_files lint-stale-cardinals || exit $?
+
 # `git ls-files` rather than a filesystem walk, so an untracked scratch script
 # is never scanned; the same discovery .gaia/tests/shell-lint.sh uses. Collected
 # with a read loop rather than `mapfile`, which is bash 4+, because these
@@ -256,10 +267,6 @@ if [ "${#scan_files[@]}" -eq 0 ]; then
   echo "lint-stale-cardinals: ERROR: no tracked shell scripts matched the scan surface; nothing was scanned" >&2
   exit 1
 fi
-
-# A separate set from scan_files, never a widened pathspec: a tree carrying
-# .sh and no .bats must not pass clean carried by the rest of the surface.
-gaia_guard_bats_files lint-stale-cardinals || exit $?
 
 # The C-family pathspecs, one per glob `.claude/rules/code-comments.md` binds
 # outside the shell and bats entries, in the rule file's own order. `:(glob)` is

@@ -167,6 +167,18 @@ type gaia_guard_bats_files >/dev/null 2>&1 || {
   exit 2
 }
 
+# The `*.bats` surface, discovered and hard-errored on separately by the shared
+# library, for the same reason the scan surface below is: a widened pathspec that
+# quietly missed every suite would still pass this guard's own empty-set check.
+#
+# It leads the two discoveries because it is the only one carrying the below-root
+# refusal, and both resolve against the working directory. Run second, its
+# refusal is unreachable from a subtree that narrows the other to empty: that
+# surface's own "nothing was scanned" fires first and tells the operator the tree
+# is empty when the working directory is the real cause, which is the conflation
+# this status vocabulary exists to end.
+gaia_guard_bats_files lint-git-path-quoting || exit $?
+
 # Scan surface: tracked shell, the extensionless husky hooks, the workflow YAML
 # whose `run:` blocks are shell by another name, tracked markdown, whose
 # fenced blocks are shell by another name on any page a rule tells the agent to
@@ -202,11 +214,6 @@ if [ "${#scan_files[@]}" -eq 0 ]; then
   echo "lint-git-path-quoting: ERROR: no tracked files matched the scan surface; nothing was scanned" >&2
   exit 1
 fi
-
-# The `*.bats` surface, discovered and hard-errored on separately by the shared
-# library, for the same reason as above: a widened pathspec that quietly missed
-# every suite would still pass this guard's own empty-set check.
-gaia_guard_bats_files lint-git-path-quoting || exit $?
 
 # scan_file <path>: print one `file:line: message` per unquoted call.
 #
