@@ -337,10 +337,10 @@ List every empty section (one per line) as `` - `wiki/path.md:42` → `## Headin
 Print to the user:
 
 1. The report path (e.g. `wiki/meta/lint-report-2026-05-03.md`).
-2. A one-line summary that includes the drift severity and count, plus dead-path count, orphan count, frontmatter-gap count, and empty-section count when any of those is non-zero, plus narrative-ref count if non-zero.
+2. A one-line summary that includes the drift severity and count, plus dead-path count, stale-marker count, orphan count, frontmatter-gap count, and empty-section count when any of those is non-zero, plus narrative-ref count if non-zero.
 
 If `drift_severity` is **`high`**, surface it prominently (separate line, prefixed with `WIKI DRIFT:`).
-If `dead.length > 0`, surface as a separate line prefixed with `WIKI DEAD-PATHS:` followed by the count.
+If `dead.length + staleMarkers.length > 0`, surface as a separate line prefixed with `WIKI DEAD-PATHS:` followed by both counts. A run whose only finding is a stale marker still has to reach the user: gating this line on `dead.length` alone leaves it in the report file and out of the summary, which is the one channel this step has.
 If narrative-ref findings > 0, surface as a separate line prefixed with `UAT-SPEC DRIFT:` followed by the count.
 If `orphans.length > 0`, surface as a separate line prefixed with `WIKI ORPHANS:` followed by the count.
 If `gaps.length > 0`, surface as a separate line prefixed with `WIKI FRONTMATTER:` followed by the count.

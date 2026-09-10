@@ -35,8 +35,8 @@ export const HELP_TEXT = `Usage: gaia wiki dead-paths [--json]
 
     <!-- gaia:hypothetical .claude/commands/tool.sh: reason it cannot exist -->
 
-  A marker whose line carries no matching dead path, and one with no reason,
-  are both reported alongside the dead paths.
+  A marker whose line carries no matching dead path is reported alongside the
+  dead paths, as is one missing either half of its path-and-reason pair.
 `;
 
 const HELP_TOKENS = new Set(['--help', '-h', 'help']);
@@ -133,8 +133,9 @@ export const ADOPTER_OWNED_SENTINELS: ReadonlySet<string> = new Set([
  *
  *   `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh: why -->
  *
- * The path inside the marker is unbackticked, or `PATH_TOKEN_PATTERN` matches
- * it as a citation of its own.
+ * The path inside the marker is written unbackticked. Backticks are kept
+ * verbatim in the declared path, so a backticked one matches no token, and the
+ * marker then exempts nothing *and* reports itself unused.
  *
  * A central allowlist is the obvious alternative and it cannot self-scope. The
  * bundle-time scrub strips a maintainer-only block from a page an adopter
@@ -184,19 +185,32 @@ type DeadRef = {
   path: string;
 };
 
+/** The two halves of a well-formed marker, each missing on its own terms. */
+type MarkerDefect = 'missing-path' | 'missing-reason';
+
+// Each label names the half the author has to supply, so the report is
+// actionable without reading the marker back.
+const STALE_MARKER_LABELS = {
+  'missing-path': 'malformed gaia:hypothetical marker, no path given',
+  'missing-reason': 'malformed gaia:hypothetical marker, no reason given',
+  unused: 'unused gaia:hypothetical marker',
+} as const;
+
 type RunOptions = {
   cwd?: string;
 };
 
 /**
- * A `gaia:hypothetical` marker that exempts nothing: either it names no dead
- * path on its own line (`unused`), or it gives no reason (`missing-reason`).
+ * A `gaia:hypothetical` marker that exempts nothing. The malformed cases are
+ * kept apart rather than folded into one, because each names the part the
+ * author has to supply and telling them to add the half they already wrote is
+ * worse than saying nothing.
  */
 type StaleMarker = {
   filePath: string;
   line: number;
   marker: string;
-  problem: 'missing-reason' | 'unused';
+  problem: 'unused' | MarkerDefect;
 };
 
 /** Every finding this scan reports, from one walk of the wiki corpus. */
@@ -249,7 +263,7 @@ type FileContext = {
 };
 
 type ParsedMarker = {
-  hasReason: boolean;
+  defect: MarkerDefect | null;
   path: string;
   raw: string;
 };
@@ -259,12 +273,16 @@ type ParsedMarker = {
 const parseMarker = (match: RegExpExecArray): ParsedMarker => {
   const payload = match[1] ?? '';
   const separator = payload.indexOf(':');
-  const declared = separator === -1 ? payload : payload.slice(0, separator);
-  const reason = separator === -1 ? '' : payload.slice(separator + 1);
+  const declared = (
+    separator === -1 ? payload : payload.slice(0, separator)).trim();
+  const reason = separator === -1 ? '' : payload.slice(separator + 1).trim();
 
   return {
-    hasReason: declared.trim() !== '' && reason.trim() !== '',
-    path: declared.trim().normalize('NFC'),
+    defect:
+      declared === '' ? 'missing-path'
+      : reason === '' ? 'missing-reason'
+      : null,
+    path: declared.normalize('NFC'),
     raw: payload.trim(),
   };
 };
@@ -274,14 +292,28 @@ const collectFindingsInLine = (
   lineNumber: number,
   line: string
 ): WikiPathScan => {
-  if (HISTORICAL_BULLET_PATTERN.test(line)) return {dead: [], staleMarkers: []};
-
   // One marker scan per line, and the strip below runs only on the rare line
   // that carries one; this runs over every line of every wiki page.
   const markers = [...line.matchAll(MARKER_PATTERN)].map(parseMarker);
-  // A marker with no reason exempts nothing, so its citation still reports.
+  const report = (matched: ReadonlySet<string>): readonly StaleMarker[] =>
+    markers
+      .filter((marker) => marker.defect !== null || !matched.has(marker.path))
+      .map((marker) => ({
+        filePath: ctx.filePath,
+        line: lineNumber,
+        marker: marker.raw,
+        problem: marker.defect ?? ('unused' as const),
+      }));
+
+  // A historical bullet suppresses its own line's citations, so a marker there
+  // can never exempt anything and is reported rather than silently kept: the
+  // early return skips the dead-path collection, not the marker report.
+  if (HISTORICAL_BULLET_PATTERN.test(line))
+    return {dead: [], staleMarkers: report(new Set())};
+
+  // A malformed marker exempts nothing, so its citation still reports.
   const exempt = new Set(
-    markers.filter((marker) => marker.hasReason).map((marker) => marker.path)
+    markers.filter((marker) => marker.defect === null).map((m) => m.path)
   );
   // Markers are cut from the line before the token scan so a reason may quote
   // a path without that quotation reading as a citation of its own.
@@ -313,15 +345,7 @@ const collectFindingsInLine = (
       path: found.token,
     }));
 
-  const staleMarkers = markers
-    .filter((marker) => !marker.hasReason || !matched.has(marker.path))
-    .map((marker) => ({
-      filePath: ctx.filePath,
-      line: lineNumber,
-      marker: marker.raw,
-      problem:
-        marker.hasReason ? ('unused' as const) : ('missing-reason' as const),
-    }));
+  const staleMarkers = report(matched);
 
   return {dead, staleMarkers};
 };
@@ -393,9 +417,7 @@ export const run = (
       ...staleMarkers.map(
         (stale) =>
           `${stale.filePath}:${stale.line}  ${
-            stale.problem === 'unused' ?
-              'unused gaia:hypothetical marker'
-            : 'malformed gaia:hypothetical marker, no reason given'
+            STALE_MARKER_LABELS[stale.problem]
           }: ${stale.marker}`
       ),
     ];

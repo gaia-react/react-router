@@ -31619,8 +31619,8 @@ var HELP_TEXT53 = `Usage: gaia wiki dead-paths [--json]
 
     <!-- gaia:hypothetical .claude/commands/tool.sh: reason it cannot exist -->
 
-  A marker whose line carries no matching dead path, and one with no reason,
-  are both reported alongside the dead paths.
+  A marker whose line carries no matching dead path is reported alongside the
+  dead paths, as is one missing either half of its path-and-reason pair.
 `;
 var HELP_TOKENS51 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var TRACKED_PREFIXES = [
@@ -31643,6 +31643,11 @@ var MARKER_PATTERN = /<!--\s*gaia:hypothetical\b([^>]*)-->/g;
 var PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 var PLACEHOLDER_PATTERN = /[<>*${}]|N{3,}|X{3,}/;
 var HISTORICAL_BULLET_PATTERN = /^\s*-\s+\*\*(Removed|Deleted|Renamed|Migrated|Replaced)\*\*/i;
+var STALE_MARKER_LABELS = {
+  "missing-path": "malformed gaia:hypothetical marker, no path given",
+  "missing-reason": "malformed gaia:hypothetical marker, no reason given",
+  unused: "unused gaia:hypothetical marker"
+};
 var isTrackedPath = (token) => {
   if (PLACEHOLDER_PATTERN.test(token)) return false;
   if (!token.includes("/")) return false;
@@ -31666,19 +31671,26 @@ var isDeadToken = (cwd, token) => SIBLING_REPO_PATTERN.test(token) || !pathExist
 var parseMarker = (match) => {
   const payload = match[1] ?? "";
   const separator = payload.indexOf(":");
-  const declared = separator === -1 ? payload : payload.slice(0, separator);
-  const reason = separator === -1 ? "" : payload.slice(separator + 1);
+  const declared = (separator === -1 ? payload : payload.slice(0, separator)).trim();
+  const reason = separator === -1 ? "" : payload.slice(separator + 1).trim();
   return {
-    hasReason: declared.trim() !== "" && reason.trim() !== "",
-    path: declared.trim().normalize("NFC"),
+    defect: declared === "" ? "missing-path" : reason === "" ? "missing-reason" : null,
+    path: declared.normalize("NFC"),
     raw: payload.trim()
   };
 };
 var collectFindingsInLine = (ctx, lineNumber, line) => {
-  if (HISTORICAL_BULLET_PATTERN.test(line)) return { dead: [], staleMarkers: [] };
   const markers = [...line.matchAll(MARKER_PATTERN)].map(parseMarker);
+  const report2 = (matched2) => markers.filter((marker) => marker.defect !== null || !matched2.has(marker.path)).map((marker) => ({
+    filePath: ctx.filePath,
+    line: lineNumber,
+    marker: marker.raw,
+    problem: marker.defect ?? "unused"
+  }));
+  if (HISTORICAL_BULLET_PATTERN.test(line))
+    return { dead: [], staleMarkers: report2(/* @__PURE__ */ new Set()) };
   const exempt = new Set(
-    markers.filter((marker) => marker.hasReason).map((marker) => marker.path)
+    markers.filter((marker) => marker.defect === null).map((m) => m.path)
   );
   const scanned = markers.length === 0 ? line : line.replaceAll(MARKER_PATTERN, " ");
   const deadTokens = [...scanned.matchAll(PATH_TOKEN_PATTERN)].flatMap(
@@ -31695,12 +31707,7 @@ var collectFindingsInLine = (ctx, lineNumber, line) => {
     line: lineNumber,
     path: found.token
   }));
-  const staleMarkers = markers.filter((marker) => !marker.hasReason || !matched.has(marker.path)).map((marker) => ({
-    filePath: ctx.filePath,
-    line: lineNumber,
-    marker: marker.raw,
-    problem: marker.hasReason ? "unused" : "missing-reason"
-  }));
+  const staleMarkers = report2(matched);
   return { dead, staleMarkers };
 };
 var collectFindingsInFile = (ctx) => {
@@ -31752,7 +31759,7 @@ var run55 = (argv, options = {}) => {
     const lines = [
       ...dead.map((ref) => `${ref.filePath}:${ref.line}  ${ref.path}`),
       ...staleMarkers.map(
-        (stale) => `${stale.filePath}:${stale.line}  ${stale.problem === "unused" ? "unused gaia:hypothetical marker" : "malformed gaia:hypothetical marker, no reason given"}: ${stale.marker}`
+        (stale) => `${stale.filePath}:${stale.line}  ${STALE_MARKER_LABELS[stale.problem]}: ${stale.marker}`
       )
     ];
     if (lines.length === 0) return EXIT_CODES.OK;

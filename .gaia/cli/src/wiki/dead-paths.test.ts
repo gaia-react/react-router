@@ -205,8 +205,8 @@ describe('wiki dead-paths', () => {
       [
         '# Quoting',
         '',
-        'NFD cite: `app/components/café.test.ts` <!-- gaia:hypothetical app/components/café.test.ts: illustration -->',
-        'NFC cite: `app/components/café.test.ts` <!-- gaia:hypothetical app/components/café.test.ts: illustration -->',
+        'NFD cite: `app/components/cafe\u0301.test.ts` <!-- gaia:hypothetical app/components/café.test.ts: illustration -->',
+        'NFC cite: `app/components/café.test.ts` <!-- gaia:hypothetical app/components/cafe\u0301.test.ts: illustration -->',
         '',
       ].join('\n')
     );
@@ -273,6 +273,37 @@ describe('wiki dead-paths', () => {
         marker: '.claude/commands/tool.sh',
         problem: 'missing-reason',
       },
+    ]);
+  });
+
+  test('a marker with no path is reported as missing its path, not its reason', () => {
+    // Both halves are mandatory and either can be the one left out, so they are
+    // reported apart: telling an author who wrote a reason to supply a reason
+    // sends them to re-read the half they already got right.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical : the sentence needs the file absent -->\n'
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead.map((d) => d.path)).toEqual(['.claude/commands/tool.sh']);
+    expect(staleMarkers.map((s) => s.problem)).toEqual(['missing-path']);
+  });
+
+  test('a marker on a historical bullet is reported rather than silently kept', () => {
+    // The bullet already suppresses its own line's citations, so a marker there
+    // can never exempt anything. Returning early before parsing markers would
+    // make it invisible dead weight, which is the exact decay the stale report
+    // exists to surface.
+    sandbox.writeFile(
+      'wiki/decisions/Some Refactor.md',
+      '# Some Refactor\n\n- **Removed** `app/state/theme.tsx` <!-- gaia:hypothetical app/state/theme.tsx: illustration -->\n'
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead).toEqual([]);
+    expect(staleMarkers.map((s) => [s.line, s.problem])).toEqual([
+      [3, 'unused'],
     ]);
   });
 
