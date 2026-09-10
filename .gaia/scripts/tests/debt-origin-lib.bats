@@ -15,6 +15,7 @@
 #   7. the two-character encoding, invertible and comment-safe
 #   8. the `changed` vocabulary, reported and never computed
 #   9. fail-open, every invocation exits 0
+#  10. the `session` field, read off the process rather than the checkout
 #
 # Run under bash 5 (bash 3.2's `[[ ]]` skip-under-set-e gap is real; see
 # .claude/rules/bats-assertions.md): `source .gaia/scripts/bats5.sh && bats5
@@ -35,6 +36,12 @@ setup() {
   # branch and turn the whole suite green-for-the-wrong-reason. The one test
   # that wants it passes it explicitly through `env`.
   unset GITHUB_HEAD_REF
+  # Same reasoning for the session id, and it bites harder: this suite is
+  # normally run BY a Claude Code session, which exports it, so every literal
+  # line below would carry that session's real id and the two tests that pin
+  # the absent case would never see it. The tests that want a value pass one
+  # explicitly through `env`.
+  unset CLAUDE_CODE_SESSION_ID
 }
 
 teardown() {
@@ -107,7 +114,7 @@ field() {
   run bash "$LIB" --changed 1 --dir "$REPO"
   [ "$status" -eq 0 ]
   [ "${#lines[@]}" -eq 1 ]
-  local re='^<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=[0-9a-f]{40} -->$'
+  local re='^<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=[0-9a-f]{40} session=unknown -->$'
   [[ "$output" =~ $re ]] || return 1
   [ "$(field head "$output")" = "$HEAD_SHA" ]
 }
@@ -191,7 +198,7 @@ field() {
   CLEANUP_DIRS+=("$nongit")
   run bash "$LIB" --dir "$nongit"
   [ "$status" -eq 0 ]
-  [ "$output" = "<!-- gaia-debt-origin: branch=unknown mode=unknown unit=unknown changed=unknown head=unknown -->" ]
+  [ "$output" = "<!-- gaia-debt-origin: branch=unknown mode=unknown unit=unknown changed=unknown head=unknown session=unknown -->" ]
 }
 
 # ========== 5. worktree normalization ==========
@@ -407,6 +414,132 @@ field() {
   [ "$status" -eq 0 ]
   run gaia_debt_origin_line --changed
   [ "$status" -eq 0 ]
+}
+
+# ========== 10. the session field ==========
+#
+# `session` is the one field here read off the PROCESS rather than the
+# checkout, which is the whole reason it exists: `branch`, `mode` and `unit`
+# describe the tree a filing was made from, and that is the wrong fact
+# whenever two sessions share one checkout. The tests below pin that
+# independence directly rather than trusting the derivation to stay separate.
+
+@test "session: a live CLAUDE_CODE_SESSION_ID is recorded verbatim" {
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID=8e5d0d9c-04cc-43d9-be98-eea731c93607 bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "8e5d0d9c-04cc-43d9-be98-eea731c93607" ]
+}
+
+@test "session: an absent CLAUDE_CODE_SESSION_ID is unknown, never empty" {
+  # The empty spelling would emit a bare `session=` and give a reader a field
+  # that parses but says nothing; `unknown` is the convention every other
+  # field on this line already uses for exactly this case.
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "unknown" ]
+  grep -qF -- "session= " <<<"$out" && return 1
+  return 0
+}
+
+@test "session: an empty CLAUDE_CODE_SESSION_ID is unknown, the same as absent" {
+  # Set-but-empty is a distinct state from unset and reaches the same answer:
+  # a variable exported with no value carries no identity either.
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID= bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "unknown" ]
+}
+
+@test "session: a value carrying whitespace is unknown, so it cannot split the line" {
+  # The line is space-delimited `key=value` pairs and every documented reader
+  # matches a field that way, so a space inside a value would present as two
+  # fields and corrupt every pair after it. No encoding fixes that, because
+  # the space is not a reserved character of the encoder: the only correct
+  # answer for a value this shape is to decline it.
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID='not a session id' bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "unknown" ]
+  grep -qF -- "not a session id" <<<"$out" && return 1
+  return 0
+}
+
+@test "session: a tab-carrying value is unknown too, not only a space-carrying one" {
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID="$(printf 'a\tb')" bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "unknown" ]
+}
+
+@test "session: the field is independent of the branch, which is the point of it" {
+  # The defect this field answers, stated as a test: one session filing from
+  # two different checkouts records ONE session and two branches. Under
+  # branch-derived provenance alone the two filings look like different
+  # actors, which is what misattributed #1777 to the #1759 drain.
+  make_repo "debt/1121-marker-sep"
+  local first second
+  first="$(env CLAUDE_CODE_SESSION_ID=same-session bash "$LIB" --dir "$REPO")"
+  git -C "$REPO" checkout -q -b "debt/1759-scratch-dir-worktree-tool"
+  second="$(env CLAUDE_CODE_SESSION_ID=same-session bash "$LIB" --dir "$REPO")"
+
+  [ "$(field branch "$first")" = "debt/1121-marker-sep" ]
+  [ "$(field branch "$second")" = "debt/1759-scratch-dir-worktree-tool" ]
+  [ "$(field unit "$first")" = "1121" ]
+  [ "$(field unit "$second")" = "1759" ]
+  [ "$(field session "$first")" = "same-session" ]
+  [ "$(field session "$second")" = "same-session" ]
+}
+
+@test "session: two sessions on one branch are distinguishable, the converse case" {
+  # The #1284-#1287 shape: one checkout, two concurrent sessions. `branch`,
+  # `mode` and `unit` agree because they describe the tree; only `session`
+  # tells the two filers apart.
+  make_repo "debt/1121-marker-sep"
+  local a b
+  a="$(env CLAUDE_CODE_SESSION_ID=session-a bash "$LIB" --dir "$REPO")"
+  b="$(env CLAUDE_CODE_SESSION_ID=session-b bash "$LIB" --dir "$REPO")"
+  [ "$(field branch "$a")" = "$(field branch "$b")" ]
+  [ "$(field unit "$a")" = "$(field unit "$b")" ]
+  [ "$(field session "$a")" = "session-a" ]
+  [ "$(field session "$b")" = "session-b" ]
+}
+
+@test "session: --branch does not reach it, so an overridden branch still names the real filer" {
+  # `--branch` and GITHUB_HEAD_REF are branch-source overrides. Neither is a
+  # session source, and a caller supplying one must not be able to silently
+  # restamp authorship along with it.
+  make_repo "main"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID=real-filer GITHUB_HEAD_REF=chore/from-the-runner \
+    bash "$LIB" --branch "spec-065" --dir "$REPO")"
+  [ "$(field branch "$out")" = "spec-065" ]
+  [ "$(field session "$out")" = "real-filer" ]
+}
+
+@test "session: a reserved character in the value is encoded, not emitted raw" {
+  # The encoder runs over every value on the line, this one included. A raw
+  # `>` would terminate the HTML comment early; the contract says every
+  # emitted value is encoded, and this proves the new field is not an
+  # exception carved out of that rule.
+  make_repo "debt/1121-marker-sep"
+  local out
+  out="$(env CLAUDE_CODE_SESSION_ID='a>b%c' bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "a%3Eb%25c" ]
+}
+
+@test "session: outside a git repository the field still resolves from the process" {
+  # Every other field goes `unknown` outside a repository because every other
+  # field is derived from one. This one is not, so it must survive there: a
+  # filing made outside a checkout still has a filer.
+  local nongit out
+  nongit=$(mktemp -d -t gaia-dol-nongit-XXXXXX)
+  CLEANUP_DIRS+=("$nongit")
+  out="$(env CLAUDE_CODE_SESSION_ID=still-a-session bash "$LIB" --dir "$nongit")"
+  [ "$(field branch "$out")" = "unknown" ]
+  [ "$(field head "$out")" = "unknown" ]
+  [ "$(field session "$out")" = "still-a-session" ]
 }
 
 # ========== structural hygiene ==========

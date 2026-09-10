@@ -107,11 +107,11 @@ The body-file is scratch, and this recipe is its only owner: nothing else reaps 
 
 ## Provenance line
 
-Beside the dedup-key line, the issue body (or a waived finding's pull-request-body entry) carries a second HTML comment recording the branch the finding was surfaced from, byte-for-byte in this form:
+Beside the dedup-key line, the issue body (or a waived finding's pull-request-body entry) carries a second HTML comment recording the branch the finding was surfaced from and the session that filed it, byte-for-byte in this form:
 
 ```
 <!-- gaia-debt-key: v1 class=holistic/unclassified path=app/services/foo.ts line=42 -->
-<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 -->
+<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 session=8e5d0d9c-04cc-43d9-be98-eea731c93607 -->
 ```
 
 Both are HTML comments, so neither appears in the rendered issue. Fields are `key=value` pairs separated by single spaces, in the order above. The order is canonical for readability only: the pairs are self-describing, so a reader must not depend on position, and adding or removing a field breaks no reader.
@@ -127,8 +127,15 @@ The field table:
 | `unit` | the issue numbers or plan/spec id encoded in the branch name, or `unknown` | yes |
 | `changed` | `0`, `1`, or `unknown` | yes |
 | `head` | the reviewed HEAD sha, or `unknown` | no |
+| `session` | the filing session's id, or `unknown` | yes |
 
-**`mode` and `unit` describe the branch, not the filer.** Both are derived from the branch name alone, by the convention table below, so they record the branch the filing resolved against, an explicit branch a caller supplies, the pull request head ref in continuous integration, or otherwise the checkout's own branch, rather than the work the session was doing. Concurrent work in one checkout inherits that branch's stamp: a session filing a finding from a checkout parked on someone else's `debt/*` branch is stamped with that branch's unit. Do not read either field as authorship.
+**`mode` and `unit` describe the branch, not the filer.** Both are derived from the branch name alone, by the convention table below, so they record the branch the filing resolved against, an explicit branch a caller supplies, the pull request head ref in continuous integration, or otherwise the checkout's own branch, rather than the work the session was doing. Concurrent work in one checkout inherits that branch's stamp: a session filing a finding from a checkout parked on someone else's `debt/*` branch is stamped with that branch's unit. Do not read either field as authorship. Read `session` for that.
+
+**`session` describes the filer, not the branch.** It is the one field on this line read off the process rather than the checkout, from the `CLAUDE_CODE_SESSION_ID` the harness exports into a session's shell and every child of it inherits. Because no branch move reaches it, it is exactly the fact the branch-derived fields cannot carry: two sessions sharing one checkout agree on `branch`, `mode`, and `unit` and differ here, and one session filing from two checkouts differs there and agrees here. The failure it answers is not hypothetical or symmetrical, and both halves matter: an inherited `unit` naming a *different live drain* is worse than an absent one, because a line of real-looking values is indistinguishable from a correct one to every reader, human or machine.
+
+It is not a flag, and deliberately so. `--branch` exists because a caller can legitimately know a better branch than the checkout does; there is no counterpart for the filer, and an override would let a caller restamp authorship. A route with no session, continuous integration among them, records `unknown` on the same terms as any other unresolved field. A value carrying whitespace is `unknown` too: these are space-delimited pairs, so a space inside a value would present as two fields, and the reserved set is `>` and `%` alone.
+
+**What `session` is not.** It identifies a session, not a person, and it does not survive as a lookup key: a session id is meaningful while its transcript is on the machine that produced it and is an opaque token afterwards. Its durable value is *discrimination*, telling two filings apart or grouping two as one filer's, which needs no lookup and works on any clone. Do not build a consumer that resolves an id to a session's contents and treat the failure to resolve as a data problem.
 
 **Reserved characters.** Two are percent-encoded in a value: `>`, because a git branch name may legally contain it and an unencoded one would terminate the HTML comment early and leak the remainder as visible text, and `%` itself, so the encoding is invertible and a reader can recover the exact branch name. `%` is encoded first, then `>`; that order is what makes the round trip exact. "Verbatim" above means the raw name after that reversible encoding, not a normalized or truncated one. This is the same reasoning `gaia_key_slug` applies in `.gaia/scripts/audit-key-lib.sh`, with a far smaller reserved set because this value is read by humans rather than used as a filename.
 
@@ -168,17 +175,19 @@ It fails open throughout: each field it cannot resolve becomes the literal `unkn
 
 **The emitting routes:**
 
-| route | instruction surface | `changed` |
-|---|---|---|
-| audit agent disposition pipeline, local | `.claude/agents/code-audit-frontend.md` | resolved |
-| audit agent disposition pipeline, continuous integration | `.github/workflows/code-review-audit.yml` | resolved, by the workflow |
-| pre-merge orchestrator cross-remit disposition | `wiki/concepts/PR Merge Workflow.md` | resolved |
-| knowledge-audit filing block | `.claude/skills/gaia/references/audit.md` | `unknown` |
-| comprehensive-audit filing offer and direct human invocation | this file | `unknown` |
+| route | instruction surface | `changed` | `session` |
+|---|---|---|---|
+| audit agent disposition pipeline, local | `.claude/agents/code-audit-frontend.md` | resolved | resolved |
+| audit agent disposition pipeline, continuous integration | `.github/workflows/code-review-audit.yml` | resolved, by the workflow | `unknown` |
+| pre-merge orchestrator cross-remit disposition | `wiki/concepts/PR Merge Workflow.md` | resolved | resolved |
+| knowledge-audit filing block | `.claude/skills/gaia/references/audit.md` | `unknown` | resolved |
+| comprehensive-audit filing offer and direct human invocation | this file | `unknown` | resolved |
 
-Known limitation: the routes with a reviewed diff run on the branch under review, so their `branch`, `mode`, and `unit` track that work. The routes with no reviewed diff run wherever the session happened to sit, so on those rows the fields are the disposing agent's checkout and nothing more.
+The continuous-integration row is `unknown` by construction rather than by omission: that route runs as a GitHub Actions job with no Claude Code session, so there is no session for it to name. Nothing is owed there, and the two columns are unrelated, a route can resolve either one without the other.
 
-**What the record does not answer.** It supports attribution, not causation. It says which branch a finding was surfaced from; it does not say the work on that branch caused the defect, and for a pre-existing defect found during a visit it usually did not. Overreading it is the failure mode to avoid.
+Known limitation: the routes with a reviewed diff run on the branch under review, so their `branch`, `mode`, and `unit` track that work. The routes with no reviewed diff run wherever the session happened to sit, so on those rows the branch-derived fields are the disposing agent's checkout and nothing more. `session` is the exception on every row that resolves it, because it is derived from the process rather than the checkout and so is unaffected by where the session happened to sit.
+
+**What the record does not answer.** It supports attribution, not causation. It says which branch a finding was surfaced from and which session filed it; it does not say either one caused the defect, and for a pre-existing defect found during a visit neither did. `session` sharpens the attribution half and adds nothing to the causal half. Overreading it is the failure mode to avoid.
 
 **Waived findings.** A finding recorded as waived rather than filed carries the same line, from the same helper, on its pull-request-body entry beside the dedup key already listed there. That entry is the waived finding's only durable surface: the disposition sidecar is gitignored, janitor-reaped, and dropped on the next digest rotation. The line is an HTML comment, so review-time visibility is unchanged. Note what this does not buy: `changed` does not separate the machinery waive from the touched-file waive, because a pull request fixing gate machinery is normally touching the machinery path it waives, so both arms usually read `changed=1`.
 

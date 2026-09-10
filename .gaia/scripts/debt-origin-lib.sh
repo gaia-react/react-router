@@ -3,12 +3,13 @@
 # GAIA shared tech-debt provenance helper (single-sourced).
 #
 # Prints ONE HTML-comment line recording the branch a tech-debt finding was
-# surfaced from. It sits beside the existing `gaia-debt-key` line on a filed
-# issue, or on a waived finding's pull-request-body entry:
+# surfaced from and the session that filed it. It sits beside the existing
+# `gaia-debt-key` line on a filed issue, or on a waived finding's
+# pull-request-body entry:
 #
-#   <!-- gaia-debt-origin: branch=<b> mode=<m> unit=<u> changed=<c> head=<h> -->
+#   <!-- gaia-debt-origin: branch=<b> mode=<m> unit=<u> changed=<c> head=<h> session=<s> -->
 #
-# Five key=value pairs, single spaces, that order, one line, newline
+# Six key=value pairs, single spaces, that order, one line, newline
 # terminated. There is no version prefix, and no reader may depend on the
 # field order: the order is canonical for human readability only.
 #
@@ -17,9 +18,17 @@
 # tell which branch the finding was surfaced from and, where the route
 # resolved one, whether the cited file was in the reviewed change's own
 # changed-file set. `mode` and `unit` are derived from the branch name, so
-# neither records who filed nor what that session was doing; the contract in
+# neither records who filed; the contract in
 # .claude/skills/file-tech-debt/SKILL.md states the limitation that puts on
 # a reader.
+#
+# `session` is the one field here that answers WHO, and it is the only one
+# read off the process rather than the checkout. Branch-derived provenance is
+# right for the common case, one session on its own branch, and wrong whenever
+# two share a checkout: the filer inherits the other's `mode` and `unit`, and
+# an inherited `unit` naming another live drain is worse than an absent one,
+# because nothing downstream can tell the two apart. A session id is immune to
+# that by construction, since no branch move reaches it.
 #
 # FAIL-OPEN, deliberately inverting the fail-closed rule of the sibling
 # .gaia/scripts/audit-key-lib.sh. Where gaia_audit_key refuses to print a
@@ -48,6 +57,10 @@
 # gaia_debt_origin_line [--changed <v>] [--branch <name>] [--dir <path>]
 #   Prints exactly one newline-terminated line. Returns 0 unconditionally,
 #   including outside a git repository and on an unrecognized argument.
+#   Reads CLAUDE_CODE_SESSION_ID from the environment for `session`, which is
+#   deliberately not a flag: the field's whole value is that it names the
+#   process actually filing, and an override would let a caller restamp
+#   authorship the way `--branch` legitimately restamps the branch.
 #
 # Deliberately NOT reusing gaia_key_slug from audit-key-lib.sh: that function
 # encodes every byte outside [A-Za-z0-9_-], which would render
@@ -336,16 +349,46 @@ gaia_debt_origin_line() {
     esac
   fi
 
+  # `session` identifies the FILER, read off the process rather than the
+  # checkout, so it is the one field a branch move cannot corrupt. The harness
+  # exports CLAUDE_CODE_SESSION_ID into the session shell and every Bash child
+  # inherits it; two other consumers in this repository already key on it for
+  # session-scoped identity (.gaia/scripts/token-tally.sh, and
+  # .specify/extensions/gaia/lib/spec-session-lock.sh, which picks it for the
+  # same stable-per-session property this field needs).
+  #
+  # Absent is `unknown`, this line's convention for every field it cannot
+  # resolve. The continuous-integration route is the by-construction case: it
+  # runs as a GitHub Actions job with no Claude Code session at all, so a
+  # session id is not a concept that applies to it and `unknown` is the honest
+  # answer rather than a gap.
+  #
+  # A value carrying whitespace is `unknown` too. The line is space-delimited
+  # `key=value` pairs and readers match a field that way, so a space inside a
+  # value would present as two fields and corrupt every pair after it. The
+  # encoder cannot help: its reserved set is `>` and `%`, deliberately small
+  # because these values are read by humans. Declining the value is the only
+  # answer that keeps the line parseable, and it costs nothing real, since no
+  # session id this reads is shaped that way.
+  local session="${CLAUDE_CODE_SESSION_ID:-unknown}"
+  case "$session" in
+    *[[:space:]]*) session="unknown" ;;
+  esac
+
   # Every value is encoded, not only the two that can carry a reserved
   # character. For `mode`, `changed`, and `head` the encoding is a no-op by
   # construction, which is the point: "no emitted value carries a raw `>` or
-  # `%`" then holds by construction rather than by argument.
-  printf '<!-- gaia-debt-origin: branch=%s mode=%s unit=%s changed=%s head=%s -->\n' \
+  # `%`" then holds by construction rather than by argument. `session` is a
+  # no-op for the harness value it normally carries and is encoded on the same
+  # terms as the rest regardless, because it is the one value here that comes
+  # from the environment and nothing constrains what a process may export.
+  printf '<!-- gaia-debt-origin: branch=%s mode=%s unit=%s changed=%s head=%s session=%s -->\n' \
     "$(gaia_debt_origin_encode "$branch")" \
     "$(gaia_debt_origin_encode "$mode")" \
     "$(gaia_debt_origin_encode "$unit")" \
     "$(gaia_debt_origin_encode "$changed")" \
-    "$(gaia_debt_origin_encode "$head")"
+    "$(gaia_debt_origin_encode "$head")" \
+    "$(gaia_debt_origin_encode "$session")"
   return 0
 }
 

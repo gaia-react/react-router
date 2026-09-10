@@ -242,7 +242,7 @@ EOF
 
 FIXTURE_KEY_INNER='v1 class=holistic/unclassified path=app/services/foo.ts line=42'
 FIXTURE_BODY='<!-- gaia-debt-key: v1 class=holistic/unclassified path=app/services/foo.ts line=42 -->
-<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 -->
+<!-- gaia-debt-origin: branch=debt/1121-marker-sep mode=drain unit=1121 changed=1 head=a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2 session=8e5d0d9c-04cc-43d9-be98-eea731c93607 -->
 Additional body prose.'
 
 @test "4a. the wrapped-key substring test still matches with a provenance line present" {
@@ -299,7 +299,7 @@ Additional body prose.'
   # followed by a non-digit or end of string.
   local adversarial_body
   adversarial_body='<!-- gaia-debt-key: v1 class=holistic/unclassified path=app/other-finding.ts line=99 -->
-<!-- gaia-debt-origin: branch=fix/app%2Fx.ts:42-thing mode=adhoc unit=unknown changed=unknown head=unknown -->
+<!-- gaia-debt-origin: branch=fix/app%2Fx.ts:42-thing mode=adhoc unit=unknown changed=unknown head=unknown session=unknown -->
 Some other finding entirely.'
 
   grep -qE 'app/x\.ts:42([^0-9]|$)' <<<"$adversarial_body" && {
