@@ -173,24 +173,42 @@
 # reports a block that was not armed. That direction costs a correct edit; the
 # other direction is the missed defect this gate exists to prevent.
 #
-# The script arm applies the same depth test to a FILE, and carries one accepted
-# blind spot with it, in the same safe direction as the clamp but arrived at the
-# other way round. A multi-line
+# The script arm applies the same depth test to a FILE, and TWO shapes reach the
+# same accepted blind spot through it. Both are false negatives, the direction
+# this gate must not be wrong in, so neither is left implied by the other.
+#
+# The first is a multi-line
 #
 #     out="$(
 #       set -o pipefail
 #       ...one pipeline into a quiet reader...
 #     )"
 #
-# in a tracked script genuinely runs armed inside that subshell, and the depth
-# test now reads it as arming nothing, so the reader inside goes unreported.
+# in a tracked script. It genuinely runs armed inside that subshell, and the
+# depth test reads it as arming nothing, so the reader inside goes unreported.
 # Before the depth test the script arm caught it by ACCIDENT, by over-arming the
-# whole file on any arming it saw anywhere. This arm is not inventing the blind
-# spot: the identical shape in a `run:` body already reads clean here, so what
-# changed is that the two arms now agree about it. No tracked shell file changes
-# arming status on it today. Closing it needs the depth walk to attribute the
-# pipeline to the substitution that scopes it rather than to the file, which is
-# a larger reader than either arm has.
+# whole file on any arming it saw anywhere. This arm invents nothing here: the
+# identical shape in a `run:` body already reads clean, so what changed is that
+# the two arms now agree about it.
+#
+# The second is an UNBALANCED literal `$(` sitting on an earlier non-comment
+# line, in a `grep -F` pattern or a `printf` template rather than in real code.
+# The carry is a plain character count, so it cannot tell a quoted one from a
+# live one, and the depth it hands the next line never returns to zero: a
+# genuine file-level `set -euo pipefail` below it reads at depth above zero and
+# does not arm, and every reader in that file goes unreported. This one is NOT
+# inherited from the workflow arm by analogy, it is the same defect standing on
+# both arms, since that arm carries `subdepth` across a block the same way and
+# has since gaia-react/gaia#1936. Closing it needs the carry computed from a
+# copy of the line with single-quoted spans removed, in both arms, which is a
+# behaviour change on a live tree rather than a comment, so it is tracked
+# separately rather than folded in here.
+#
+# Neither shape has an instance in this tree: no tracked shell file changes
+# arming status on either, and no file ends a line with a net-positive literal
+# depth. The balanced case, a whole `$( ... )` inside one quoted argument, is
+# NOT affected and is pinned by a fixture, because it is the half that has to
+# keep working for the carry to be worth having at all.
 #
 # `defaults.run.shell`, at job or workflow level, would move the resolved shell
 # for every step under it. This gate REFUSES rather than resolves it: a

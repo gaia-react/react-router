@@ -448,6 +448,31 @@ printf "%s" "$changed" | grep -q needle'
   [ "$status" -eq 0 ]
 }
 
+# The depth the script arm now carries from one line to the next is a plain
+# character count, so a `$( ... )` written as DATA rather than as code counts
+# too: a grep pattern, a printf template, a message. Balanced, it opens and
+# closes on the same line and the carry returns to zero, so a real arming below
+# it still arms and the reader below THAT is still reported. That is the half
+# that has to keep working for the carry to be worth having, and it is the half
+# a repair to the carry could break silently, since breaking it reports nothing
+# rather than reporting too much.
+#
+# The unbalanced case is the accepted blind spot the gate header states: the
+# carry never returns to zero, the arming below reads as scoped, and the file
+# goes unreported. It is deliberately NOT pinned by a fixture here. A test
+# asserting a false negative reds on the day somebody repairs it, which is
+# backwards for a suite whose job is to red when the gate goes quiet.
+@test "a balanced dollar-paren inside a quoted argument leaves the file armed" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+grep -nF "x=$(cmd)" file.txt
+set -euo pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:4:" <<<"$output"
+}
+
 # --- the pipefail closure --------------------------------------------------
 #
 # pipefail is a process option, so a sourced library runs under whatever its
@@ -793,7 +818,7 @@ set -euo pipefail'
 # shape this repository writes wherever a `git diff -z` feeds a `tr`. Reading it
 # as block-level arming would report every one of those blocks.
 #
-# All three spellings are stopped by the SAME mechanism, the depth test, and
+# The spellings below are stopped by the SAME mechanism, the depth test, and
 # each still earns its own fixture because each reaches it differently: the
 # tree's own `$(set -o pipefail; ...)` through the semicolon the trailing
 # boundary admits, the spaced form through the whitespace it always admitted,
