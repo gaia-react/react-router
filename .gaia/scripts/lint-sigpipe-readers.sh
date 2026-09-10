@@ -194,9 +194,10 @@
 # The second is an UNBALANCED literal `$(` sitting on an earlier non-comment
 # line, in a `grep -F` pattern or a `printf` template rather than in real code.
 # The carry is a plain character count, so it cannot tell a quoted one from a
-# live one, and the depth it hands the next line never returns to zero: a
-# genuine file-level `set -euo pipefail` below it reads at depth above zero and
-# does not arm, and every reader in that file goes unreported. This one is NOT
+# live one, and the depth it hands the next line does not return to zero until
+# some later line spends a `)`: a genuine file-level `set -euo pipefail` in
+# between reads at depth above zero and does not arm, and every reader in that
+# file goes unreported. This one is NOT
 # inherited from the workflow arm by analogy, it is the same defect standing on
 # both arms, since that arm carries `subdepth` across a block the same way and
 # has since gaia-react/gaia#1936. Closing it needs the carry computed from a
@@ -204,11 +205,25 @@
 # behaviour change on a live tree rather than a comment, so it is tracked
 # separately rather than folded in here.
 #
-# Neither shape has an instance in this tree: no tracked shell file changes
-# arming status on either, and no file ends a line with a net-positive literal
-# depth. The balanced case, a whole `$( ... )` inside one quoted argument, is
-# NOT affected and is pinned by a fixture, because it is the half that has to
-# keep working for the carry to be worth having at all.
+# Neither shape changes what this tree reports, and the honest form of that is
+# a differential rather than an absence. Run the gate with the cross-line carry
+# disabled outright and the armed set and the report come back byte-identical,
+# so nothing in this tree has an arming status that turns on the carry. That is
+# the claim; it is cheap to re-check and it is the one that matters.
+#
+# What is NOT true, and was asserted here once: that no line ends at a positive
+# carry. Hundreds do, across dozens of tracked files, wherever a quoted `$(`
+# sits in a pattern or a message. They are harmless for two reasons this file
+# should name rather than imply. Every one of them is spent by a later `)`, so
+# no tracked file reaches end of file still carrying depth. And a file like
+# .claude/hooks/block-secrets-write.sh arms far above its literal block, so
+# `armed` is already 1 by the time the carry rises and nothing downstream can
+# lower it. Neither reason is a property of the carry being safe in general,
+# which is exactly why the differential above is what the claim rests on.
+#
+# The balanced case, a whole `$( ... )` inside one quoted argument, is NOT
+# affected and is pinned by a fixture, because it is the half that has to keep
+# working for the carry to be worth having at all.
 #
 # `defaults.run.shell`, at job or workflow level, would move the resolved shell
 # for every step under it. This gate REFUSES rather than resolves it: a
