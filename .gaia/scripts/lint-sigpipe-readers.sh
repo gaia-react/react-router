@@ -410,16 +410,20 @@ readonly YAML_AWK='
 # scalar rather than a key at all. Sets keyname, keycol and islist; answers 0
 # when the line carries no key to read.
 #
-# The block-scalar half is load-bearing rather than tidiness, and it is worth
-# being exact about which case needs it. What it holds is `defaults:` detection
-# and pass-two `run:` detection, both of which read a key at ANY column and so
-# have no column test to fall back on: a `run:` body quoting either word would
-# otherwise be read as the key itself. It is NOT what saves the two lines
-# spelled `shell:` inside the `filters: |` body of
-# .github/workflows/shell-lint.yml, tempting as that reading is. Block-scalar
-# content is necessarily indented deeper than the key that opened it, and that
-# key is already deeper than the step column, so the step-column test decides
-# those two on its own and would still decide them with this half removed.
+# The block-scalar half is load-bearing rather than tidiness, and which cases
+# need it is a criterion rather than a list: any caller that acts on this
+# answer without the step-column test gating it reads a key at ANY column, so
+# it has nothing to fall back on, and a `run:` body quoting the word that
+# caller tests for would be taken for the key itself. Both passes below carry
+# such callers, the `islist` arm among them, since the arm that sets the step
+# column necessarily runs ahead of the test against it. Take them off the call
+# sites rather than off a list here, which goes stale the round another one is
+# added. It is NOT what saves the two lines spelled `shell:` inside the
+# `filters: |` body of .github/workflows/shell-lint.yml, tempting as that
+# reading is. Block-scalar content is necessarily indented deeper than the key
+# that opened it, and that key is already deeper than the step column, so the
+# step-column test decides those two on its own and would still decide them
+# with this half removed.
 function yaml_key(l,   col, rest) {
   if (l ~ /^[[:space:]]*$/) return 0
   col = match(l, /[^ ]/)
