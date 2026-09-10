@@ -11,6 +11,19 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-10 486c3142 SKIP - StrictMode canary oracle swapped (wall-clock ratio → fiber mode-bit containment) inside .playwright/ test harness; wiki/concepts/React Perf Diagnostic.md names the canary generically and claims nothing about its internal oracle
+- 2026-09-10 4db9b8ec SKIP - internal single-file refinement to lint-sigpipe-readers.sh, no wiki page claim affected
+- 2026-09-10 7af6d8b1 SKIP - tests-only
+- 2026-09-10 e9c218c8 WORTHY - wiki edit landed in-commit (wiki/concepts/Worktrees.md revised: dispatched arm has a general whole-command test too, three tests not two)
+- 2026-09-10 bad731e3 SKIP - extends the sigpipe-reader lint to workflow YAML; wiki/concepts/Release Workflow.md already describes the folded guards by pointer, not enumeration, so no page needed updating
+- 2026-09-10 f5189ecd SKIP - internal guard-awk-lib below-root bats-discovery refusal; correctness fix in release-excluded .gaia/scripts/, same family as b4c2cbf5
+- 2026-09-10 94e36cad SKIP - internal GAIA_HOOK_NAME_RE path-token anchoring fix in release-excluded .gaia/scripts/, no wiki page documents the prior matching behavior
+- 2026-09-10 ae215ccb WORTHY - debt provenance marker gains a session= field (WHO) alongside its branch-derived fields (WHERE) → wiki/concepts/Audit Disposition and Debt Fix.md
+- 2026-09-10 fdfcaeb3 WORTHY - wiki edit landed in-commit (wiki/concepts/Worktrees.md revised on the dispatched-arm keying rule)
+- 2026-09-10 b4c2cbf5 SKIP - internal guard-awk-lib below-root scan-set refusal; correctness fix in release-excluded .gaia/scripts/, no wiki page claims the prior behavior
+- 2026-09-10 7bbce928 SKIP - tests-only
+- 2026-09-10 d89eac20 SKIP - tests-only
+- 2026-09-10 0655b58a SKIP - wiki: self-referential
 - 2026-09-09 30772cd7 SKIP - errexit-source guard scan-surface derivation, internal lint-guard implementation fix, no dedicated wiki page for this guard
 - 2026-09-09 c3600d9e SKIP - tests-only
 - 2026-09-09 84a00c1e SKIP - hook_registered lifted to shared .gaia/tests/helpers/, tests-only infra
