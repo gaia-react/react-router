@@ -56,6 +56,12 @@
 # original silently, because each holder keeps passing against the copy it
 # reads. Rooted at this file's own on-disk location, so it resolves however a
 # suite is invoked.
+#
+# The literal's first capture is the path token and its second is the character
+# that terminated it, so the assertion below compares `.captures[0]` rather than
+# the whole match. Comparing the whole match would compare a name with the
+# closing quote still attached and never match; the library's own header carries
+# why the terminator is in the literal at all.
 # shellcheck source=../../scripts/hook-registration-lib.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/hook-registration-lib.sh"
 
@@ -93,7 +99,7 @@ hook_registered() {
   local settings="$1" filter="$2" hook="$3"
   run jq -e --arg re "$GAIA_HOOK_NAME_RE" --arg hook "$hook" \
     "[ $filter | .hooks[] | .command // empty ] |
-       any([match(\$re; \"g\").string] | any(. == \".claude/hooks/\" + \$hook))" \
+       any([match(\$re; \"g\").captures[0].string] | any(. == \".claude/hooks/\" + \$hook))" \
     "$settings"
   [ "$status" -eq 0 ]
 }
