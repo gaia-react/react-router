@@ -358,13 +358,10 @@ gaia_debt_origin_line() {
   # same stable-per-session property this field needs).
   #
   # Absent is `unknown`, this line's convention for every field it cannot
-  # resolve. The continuous-integration route reaches it: that route renders
-  # its provenance lines in a plain workflow step that runs ahead of the agent,
-  # and a workflow step inherits no session id, so there is nothing to read and
-  # `unknown` is the honest answer rather than a gap. What holds that is the
-  # step ordering, not the job: the job does host a Claude Code session further
-  # down, so provenance rendered from inside the agent would start resolving
-  # one. Nothing here depends on which way that goes.
+  # resolve. The continuous-integration route reaches that arm; why it does,
+  # and what the guarantee actually rests on, is the CI row in
+  # .claude/skills/file-tech-debt/SKILL.md, which owns the contract. Nothing
+  # here depends on which way that goes.
   #
   # A value carrying whitespace is `unknown` too. The line is space-delimited
   # `key=value` pairs and readers match a field that way, so a space inside a
