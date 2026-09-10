@@ -210,18 +210,32 @@ jobs:
               # settings.json alone would skip every bats step and green the job
               # having run that scan zero times.
               - '.claude/settings.json'
-              # check-wiki-state-collision.bats (.gaia/scripts/tests/) asserts
-              # that wiki/.state.json stays tracked and that no merge driver is
-              # bound to it, which is what keeps a cross-branch collision on the
-              # single recorded sha a conflict rather than a silent overwrite.
-              # Those are exactly the two files the check reads, and both match
-              # nothing else here, so without these lines the edits the check
-              # exists to catch -- untracking the state file, or adding a
-              # .gitattributes that resolves it automatically -- would skip every
-              # bats step and green the job having run that scan zero times.
-              # .gitattributes is listed at both depths because git honors a
-              # nested one and a root-level glob would not match it.
-              - 'wiki/.state.json'
+              # check-wiki-state-collision.bats (.gaia/scripts/tests/) exercises
+              # check-wiki-state-collision.sh, which reads only whether
+              # wiki/.state.json stays tracked and the `merge` attribute git
+              # resolves for it -- nothing about the bytes inside the file. A
+              # content-only rewrite, which is what a wiki sync commits, changes
+              # neither, so it is deliberately unarmed here: `deleted` is the
+              # change type that carries an untracking (a plain deletion or a
+              # `git rm --cached`), and it also carries a rename out of wiki/,
+              # because the pull-request lane -- the lane this workflow runs the
+              # filter on -- decomposes a rename into a delete of the previous
+              # path plus an add of the new one before matching, so no
+              # `renamed` token is needed or wanted for that case. `renamed`
+              # and `copied` sit in the action's own accepted change-status set
+              # but are forbidden on this entry; a check pins the token to
+              # exactly `deleted` so a drift toward either of those, or toward
+              # any other status, reds rather than parsing cleanly and matching
+              # nothing forever.
+              # .gitattributes is the check's other input -- an added or
+              # changed `merge` attribute reaching the path -- and it stays a
+              # bare, unqualified entry rather than joining the mapping: the
+              # check reads that file's CONTENT (the attribute value it
+              # resolves to), not whether it changed type, so any modification
+              # has to arm. It is listed once unqualified and again with a
+              # leading `**/`, because git honors a nested .gitattributes and a
+              # root-level glob would not reach one.
+              - deleted: 'wiki/.state.json'
               - '.gitattributes'
               - '**/.gitattributes'
               # debt-origin-contract.bats (.gaia/scripts/tests/) asserts the

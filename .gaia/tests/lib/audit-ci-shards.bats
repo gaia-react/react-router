@@ -81,6 +81,7 @@ setup() {
   CLI_WORKFLOW="$REPO_ROOT/.github/workflows/cli-tests.yml"
   WORKFLOW_DIR="$REPO_ROOT/.github/workflows"
   BATS_SHARDS="$REPO_ROOT/.gaia/tests/bats-shards.sh"
+  CHECK_WIKI_STATE_COLLISION="$REPO_ROOT/.gaia/scripts/check-wiki-state-collision.sh"
   # Matches retrigger-reachability.bats' own constant: the self-heal poller
   # margin charged per hop of the needs: chain.
   POLLER_MARGIN_MIN=5
@@ -103,11 +104,28 @@ setup() {
   # added.
   MATRIX_SHARD_PATTERN='^ *shard: \['
 
+  # Committed fixtures for the lever-one guards (W13, W14, W15). Both are
+  # namers of wiki/.state.json in the leg-arming scan's own input set --
+  # they sit under a fixtures/ sibling of this suite's directory -- which is
+  # harmless because that arms `lib` unconditionally regardless.
+  SPEC078_FIXTURES="$BATS_TEST_DIRNAME/fixtures/spec-078"
+  # The dorny/paths-filter version lever one's premises (step 0 of the task
+  # doc) were verified against, recorded once here so W14 and its header
+  # comment cannot disagree with each other about which pin they mean.
+  PATHS_FILTER_PINNED_SHA='ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d'
+  PATHS_FILTER_PINNED_TAG='v4.0.3'
+
   require_repo_path -f "$WORKFLOW" "audit-ci-tests.yml" || return 1
   require_repo_path -f "$POLLER_WORKFLOW" "code-review-audit.yml" || return 1
   require_repo_path -f "$CLI_WORKFLOW" "cli-tests.yml" || return 1
   require_repo_path -d "$WORKFLOW_DIR" ".github/workflows/" || return 1
   require_repo_path -f "$BATS_SHARDS" "bats-shards.sh" || return 1
+  require_repo_path -f "$SPEC078_FIXTURES/codefilter-token-out-of-set.yml" \
+    "fixtures/spec-078/codefilter-token-out-of-set.yml" || return 1
+  require_repo_path -f "$SPEC078_FIXTURES/paths-filter-pin-bumped.yml" \
+    "fixtures/spec-078/paths-filter-pin-bumped.yml" || return 1
+  require_repo_path -f "$CHECK_WIKI_STATE_COLLISION" \
+    "check-wiki-state-collision.sh" || return 1
 
   # W12's subject set: every workflow file in the directory, derived from the
   # directory rather than listed, so a workflow added later is scanned without
@@ -182,6 +200,17 @@ teardown() {
 #                         rather than guessing which value it meant.
 #                         Exits 2 when the job has no such step or the step
 #                         has no `code:` list.
+#   codefilterentries <job-id>
+#                         that job's dorny/paths-filter step's `code:` list,
+#                         one `<key>\t<path>` line per entry: a bare-string
+#                         entry prints `-` as its key, a change-type mapping
+#                         entry prints its key, so the change-type key
+#                         `codefilter` discards survives for a reader that
+#                         needs it. A mapping entry carrying several
+#                         change-type keys
+#                         prints one line per key, each paired with that
+#                         key's own path. Same exit-2 conditions as
+#                         `codefilter`.
 #   filtercount            total dorny/paths-filter steps in the whole file
 #   filterifs              one `<job-id>\t<normalized-if>` line per step, across
 #                         EVERY job, whose `if:` mentions steps.filter.outputs.
@@ -309,6 +338,31 @@ def chain(jid, seen, margin):
     return (cap_of(jid) or 0) + best[0], best[1] + 1
 
 
+def code_list_for(jid):
+    """That job's dorny/paths-filter step's `code:` list, as parsed YAML
+    entries (bare strings and change-type mappings alike). Shared by
+    `codefilter` and `codefilterentries`, which read the same list and differ
+    only in whether the change-type key survives."""
+    filter_step = None
+    for step in jobs[jid].get('steps') or []:
+        if isinstance(step, dict) and 'dorny/paths-filter' in str(step.get('uses', '')):
+            filter_step = step
+            break
+    if filter_step is None:
+        die('job %r has no dorny/paths-filter step' % jid)
+    filters_raw = (filter_step.get('with') or {}).get('filters')
+    if not isinstance(filters_raw, str):
+        die('job %r paths-filter step has no filters: string' % jid)
+    try:
+        filters_doc = yaml.safe_load(filters_raw)
+    except yaml.YAMLError as exc:
+        die('job %r filters: block is not valid YAML (%s)' % (jid, exc.__class__.__name__))
+    code_list = (filters_doc or {}).get('code')
+    if not isinstance(code_list, list):
+        die('job %r filters: block has no code: list' % jid)
+    return code_list
+
+
 if mode == 'jobs':
     print('\n'.join(jobs))
 elif mode == 'name':
@@ -334,24 +388,7 @@ elif mode == 'matrix':
             print(str(item))
 elif mode == 'codefilter':
     require_job(rest[0])
-    filter_step = None
-    for step in jobs[rest[0]].get('steps') or []:
-        if isinstance(step, dict) and 'dorny/paths-filter' in str(step.get('uses', '')):
-            filter_step = step
-            break
-    if filter_step is None:
-        die('job %r has no dorny/paths-filter step' % rest[0])
-    filters_raw = (filter_step.get('with') or {}).get('filters')
-    if not isinstance(filters_raw, str):
-        die('job %r paths-filter step has no filters: string' % rest[0])
-    try:
-        filters_doc = yaml.safe_load(filters_raw)
-    except yaml.YAMLError as exc:
-        die('job %r filters: block is not valid YAML (%s)' % (rest[0], exc.__class__.__name__))
-    code_list = (filters_doc or {}).get('code')
-    if not isinstance(code_list, list):
-        die('job %r filters: block has no code: list' % rest[0])
-    for item in code_list:
+    for item in code_list_for(rest[0]):
         if isinstance(item, dict):
             values = list(item.values())
             if len(values) != 1:
@@ -359,6 +396,14 @@ elif mode == 'codefilter':
             print(str(values[0]))
         else:
             print(str(item))
+elif mode == 'codefilterentries':
+    require_job(rest[0])
+    for item in code_list_for(rest[0]):
+        if isinstance(item, dict):
+            for key, value in item.items():
+                print('%s\t%s' % (key, value))
+        else:
+            print('-\t%s' % item)
 elif mode == 'filtercount':
     count = 0
     for job in jobs.values():
@@ -706,6 +751,135 @@ lines[i + 1:i + 1] = insertion.split('\n')
 with open(out, 'w', encoding='utf-8') as handle:
     handle.write('\n'.join(lines))
 PY
+}
+
+# Shared checks for W13, W14 and W15 (SPEC-078 lever one). Each is a plain
+# function rather than a script, so the healthy assertion and its adversarial
+# case run the identical code against a healthy and a doctored input, the
+# same posture every other guard in this file takes.
+
+# assert_wiki_state_key_is_deleted <workflow>: the code: filter's entry for
+# wiki/.state.json is keyed on exactly `deleted`. Whole-field string equality
+# against read_wf codefilterentries' key column, never a substring test, so a
+# compound key like `deleted|renamed` reds rather than passing on the
+# substring it contains.
+assert_wiki_state_key_is_deleted() {
+  local workflow="$1" entries key count
+  entries="$(read_wf codefilterentries "$workflow" shards)" || return 1
+  key="$(printf '%s\n' "$entries" | awk -F'\t' '$2 == "wiki/.state.json" { print $1 }')"
+  count="$(printf '%s\n' "$key" | grep -c '.')"
+  [ "$count" -eq 1 ] || {
+    echo "expected exactly one code: entry naming wiki/.state.json in $workflow, found $count" >&2
+    return 1
+  }
+  [ "$key" = "deleted" ] && return 0
+  echo "$workflow's code: entry for wiki/.state.json is keyed '$key', expected exactly 'deleted'" >&2
+  return 1
+}
+
+# assert_no_renamed_or_copied_tokens <workflow>: no code: filter entry
+# anywhere in <workflow> carries `renamed` or `copied` in its change-type
+# key, split on `|` so a compound key like `deleted|renamed` is caught by its
+# individual tokens rather than missed as a whole-field mismatch.
+assert_no_renamed_or_copied_tokens() {
+  local workflow="$1" entries key path token bad=""
+  entries="$(read_wf codefilterentries "$workflow" shards)" || return 1
+  while IFS=$'\t' read -r key path; do
+    [ -n "$key" ] || continue
+    [ "$key" = "-" ] && continue
+    for token in $(printf '%s' "$key" | tr '|' ' '); do
+      case "$token" in
+        renamed | copied)
+          bad="${bad}${key} (on ${path}) "
+          ;;
+      esac
+    done
+  done <<<"$entries"
+  [ -z "$bad" ] || {
+    echo "$workflow's code: filter carries a forbidden renamed/copied change-type token: $bad" >&2
+    return 1
+  }
+  return 0
+}
+
+# assert_paths_filter_pin_matches <workflow>: the sole dorny/paths-filter
+# `uses:` line's SHA and tag comment equal PATHS_FILTER_PINNED_SHA and
+# PATHS_FILTER_PINNED_TAG, the pair lever one's premises (task-lever-one.md
+# step 0) were verified against. A version drift moving either half
+# invalidates those premises silently -- a grouped dependency bump nobody
+# reads closely -- so the refusal names both recorded values and where to
+# re-derive each premise.
+assert_paths_filter_pin_matches() {
+  local workflow="$1" line count sha tag
+  line="$(grep -E "dorny/paths-filter@[0-9a-f]{40} # v[0-9]+\.[0-9]+\.[0-9]+" "$workflow")" || {
+    echo "no dorny/paths-filter uses: line found in $workflow" >&2
+    return 1
+  }
+  count="$(printf '%s\n' "$line" | grep -c '.')"
+  [ "$count" -eq 1 ] || {
+    echo "expected exactly one dorny/paths-filter uses: line in $workflow, found $count" >&2
+    return 1
+  }
+  sha="$(printf '%s' "$line" | sed -E 's/.*dorny\/paths-filter@([0-9a-f]{40}) # v.*/\1/')"
+  tag="$(printf '%s' "$line" | sed -E 's/.*# (v[0-9]+\.[0-9]+\.[0-9]+).*/\1/')"
+  if [ "$sha" = "$PATHS_FILTER_PINNED_SHA" ] && [ "$tag" = "$PATHS_FILTER_PINNED_TAG" ]; then
+    return 0
+  fi
+  echo "$workflow pins dorny/paths-filter@$sha ($tag), lever one's premises were verified against $PATHS_FILTER_PINNED_SHA ($PATHS_FILTER_PINNED_TAG). Re-derive against the pinned source at the new SHA: the accepted change-status set (file.ts:6-13) and its unvalidated per-entry cast (filter.ts:171-176); the plain array membership check that lets an unrecognized token match nothing forever (filter.ts:123-125); and the pull-request lane's rename decomposition -- the token input defaults to github.token (action.yml:5-8), so this lane takes getChangedFilesFromApi (main.ts:101-107), which replaces a renamed row with an added-new-path row plus a deleted-previous-path row (main.ts:227-239)." >&2
+  return 1
+}
+
+# make_state_collision_fixture_repo <name> <state-bytes>: a fresh git repo
+# under BATS_TEST_TMPDIR with wiki/.state.json tracked and committed holding
+# exactly <state-bytes>, and no .gitattributes. Mirrors the `git init`
+# incantation .gaia/scripts/tests/check-wiki-state-collision.bats's own
+# make_fixture_repo uses, so both suites build the identical fixture shape
+# for check-wiki-state-collision.sh.
+make_state_collision_fixture_repo() {
+  local name="$1" bytes="$2" dir
+  dir="$BATS_TEST_TMPDIR/$name"
+  mkdir -p "$dir/wiki"
+  git init -q --initial-branch=main "$dir"
+  git -C "$dir" config user.email t@example.com
+  git -C "$dir" config user.name T
+  git -C "$dir" config commit.gpgsign false
+  printf '%s' "$bytes" >"$dir/wiki/.state.json"
+  git -C "$dir" add -A
+  git -C "$dir" commit -q -m seed
+  printf '%s' "$dir"
+}
+
+# assert_checker_is_content_blind <checker-script>: builds two fixture repos
+# identical except for the bytes inside wiki/.state.json, sources
+# <checker-script> and runs gaia_check_wiki_state_collision against each,
+# and requires the exit status and the combined stdout+stderr to be
+# byte-identical. A behavioral oracle rather than a spelling-specific scan:
+# "the checker reads the file's contents" is not statically decidable in
+# shell, and a scan tuned to one spelling would miss a helper it sources or
+# a different way of reading the bytes.
+assert_checker_is_content_blind() {
+  local checker="$1" repoA repoB statusA outputA statusB outputB
+  repoA="$(make_state_collision_fixture_repo w15-a 'aaaaaaa-oracle-fixture-bytes')"
+  repoB="$(make_state_collision_fixture_repo w15-b 'zzzzzzz-oracle-fixture-different')"
+
+  run bash -c 'source "$1" && gaia_check_wiki_state_collision "$2"' _ "$checker" "$repoA"
+  statusA="$status"
+  outputA="$output"
+  run bash -c 'source "$1" && gaia_check_wiki_state_collision "$2"' _ "$checker" "$repoB"
+  statusB="$status"
+  outputB="$output"
+
+  [ "$statusA" -eq "$statusB" ] || {
+    echo "$checker's exit status differs between two repos differing only in wiki/.state.json's bytes: $statusA vs $statusB" >&2
+    return 1
+  }
+  [ "$outputA" = "$outputB" ] || {
+    echo "$checker's output differs between two repos differing only in wiki/.state.json's bytes" >&2
+    printf 'repo A output:\n%s\n' "$outputA" >&2
+    printf 'repo B output:\n%s\n' "$outputB" >&2
+    return 1
+  }
+  return 0
 }
 
 # The parser gate above is the single point where every parser-gated test in
@@ -2081,6 +2255,150 @@ concurrency_tree_needs_packages() {
   }
   printf '%s\n' "$output" | grep -qF -- '.gaia/release-exclude' || {
     echo "the refusal message did not name the offending entry" >&2
+    return 1
+  }
+}
+
+# W13 (SPEC-078 lever one, UAT-003). dorny/paths-filter casts an unrecognized
+# change-status token without validating it (filter.ts:171-176), so a
+# misspelled or out-of-allowlist key parses cleanly and matches nothing
+# forever. This pins the wiki/.state.json entry to exactly `deleted` and
+# sweeps every code: entry for the two tokens the action accepts but this
+# repository forbids, `renamed` and `copied` -- both are redundant with
+# `deleted` on the pull-request lane, which decomposes a rename into a
+# delete of the previous path plus an add of the new one before matching:
+# the `token` input defaults to github.token (action.yml:5-8), so the
+# pull-request lane takes getChangedFilesFromApi (main.ts:101-107), which
+# does exactly that decomposition (main.ts:227-239).
+
+@test "W13: audit-ci-tests.yml's code filter keys wiki/.state.json on exactly deleted" {
+  require_yaml_parser
+  assert_wiki_state_key_is_deleted "$WORKFLOW"
+}
+
+@test "W13: no code: filter entry anywhere carries a renamed or copied change-type token" {
+  require_yaml_parser
+  assert_no_renamed_or_copied_tokens "$WORKFLOW"
+}
+
+@test "W13 adversarial: the committed out-of-set-token fixture reds and names the token" {
+  require_yaml_parser
+  run assert_wiki_state_key_is_deleted "$SPEC078_FIXTURES/codefilter-token-out-of-set.yml"
+  [ "$status" -ne 0 ] || {
+    echo "the out-of-set token fixture did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "'changed'" || {
+    echo "the refusal did not name the offending token 'changed'" >&2
+    return 1
+  }
+}
+
+@test "W13 adversarial: doctoring the entry to an in-set but wrong token reds and names it" {
+  require_yaml_parser
+  local line
+  line="$(sole_line_matching "$WORKFLOW" "^ *- deleted: 'wiki/\\.state\\.json'\$")" || return 1
+
+  local doctored_added="$BATS_TEST_TMPDIR/w13-added.yml" mutated_added
+  mutated_added="$(printf '%s' "$line" | sed "s/deleted:/added:/")"
+  assert_doctored "$line" "$mutated_added" "keying the entry on added" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated_added" "$doctored_added"
+  run assert_wiki_state_key_is_deleted "$doctored_added"
+  [ "$status" -ne 0 ] || {
+    echo "keying the entry on 'added' did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "'added'" || {
+    echo "the refusal did not name the offending token 'added'" >&2
+    return 1
+  }
+
+  local doctored_compound="$BATS_TEST_TMPDIR/w13-compound.yml" mutated_compound
+  mutated_compound="$(printf '%s' "$line" | sed "s/deleted:/deleted|renamed:/")"
+  assert_doctored "$line" "$mutated_compound" "keying the entry on deleted|renamed" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated_compound" "$doctored_compound"
+  run assert_wiki_state_key_is_deleted "$doctored_compound"
+  [ "$status" -ne 0 ] || {
+    echo "keying the entry on 'deleted|renamed' did not red, so the check is a substring test rather than whole-field equality" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "'deleted|renamed'" || {
+    echo "the refusal did not name the offending compound token 'deleted|renamed'" >&2
+    return 1
+  }
+}
+
+@test "W13 adversarial: the renamed/copied sweep reds when a second, unrelated entry is doctored" {
+  require_yaml_parser
+  local line mutated doctored="$BATS_TEST_TMPDIR/w13-sweep.yml"
+  line="$(sole_line_matching "$WORKFLOW" "^ *- '\\.gaia/release-exclude'\$")" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/^\\( *\\)- '\\(.*\\)'\$/\\1- renamed: '\\2'/")"
+  assert_doctored "$line" "$mutated" "wrapping an unrelated entry in a renamed: mapping" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_no_renamed_or_copied_tokens "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "doctoring .gaia/release-exclude into a renamed: mapping did not red the sweep" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- '.gaia/release-exclude' || {
+    echo "the sweep's refusal did not name the offending entry" >&2
+    return 1
+  }
+}
+
+# W14 (SPEC-078 lever one, UAT-025). Lever one's premises are properties of
+# an unvendored dependency, dorny/paths-filter, that a grouped weekly
+# dependency bump moves without anyone reading the diff. This pins the
+# workflow's dorny/paths-filter version to the pair the premises in
+# task-lever-one.md's step 0 were verified against.
+
+@test "W14: the workflow's dorny/paths-filter pin matches the version lever one's premises were verified against" {
+  assert_paths_filter_pin_matches "$WORKFLOW"
+}
+
+@test "W14 adversarial: the committed bumped-pin fixture reds and names both versions" {
+  run assert_paths_filter_pin_matches "$SPEC078_FIXTURES/paths-filter-pin-bumped.yml"
+  [ "$status" -ne 0 ] || {
+    echo "the bumped-pin fixture did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "$PATHS_FILTER_PINNED_SHA" || {
+    echo "the refusal did not name the recorded SHA" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- '0000000000000000000000000000000000000000' || {
+    echo "the refusal did not name the fixture's bumped SHA" >&2
+    return 1
+  }
+}
+
+# W15 (SPEC-078 lever one, UAT-004). Lever one's whole premise is that
+# check-wiki-state-collision.sh cannot see a difference between two commits
+# that change only wiki/.state.json's bytes. "The checker reads the file's
+# contents" is not statically decidable in shell, so this is a behavioral
+# oracle rather than a spelling-specific scan: see assert_checker_is_content_
+# blind's own header for why, and the adversarial case below for the proof
+# that a checker perturbed to read the bytes makes the oracle disagree.
+
+@test "W15: check-wiki-state-collision.sh is content-blind (behavioral oracle)" {
+  assert_checker_is_content_blind "$CHECK_WIKI_STATE_COLLISION"
+}
+
+@test "W15 adversarial: the oracle fails when the checker is doctored to read the file's bytes" {
+  local old mutated doctored_checker="$BATS_TEST_TMPDIR/doctored-check-wiki-state-collision.sh"
+  old="$(sole_line_matching "$CHECK_WIKI_STATE_COLLISION" "printf 'wiki state file tracked: yes")" || return 1
+  mutated='    printf '\''wiki state file tracked: yes (%s)\n'\'' "$(head -c 8 "$repo_root/wiki/.state.json" 2>/dev/null)"'
+  assert_doctored "$old" "$mutated" "making the tracked verdict echo content-derived bytes" || return 1
+  replace_line "$CHECK_WIKI_STATE_COLLISION" "$old" "$mutated" "$doctored_checker"
+
+  run assert_checker_is_content_blind "$doctored_checker"
+  [ "$status" -ne 0 ] || {
+    echo "doctoring the checker to echo content-derived bytes did not fail the oracle" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "output differs" || {
+    echo "the oracle's failure did not name the differing output" >&2
     return 1
   }
 }

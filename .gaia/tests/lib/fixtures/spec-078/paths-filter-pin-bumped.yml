@@ -1,0 +1,15 @@
+# Fixture for W14 (SPEC-078 lever one). The rename-decomposition premise
+# lever one relies on is a property of the dorny/paths-filter version pinned
+# beside it, not of the action's name, and a grouped weekly dependency bump
+# moves that version without anyone reading the diff. This fixture stands in
+# for exactly that: a `uses:` line naming a different SHA and tag comment
+# than the one the premises were verified against. Committed rather than
+# doctored, because an automated bump is the ordinary way this fires, and a
+# committed artifact of that shape is the honest fixture for it.
+#
+# Minimal rather than a copy of the real workflow, so it cannot go stale.
+jobs:
+  shards:
+    steps:
+      - uses: dorny/paths-filter@0000000000000000000000000000000000000000 # v0.0.0
+        id: filter
