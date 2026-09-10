@@ -85,8 +85,8 @@ jobs:
               # The gate folds in guards whose scan surface INCLUDES the
               # workflow `run:` blocks, which no *.sh glob reaches:
               # lint-git-path-quoting.sh, lint-workflow-run-interpolation.sh,
-              # lint-grep-ere-escapes.sh, lint-errexit-status-read.sh, and
-              # lint-collapsed-signal-trap.sh. Only
+              # lint-grep-ere-escapes.sh, lint-errexit-status-read.sh,
+              # lint-collapsed-signal-trap.sh, and lint-sigpipe-readers.sh. Only
               # lint-workflow-run-interpolation.sh is
               # workflow/action/template-only; the rest scan tracked *.sh as
               # well, so this line is not their whole surface, it is the only
@@ -101,9 +101,13 @@ jobs:
               # check having linted the very files it just changed -- the same
               # gap the .husky/** line above closes, one file type over.
               - '.github/workflows/**'
-              # The run-interpolation, grep-escape, status-read, and
-              # collapsed-signal-trap guards also scan the composite actions,
-              # which the glob above does not reach. For the status-read guard
+              # The run-interpolation, grep-escape, status-read,
+              # collapsed-signal-trap and sigpipe-reader guards also scan the
+              # composite actions, which the glob above does not reach. The
+              # composite actions are where the sigpipe-reader guard's oracle
+              # has the most to say: GitHub's schema makes `shell:` mandatory on
+              # a composite `run:` step, and `shell: bash` arms pipefail, so
+              # every one of those blocks runs armed. For the status-read guard
               # this is the load-bearing half rather than a widening: both
               # instances of its class shipped inside a composite action, and
               # actionlint does not lint composite step bodies at all.
@@ -112,9 +116,10 @@ jobs:
               # explicit record that this gate re-runs on a change to itself,
               # which survives any later narrowing of that glob.
               - '.github/workflows/shell-lint.yml'
-              # The run-interpolation, grep-escape, status-read, and
-              # collapsed-signal-trap guards also scan the adopter workflow
-              # templates. Those render into an adopter's own CI, so a
+              # The run-interpolation, grep-escape, status-read,
+              # collapsed-signal-trap and sigpipe-reader guards also scan the
+              # adopter workflow templates. Those render into an adopter's own
+              # CI, so a
               # template-only PR resolving `shell=false` would green the check
               # having left unscanned the one surface whose defects this repo's
               # review is the last place able to see.

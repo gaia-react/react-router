@@ -103,7 +103,12 @@ jobs:
               echo "$tool: not scheduled for '$FIRED_CRON'"
               return 0
             fi
-            if printf '%s\\n' "$open_pr_branches" | grep -q "^gaia-ci/$tool/"; then
+            # A here-string rather than a pipe: this block arms \`pipefail\`, and
+            # a quiet grep downstream of a pipe closes it at the first match, so
+            # the producer takes SIGPIPE and the pipeline answers FALSE because
+            # a match WAS found -- which would report no open PR and start a
+            # second one.
+            if grep -q "^gaia-ci/$tool/" <<<"$open_pr_branches"; then
               echo "$tool: open gaia-ci PR; skipping"
               return 0
             fi
