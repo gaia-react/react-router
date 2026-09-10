@@ -11,6 +11,7 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-10 666c904b SKIP - canary for the per-leg narrowing of Audit CI Tests; this probe pull request is closed unmerged
 - 2026-09-10 486c3142 SKIP - StrictMode canary oracle swapped (wall-clock ratio → fiber mode-bit containment) inside .playwright/ test harness; wiki/concepts/React Perf Diagnostic.md names the canary generically and claims nothing about its internal oracle
 - 2026-09-10 4db9b8ec SKIP - internal single-file refinement to lint-sigpipe-readers.sh, no wiki page claim affected
 - 2026-09-10 7af6d8b1 SKIP - tests-only

@@ -3,7 +3,7 @@ type: concept
 title: GAIA Audit
 status: active
 created: 2026-04-20
-updated: 2026-07-07
+updated: 2026-09-10
 tags: [concept, claude, skill, knowledge, hygiene]
 ---
 
