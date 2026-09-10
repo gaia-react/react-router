@@ -31,12 +31,13 @@
  * declarations at the top of the file, as the TypeScript parser reads them,
  * ending at the first statement of any other kind. An import declaration is
  * `import … from`, a side-effect `import '…'`, `import type`, or
- * `import x = require(…)`; `import.meta` and a dynamic `import(…)` are
- * expressions and close the header like any other statement. Comments and blank
- * lines are trivia to the parser, so they never close it. A file may open with
- * its docblock, import, and then import again further down beside the code that
- * needs it (`setup-ci/__tests__/sandbox.ts`); the later import is not part of
- * the header and a JSDoc beside it is not this defect.
+ * `import x = require(…)` with or without `export`; `import.meta` and a
+ * dynamic `import(…)` are expressions and close the header like any other
+ * statement. Comments and blank lines are trivia to the parser, so they never
+ * close it. A file may open with its docblock, import, and then import again
+ * further down beside the code that needs it (`setup-ci/__tests__/sandbox.ts`);
+ * the later import is not part of the header and a JSDoc beside it is not this
+ * defect.
  *
  * # Why the header is read from the TypeScript AST
  *
@@ -102,12 +103,9 @@ const findStrandedDocblock = (source: string): null | number => {
   const lineStarts = file.getLineStarts();
   const lineOf = (position: number): number =>
     file.getLineAndCharacterOfPosition(position).line;
-  const isBlankLine = (line: number): boolean =>
+  const isBlankFrom = (position: number): boolean =>
     source
-      .slice(
-        lineStarts[line] ?? source.length,
-        lineStarts[line + 1] ?? source.length
-      )
+      .slice(position, lineStarts[lineOf(position) + 1] ?? source.length)
       .trim() === '';
 
   // The end-of-file token leads with whatever follows the last statement, so a
@@ -118,10 +116,14 @@ const findStrandedDocblock = (source: string): null | number => {
     file.endOfFileToken,
   ].entries()) {
     for (const comment of ts.getLeadingCommentRanges(source, node.pos) ?? []) {
+      // A docblock sharing its line with code is attached to that code, so the
+      // blank-line test applies only to one that ends its line.
+      const lineBelow = lineStarts[lineOf(comment.end) + 1] ?? source.length;
+
       if (
         index > 0 &&
         source.startsWith('/**', comment.pos) &&
-        (isBlankLine(lineOf(comment.end) + 1) || isImport(node))
+        (isImport(node) || (isBlankFrom(comment.end) && isBlankFrom(lineBelow)))
       ) {
         return lineOf(comment.pos) + 1;
       }
@@ -424,6 +426,18 @@ describe('module docblock placement', () => {
       ' * What the export below does.',
       ' */',
       'export const value = 1;',
+    ].join('\n');
+
+    expect(findStrandedDocblock(source)).toBeNull();
+  });
+
+  // A docblock sharing its closing line with the declaration it documents is
+  // attached to that declaration, whatever the line below it holds.
+  test('accepts a docblock on the same line as the declaration it documents', () => {
+    const source = [
+      "import {z} from 'zod';",
+      '/** What the export beside it does. */ export const value = 1;',
+      '',
     ].join('\n');
 
     expect(findStrandedDocblock(source)).toBeNull();
