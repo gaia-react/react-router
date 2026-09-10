@@ -427,8 +427,8 @@ field() {
 @test "session: a live CLAUDE_CODE_SESSION_ID is recorded verbatim" {
   make_repo "debt/1121-marker-sep"
   local out
-  out="$(env CLAUDE_CODE_SESSION_ID=8e5d0d9c-04cc-43d9-be98-eea731c93607 bash "$LIB" --dir "$REPO")"
-  [ "$(field session "$out")" = "8e5d0d9c-04cc-43d9-be98-eea731c93607" ]
+  out="$(env CLAUDE_CODE_SESSION_ID=00000000-0000-4000-8000-000000000000 bash "$LIB" --dir "$REPO")"
+  [ "$(field session "$out")" = "00000000-0000-4000-8000-000000000000" ]
 }
 
 @test "session: an absent CLAUDE_CODE_SESSION_ID is unknown, never empty" {

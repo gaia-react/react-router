@@ -608,9 +608,12 @@ jobs:
             and continue; never block, fail, retry, or defer a filing or a waive
             over provenance. The line is an HTML comment, adding nothing to the
             rendered issue or the public PR comment's visible text, and carries
-            no finding detail, so it does not touch the count-only invariants above:
-            `branch`, `mode`, `unit`, `changed`, and `head` say nothing about
-            what the finding is.
+            no finding detail, so it does not touch the count-only invariants
+            above: every field the line carries describes where the filing came
+            from, never what the finding is. That is a property of the whole
+            line rather than of a list of field names, so it still holds when
+            the line gains a field; the field vocabulary is owned by
+            `.claude/skills/file-tech-debt/SKILL.md`.
 
             SELF-HEAL CONSTRAINTS: read before making any edits:
             1. Run `git diff --name-only ${{ github.event.pull_request.base.sha }}...HEAD`
