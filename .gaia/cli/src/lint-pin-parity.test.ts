@@ -228,12 +228,15 @@ const PARITY_EXEMPT: Record<string, string> = {
   // and both readings are identical in the two workspaces. Nothing in the repo
   // recounts them, because doing so needs the root workspace installed, so
   // re-take them there on either trigger: an `import-x` resolver-settings move,
-  // or a rule reaching `eslint-module-utils` being enabled, whether an
-  // `import/*` rule that resolves specifiers or any of the canonical rules the
-  // `eslint-module-utils` entry names.
+  // or a rule reaching `eslint-module-utils` being enabled, which is any
+  // `import/*` rule or any of the canonical rules the `eslint-module-utils`
+  // entry names.
   //
-  // That second trigger reaches BOTH entries, which is why it is stated here
-  // rather than on the entry that makes it obvious. `eslint-module-utils/resolve`
+  // That second trigger reaches BOTH entries whenever the enabled rule resolves
+  // specifiers, which is why it is stated here rather than on the entry that
+  // makes it obvious. An `import/*` rule that resolves nothing still loads the
+  // helper through its other submodules, so it takes the helper entry alone and
+  // leaves the resolver entry standing. `eslint-module-utils/resolve`
   // falls back to the default `node` resolver when `import/resolver` is unset,
   // and it is unset in both workspaces, and that fallback loads
   // `eslint-import-resolver-node` by conventional name. So enabling a rule that
@@ -268,9 +271,9 @@ const PARITY_EXEMPT: Record<string, string> = {
   // convergence cost applies unchanged.
   //
   // It is also the premise the `eslint-module-utils` entry above rests on for
-  // one of that helper's consumers. Enabling any `import/*` rule invalidates
-  // this entry, and the comment heading the resolver and helper entries above
-  // says when that takes those two with it.
+  // one of that helper's consumers, so enabling any `import/*` rule invalidates
+  // this entry and that one together; the comment heading the resolver and
+  // helper entries says when the resolver entry falls with them.
   'eslint-plugin-import':
     'loaded by neither workspace (no import/* rule in either resolved config), so a version difference changes no rule; converging it is churn that re-diverges on the next re-resolve',
 };
