@@ -270,6 +270,13 @@ type ParsedMarker = {
 
 // The payload is split at its first colon so a reason may itself contain one.
 // A path carries no colon, which is what makes that split unambiguous.
+//
+// With no colon at all the whole payload is the declared path, and which half
+// the author actually omitted is then a question the split cannot answer: a
+// path carries no whitespace, so a payload that does is a reason written
+// without one. Reading it as a path instead would echo the reason back while
+// asking for a reason, which is the wrong instruction this defect pair exists
+// to avoid handing out.
 const parseMarker = (match: RegExpExecArray): ParsedMarker => {
   const payload = match[1] ?? '';
   const separator = payload.indexOf(':');
@@ -279,7 +286,7 @@ const parseMarker = (match: RegExpExecArray): ParsedMarker => {
 
   return {
     defect:
-      declared === '' ? 'missing-path'
+      declared === '' || /\s/.test(declared) ? 'missing-path'
       : reason === '' ? 'missing-reason'
       : null,
     path: declared.normalize('NFC'),

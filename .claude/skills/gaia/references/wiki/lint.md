@@ -133,11 +133,11 @@ Mark that line instead. The marker sits on the citation's own line and names the
 
 Three properties are deliberate:
 
-- **The reason is mandatory.** A marker without one exempts nothing: the citation still reports, and the marker itself is reported as malformed. The reason is what a later reader checks the exemption against.
+- **Both halves are mandatory.** A marker missing either its path or its reason exempts nothing: the citation still reports, and the marker itself is reported as malformed. The two are reported apart, naming the half that is actually missing, because telling an author to supply the half they already wrote sends them to re-read the part they got right. The reason is what a later reader checks the exemption against.
 - **The marker is reported once it stops exempting anything.** If the sentence goes, or the path becomes a real file, the scan reports the marker as unused. An exemption nothing recounts decays into a blind spot for a genuinely dead future citation of the same path.
 - **It is scoped to its one line and to that exact path.** A real citation sitting beside a hypothetical one still reports.
 
-Both reports appear under `staleMarkers`, and on the text output alongside the dead paths. Treat one the way you treat a dead path: fix the line or drop the marker.
+Every such report appears under `staleMarkers`, and on the text output alongside the dead paths. The `problem` field carries which of the three it is. Treat one the way you treat a dead path: fix the line or drop the marker.
 
 The marker travels with the page rather than with the scanner, which is why it works where a list inside the CLI cannot: an adopter can write one, and a marker on a line that never reaches an adopter clone does not reach it either.
 
@@ -165,7 +165,10 @@ Otherwise:
 
 - `wiki/decisions/Baz.md:88` → unused, the line carries no matching dead path
 - `wiki/decisions/Qux.md:12` → malformed, no reason given
+- `wiki/decisions/Quux.md:5` → malformed, no path given
 ```
+
+One line form per `problem` value (`unused`, `missing-reason`, `missing-path`); render each entry from the value the scan reported rather than from the nearest form on offer.
 
 List every dead reference and every stale marker (one per line), and drop whichever heading has no entries. Do not truncate: the counts are small enough to be actionable.
 

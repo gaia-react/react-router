@@ -290,6 +290,21 @@ describe('wiki dead-paths', () => {
     expect(staleMarkers.map((s) => s.problem)).toEqual(['missing-path']);
   });
 
+  test('a reason written with no colon is reported as missing its path', () => {
+    // With no colon the whole payload reads as the declared path, so the split
+    // alone cannot say which half was omitted. Whitespace decides it: a path
+    // carries none. Reading this as a path would echo the reason back while
+    // asking the author to write one.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical the sentence needs the file absent -->\n'
+    );
+
+    expect(
+      scanWikiPaths(sandbox.root).staleMarkers.map((s) => s.problem)
+    ).toEqual(['missing-path']);
+  });
+
   test('a marker on a historical bullet is reported rather than silently kept', () => {
     // The bullet already suppresses its own line's citations, so a marker there
     // can never exempt anything. Returning early before parsing markers would
