@@ -276,18 +276,39 @@ describe('wiki dead-paths', () => {
     ]);
   });
 
-  test('a marker with no path is reported as missing its path, not its reason', () => {
-    // Both halves are mandatory and either can be the one left out, so they are
-    // reported apart: telling an author who wrote a reason to supply a reason
-    // sends them to re-read the half they already got right.
+  // Both halves are mandatory and either can be the one left out, so they are
+  // reported apart: telling an author who wrote a reason to supply a reason
+  // sends them to re-read the half they already got right.
+  test.each([
+    {
+      name: 'a marker with no path is reported as missing its path',
+      payload: ': the sentence needs the file absent',
+      problem: 'missing-path',
+    },
+    // With no separator the split cannot say which half was written, and a
+    // reason is the half an author writes and leaves unpunctuated.
+    {
+      name: 'a reason written without the colon is reported as missing its path',
+      payload: 'the sentence needs the file absent',
+      problem: 'missing-path',
+    },
+    // The slash rule settles only the colonless case: with a colon the split
+    // already says which half is which, so a path no citation can match makes
+    // the marker unused rather than pathless.
+    {
+      name: 'a colon keeps a slashless declared half as the path',
+      payload: 'tool.sh: illustration',
+      problem: 'unused',
+    },
+  ])('$name', ({payload, problem}) => {
     sandbox.writeFile(
       'wiki/decisions/Routing.md',
-      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical : the sentence needs the file absent -->\n'
+      `# Routing\n\nSee \`.claude/commands/tool.sh\` <!-- gaia:hypothetical ${payload} -->\n`
     );
 
     const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
     expect(dead.map((d) => d.path)).toEqual(['.claude/commands/tool.sh']);
-    expect(staleMarkers.map((s) => s.problem)).toEqual(['missing-path']);
+    expect(staleMarkers.map((s) => s.problem)).toEqual([problem]);
   });
 
   test('a marker exempts a path containing spaces', () => {

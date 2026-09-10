@@ -271,10 +271,13 @@ type ParsedMarker = {
 // The payload is split at its first colon so a reason may itself contain one.
 // A path carries no colon, which is what makes that split unambiguous.
 //
-// The two defects are told apart by which side of that split came back empty,
-// and only by that. With no colon at all the payload is read as the path and
-// the marker reports a missing reason, which is right for a bare path and is
-// the wrong half to name for a reason someone wrote without the separator.
+// With a colon, the two defects are told apart by which side of that split
+// came back empty. With none, the split cannot say which half was written, so
+// the payload's shape decides: every path this scan can exempt contains a `/`,
+// since the token scan refuses any token without one, so a payload lacking one
+// is a reason and the path is the missing half. A colonless reason that quotes
+// a path still reads as a bare path and reports its reason missing; that names
+// the wrong half, but the marker still exempts nothing.
 // Whitespace does not discriminate the two: a wiki page name routinely carries
 // spaces (`wiki/decisions/Code Audit Team.md`), so reading a spaced payload as
 // prose would refuse the marker every spaced path needs.
@@ -284,10 +287,12 @@ const parseMarker = (match: RegExpExecArray): ParsedMarker => {
   const declared = (
     separator === -1 ? payload : payload.slice(0, separator)).trim();
   const reason = separator === -1 ? '' : payload.slice(separator + 1).trim();
+  const pathless =
+    declared === '' || (separator === -1 && !declared.includes('/'));
 
   return {
     defect:
-      declared === '' ? 'missing-path'
+      pathless ? 'missing-path'
       : reason === '' ? 'missing-reason'
       : null,
     path: declared.normalize('NFC'),
