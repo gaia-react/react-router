@@ -11,6 +11,12 @@ tags: [meta, log]
 
 ## [Unreleased]
 
+- 2026-09-10 666c904b WORTHY - per-leg CI narrowing for wiki-only PRs → wiki/decisions/Sharded CI Test Matrix.md already updated in-commit
+- 2026-09-10 39a6a06e SKIP - shell lint-gate correctness fix, no wiki page describes this gate's match boundary
+- 2026-09-10 2f25d63f WORTHY - hypothetical-path marker replaces HYPOTHETICAL_EXAMPLE_PATHS list → wiki/decisions/{Code Audit Team,Quality Gate,Wiki Management}.md already updated in-commit
+- 2026-09-10 9af04655 WORTHY - parity guard widened to import-resolution family → updated wiki/decisions/pnpm.md, wiki/dependencies/gaia-lint.md
+- 2026-09-10 a21e0c06 WORTHY - worktree refusal tests consolidated in-commit → wiki/concepts/Worktrees.md already updated
+- 2026-09-10 ce364ed1 SKIP - prior wiki-sync commit (#1948), already self-documenting via its own state/log edit
 - 2026-09-10 486c3142 SKIP - StrictMode canary oracle swapped (wall-clock ratio → fiber mode-bit containment) inside .playwright/ test harness; wiki/concepts/React Perf Diagnostic.md names the canary generically and claims nothing about its internal oracle
 - 2026-09-10 4db9b8ec SKIP - internal single-file refinement to lint-sigpipe-readers.sh, no wiki page claim affected
 - 2026-09-10 7af6d8b1 SKIP - tests-only
