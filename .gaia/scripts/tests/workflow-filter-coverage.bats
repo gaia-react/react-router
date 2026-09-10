@@ -145,8 +145,9 @@ setup() {
   # a derived per-leg gate (id: leg-arming), but its output is an ADDITIONAL
   # conjunct on each narrowed step's `if:`, never a replacement for
   # steps.filter.outputs.code == 'true', so the gate contributes nothing to
-  # this exempt set; the entry above stays about hook-capabilities-live-tree
-  # alone.
+  # this exempt set; the entry above covers the standalone jobs that
+  # hand-roll their own gate, hook-capabilities-live-tree and
+  # verb-arming-adoption, rather than naming one of the two.
   HANDROLLED_EXEMPT=$'tests.yml\naudit-ci-tests.yml'
 
   require_repo_path -d "$WORKFLOWS_DIR" ".github/workflows" || return 1

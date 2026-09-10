@@ -746,7 +746,12 @@ jobs:
         name: Resolve whether this leg holds a suite naming the changed wiki pages
         env:
           LEG_ID: ${{ matrix.shard }}
-          CHANGED_FILES_JSON: ${{ steps.filter.outputs.code_files }}
+          # Bounded against the kernel's per-string MAX_ARG_STRLEN: an
+          # oversized code_files list would fail this step's execve before
+          # leg-arming.sh's own fail-open can run, so the expression withholds
+          # the list above the bound and the resulting empty string arms every
+          # leg through the script's empty-list rule instead.
+          CHANGED_FILES_JSON: ${{ github.event.pull_request.changed_files <= 1000 && steps.filter.outputs.code_files || '' }}
           PR_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |
           set -euo pipefail

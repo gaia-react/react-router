@@ -156,7 +156,7 @@ readonly WTI_EXCLUDED='.gaia/scripts/check-debt-issue-metadata.sh|argument-drive
 .gaia/tests/bats-shards.sh|harness plumbing, it partitions suites into shards rather than asserting anything; the partition itself is the bats member above
 .gaia/tests/install-bats.sh|harness plumbing, it installs the pinned bats and asserts no invariant
 .gaia/tests/run-bats-parallel.sh|harness plumbing, the hand-run entry point for the same partition
-.gaia/tests/leg-arming.sh|per-leg CI arming decision, not a scan of the tree: its input is the environment (the pull request changed-files list and the matrix leg id), so it answers true or false for one leg rather than asserting an invariant over the whole checkout; its guards live in .gaia/tests/lib/audit-ci-shards.bats, already the WTI_BATS member
+.gaia/tests/leg-arming.sh|per-leg CI arming decision: its answer is conditioned on the changed-file list a pull request carries and the matrix leg id, so it decides one leg rather than asserting an invariant over the checkout; its guards live in .gaia/tests/lib/audit-ci-shards.bats, already the WTI_BATS member
 .gaia/scripts/verify-cli-bundle-fresh.sh|rebuilds the CLI via pnpm bundle; a build step needing installed dependencies, not a read of the tree
 .gaia/scripts/verify-required-checks.sh|reads the live GitHub ruleset over the network, so its subject is repository configuration rather than the tree
 .gaia/tests/whole-tree-invariants.sh|this runner; a member of itself would recurse

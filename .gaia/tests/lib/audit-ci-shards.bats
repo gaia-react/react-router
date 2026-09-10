@@ -104,10 +104,12 @@ setup() {
   # added.
   MATRIX_SHARD_PATTERN='^ *shard: \['
 
-  # Committed fixtures for the lever-one guards (W13, W14, W15). Both are
-  # namers of wiki/.state.json in the leg-arming scan's own input set --
-  # they sit under a fixtures/ sibling of this suite's directory -- which is
-  # harmless because that arms `lib` unconditionally regardless.
+  # Committed fixtures for the lever-one guards (W13, W14, W15). They sit
+  # under a fixtures/ sibling of this suite's directory, inside the
+  # leg-arming scan's own input set. Only codefilter-token-out-of-set.yml
+  # names wiki/.state.json, making it a namer of that page attributed to
+  # `lib`; paths-filter-pin-bumped.yml names no narrowable page. Either way
+  # it is harmless, because `lib` arms unconditionally regardless.
   SPEC078_FIXTURES="$BATS_TEST_DIRNAME/fixtures/spec-078"
   # The dorny/paths-filter version lever one's premises (step 0 of the task
   # doc) were verified against, recorded once here so W14 and its header
@@ -3207,10 +3209,12 @@ PY
 # Two kinds of file in the input set name narrowable pages without reading them,
 # and both are counted rather than special-cased. This suite is a discovered
 # `lib` suite, and w16_declared_table names every page, so it is a namer of all
-# and the namer-of-all rule drops it. The committed fixtures under
-# .gaia/tests/lib/fixtures/spec-078/ sit in a fixtures/ subtree beside the `lib`
-# suites and name wiki/.state.json, so they attribute to `lib`. Neither can move
-# an armed set: `lib` holds this suite, which rule 5 arms on every page anyway.
+# and the namer-of-all rule drops it. Of the committed fixtures under
+# .gaia/tests/lib/fixtures/spec-078/, which sit in a fixtures/ subtree beside
+# the `lib` suites, only codefilter-token-out-of-set.yml names wiki/.state.json,
+# so it attributes to `lib`; paths-filter-pin-bumped.yml names no narrowable
+# page. Neither can move an armed set: `lib` holds this suite, which rule 5
+# arms on every page anyway.
 arming_recompute() {
   local sharder="$1" root="$2" workflow="$3" conc_dir="$4" conc_leg="$5" stats="${6:-}"
   local class legs data
@@ -5257,6 +5261,21 @@ assert_arming_fallback_present() {
   return 1
 }
 
+# assert_changed_files_json_bounded <workflow>: the arming step's
+# env.CHANGED_FILES_JSON reads steps.filter.outputs.code_files only under a
+# github.event.pull_request.changed_files bound, falling back to '' on an
+# oversized list. An unbounded value can exceed the kernel's per-string
+# MAX_ARG_STRLEN, which fails the step's execve before leg-arming.sh's own
+# fail-open can run (round 1 audit repair). Matched by construct, with the
+# integer wildcarded, so a retune of the bound does not red this.
+assert_changed_files_json_bounded() {
+  local workflow="$1" value
+  value="$(read_wf stepfield "$workflow" shards "$ARMING_STEP_NAME" env.CHANGED_FILES_JSON)"
+  printf '%s' "$value" | grep -qE -- "github\.event\.pull_request\.changed_files *[<>=]+ *[0-9]+ *&& *steps\.filter\.outputs\.code_files *\|\| *''" && return 0
+  echo "the '$ARMING_STEP_NAME' step's env.CHANGED_FILES_JSON is '$value', expected steps.filter.outputs.code_files gated behind a github.event.pull_request.changed_files bound with an '' fallback (the guard against an oversized env string failing this step's execve before the script's own fail-open runs)" >&2
+  return 1
+}
+
 # assert_arming_body_no_changed_files_leak <workflow>: the arming step's
 # run: body writes only fixed literals to GITHUB_OUTPUT and
 # GITHUB_STEP_SUMMARY, never CHANGED_FILES_JSON -- those two sinks are
@@ -5458,6 +5477,30 @@ assert_arming_body_no_changed_files_leak() {
   run assert_arming_fallback_present "$doctored"
   [ "$status" -ne 0 ] || {
     echo "removing the fallback case arm did not red" >&2
+    return 1
+  }
+}
+
+@test "W19: CHANGED_FILES_JSON reads code_files only under a changed_files bound, with an '' fallback" {
+  require_yaml_parser
+  assert_changed_files_json_bounded "$WORKFLOW"
+}
+
+@test "W19 adversarial: CHANGED_FILES_JSON reverted to the bare code_files expression is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-changed-files-json-unbounded.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *CHANGED_FILES_JSON: ')" || return 1
+  mutated="$(printf '%s\n' "$line" | sed "s/CHANGED_FILES_JSON: .*/CHANGED_FILES_JSON: \${{ steps.filter.outputs.code_files }}/")"
+  assert_doctored "$line" "$mutated" "reverting CHANGED_FILES_JSON to the bare code_files expression" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_changed_files_json_bounded "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "reverting CHANGED_FILES_JSON to the bare code_files expression did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "$ARMING_STEP_NAME" || {
+    echo "the refusal did not name the step" >&2
     return 1
   }
 }

@@ -23,7 +23,10 @@
 #   GITHUB_EVENT_NAME   `workflow_dispatch` arms unconditionally.
 #   CHANGED_FILES_JSON  the JSON array the paths-filter step exposes as
 #                       `code_files` under `list-files: json`. A contributor
-#                       picks those names, so the list is hostile input.
+#                       picks those names, so the list is hostile input. The
+#                       workflow withholds an oversized list, so it arrives
+#                       here as the empty string and arms through the
+#                       empty-list rule below.
 #   LEG_ID              the matrix leg being decided.
 #   PR_CHANGED_FILES    github.event.pull_request.changed_files, a decimal.
 #
@@ -75,8 +78,8 @@
 # before `with:`, and any shape it does not recognize is a derivation failure,
 # which arms. The guard suite compares its answer against a real YAML parser's.
 #
-# The scan is a deliberate SUPERSET of the real readers: every suite the
-# sharder discovers, the `helpers/`, `lib/` and `fixtures/` subtrees beside
+# The scan is a superset of the files that name a page literally: every suite
+# the sharder discovers, the `helpers/`, `lib/` and `fixtures/` subtrees beside
 # them, and the concurrency seam, matched by full path or bare basename, with no
 # filter on the matched line. A `case` arm or a docblock line naming a page arms
 # like a real read, because no rule telling them apart fails in a safe
@@ -90,7 +93,9 @@
 # suite that genuinely reads the content of every class member is excluded and
 # does not arm. That is real under-arming. It is accepted because no such suite
 # exists today, because the leg holding the derived check arms unconditionally
-# regardless, and because every other rule here fails open.
+# regardless, and because every other rule here fails open. A related, smaller
+# gap: a suite that drives a page-reading script without naming the page
+# itself, in its own source, sits on a leg the gate may decline to arm.
 #
 # It writes nothing to $GITHUB_OUTPUT, $GITHUB_ENV or $GITHUB_STEP_SUMMARY.
 # Those files are line-oriented, a filename may carry a newline, and one echoed
