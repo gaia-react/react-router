@@ -210,18 +210,32 @@ jobs:
               # settings.json alone would skip every bats step and green the job
               # having run that scan zero times.
               - '.claude/settings.json'
-              # check-wiki-state-collision.bats (.gaia/scripts/tests/) asserts
-              # that wiki/.state.json stays tracked and that no merge driver is
-              # bound to it, which is what keeps a cross-branch collision on the
-              # single recorded sha a conflict rather than a silent overwrite.
-              # Those are exactly the two files the check reads, and both match
-              # nothing else here, so without these lines the edits the check
-              # exists to catch -- untracking the state file, or adding a
-              # .gitattributes that resolves it automatically -- would skip every
-              # bats step and green the job having run that scan zero times.
-              # .gitattributes is listed at both depths because git honors a
-              # nested one and a root-level glob would not match it.
-              - 'wiki/.state.json'
+              # check-wiki-state-collision.bats (.gaia/scripts/tests/) exercises
+              # check-wiki-state-collision.sh, which reads only whether
+              # wiki/.state.json stays tracked and the `merge` attribute git
+              # resolves for it -- nothing about the bytes inside the file. A
+              # content-only rewrite, which is what a wiki sync commits, changes
+              # neither, so it is deliberately unarmed here: `deleted` is the
+              # change type that carries an untracking (a plain deletion or a
+              # `git rm --cached`), and it also carries a rename out of wiki/,
+              # because the pull-request lane -- the lane this workflow runs the
+              # filter on -- decomposes a rename into a delete of the previous
+              # path plus an add of the new one before matching, so no
+              # `renamed` token is needed or wanted for that case. `renamed`
+              # and `copied` sit in the action's own accepted change-status set
+              # but are forbidden on this entry; a check pins the token to
+              # exactly `deleted` so a drift toward either of those, or toward
+              # any other status, reds rather than parsing cleanly and matching
+              # nothing forever.
+              # .gitattributes is the check's other input -- an added or
+              # changed `merge` attribute reaching the path -- and it stays a
+              # bare, unqualified entry rather than joining the mapping: the
+              # check reads that file's CONTENT (the attribute value it
+              # resolves to), not whether it changed type, so any modification
+              # has to arm. It is listed once unqualified and again with a
+              # leading `**/`, because git honors a nested .gitattributes and a
+              # root-level glob would not reach one.
+              - deleted: 'wiki/.state.json'
               - '.gitattributes'
               - '**/.gitattributes'
               # debt-origin-contract.bats (.gaia/scripts/tests/) asserts the
@@ -699,6 +713,62 @@ jobs:
               - '**/*.md'
               - '**/*.yml'
               - '**/*.yaml'
+          # json, not the action's default line-oriented formats: several of
+          # the narrowable class pages leg-arming.sh reads carry a space in
+          # their path, and every other list-files format the action offers is
+          # space-joined or comma-joined, so a word-splitting read of one of
+          # those would silently shred a path mid-name. That would ship the
+          # per-leg narrowing inert while every criterion here still read
+          # green. json is parsed as a real array by the script, never
+          # word-split.
+          list-files: json
+      # leg-arming.sh owns the whole per-leg narrowing decision; this step's
+      # job is only to hand the script its inputs and translate its stdout
+      # into a step output the steps below can read. The class of narrowable
+      # wiki pages, the scan mapping a changed page to the shards holding a
+      # suite naming it, and the pagination-cap and fail-open rules the
+      # decision falls back to on any unresolved input are all read out of the
+      # live tree at run time inside the script, not restated here.
+      #
+      # Its answer is an ADDITIONAL conjunct on every narrowed step below,
+      # never a replacement for the existing
+      # steps.filter.outputs.code == 'true' conjunct those steps already
+      # carry: that conjunct is what keeps every narrowed step inside
+      # workflow-filter-coverage.bats's gated set and inside this job's own
+      # self-coverage assertions, and dropping it would silently retire both.
+      #
+      # The case arm below is a second fail-open layer above the script's
+      # own: a step whose output came back empty would skip every narrowed
+      # step, which is the one dangerous direction, so anything but the two
+      # literals reads as true here as well as inside the script.
+      - if: matrix.shard != 'sandbox' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+        id: leg-arming
+        name: Resolve whether this leg holds a suite naming the changed wiki pages
+        env:
+          LEG_ID: ${{ matrix.shard }}
+          # A changed-file COUNT stands in for the kernel's per-string
+          # MAX_ARG_STRLEN, a BYTE limit, because a workflow expression cannot
+          # measure the rendered list's length directly. At the bound, each
+          # entry averages about 131 bytes before the limit is reached, far
+          # above a typical path, but the count is still a proxy rather than
+          # the real measure: a list of unusually long paths under the count
+          # bound could still exceed the byte limit, which fails this step's
+          # execve and reds the leg rather than silently passing (fail-closed,
+          # never a false green). Above the bound, the expression withholds
+          # the list and the resulting empty string arms every leg through
+          # the script's empty-list rule instead.
+          CHANGED_FILES_JSON: ${{ github.event.pull_request.changed_files <= 1000 && steps.filter.outputs.code_files || '' }}
+          PR_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
+        run: |
+          set -euo pipefail
+          arm="$(bash .gaia/tests/leg-arming.sh || printf 'true\n')"
+          case "$arm" in
+            true | false) ;;
+            *) arm=true ;;
+          esac
+          printf 'arm=%s\n' "$arm" >> "$GITHUB_OUTPUT"
+          printf 'arming: leg=%s event=%s arm=%s\n' \
+            "$LEG_ID" "$GITHUB_EVENT_NAME" "$arm" >> "$GITHUB_STEP_SUMMARY"
       # python3-yaml pins the parser (python3+pyyaml) that every
       # `require_yaml_parser` gate on this runner needs. How many suites carry
       # one is deliberately not written down here: a hand-kept count drifts as
@@ -740,7 +810,7 @@ jobs:
       # on `code || sandbox` would need install-bats.sh listed in both filter
       # bodies for the SAME step, and this way each step's script is covered by
       # exactly the filter that gates it.
-      - if: matrix.shard != 'sandbox' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: matrix.shard != 'sandbox' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Install pinned bats
         run: bash .gaia/tests/install-bats.sh
       # python3-yaml pins the parser (python3+pyyaml) rather than resting on
@@ -782,7 +852,7 @@ jobs:
       # suite's dependency changed or a group's membership did, and the repair
       # is to copy the set W10 names, which it derives from the suites and the
       # sharder's own groups rather than from here.
-      - if: contains(fromJSON('["hooks-2", "hooks-3", "hooks-4", "lib", "scripts-1", "scripts-2", "scripts-3"]'), matrix.shard) && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: contains(fromJSON('["hooks-2", "hooks-3", "hooks-4", "lib", "scripts-1", "scripts-2", "scripts-3"]'), matrix.shard) && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Install the YAML parser and zsh
         # Sized for fast failure and honest attribution, NOT to the leg. When
         # this cap fires is the budget paragraph's subject, not this one's,
@@ -898,7 +968,7 @@ jobs:
       # gaia-react/gaia#1748. The step below this one is what they need; keep
       # the two separate rather than widening this one's `if:`, because they
       # install different things for different reasons.
-      - if: matrix.shard == 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: matrix.shard == 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Setup Node and install both workspaces
         # Sized for fast failure and honest attribution, the same reasoning the
         # apt step above states at length, and NOT sized to the leg. Every
@@ -965,7 +1035,7 @@ jobs:
       # unblocks does not approach it. The leg that is genuinely close to the
       # cap is scripts-1, and it draws neither this step nor any of these
       # suites.
-      - if: contains(fromJSON('["hooks-2", "hooks-3", "hooks-4"]'), matrix.shard) && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: contains(fromJSON('["hooks-2", "hooks-3", "hooks-4"]'), matrix.shard) && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Setup Node for the node-dependent RED suites
         # Same cap, same reasoning as the concurrency leg's step above; W12
         # holds every gaia-setup-node step in every workflow to it.
@@ -1002,7 +1072,7 @@ jobs:
       # question matters on a given day, `bats-shards.sh files <shard>` answers
       # which leg pays, and the region-marker docblock in cli-tests.yml records
       # what to check on that leg and when the check is actually owed.
-      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         id: needs-cli-workspace
         name: Ask the sharder whether this shard holds the js-yaml-dependent suite
         env:
@@ -1025,6 +1095,14 @@ jobs:
           else
             printf 'needed=0\n' >> "$GITHUB_OUTPUT"
           fi
+      # Deliberately carries no arming conjunct of its own. The step above
+      # this one already carries the arming conjunct, so on a leg the arming
+      # step declined to arm, that step's `run:` body never executes,
+      # `needed` is never written to `$GITHUB_OUTPUT`, and the `== '1'` gate
+      # below reads empty, which is not `'1'`. The narrowing reaches this step
+      # transitively rather than through its own conjunct; the canary's
+      # evidence checklist observes this step's `conclusion` explicitly for
+      # that reason.
       - if: steps.needs-cli-workspace.outputs.needed == '1'
         name: Install the CLI workspace for the floor-check suite
         # Same cap, same reasoning as the concurrency leg's step above; W12
@@ -1041,7 +1119,7 @@ jobs:
       # interpolated into the run: body text itself -- the shape this repo's
       # workflows auditor checks, and what keeps it true when a future edit
       # drives the matrix from an expression rather than a literal list.
-      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Run a bats shard
         env:
           SHARD: ${{ matrix.shard }}
@@ -1066,7 +1144,7 @@ jobs:
       # still counting in the reading. A `bats --filter` over the armed
       # tranches was the alternative and is worse: it hides the reds and makes
       # a newly added scenario invisible by default.
-      - if: matrix.shard == 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')
+      - if: matrix.shard == 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch') && steps.leg-arming.outputs.arm == 'true'
         name: Run the INV-7 concurrency meter (gated on its expected-status manifest)
         run: bash .gaia/tests/concurrency/meter-gate.sh
 

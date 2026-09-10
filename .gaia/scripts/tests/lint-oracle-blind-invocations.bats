@@ -97,22 +97,33 @@ root_probes() {
   done <<<"${roots// /$'\n'}"
 }
 
-# code_filter_globs: the path globs in the `code:` filter of the shards job that
-# runs this suite, read off the workflow rather than restated here.
+# code_filter_globs [workflow]: the path globs in the `code:` filter of the
+# shards job that runs this suite, read off the workflow rather than restated
+# here. Defaults to the real workflow; a caller may point it at a doctored
+# copy to drive the short-read guard adversarially.
 #
 # The short read is the dangerous case: a glob written in a shape the extraction
 # cannot read would drop out of the set silently, and a caller asserting
 # containment against the remainder would report armed when it is not. So the
 # entries are counted a second way, off the list marker rather than off the
 # quoting, and a disagreement returns non-zero instead of a shorter list.
+#
+# A change-type mapping entry (`- <key>: '<value>'`) arms only on that change
+# type, never on an ordinary edit, while this function's callers ask whether
+# the filter arms on an ordinary modification to a scan root. It is counted
+# here, alongside the bare entries, to keep the cross-check strict against a
+# third unrecognised shape, but excluded from the returned set: returning it
+# would claim the filter arms on every edit, which is the over-claiming,
+# silent-green direction this suite exists to prevent.
 code_filter_globs() {
-  local wf block raw names
-  wf="$REPO_ROOT/.github/workflows/audit-ci-tests.yml"
+  local wf="${1:-$REPO_ROOT/.github/workflows/audit-ci-tests.yml}"
+  local block raw names qualified
   [ "$(grep -c '^            code:$' "$wf")" -eq 1 ] || return 1
   block="$(sed -n '/^            code:$/,/^            [a-z][a-z-]*:$/p' "$wf")"
   raw="$(printf '%s\n' "$block" | grep -c '^ *- ')"
   names="$(printf '%s\n' "$block" | sed -n "s/^ *- '\(.*\)'\$/\1/p")"
-  [ "$(printf '%s\n' "$names" | grep -c .)" -eq "$raw" ] || return 1
+  qualified="$(printf '%s\n' "$block" | grep -cE "^ *- [A-Za-z_-]+: '.*'\$")"
+  [ "$(( $(printf '%s\n' "$names" | grep -c .) + qualified ))" -eq "$raw" ] || return 1
   printf '%s\n' "$names"
 }
 
@@ -258,6 +269,43 @@ uncovered() {
   # one unrelated file, every root has to come back unarmed.
   left="$(printf '%s\n' "$probes" | unarmed "CHANGELOG.md")"
   [ "$(printf '%s\n' "$left" | grep -c .)" -eq "$(printf '%s\n' "$probes" | grep -c .)" ]
+}
+
+# ---------------------------------------------------------------------------
+# 1d. code_filter_globs itself: a change-type mapping entry is a counted
+#     shape, excluded from the returned set, and a shape it cannot read at
+#     all still refuses rather than shortening the list
+# ---------------------------------------------------------------------------
+
+# assert_doctored: fails when a mutation left $2 identical to $1, naming the
+# mutation as $3, so a case that stops mutating asserts against the healthy
+# file instead of going inert and passing for the wrong reason.
+assert_doctored() {
+  local original="$1" doctored="$2" what="$3"
+  [ "$doctored" != "$original" ] || {
+    echo "$what: left the file unchanged, so the case would assert against an undoctored workflow" >&2
+    return 1
+  }
+}
+
+@test "code_filter_globs refuses on an entry shape it cannot read" {
+  new_fixture
+  local wf="$REPO_ROOT/.github/workflows/audit-ci-tests.yml" doctored="$TMP/doctored.yml"
+  sed "s/^\( *\)- deleted: 'wiki\/.state.json'\$/\1- {deleted: 'wiki\/.state.json'}/" \
+    "$wf" > "$doctored"
+  assert_doctored "$(cat "$wf")" "$(cat "$doctored")" "flow-mapping the deleted entry" || return 1
+  # The flow-mapping form is neither the bare-quoted shape nor the
+  # `key: 'value'` change-type shape the cross-check counts, so the raw count
+  # now exceeds what the two recognised shapes account for.
+  run code_filter_globs "$doctored"
+  [ "$status" -eq 1 ]
+}
+
+@test "code_filter_globs excludes a change-qualified entry from the returned set while keeping the bare entries" {
+  local globs
+  globs="$(code_filter_globs)"
+  grep -qF -- "wiki/.state.json" <<<"$globs" && return 1
+  grep -qF -- ".gitattributes" <<<"$globs"
 }
 
 @test "every declared scan root exists in this repository" {
