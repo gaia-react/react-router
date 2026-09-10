@@ -232,7 +232,13 @@ const onRender = (fiber: Fiber, phase: RenderPhase): void => {
     const {selfTime, totalTime} = getTimings(fiber);
     if (totalTime > 0 || selfTime > 0) meta.profilingAvailable = true;
 
-    const {tag} = fiber;
+    // mode is React's inherited subtree-mode bitmask: a fiber inherits its
+    // parent's, and <StrictMode> ORs its own bits into every fiber created
+    // beneath it. Copied out raw, never decoded against literal bit values,
+    // because React renumbers them between versions; that is the same reason
+    // getFiberKindLabel resolves work tags through bippy's per-fiber map. A
+    // consumer compares two captures' values rather than naming a bit.
+    const {mode, tag} = fiber;
     // WeakMap-cached per fiber and alternate, so this is amortized O(1).
     const tags = getReactWorkTagsForFiber(fiber);
     const isMemo =
@@ -299,6 +305,7 @@ const onRender = (fiber: Fiber, phase: RenderPhase): void => {
       fiberId: getFiberId(fiber),
       isMemo,
       kind: getFiberKindLabel(tag, tags),
+      mode,
       phase,
       propsChanged,
       selfTime,
