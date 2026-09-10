@@ -95,6 +95,14 @@
 # transitive, because a library sourced by a library sourced by an armed entry
 # point runs armed too.
 #
+# "Arms pipefail itself" means at command-substitution depth ZERO, the same test
+# the workflow arm applies to a `run:` body and for the same reason: a
+# `changed=$(set -o pipefail; ...)` arms its own subshell and nothing outside
+# it, so a file whose only arming is that idiom is not a seed. The two arms
+# share one arming test rather than two that agree by inspection
+# (`arms_at_depth_zero` below); gaia-react/gaia#1941 is the round where the
+# script arm got it. What that costs is stated with the depth test itself.
+#
 # An edge resolves by BASENAME against the tracked set, because a load names its
 # target through a variable far more often than not
 # (`. "$lib_dir/guard-awk-lib.sh"`), and no static reader can resolve that
@@ -164,6 +172,25 @@
 # toward zero, which reads a substitution-scoped `set` as block-level and
 # reports a block that was not armed. That direction costs a correct edit; the
 # other direction is the missed defect this gate exists to prevent.
+#
+# The script arm applies the same depth test to a FILE, and carries one accepted
+# blind spot with it, in the same safe direction as the clamp but arrived at the
+# other way round. A multi-line
+#
+#     out="$(
+#       set -o pipefail
+#       ...one pipeline into a quiet reader...
+#     )"
+#
+# in a tracked script genuinely runs armed inside that subshell, and the depth
+# test now reads it as arming nothing, so the reader inside goes unreported.
+# Before the depth test the script arm caught it by ACCIDENT, by over-arming the
+# whole file on any arming it saw anywhere. This arm is not inventing the blind
+# spot: the identical shape in a `run:` body already reads clean here, so what
+# changed is that the two arms now agree about it. No tracked shell file changes
+# arming status on it today. Closing it needs the depth walk to attribute the
+# pipeline to the substitution that scopes it rather than to the file, which is
+# a larger reader than either arm has.
 #
 # `defaults.run.shell`, at job or workflow level, would move the resolved shell
 # for every step under it. This gate REFUSES rather than resolves it: a
@@ -299,15 +326,15 @@ function segment_reader(s,   toks, m, j, t, w) {
   return ""
 }
 
-# The `set` spellings that arm pipefail, as ONE string both readers share: the
-# predicate below that answers WHETHER a line arms it, and the workflow arm that
-# needs to know WHERE, so it can ask whether that position sits inside a command
-# substitution. Two copies with different trailing boundaries would let the
-# predicate match one occurrence while the locator found an earlier one, and the
-# depth test would then answer about a position the predicate never accepted,
-# reading an armed block as unarmed. That is a false negative, the one direction
-# this gate must not be wrong in, which is why the pattern is bound once rather
-# than written twice.
+# The `set` spellings that arm pipefail, as ONE string every reader shares: the
+# arming test below that answers WHETHER a line arms it, and the locator inside
+# that test that answers WHERE, so it can ask whether the occurrence sits inside
+# a command substitution. Two copies with different trailing boundaries would
+# let the predicate match one occurrence while the locator found an earlier one,
+# and the depth test would then answer about a position the predicate never
+# accepted, reading an armed block as unarmed. That is a false negative, the one
+# direction this gate must not be wrong in, which is why the pattern is bound
+# once rather than written twice.
 #
 # The option run before the -o that carries pipefail is optional and unbounded,
 # and it admits both spellings a set line uses: a short flag cluster, and a
@@ -316,12 +343,18 @@ function segment_reader(s,   toks, m, j, t, w) {
 # bare option name is admitted only directly after a flag token, never on its
 # own: set stops parsing options at its first non-option word, so
 # set a b -o pipefail arms nothing and must not read as if it did.
+#
+# The trailing boundary admits a SEMICOLON alongside whitespace and end-of-line,
+# so the one-line set -euo pipefail; cmd spelling arms what it really arms. What
+# holds the substitution-scoped changed=$(set -o pipefail; ...) idiom back from
+# arming the file or block around it is the depth test in arms_at_depth_zero
+# below, and nothing else. A boundary narrow enough to exclude that idiom is
+# narrow enough to miss the one-line spelling too: it excludes by accident what
+# the depth test excludes on purpose, and a reader who repairs the accident
+# without the depth test already in place reopens the very gap the depth test
+# closes. That is the trade gaia-react/gaia#1941 records.
 BEGIN {
-  PIPEFAIL_RE = "(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)"
-}
-
-function arms_pipefail(s) {
-  return (s ~ PIPEFAIL_RE)
+  PIPEFAIL_RE = "(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|;|$)"
 }
 
 # Split one line into pipeline segments and fill hitbuf with the reader heading
@@ -352,6 +385,48 @@ function carries_pipe(l,   tail) {
   sub(/[[:space:]]+$/, "", tail)
   return (tail ~ /\|$/ && tail !~ /\|\|$/)
 }
+
+# The command-substitution nesting depth at character `upto` of `s`, starting
+# from the carried-in `subdepth` and clamped at zero. Clamped, not merely
+# bounded: the header states why that direction is the safe one. Both arms carry
+# `subdepth` from one line to the next, and each resets it where its own unit of
+# arming begins: the workflow arm at every run: key, the shell arm never, since
+# that arm is handed one file per awk invocation and the file IS the unit.
+function depth_at(s, upto,   i, d, c) {
+  d = subdepth
+  for (i = 1; i < upto; i++) {
+    c = substr(s, i, 1)
+    if (c == "$" && substr(s, i + 1, 1) == "(") { d++; i++ }
+    else if (c == ")" && d > 0) d--
+  }
+  return d
+}
+
+# Whether this line arms pipefail for the file or block AROUND it, which is the
+# only arming either arm asks about: an arming inside a command substitution
+# belongs to that subshell and dies with it.
+#
+# EVERY occurrence on the line is walked, not merely the first, and that is the
+# whole reason this is a loop rather than one match(). match() answers with the
+# leftmost occurrence, so a line carrying a substitution-scoped arming AHEAD of
+# a real one, x=$(set -o pipefail; true); set -o pipefail, would be graded on
+# the leftmost, the depth test would answer 1, and a genuinely armed block would
+# read as unarmed. That is the false negative gaia-react/gaia#1936 closed, and
+# the only thing that kept the shipped single-match form from reopening it was a
+# trailing boundary narrow enough to reject the leftmost occurrence outright:
+# the same boundary gaia-react/gaia#1941 had to widen. Walking every occurrence
+# is what makes the boundary and the depth test independent of each other.
+function arms_at_depth_zero(l,   s, off, pos) {
+  s = l
+  off = 0
+  while (match(s, PIPEFAIL_RE)) {
+    pos = off + RSTART
+    if (depth_at(l, pos) == 0) return 1
+    off = pos
+    s = substr(l, pos + 1)
+  }
+  return 0
+}
 '
 
 # The `*.sh` arm. One pass per file, emitting three tab-separated record kinds
@@ -372,7 +447,15 @@ readonly SHELL_AWK='
   # a trailing pipe and the command that follows it, so the carry is left alone.
   if (bare ~ /^#/) next
 
-  if (arms_pipefail(bare)) armed = 1
+  # The arming test is handed `line`, not the whitespace-stripped `bare` the
+  # rest of this block reads, because its locator indexes the string it was
+  # given: a stripped one would place every occurrence a few characters early
+  # and answer the depth question about the wrong position. The depth is carried
+  # to the next line the way the workflow arm carries it, and for the same
+  # reason: a substitution opened on one line and closed on another scopes every
+  # arming between them.
+  if (!armed && arms_at_depth_zero(line)) armed = 1
+  subdepth = depth_at(line, length(line) + 1)
 
   # A source edge. The load token is recognized anywhere a command may start,
   # not at line start only, because the bracketed load this tree uses for an
@@ -482,19 +565,6 @@ function flush_step() {
   stepshell = ""
 }
 
-# The command-substitution nesting depth at character `upto` of `s`, starting
-# from the block-level `subdepth` and clamped at zero. Clamped, not merely
-# bounded: the header states why that direction is the safe one.
-function depth_at(s, upto,   i, d, c) {
-  d = subdepth
-  for (i = 1; i < upto; i++) {
-    c = substr(s, i, 1)
-    if (c == "$" && substr(s, i + 1, 1) == "(") { d++; i++ }
-    else if (c == ")" && d > 0) d--
-  }
-  return d
-}
-
 BEGIN { blockcol = -1; steprun = 0; stepkeycol = -1 }
 
 # --- pass one: resolve each step\047s shell, and find any defaults: key ------
@@ -562,13 +632,7 @@ function body(l, n,   i, k) {
   # too: this tree\047s comments quote `$(...)` as prose, and counting those
   # would drift the depth against real code.
   if (bare ~ /^#/) return
-  # Predicate and locator are handed the SAME string as well as the same
-  # pattern, so RSTART below is the position of the occurrence that just
-  # answered true rather than of some earlier near-miss.
-  if (!armed && arms_pipefail(l)) {
-    match(l, PIPEFAIL_RE)
-    if (depth_at(l, RSTART) == 0) armed = 1
-  }
+  if (!armed && arms_at_depth_zero(l)) armed = 1
   subdepth = depth_at(l, length(l) + 1)
   k = scan_pipeline(l)
   for (i = 1; i <= k; i++) { pend++; pline[pend] = n; ptext[pend] = hitbuf[i] }

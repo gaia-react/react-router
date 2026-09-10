@@ -391,6 +391,63 @@ printf "%s" "$a" | grep -q needle'
   grep -qF -- "check.sh:3:" <<<"$output"
 }
 
+# The one-line spelling, which the arming pattern read as arming NOTHING until
+# gaia-react/gaia#1941: the `;` sat where the pattern demanded whitespace or
+# end-of-line, so a file armed only this way was graded unarmed and every quiet
+# reader in it went unreported. Confirmed to report clean against exactly this
+# fixture before the trailing boundary admitted the semicolon.
+@test "the one-line spelling set -euo pipefail; cmd arms the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+set -euo pipefail; umask 022
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+# The script arm mirror of the workflow arm oracle further down, and what makes
+# admitting the `;` above safe rather than a trade. Once the boundary admits it,
+# the substitution-scoped occurrence on this line MATCHES, and a locator that
+# stopped at the leftmost match would ask the depth test about a position inside
+# the substitution and read a genuinely armed file as unarmed. That is the false
+# negative gaia-react/gaia#1936 closed on the workflow arm; only walking every
+# occurrence keeps this arm out of it.
+@test "an arming preceded on its line by a substitution-scoped one still arms the file" {
+  fixture_repo
+  fixture_file check.sh '#!/usr/bin/env bash
+x=$(set -o pipefail; true); set -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "check.sh:3:" <<<"$output"
+}
+
+# The other direction, and the reason the script arm needed a depth test of its
+# own before the boundary could widen. `changed=$(set -o pipefail; ...)` arms
+# its own subshell and nothing outside it, and it is the shape this repository
+# writes wherever a `git diff -z` feeds a `tr`. Reading it as file-level arming
+# would grade every file carrying the idiom armed and report every quiet reader
+# in them. Until gaia-react/gaia#1941 the script arm had no depth test at all
+# and was saved only by the boundary that rejected the `;`, and no fixture here
+# covered the shape: every substitution fixture in this suite drove the workflow
+# arm, which is why the boundary could not widen until this arm grew one.
+@test "a substitution-scoped set -o pipefail does not arm the file: tree spelling" {
+  fixture_repo
+  fixture_script_unarmed 'changed=$(set -o pipefail; git diff --name-only -z | tr "\0" "\n")
+printf "%s" "$changed" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+@test "a substitution-scoped set -o pipefail does not arm the file: spaced spelling" {
+  fixture_repo
+  fixture_script_unarmed 'changed=$(set -o pipefail ; git diff --name-only -z | tr "\0" "\n")
+printf "%s" "$changed" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
 # --- the pipefail closure --------------------------------------------------
 #
 # pipefail is a process option, so a sourced library runs under whatever its
@@ -630,6 +687,19 @@ printf "%s" "$a" | grep -q needle'
   grep -qF -- ".github/workflows/probe.yml:7:" <<<"$output"
 }
 
+# The body-text arm carried the same boundary gap as the script arm, because
+# both read the one shared pattern: a block armed only by the one-line spelling
+# was graded unarmed. Both arms are driven into it here rather than one, since a
+# gap in one pattern cannot be closed in one arm.
+@test "flags a reader in a run: body armed by a one-line set -euo pipefail; cmd" {
+  fixture_repo
+  fixture_workflow 'set -euo pipefail; umask 022
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/workflows/probe.yml:7:" <<<"$output"
+}
+
 # The adopter workflow templates render into somebody else's CI, so they are the
 # one surface whose defects this repository's review is the last place able to
 # see. `.tmpl` matches no `*.yml` glob, hence its own pathspec in the set.
@@ -723,12 +793,14 @@ set -euo pipefail'
 # shape this repository writes wherever a `git diff -z` feeds a `tr`. Reading it
 # as block-level arming would report every one of those blocks.
 #
-# Each spelling gets its own fixture because they are stopped by DIFFERENT
-# mechanisms, and only one of them is the depth test. In the tree's own
-# `$(set -o pipefail; ...)` the `;` sits where the arming pattern requires
-# whitespace or end-of-line, so that spelling never reaches the depth test at
-# all. Spaced before the `;`, and split across lines, the pattern does match and
-# the depth test is the only thing standing between the block and a false arm.
+# All three spellings are stopped by the SAME mechanism, the depth test, and
+# each still earns its own fixture because each reaches it differently: the
+# tree's own `$(set -o pipefail; ...)` through the semicolon the trailing
+# boundary admits, the spaced form through the whitespace it always admitted,
+# and the split form across a line break with the depth carried between lines.
+# The tree spelling reached no test at all until gaia-react/gaia#1941: the
+# boundary rejected the `;` outright, which excluded this shape by accident
+# while missing the one-line arming above by the same accident.
 @test "a substitution-scoped set -o pipefail does not arm the block: tree spelling" {
   fixture_repo
   fixture_workflow 'set -eu
@@ -760,15 +832,18 @@ printf "%s" "$changed" | grep -q needle'
 }
 
 # The mirror image of the substitution-scoped tests above, and the reason the
-# arming pattern is bound once rather than written twice. Here a genuine
-# block-level arming follows a substitution-scoped one on the SAME line, and the
-# earlier one ends at a `;` where the pattern wants whitespace or end-of-line. A
-# locator carrying its own boundary-less copy of the pattern finds that earlier
-# occurrence, asks the depth test about a position inside the substitution, and
-# reads the block as unarmed: a false negative, which is the direction this gate
-# must not be wrong in. Confirmed to report clean against exactly that shape
-# before the two readers were given one pattern.
-@test "an arming preceded on its line by a boundary-less one still arms the block" {
+# arming pattern is bound once rather than written twice AND is walked past a
+# substitution-scoped match rather than stopped at it. Here a genuine
+# block-level arming
+# follows a substitution-scoped one on the SAME line. A locator that answers
+# with the leftmost match asks the depth test about a position inside the
+# substitution and reads the block as unarmed: a false negative, the direction
+# this gate must not be wrong in. Confirmed to report clean against exactly this
+# shape before the two readers were given one pattern, and again against the
+# widened boundary before the locator walked every occurrence: until
+# gaia-react/gaia#1941 what kept the leftmost match off this line was the
+# boundary rejecting its `;`, so the two are only independent now.
+@test "an arming preceded on its line by a substitution-scoped one still arms the block" {
   fixture_repo
   fixture_workflow 'x=$(set -o pipefail; true); set -o pipefail
 printf "%s" "$a" | grep -q needle'
