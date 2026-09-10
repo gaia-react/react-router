@@ -14,10 +14,11 @@ tags: [decision, ci, performance, github-actions, bats]
 
 ## Shape
 
-`.github/workflows/audit-ci-tests.yml` declares two jobs:
+`.github/workflows/audit-ci-tests.yml` declares these jobs:
 
 - `shards`, a matrix of twelve legs: ten bats shards (`hooks-1` to `hooks-4`, `scripts-1` to `scripts-3`, `audit`, `lib`, `misc`), the `.gaia/tests/sandbox` conformance tree, and the INV-7 concurrency meter.
-- `audit-ci-tests`, which reads `needs.shards.result` and exits non-zero for anything other than `success`.
+- `hook-capabilities-live-tree` and `verb-arming-adoption`, standalone jobs that run alongside `shards` rather than depending on it. Each checks out full history (`fetch-depth: 0`) on every pull request and gates its own checker step on a hand-rolled `code` filter, neither of which matches a `wiki/` path. Their checkers already skip a wiki-only pull request; the checkout itself does not, and stays a fixed cost neither lever below removes. That is the honest bound on what narrowing this workflow saves.
+- `audit-ci-tests`, the aggregator, which reads `shards`, `hook-capabilities-live-tree` and `verb-arming-adoption`'s results and exits non-zero for anything other than `success`.
 
 Splitting the required check name off the work is what lets `fail-fast: false` stop one failing shard from cancelling its siblings without also cancelling the check. The aggregator compares against `success` rather than enumerating failure states, so a conclusion GitHub adds later fails closed, and `always()` on its `if:` stops a skip-on-dependency-failure from satisfying a required context that ran nothing.
 
@@ -102,11 +103,26 @@ The hooks group stops at three shards even though a fourth would lower its own h
 ## Levers not taken, and why
 
 - **A setup job that fetches shared state once.** Adds a third hop; see the ceiling above.
-- **Per-shard narrowed paths filters.** Every leg shares one `steps:` block, so the filter is defined once and evaluated per leg. Narrowing per shard also breaks `.gaia/scripts/tests/workflow-filter-coverage.bats`, which requires every gate on a step to reach every literal path that step names, independently. `audit-ci-shards.bats` W7 pins the count at exactly one filter step.
 - **A checked-in shard manifest.** Fails silently: a new suite runs in no shard, every check greens, the pass count quietly drops.
 - **A checked-in table of per-file runtimes.** A better weight than file size, and the same silent-stale hazard as the manifest above wearing different clothes: a newly added suite weighs nothing, the shard holding it is under-counted, and nothing says so. Size is read from the tree at discovery time, so it is never stale and never absent. The anchor list the sharder does carry is not this table in miniature: it holds no runtimes and changes no file's weight, an unlisted file weighs its bytes rather than nothing, and a listed file discovery cannot find is an error instead of a quiet no-op.
 - **A hand-maintained per-shard package list.** Also a silent-green hazard, because the suites that need `python3-yaml` fail rather than skip when it is absent while the ones needing `zsh` skip quietly. The step's list is derived from the suites instead, rounded up to whole exchange groups and pinned by W10; W9 pins the sandbox leg's reduced set.
 - **`bats --jobs`.** A live lever rather than a closed question. The reasoning that excludes it, that the runner is already CPU-saturated, describes every shard sharing one box; a shard now runs one suite serially on its own four-core box, leaving cores idle.
+
+## Per-leg narrowing for wiki-only changes
+
+Per-leg narrowing faces two objections. Every leg shares one `steps:` block, so the `code:` filter is defined once and its output is identical on every leg; per-shard narrowing therefore needs a per-leg GATE, not a second filter step. And it must not break `.gaia/scripts/tests/workflow-filter-coverage.bats`, which requires every gate on a step to reach every literal path that step names. Both are answered on their merits, not routed around.
+
+The per-leg gate is a step output computed by one script, not a second `dorny/paths-filter` step, so the single filter step stays single, and the single-filter property `.gaia/tests/lib/audit-ci-shards.bats` pins stays untouched. `steps.filter.outputs.code == 'true'` stays a conjunct of every narrowed step's `if:`, and the script's output is an ADDITIONAL conjunct, never a replacement: `workflow-filter-coverage.bats`'s extractor only credits a gate whose producing step is a paths-filter step in the same job, so a gate-output-only `if:` would silently drop every narrowed step out of its literal-input and self-coverage assertions.
+
+The narrowing is derived from the suites at run time, through the sharder's exchange groups, and defaults to arming the full matrix on anything it cannot resolve.
+
+A file that names every page the narrowing can distinguish between contributes nothing to any single page's arming decision, and is excluded from the namer set of all of them. This is a real, accepted under-arming risk rather than a footnote: a suite that genuinely read every one of those pages would be excluded too, and would not arm on a change to any of them. No such suite exists today, the leg holding the suite that checks this narrowing arms unconditionally regardless, and every other rule in the decision order fails open, but the risk stands as stated.
+
+Measured against the tree, the saving is runner-minutes before it is wall clock. Some pages are named only by `lib`'s own suites and arm that single leg, which moves both wall clock and runner-minutes; others also reach the scripts group, whose legs sit on the critical path, so narrowing to them moves runner-minutes only. `wiki/.state.json`, the file every wiki sync rewrites, would arm nearly the whole matrix through this lever alone.
+
+A `code:` filter entry may be qualified by change type, and the `wiki/.state.json` entry is: a content-only rewrite of that file, which is what every wiki sync does to it, does not arm `code:` at all. What makes that safe is the checker the entry narrows against being blind to the file's content, not the entry being cheap; the invariant pinning that lives beside the per-leg gate's own invariants.
+
+See `.gaia/tests/leg-arming.sh` for the decision, `.gaia/tests/bats-shards.sh` for the exchange groups it is derived through, and `.gaia/tests/lib/audit-ci-shards.bats` for what pins it, including the per-page armed-leg table.
 
 ## Fan-out has its own costs
 
