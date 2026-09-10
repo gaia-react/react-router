@@ -7,10 +7,10 @@ import {ADOPTER_OWNED_SENTINELS as GIT_TRACKED_SENTINELS} from '../release/manif
 import {ADOPTER_OWNED_SENTINELS as RELEASE_SENTINELS} from '../release/runtime-deps.js';
 import {
   ADOPTER_OWNED_SENTINELS,
-  findDeadPaths,
   HELP_TEXT,
   LOCAL_EXEMPT_PREFIX,
   run,
+  scanWikiPaths,
 } from './dead-paths.js';
 import {
   GENERATED_CONTENT_EXEMPT_PATHS,
@@ -113,7 +113,7 @@ describe('wiki dead-paths', () => {
       '# Hooks\n\nSee `.claude/hooks/wiki-stop-safety-net.sh` for the safety net.\n'
     );
 
-    const dead = findDeadPaths(sandbox.root);
+    const {dead} = scanWikiPaths(sandbox.root);
     expect(dead).toEqual([
       {
         filePath: 'wiki/concepts/Hooks.md',
@@ -130,7 +130,7 @@ describe('wiki dead-paths', () => {
       '# Hooks\n\nSee `.claude/hooks/wiki-session-stop.sh`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('ignores wikilinks and non-path backticks', () => {
@@ -139,7 +139,7 @@ describe('wiki dead-paths', () => {
       '# Page\n\nLinks [[Other]] and code `let x = 1;` and constants `FOO_BAR`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('ignores placeholders like `<path>` and globs', () => {
@@ -148,7 +148,7 @@ describe('wiki dead-paths', () => {
       '# Page\n\nUse `.claude/hooks/<name>.sh` and `.gaia/cli/src/**/*.ts`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('ignores convention placeholders like SPEC-NNN.md and XXX-XXX.ts', () => {
@@ -157,7 +157,7 @@ describe('wiki dead-paths', () => {
       '# Specs\n\nLives at `.gaia/local/specs/SPEC-NNN.md`. Or `.claude/foo/XXX-bar.ts`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('ignores gitignored runtime paths under .gaia/local', () => {
@@ -166,7 +166,7 @@ describe('wiki dead-paths', () => {
       '# Runtime\n\nCache at `.gaia/local/cache/shared/update-check.json` and `.gaia/local/i18n.json`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('ignores adopter-owned sentinels absent from the GAIA source repo', () => {
@@ -175,7 +175,7 @@ describe('wiki dead-paths', () => {
       '# Automation\n\nThe policy lives in `.gaia/automation.json`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('exempts the sentinel by exact token, not by prefix', () => {
@@ -187,44 +187,174 @@ describe('wiki dead-paths', () => {
       '# Automation\n\nSee `.gaia/automation.json` and `.gaia/automation.json.bak`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+    expect(scanWikiPaths(sandbox.root).dead.map((d) => d.path)).toEqual([
       '.gaia/automation.json.bak',
     ]);
   });
 
-  test('ignores a hypothetical example path in either Unicode normal form', () => {
-    // An accented path has two legal spellings and `Set.has` compares code
-    // points, so a wiki page saved as NFD (`e` + U+0301) stops matching an NFC
-    // entry. Only the second line pins that; the first passes either way. Its
-    // combining mark is written as an escape rather than typed, because as a
-    // raw literal any re-encode of this file flattens it into the line above,
-    // leaving the suite green with the normalization removed and no diff
-    // showing the coverage had gone.
+  test('a marker exempts its citation across either Unicode normal form', () => {
+    // An accented path has two legal spellings and string equality compares
+    // code points, so a page saved as NFD (`e` + U+0301) stops matching a
+    // marker typed as NFC. Each line crosses the two forms in one direction.
+    // The combining marks are written as escapes rather than typed, because as
+    // raw literals any re-encode of this file flattens them into their NFC
+    // neighbours, leaving the suite green with the normalization removed and
+    // no diff showing the coverage had gone.
     sandbox.writeFile(
       'wiki/decisions/Quoting.md',
       [
         '# Quoting',
         '',
-        'NFC: `app/components/café.test.ts`',
-        'NFD: `app/components/cafe\u0301.test.ts`',
+        'NFD cite: `app/components/cafe\u0301.test.ts` <!-- gaia:hypothetical app/components/café.test.ts: illustration -->',
+        'NFC cite: `app/components/café.test.ts` <!-- gaia:hypothetical app/components/cafe\u0301.test.ts: illustration -->',
         '',
       ].join('\n')
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root)).toEqual({dead: [], staleMarkers: []});
   });
 
-  test('exempts hypothetical examples by exact token, not by prefix', () => {
-    // Widening the `.has()` membership check into a prefix skip would take
-    // every real citation under the directory with it.
+  test('a marker exempts by exact token, not by prefix', () => {
+    // Two widenings are pinned at once, and the second is the one a sibling
+    // citation cannot see: a directory-prefix skip would swallow `deploy.sh`,
+    // while a `startsWith` on the marker's own path swallows only a token that
+    // extends it, which is why `tool.sh.bak` is here rather than `deploy.sh`
+    // alone.
     sandbox.writeFile(
       'wiki/decisions/Routing.md',
-      '# Routing\n\nSee `.claude/commands/tool.sh` and `.claude/commands/deploy.sh`.\n'
+      '# Routing\n\nSee `.claude/commands/tool.sh`, `.claude/commands/tool.sh.bak` and `.claude/commands/deploy.sh`. <!-- gaia:hypothetical .claude/commands/tool.sh: illustration -->\n'
     );
 
-    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+    expect(scanWikiPaths(sandbox.root).dead.map((d) => d.path)).toEqual([
+      '.claude/commands/tool.sh.bak',
       '.claude/commands/deploy.sh',
     ]);
+  });
+
+  test('a marker is scoped to its own line', () => {
+    // Line scope is what ties the exemption to the sentence that justifies it.
+    // A page-wide marker would restore exactly the decay the central allowlist
+    // had.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      [
+        '# Routing',
+        '',
+        'Marked: `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh: illustration -->',
+        'Unmarked: `.claude/commands/tool.sh`',
+        '',
+      ].join('\n')
+    );
+
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([
+      {
+        filePath: 'wiki/decisions/Routing.md',
+        line: 4,
+        path: '.claude/commands/tool.sh',
+      },
+    ]);
+  });
+
+  test('a marker with no reason exempts nothing and is reported', () => {
+    // The reason is what a later reader checks the exemption against, so a
+    // marker without one fails closed: the citation still reports, and the
+    // marker reports too rather than passing as a silent skip.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh -->\n'
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead.map((d) => d.path)).toEqual(['.claude/commands/tool.sh']);
+    expect(staleMarkers).toEqual([
+      {
+        filePath: 'wiki/decisions/Routing.md',
+        line: 3,
+        marker: '.claude/commands/tool.sh',
+        problem: 'missing-reason',
+      },
+    ]);
+  });
+
+  test('a marker with no path is reported as missing its path, not its reason', () => {
+    // Both halves are mandatory and either can be the one left out, so they are
+    // reported apart: telling an author who wrote a reason to supply a reason
+    // sends them to re-read the half they already got right.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical : the sentence needs the file absent -->\n'
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead.map((d) => d.path)).toEqual(['.claude/commands/tool.sh']);
+    expect(staleMarkers.map((s) => s.problem)).toEqual(['missing-path']);
+  });
+
+  test('a marker exempts a path containing spaces', () => {
+    // Wiki page names routinely carry spaces and the token pattern is
+    // backtick-delimited, so a spaced path is ordinary input here rather than
+    // an edge case. Reading whitespace in the declared half as evidence that
+    // the path is missing refuses the marker every such path needs, and
+    // reports it as pathless with the path written right there.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `wiki/decisions/Some Missing Page.md` <!-- gaia:hypothetical wiki/decisions/Some Missing Page.md: illustration -->\n'
+    );
+
+    expect(scanWikiPaths(sandbox.root)).toEqual({dead: [], staleMarkers: []});
+  });
+
+  test('a marker on a historical bullet is reported rather than silently kept', () => {
+    // The bullet already suppresses its own line's citations, so a marker there
+    // can never exempt anything. Returning early before parsing markers would
+    // make it invisible dead weight, which is the exact decay the stale report
+    // exists to surface.
+    sandbox.writeFile(
+      'wiki/decisions/Some Refactor.md',
+      '# Some Refactor\n\n- **Removed** `app/state/theme.tsx` <!-- gaia:hypothetical app/state/theme.tsx: illustration -->\n'
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead).toEqual([]);
+    expect(staleMarkers.map((s) => [s.line, s.problem])).toEqual([
+      [3, 'unused'],
+    ]);
+  });
+
+  test('a marker whose line carries no matching dead path is reported unused', () => {
+    // This is the property a central list cannot have. Once the sentence that
+    // justified the exemption goes, or the file it names becomes real, nothing
+    // recounts a list entry and it blinds the scan to a future dead citation
+    // of the same path forever. The marker reds instead.
+    sandbox.writeFile('.claude/commands/tool.sh', '#!/bin/bash\n');
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      [
+        '# Routing',
+        '',
+        'Now real: `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh: illustration -->',
+        'Sentence gone. <!-- gaia:hypothetical .claude/commands/other.sh: illustration -->',
+        '',
+      ].join('\n')
+    );
+
+    const {dead, staleMarkers} = scanWikiPaths(sandbox.root);
+    expect(dead).toEqual([]);
+    expect(staleMarkers.map((s) => [s.line, s.problem])).toEqual([
+      [3, 'unused'],
+      [4, 'unused'],
+    ]);
+  });
+
+  test('a marker reason may quote a path without that reading as a citation', () => {
+    // The marker is cut from the line before the token scan, so a reason is
+    // free to name the real file the illustration stands in for.
+    sandbox.writeFile(
+      'wiki/decisions/Routing.md',
+      '# Routing\n\nSee `.claude/commands/tool.sh` <!-- gaia:hypothetical .claude/commands/tool.sh: stands in for `.claude/commands/gone.sh` -->\n'
+    );
+
+    expect(scanWikiPaths(sandbox.root)).toEqual({dead: [], staleMarkers: []});
   });
 
   test('ignores gitignored machine-local files absent from this checkout', () => {
@@ -233,7 +363,7 @@ describe('wiki dead-paths', () => {
       '# Claude Integration\n\nOverrides live in `.claude/settings.local.json`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('exempts gitignored machine-local files by exact token, not by prefix', () => {
@@ -251,7 +381,7 @@ describe('wiki dead-paths', () => {
       ].join('\n')
     );
 
-    expect(findDeadPaths(sandbox.root).map((d) => d.path)).toEqual([
+    expect(scanWikiPaths(sandbox.root).dead.map((d) => d.path)).toEqual([
       '.claude/settings.local.json.bak',
       '.claude/settings.other.json',
     ]);
@@ -272,7 +402,7 @@ describe('wiki dead-paths', () => {
       ].join('\n')
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('skips wiki/log.md, wiki/hot.md and wiki/meta/** by design', () => {
@@ -289,7 +419,7 @@ describe('wiki dead-paths', () => {
       '# Lint Report\n\nReferences historical `.claude/hooks/gone.sh`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([]);
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([]);
   });
 
   test('the help text and the skip list agree, in both directions', () => {
@@ -352,7 +482,7 @@ describe('wiki dead-paths', () => {
       '# Archive\n\nSee `.claude/hooks/gone.sh`.\n'
     );
 
-    expect(findDeadPaths(sandbox.root)).toEqual([
+    expect(scanWikiPaths(sandbox.root).dead).toEqual([
       {
         filePath: 'wiki/log.md-archive.md',
         line: 3,
@@ -371,7 +501,7 @@ describe('wiki dead-paths', () => {
       '# B\n\nSee `app/components/Removed/index.tsx`.\n'
     );
 
-    const dead = findDeadPaths(sandbox.root);
+    const {dead} = scanWikiPaths(sandbox.root);
     expect(dead).toHaveLength(2);
     expect(
       dead.map((d) => d.path).toSorted((a, b) => a.localeCompare(b))
@@ -387,7 +517,7 @@ describe('wiki dead-paths', () => {
       '# Sibling\n\nSee `studio/decisions/foo.md`.\nAlso `../../../studio/strategy/bar.md`.\nAnd `website/src/sections/baz.md`.\n'
     );
 
-    const dead = findDeadPaths(sandbox.root);
+    const {dead} = scanWikiPaths(sandbox.root);
     expect(
       dead.map((d) => d.path).toSorted((a, b) => a.localeCompare(b))
     ).toEqual([
@@ -429,9 +559,43 @@ describe('wiki dead-paths', () => {
 
     const parsed = JSON.parse(stdio.outputs.join('')) as {
       dead: readonly {filePath: string; line: number; path: string}[];
+      staleMarkers: readonly unknown[];
     };
     expect(parsed.dead).toHaveLength(1);
     expect(parsed.dead[0]?.path).toBe('.claude/hooks/gone.sh');
+    expect(parsed.staleMarkers).toEqual([]);
+  });
+
+  test('--json carries stale markers beside the dead paths', () => {
+    sandbox.writeFile(
+      'wiki/concepts/Hooks.md',
+      '# Hooks\n\nNothing dead here. <!-- gaia:hypothetical .claude/hooks/gone.sh: illustration -->\n'
+    );
+
+    const exit = run(['--json'], {cwd: sandbox.root});
+    expect(exit).toBe(0);
+
+    const parsed = JSON.parse(stdio.outputs.join('')) as {
+      dead: readonly unknown[];
+      staleMarkers: readonly {problem: string}[];
+    };
+    expect(parsed.dead).toEqual([]);
+    expect(parsed.staleMarkers.map((s) => s.problem)).toEqual(['unused']);
+  });
+
+  test('CLI prints a stale marker on stdout', () => {
+    // The scan exits 0 either way, so stdout is the only channel a stale
+    // marker has: a marker nobody sees reported is a marker nobody removes.
+    sandbox.writeFile(
+      'wiki/concepts/Hooks.md',
+      '# Hooks\n\nNothing dead here. <!-- gaia:hypothetical .claude/hooks/gone.sh: illustration -->\n'
+    );
+
+    const exit = run([], {cwd: sandbox.root});
+    expect(exit).toBe(0);
+    expect(stdio.outputs.join('').trim()).toBe(
+      'wiki/concepts/Hooks.md:3  unused gaia:hypothetical marker: .claude/hooks/gone.sh: illustration'
+    );
   });
 
   test('rejects unknown flags', () => {

@@ -51,7 +51,7 @@ Quick check:
 git diff --cached --name-only -z | tr '\0' '\n' | grep -E '\.(ts|tsx|js|jsx|mjs|cjs|css)$|^(package\.json|pnpm-lock\.yaml|tsconfig.*\.json|vite\.config\.|vitest\.config\.|playwright\.config\.|eslint\.config\.)'
 ```
 
-`-z` and the `tr` back to newlines are both load-bearing. Under git's default `core.quotePath`, a path-listing command C-quotes any path carrying a non-ASCII byte, so a staged `app/components/café.test.ts` prints as `"app/components/caf\303\251.test.ts"`, whose last character is a double quote. The `$`-anchored extension alternation no longer meets a bare path, the grep returns empty, and the gate is skipped on a real source change. `-z` turns the quoting off; the `tr` is what gives the anchor a bare path to match again.
+`-z` and the `tr` back to newlines are both load-bearing. Under git's default `core.quotePath`, a path-listing command C-quotes any path carrying a non-ASCII byte, so a staged `app/components/café.test.ts` prints as `"app/components/caf\303\251.test.ts"`, whose last character is a double quote. The `$`-anchored extension alternation no longer meets a bare path, the grep returns empty, and the gate is skipped on a real source change. `-z` turns the quoting off; the `tr` is what gives the anchor a bare path to match again. <!-- gaia:hypothetical app/components/café.test.ts: a worked example of C-quoting an accented path, not a file this repo has -->
 
 **Skip only on a positive answer.** If the grep returns nothing and the check itself ran, skip the gate. If the check cannot answer, the `git` call fails or nothing runs it, run the gate: an unanswered check is not an empty staged set.
 

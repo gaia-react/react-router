@@ -31823,6 +31823,15 @@ var HELP_TEXT63 = `Usage: gaia wiki dead-paths [--json]
   tarball and never resolve on a single-repo clone. Excludes wiki/log.md,
   wiki/hot.md and wiki/meta/** (generated or append-only files that
   legitimately reference historical paths).
+
+  A citation of a path that is an illustration rather than a real file is
+  exempted on its own line by a trailing marker naming the same path
+  unbackticked, with a reason:
+
+    <!-- gaia:hypothetical .claude/commands/tool.sh: reason it cannot exist -->
+
+  A marker whose line carries no matching dead path is reported alongside the
+  dead paths, as is one missing either half of its path-and-reason pair.
 `;
 var HELP_TOKENS61 = /* @__PURE__ */ new Set(["--help", "-h", "help"]);
 var TRACKED_PREFIXES = [
@@ -31841,20 +31850,20 @@ var GITIGNORED_LOCAL_FILES = /* @__PURE__ */ new Set([
 var ADOPTER_OWNED_SENTINELS = /* @__PURE__ */ new Set([
   ".gaia/automation.json"
 ]);
-var HYPOTHETICAL_EXAMPLE_PATHS = new Set(
-  [".claude/commands/tool.sh", "app/components/caf\xE9.test.ts"].map(
-    (entry) => entry.normalize("NFC")
-  )
-);
+var MARKER_PATTERN = /<!--\s*gaia:hypothetical\b([^>]*)-->/g;
 var PATH_TOKEN_PATTERN = /`([^`\n]+?)`/g;
 var PLACEHOLDER_PATTERN = /[<>*${}]|N{3,}|X{3,}/;
 var HISTORICAL_BULLET_PATTERN = /^\s*-\s+\*\*(Removed|Deleted|Renamed|Migrated|Replaced)\*\*/i;
+var STALE_MARKER_LABELS = {
+  "missing-path": "malformed gaia:hypothetical marker, no path given",
+  "missing-reason": "malformed gaia:hypothetical marker, no reason given",
+  unused: "unused gaia:hypothetical marker"
+};
 var isTrackedPath = (token) => {
   if (PLACEHOLDER_PATTERN.test(token)) return false;
   if (!token.includes("/")) return false;
   if (!/\.[a-z0-9]{1,8}$/i.test(token)) return false;
   if (ADOPTER_OWNED_SENTINELS.has(token)) return false;
-  if (HYPOTHETICAL_EXAMPLE_PATHS.has(token.normalize("NFC"))) return false;
   if (GITIGNORED_LOCAL_FILES.has(token)) return false;
   if (RUNTIME_PREFIXES.some((prefix) => token.startsWith(prefix))) return false;
   if (SIBLING_REPO_PATTERN.test(token)) return true;
@@ -31870,25 +31879,66 @@ var pathExists = (root, candidate) => {
   }
 };
 var isDeadToken = (cwd, token) => SIBLING_REPO_PATTERN.test(token) || !pathExists(cwd, token);
-var collectDeadPathsInLine = (ctx, lineNumber, line) => {
-  if (HISTORICAL_BULLET_PATTERN.test(line)) return [];
-  const refs = [];
-  for (const match of line.matchAll(PATH_TOKEN_PATTERN)) {
-    const token = match[1];
-    if (token !== void 0 && isTrackedPath(token) && isDeadToken(ctx.cwd, token)) {
-      refs.push({ filePath: ctx.filePath, line: lineNumber, path: token });
-    }
-  }
-  return refs;
+var parseMarker = (match) => {
+  const payload = match[1] ?? "";
+  const separator = payload.indexOf(":");
+  const declared = (separator === -1 ? payload : payload.slice(0, separator)).trim();
+  const reason = separator === -1 ? "" : payload.slice(separator + 1).trim();
+  return {
+    defect: declared === "" ? "missing-path" : reason === "" ? "missing-reason" : null,
+    path: declared.normalize("NFC"),
+    raw: payload.trim()
+  };
 };
-var collectDeadPathsInFile = (ctx) => {
+var collectFindingsInLine = (ctx, lineNumber, line) => {
+  const markers = [...line.matchAll(MARKER_PATTERN)].map(parseMarker);
+  const report2 = (matched2) => markers.filter((marker) => marker.defect !== null || !matched2.has(marker.path)).map((marker) => ({
+    filePath: ctx.filePath,
+    line: lineNumber,
+    marker: marker.raw,
+    problem: marker.defect ?? "unused"
+  }));
+  if (HISTORICAL_BULLET_PATTERN.test(line))
+    return { dead: [], staleMarkers: report2(/* @__PURE__ */ new Set()) };
+  const exempt = new Set(
+    markers.filter((marker) => marker.defect === null).map((m) => m.path)
+  );
+  const scanned = markers.length === 0 ? line : line.replaceAll(MARKER_PATTERN, " ");
+  const deadTokens = [...scanned.matchAll(PATH_TOKEN_PATTERN)].flatMap(
+    (match) => {
+      const token = match[1];
+      return token !== void 0 && isTrackedPath(token) && isDeadToken(ctx.cwd, token) ? [{ normalized: token.normalize("NFC"), token }] : [];
+    }
+  );
+  const matched = new Set(
+    deadTokens.filter((found) => exempt.has(found.normalized)).map((found) => found.normalized)
+  );
+  const dead = deadTokens.filter((found) => !exempt.has(found.normalized)).map((found) => ({
+    filePath: ctx.filePath,
+    line: lineNumber,
+    path: found.token
+  }));
+  const staleMarkers = report2(matched);
+  return { dead, staleMarkers };
+};
+var collectFindingsInFile = (ctx) => {
   const content = readFileSync36(path49.join(ctx.cwd, ctx.filePath), "utf8");
   const lines = content.split("\n");
-  return lines.flatMap(
-    (line, index) => collectDeadPathsInLine(ctx, index + 1, line)
+  const perLine = lines.map(
+    (line, index) => collectFindingsInLine(ctx, index + 1, line)
   );
+  return {
+    dead: perLine.flatMap((found) => found.dead),
+    staleMarkers: perLine.flatMap((found) => found.staleMarkers)
+  };
 };
-var findDeadPaths = (cwd) => collectWikiMarkdown(cwd).filter((filePath) => !shouldSkipFile(filePath)).flatMap((filePath) => collectDeadPathsInFile({ cwd, filePath }));
+var scanWikiPaths = (cwd) => {
+  const perFile = collectWikiMarkdown(cwd).filter((filePath) => !shouldSkipFile(filePath)).map((filePath) => collectFindingsInFile({ cwd, filePath }));
+  return {
+    dead: perFile.flatMap((found) => found.dead),
+    staleMarkers: perFile.flatMap((found) => found.staleMarkers)
+  };
+};
 var run65 = (argv, options = {}) => {
   let json3 = false;
   for (const token of argv) {
@@ -31909,14 +31959,21 @@ var run65 = (argv, options = {}) => {
   }
   try {
     const cwd = options.cwd ?? process.cwd();
-    const dead = findDeadPaths(cwd);
+    const { dead, staleMarkers } = scanWikiPaths(cwd);
     if (json3) {
-      process.stdout.write(`${JSON.stringify({ dead }, null, 2)}
-`);
+      process.stdout.write(
+        `${JSON.stringify({ dead, staleMarkers }, null, 2)}
+`
+      );
       return EXIT_CODES.OK;
     }
-    if (dead.length === 0) return EXIT_CODES.OK;
-    const lines = dead.map((ref) => `${ref.filePath}:${ref.line}  ${ref.path}`);
+    const lines = [
+      ...dead.map((ref) => `${ref.filePath}:${ref.line}  ${ref.path}`),
+      ...staleMarkers.map(
+        (stale) => `${stale.filePath}:${stale.line}  ${STALE_MARKER_LABELS[stale.problem]}: ${stale.marker}`
+      )
+    ];
+    if (lines.length === 0) return EXIT_CODES.OK;
     process.stdout.write(`${lines.join("\n")}
 `);
     return EXIT_CODES.OK;
