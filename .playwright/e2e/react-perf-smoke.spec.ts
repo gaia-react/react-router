@@ -14,8 +14,12 @@ const CANARY = 'ThemeSwitch';
 const readDump = (rawPath: string): RawDump =>
   JSON.parse(readFileSync(rawPath, 'utf8')) as RawDump;
 
-const totalRenderTime = (dump: RawDump): number =>
-  dump.all.reduce((sum, record) => sum + record.totalTime, 0);
+// Every mode bit set on any captured fiber in one page load. A fiber inherits
+// its parent's mode, so <StrictMode> contributes its bits to the whole app
+// subtree and this OR carries them whenever the wrapper is mounted at all.
+const observedModeBits = (dump: RawDump): number =>
+  // eslint-disable-next-line no-bitwise -- fiber.mode is a bitmask; OR is the only way to union two of them
+  dump.all.reduce((bits, record) => bits | record.mode, 0);
 
 // Drive the canary micro-interaction: click the ThemeSwitch inlined on the
 // minimal index page. It is the sole button on that page and is located by
@@ -145,7 +149,7 @@ test('captures bippy renders: active, canary resolves name + memo + timing', asy
   expect(canaryRecords.some((record) => record.phase === 'update')).toBe(true);
 });
 
-test('noStrict bypass disables StrictMode (render-time inflation collapses)', async ({
+test('noStrict bypass disables StrictMode (the StrictMode fiber-mode bits clear)', async ({
   baseURL,
   browser,
 }) => {
@@ -159,29 +163,32 @@ test('noStrict bypass disables StrictMode (render-time inflation collapses)', as
     const dump = readDump(result.rawPath);
     await context.close();
 
-    return {meta: result.meta, total: totalRenderTime(dump)};
+    return {meta: result.meta, modeBits: observedModeBits(dump)};
   };
 
-  // SSR hydration shows no StrictMode mount→unmount→remount burst, so render
-  // COUNTS are identical with or without StrictMode. The one observable effect
-  // is the double-invoke: React sums both render passes into actualDuration, so
-  // a StrictMode-on capture's aggregate render time runs materially higher.
-  // Two interleaved loads per mode damp single-run jitter.
-  const strictA = await load(false);
-  const relaxedA = await load(true);
-  const strictB = await load(false);
-  const relaxedB = await load(true);
+  const strict = await load(false);
+  const relaxed = await load(true);
 
   // meta.strictMode reflects the bypass (the reduce CLI keys its caveat on it).
-  expect(strictA.meta.strictMode).toBe(true);
-  expect(strictB.meta.strictMode).toBe(true);
-  expect(relaxedA.meta.strictMode).toBe(false);
-  expect(relaxedB.meta.strictMode).toBe(false);
+  expect(strict.meta.strictMode).toBe(true);
+  expect(relaxed.meta.strictMode).toBe(false);
 
-  // Proof the bypass actually fired (not vacuous): the double-invoke is gone, so
-  // noStrict aggregate render time is well below StrictMode's. A bypass that did
-  // nothing would leave these ~equal and fail this margin (observed ratio ~1.2).
-  const strictAvg = (strictA.total + strictB.total) / 2;
-  const relaxedAvg = (relaxedA.total + relaxedB.total) / 2;
-  expect(strictAvg).toBeGreaterThan(relaxedAvg * 1.1);
+  // Proof the bypass actually fired (not vacuous). The double-invoke inflates
+  // StrictMode-on render time, but a wall-clock ratio between two live browser
+  // loads is not an oracle this environment can resolve: the effect is ~20% of
+  // a sum of sub-millisecond actualDuration values, against a noise floor
+  // nothing bounds, so it fails on a loaded machine with the bypass working.
+  //
+  // The mode bitmask states the same property structurally. React ORs the
+  // StrictMode bits into every fiber beneath the wrapper, so removing the
+  // wrapper removes them from the whole tree: strict's bits are a STRICT
+  // superset of relaxed's. Both halves carry weight. The subset half fails if
+  // the bypass changed something other than StrictMode; the inequality fails if
+  // it changed nothing at all, which is the vacuous pass the timing assertion
+  // was there to catch, and it also fails when both dumps are empty. No literal
+  // bit value appears here, so a React renumbering cannot silently invert it.
+  /* eslint-disable no-bitwise -- fiber.mode is a bitmask; masking is the only way to test containment */
+  expect(strict.modeBits & relaxed.modeBits).toBe(relaxed.modeBits);
+  /* eslint-enable no-bitwise */
+  expect(strict.modeBits).not.toBe(relaxed.modeBits);
 });

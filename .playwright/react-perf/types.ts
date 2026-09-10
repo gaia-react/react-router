@@ -54,6 +54,7 @@ export type RenderRecord = {
   fiberId: number; // getFiberId(fiber) — stable cross-commit identity
   isMemo: boolean; // tag ∈ {tags.MemoComponent, tags.SimpleMemoComponent} or hasMemoCache
   kind: string; // 'Memo' | 'ForwardRef' | 'Class' | 'Function' ('tag(N)' is unreachable)
+  mode: number; // fiber.mode, React's inherited subtree-mode bitmask
   phase: string; // 'mount' | 'update' | 'unmount' (bippy phase)
   propsChanged: ChangeEntry[];
   selfTime: number; // getTimings(fiber).selfTime
