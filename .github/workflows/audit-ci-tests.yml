@@ -1009,24 +1009,18 @@ jobs:
           SHARD: ${{ matrix.shard }}
         run: |
           set -euo pipefail
-          # No `tr` in this pipeline: `files` already prints one repo-relative
-          # path per line, so it was a no-op. IT WAS REMOVED FOR BEING A NO-OP,
-          # NOT AS A SAFETY FIX, and the distinction matters because the hazard
-          # it carried is still here. Under `set -o pipefail` any producer killed
-          # by SIGPIPE after `grep -q` exits early resolves this to needed=0 on a
-          # leg that DOES hold the suite, which then reds at exit 2 with the
-          # install skipped, and the surviving `bats-shards.sh files` carries
-          # that identically. What closes it is the SIZE, not the stage count:
-          # the largest shard list is about 2KB against a 64KB pipe buffer, so
-          # the producer always completes its single write before grep can exit:
-          # `cmd_files` ends in a single `printf`, so the write is one syscall
-          # that can neither block nor go partial at this size. The buffer is
-          # about THIRTY times the largest list, `lib` at 1994 bytes, which is
-          # the margin a shard would have to grow through for this to become
-          # reachable. Measured rather than estimated, and stated as a ratio
-          # because both halves move.
-          if bash .gaia/tests/bats-shards.sh files "$SHARD" \
-            | grep -qF 'check-cli-workspace-floors.bats'; then
+          # Captured first and read from a here-string rather than piped into
+          # `grep -qF`. Under `set -o pipefail` a producer killed by SIGPIPE
+          # after the quiet grep exits early resolves the pipeline to FALSE
+          # BECAUSE a match was found, which would set needed=0 on a leg that
+          # does hold the suite and then red at exit 2 with the install skipped.
+          # This shape removes the pipeline rather than arguing the race is
+          # unreachable, so nothing here rests on the shard list staying small
+          # relative to the pipe buffer. `.gaia/scripts/lint-sigpipe-readers.sh`
+          # is the gate that now reaches this surface and keeps the piped form
+          # from coming back.
+          shard_files="$(bash .gaia/tests/bats-shards.sh files "$SHARD")"
+          if grep -qF 'check-cli-workspace-floors.bats' <<<"$shard_files"; then
             printf 'needed=1\n' >> "$GITHUB_OUTPUT"
           else
             printf 'needed=0\n' >> "$GITHUB_OUTPUT"

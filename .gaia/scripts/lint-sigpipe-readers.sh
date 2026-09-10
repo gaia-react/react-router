@@ -1,26 +1,33 @@
 #!/usr/bin/env bash
-# SC2016 is intentional file-wide: SCAN_AWK below is single-quoted precisely so
-# every `$` and awk field reference reaches awk as literal program text rather
-# than being expanded by this shell first.
+# SC2016 is intentional file-wide: every awk program below is single-quoted
+# precisely so every `$` and awk field reference reaches awk as literal program
+# text rather than being expanded by this shell first.
 # shellcheck disable=SC2016
 #
 # lint-sigpipe-readers.sh: flag a short-circuiting reader -- `grep` or `rg` told
 # to stop early, whether by a `-q`-bearing flag cluster, `--quiet`, `--silent`,
-# or a match count (`-m`, `--max-count`) -- standing downstream of a `|` in a
-# tracked shell script that runs under `pipefail`. Run it directly from the repo
-# root: `bash .gaia/scripts/lint-sigpipe-readers.sh`.
+# or a match count (`-m`, `--max-count`) -- standing downstream of a `|` where
+# `pipefail` is armed: in a tracked shell script, and in an Actions `run:` body,
+# which is shell by another name. Run it directly from the repo root:
+# `bash .gaia/scripts/lint-sigpipe-readers.sh`.
 #
 # Exit 0 when clean, and 1 either with a file:line report on any hit or on a
-# scan surface that came back empty. Two statuses say the gate never ran at
-# all: 2 when it could not start (guard-awk-lib.sh missing beside this script,
-# or no scratch directory), and 3 when the scan-surface discovery failed.
+# scan surface that came back empty. Three statuses say the gate never produced
+# a verdict at all: 2 when it could not start (guard-awk-lib.sh missing beside
+# this script, or no scratch directory), 3 when the scan-surface discovery
+# failed, and 4 when a workflow carries a `defaults:` key, the one construct the
+# shell oracle below refuses to resolve rather than answer wrongly about.
 # gaia:maintainer-only:start
 #
 # Enforced by the sibling bats suite
 # .gaia/scripts/tests/lint-sigpipe-readers.bats, which the `Audit CI Tests`
-# scripts shard runs, and folded into .gaia/tests/shell-lint.sh, whose
-# `**/*.sh` paths-filter entry arms it across the whole surface it reads. Also
-# runnable directly: `bats .gaia/scripts/tests/lint-sigpipe-readers.bats`.
+# scripts shard runs, and folded into .gaia/tests/shell-lint.sh. Its arming
+# takes MORE than that gate's `**/*.sh` paths-filter entry, which reaches only
+# half of what this gate reads: the workflow, composite-action and adopter
+# template entries beside it are what arm the other half, and each names this
+# guard. A pull request touching only a workflow that skipped this gate would
+# green it having read the very file it changed zero times. Also runnable
+# directly: `bats .gaia/scripts/tests/lint-sigpipe-readers.bats`.
 # gaia:maintainer-only:end
 #
 # Why: a short-circuiting reader INVERTS the truth value of the pipeline it
@@ -102,8 +109,10 @@
 # Scan surface
 # ---------------------------------------------------------------------------
 #
-# Tracked `*.sh`, the `shell` set the shared library defines. Three surfaces are
-# deliberately outside it:
+# Two sets the shared library defines, read as two arms because they decide
+# arming differently: tracked `*.sh` (`shell`), and the Actions workflows,
+# composite actions and adopter workflow templates (`workflows`). Two surfaces
+# are deliberately outside both:
 #
 #   *.bats            bats-core arms no pipefail by DEFAULT, so an ordinary
 #                     suite does not run the class. A suite that arms pipefail
@@ -113,24 +122,78 @@
 #                     where the shape is the fixture rather than the suite.
 #   the husky hooks   `.husky/_/h` runs each one as `sh -e`, which arms no
 #                     pipefail either.
-#   workflow YAML     a `run:` body inherits pipefail from the step's RESOLVED
-#                     shell, not from any text in the body, so the armed test
-#                     below cannot answer for it: GitHub's default `run:` shell
-#                     is `bash -e`, an explicit `shell: bash` is `bash -eo
-#                     pipefail`, and `defaults.run.shell` moves both. This
-#                     tree's workflows do carry the shape, though nearly always
-#                     in blocks that arm no pipefail at all: their only
-#                     `set -o pipefail` sits inside a command substitution,
-#                     which does not reach the block around it. The armed one
-#                     that remains carries its own comment arguing it
-#                     unreachable on a measured size margin. Extending the gate
-#                     here needs that shell oracle, which is its own change and
-#                     is tracked as gaia-react/gaia#1814.
 #
 # What this gate does NOT try to decide: whether the pipeline's status is read
 # as a truth value at all. A status nobody reads makes the shape harmless rather
 # than absent, and separating the two needs the surrounding control flow. The
 # remedy costs the same either way, so the shape is reported wherever it stands.
+#
+# ---------------------------------------------------------------------------
+# THE WORKFLOW ARM, whose arming is a shell oracle rather than a text test
+# ---------------------------------------------------------------------------
+#
+# A `run:` body is shell by another name, and it carries this class exactly as a
+# script does. What it does NOT carry is the script arm's arming signal: a body
+# inherits pipefail from the step's RESOLVED SHELL rather than from any text in
+# it. GitHub's default `run:` shell is `bash -e`, which arms no pipefail; an
+# explicit `shell: bash` resolves to `bash --noprofile --norc -eo pipefail`,
+# which does. So the body-text test alone would grade every block by whether its
+# author happened to write a redundant `set -o pipefail`.
+#
+# A block is therefore armed when EITHER holds, and the two are independent:
+#
+#   the resolved shell   the step's own `shell:` value is `bash`, or is a custom
+#                        invocation naming `pipefail`. Anything else, including
+#                        the absent case that covers every workflow-file step in
+#                        this tree, is the bare `bash -e` default and arms
+#                        nothing. `shell:` is read at the STEP's own key column,
+#                        so the `shell:` that names a dorny/paths-filter filter
+#                        inside a `filters: |` block scalar is not mistaken for
+#                        one (.github/workflows/shell-lint.yml has two).
+#   the body text        the block's own `set -o pipefail`, in the spellings the
+#                        script arm already reads. A body that arms pipefail is
+#                        armed whatever its shell resolves to.
+#
+# The substitution-scoped form `changed=$(set -o pipefail; ...)` must NOT arm
+# the block around it, and the distinction is not academic: it is the shape this
+# tree writes, and reading it as block-level arming would report every one of
+# those blocks. So the body-text test fires only at command-substitution depth
+# zero, tracked by counting `$(` against `)` across the block and clamped at
+# zero. The clamp is what makes a miscount safe rather than merely bounded: a
+# stray `)` (a `case` pattern, an arithmetic `))`) can only push the depth DOWN
+# toward zero, which reads a substitution-scoped `set` as block-level and
+# reports a block that was not armed. That direction costs a correct edit; the
+# other direction is the missed defect this gate exists to prevent.
+#
+# `defaults.run.shell`, at job or workflow level, would move the resolved shell
+# for every step under it. This gate REFUSES rather than resolves it: a
+# BLOCK-STYLE `defaults:` key anywhere in the scanned YAML exits 4 naming
+# gaia-react/gaia#1814. Block-style is the honest qualifier rather than a
+# hedge, because it is exactly what the reader below sees: it takes one leading
+# mapping key per line, so a flow-style `jobs: {j: {defaults: ...}}` reads as
+# the key `jobs` and its nested `defaults:` is never seen. No flow-style
+# workflow YAML exists here, and the same one-key-per-line reading is what every
+# other structural answer this arm gives is built on. There are zero in this tree, so the refusal costs
+# nothing today, and it converts an unimplemented precedence chain into a loud
+# stop rather than a silent wrong answer. That is this tree's own idiom, the
+# same shape gaia-react/gaia#1880's `--show-prefix` refusal takes ahead of
+# discovery. Implementing the chain is a change for the day a `defaults:` key
+# first appears, and this diagnostic is what will name it.
+#
+# BOTH `run:` spellings are scanned. A block scalar is graded when the block
+# ends; an inline value is a single command, so it is its own one-line block and
+# is graded on the spot. Grading only the block form would leave the inline one
+# unscanned at every arming, and a composite step is precisely where that
+# matters: the Actions schema makes `shell:` mandatory there, so a `shell: bash`
+# arms an inline reader exactly as it arms a block one.
+#
+# Known blind spots on this surface, stated rather than discovered later, and
+# both of them FALSE NEGATIVES. A `run:` whose value is a multi-line plain or
+# quoted flow scalar has only its first line read, the rest being scanned as
+# though they were not part of the value. A mustache partial include inside a
+# body ends the scan there. Both mirror
+# .gaia/scripts/lint-workflow-run-interpolation.sh, which states its own version
+# of each and scans the same two arms, and neither shape appears in this tree.
 #
 # Bash 3.2 compatible. Never `cd`.
 
@@ -163,18 +226,29 @@ type gaia_guard_scan_files >/dev/null 2>&1 || {
 # tree was read and held nothing, 3 says it was never read at all, and an
 # operator handed 1 for the second would look at the tree instead of the
 # discovery.
+# Each set is copied out of the library's one global before the next call
+# overwrites it, because the two arms below ARM differently: the scripts by
+# their own text and their source closure, the YAML by its steps' resolved
+# shells. A single union call would hand both to one arm and, worse, would let a
+# non-empty `shell` set carry an empty `workflows` set past the emptiness check,
+# which is the fail-open discovery `.claude/rules/guards-must-fail.md` names.
 gaia_guard_scan_files "$PROG" shell || exit $?
+sh_files=(${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"})
 
-# One pass per file, emitting three tab-separated record kinds rather than a
-# verdict, because no file can be graded until the whole closure is known:
-#
-#   #armed  <file>                     the file arms pipefail itself (a seed)
-#   #source <file> <basename>          the file loads that basename (an edge)
-#   #hit    <file> <line> <message>    a candidate, graded later
+gaia_guard_scan_files "$PROG" workflows || exit $?
+yaml_files=(${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"})
+
+# The class detector both arms share: what makes a reader short-circuiting,
+# which segment of a pipeline it heads, what arms pipefail, and where a
+# pipeline carries to the next line. Concatenated ahead of one of the two mains
+# below rather than duplicated into each, so the two arms cannot drift on what
+# the class IS while disagreeing only about which files carry it. The sibling
+# .gaia/scripts/lint-errexit-status-read.sh joins its shared detector to a
+# per-surface program the same way.
 #
 # Single-quoted, so every literal single quote inside is spelled \047 and no
 # comment in it may carry an apostrophe.
-readonly SCAN_AWK='
+readonly READER_AWK='
 # A token that turns a reader into a short-circuiting one. TWO families, and
 # both belong here because the class is the short circuit rather than the flag:
 #
@@ -225,6 +299,69 @@ function segment_reader(s,   toks, m, j, t, w) {
   return ""
 }
 
+# The `set` spellings that arm pipefail, as ONE string both readers share: the
+# predicate below that answers WHETHER a line arms it, and the workflow arm that
+# needs to know WHERE, so it can ask whether that position sits inside a command
+# substitution. Two copies with different trailing boundaries would let the
+# predicate match one occurrence while the locator found an earlier one, and the
+# depth test would then answer about a position the predicate never accepted,
+# reading an armed block as unarmed. That is a false negative, the one direction
+# this gate must not be wrong in, which is why the pattern is bound once rather
+# than written twice.
+#
+# The option run before the -o that carries pipefail is optional and unbounded,
+# and it admits both spellings a set line uses: a short flag cluster, and a
+# long-form -o followed by its option NAME. So set -o pipefail, set -euo
+# pipefail, set -e -o pipefail and set -o errexit -o pipefail all arm it. The
+# bare option name is admitted only directly after a flag token, never on its
+# own: set stops parsing options at its first non-option word, so
+# set a b -o pipefail arms nothing and must not read as if it did.
+BEGIN {
+  PIPEFAIL_RE = "(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)"
+}
+
+function arms_pipefail(s) {
+  return (s ~ PIPEFAIL_RE)
+}
+
+# Split one line into pipeline segments and fill hitbuf with the reader heading
+# each downstream one, answering how many there were. A doubled bar is a logical
+# OR, not a pipe: masking it before the split is what keeps the command after
+# one from reading as a downstream segment. Segment 1 is downstream only when
+# the PREVIOUS line left a pipeline open, which the caller carries in prev_pipe.
+function scan_pipeline(l,   work, k, seg, i, hit) {
+  hitn = 0
+  work = l
+  gsub(/\|\|/, "\002", work)
+  k = split(work, seg, "|")
+  for (i = 1; i <= k; i++) {
+    if (i == 1 && !prev_pipe) continue
+    hit = segment_reader(seg[i])
+    if (hit != "") { hitn++; hitbuf[hitn] = hit }
+  }
+  return hitn
+}
+
+# Whether this line leaves a pipeline open for the next one. A trailing
+# backslash after the bar is redundant in bash but legal, so it is stripped
+# before the test.
+function carries_pipe(l,   tail) {
+  tail = l
+  sub(/[[:space:]]+$/, "", tail)
+  sub(/\\$/, "", tail)
+  sub(/[[:space:]]+$/, "", tail)
+  return (tail ~ /\|$/ && tail !~ /\|\|$/)
+}
+'
+
+# The `*.sh` arm. One pass per file, emitting three tab-separated record kinds
+# rather than a verdict, because no file can be graded until the whole closure
+# is known:
+#
+#   #armed  <file>                     the file arms pipefail itself (a seed)
+#   #source <file> <basename>          the file loads that basename (an edge)
+#   #hit    <file> <line> <message>    a candidate, graded later
+readonly SHELL_AWK='
 {
   line = $0
   bare = line
@@ -235,15 +372,7 @@ function segment_reader(s,   toks, m, j, t, w) {
   # a trailing pipe and the command that follows it, so the carry is left alone.
   if (bare ~ /^#/) next
 
-  # The option run before the -o that carries pipefail is optional and
-  # unbounded, and it admits both spellings a set line uses: a short flag
-  # cluster, and a long-form -o followed by its option NAME. So set -o pipefail,
-  # set -euo pipefail, set -e -o pipefail and set -o errexit -o pipefail all arm
-  # it. The bare option name is admitted only directly after a flag token, never
-  # on its own: set stops parsing options at its first non-option word, so
-  # set a b -o pipefail arms nothing and must not read as if it did.
-  if (bare ~ /(^|[^A-Za-z0-9_])set([[:space:]]+-[A-Za-z]+([[:space:]]+[A-Za-z]+)?)*[[:space:]]+-[A-Za-z]*o[[:space:]]+pipefail([[:space:]]|$)/)
-    armed = 1
+  if (arms_pipefail(bare)) armed = 1
 
   # A source edge. The load token is recognized anywhere a command may start,
   # not at line start only, because the bracketed load this tree uses for an
@@ -253,31 +382,202 @@ function segment_reader(s,   toks, m, j, t, w) {
       printf "#source\t%s\t%s\n", file, substr(bare, RSTART, RLENGTH)
   }
 
-  # A doubled bar is a logical OR, not a pipe. Masking it before the split is
-  # what keeps the command after one from reading as a downstream segment.
-  work = line
-  gsub(/\|\|/, "\002", work)
-  n = split(work, seg, "|")
-  for (i = 1; i <= n; i++) {
-    # Segment 1 is downstream only when the PREVIOUS line left a pipeline open.
-    if (i == 1 && !prev_pipe) continue
-    hit = segment_reader(seg[i])
-    if (hit != "")
-      printf "#hit\t%s\t%d\t`%s` short-circuits a pipeline under pipefail\n", file, FNR, hit
-  }
+  n = scan_pipeline(line)
+  for (i = 1; i <= n; i++)
+    printf "#hit\t%s\t%d\t`%s` short-circuits a pipeline under pipefail\n", file, FNR, hitbuf[i]
 
-  # Carry an open pipeline to the next line. A trailing backslash after the bar
-  # is redundant in bash but legal, so it is stripped before the test.
-  tail = line
-  sub(/[[:space:]]+$/, "", tail)
-  sub(/\\$/, "", tail)
-  sub(/[[:space:]]+$/, "", tail)
-  prev_pipe = (tail ~ /\|$/ && tail !~ /\|\|$/)
+  prev_pipe = carries_pipe(line)
 }
 
 # At END, not inline: a file may arm pipefail on a line BELOW a pipeline, so
 # where the set sits says nothing about whether the file runs armed.
 END { if (armed) printf "#armed\t%s\n", file }
+'
+
+# The workflow-YAML arm, and the whole of the shell oracle the header describes.
+# Two passes over the same file, named twice on the command line, because a
+# step\047s `shell:` key may sit either side of its `run:` key and the block
+# cannot be graded until both have been read. Pass one resolves each step\047s
+# shell and finds any `defaults:` key; pass two scans the bodies.
+#
+# Two record kinds, both already graded, because this arm needs no closure:
+#
+#   #defaults <file> <line>            a construct this gate refuses to resolve
+#   #hit      <file> <line> <message>  a reader in a block that runs armed
+readonly YAML_AWK='
+# The YAML structure both passes walk, reduced to the two questions this gate
+# asks of it: which mapping key is this line, and is this line inside a block
+# scalar rather than a key at all. Sets keyname, keycol and islist; answers 0
+# when the line carries no key to read.
+#
+# The block-scalar half is load-bearing rather than tidiness, and it is worth
+# being exact about which case needs it. What it holds is `defaults:` detection
+# and pass-two `run:` detection, both of which read a key at ANY column and so
+# have no column test to fall back on: a `run:` body quoting either word would
+# otherwise be read as the key itself. It is NOT what saves the two lines
+# spelled `shell:` inside the `filters: |` body of
+# .github/workflows/shell-lint.yml, tempting as that reading is. Block-scalar
+# content is necessarily indented deeper than the key that opened it, and that
+# key is already deeper than the step column, so the step-column test decides
+# those two on its own and would still decide them with this half removed.
+function yaml_key(l,   col, rest) {
+  if (l ~ /^[[:space:]]*$/) return 0
+  col = match(l, /[^ ]/)
+  if (blockcol >= 0) {
+    if (col > blockcol) return 0
+    blockcol = -1
+  }
+  # A mustache section tag sits at column 1 in the adopter templates and renders
+  # as a blank line, so it is neither a key nor a dedent. A partial include is
+  # deliberately not spared: it splices a whole document region.
+  rest = substr(l, col)
+  if (substr(rest, 1, 3) ~ /^\{\{[#^\/]/) return 0
+  # A list item opens a step, and the key after its dash is the first key of
+  # that step. The dash and its following run of spaces are part of the
+  # indentation for column purposes, so the key column is measured past them.
+  islist = 0
+  if (match(l, /^[[:space:]]*-[[:space:]]+/)) {
+    islist = 1
+    col = RLENGTH + 1
+    rest = substr(l, col)
+  }
+  if (rest !~ /^[A-Za-z_][A-Za-z0-9_.-]*:([[:space:]]|$)/) return 0
+  keyname = rest
+  sub(/:.*$/, "", keyname)
+  keycol = col
+  keyval = rest
+  sub(/^[A-Za-z_][A-Za-z0-9_.-]*:/, "", keyval)
+  # A block scalar header carries nothing but the indicator, its optional
+  # chomping and indentation digits in either order, and an optional comment.
+  # Anything else on the line is inline content, which is a single command and
+  # so cannot carry a two-line shape.
+  isblock = (keyval ~ /^[[:space:]]*[|>][-+0-9]*[[:space:]]*(#.*)?$/)
+  if (isblock) blockcol = keycol
+  return 1
+}
+
+# A step is armed by its resolved shell when it names bash outright, or names a
+# custom invocation carrying pipefail. Everything else, the absent case
+# included, is GitHub\047s bare `bash -e` default, which arms nothing.
+function shell_arms(v) {
+  sub(/^[[:space:]]+/, "", v)
+  sub(/[[:space:]]+$/, "", v)
+  gsub(/^["\047]|["\047]$/, "", v)
+  if (v == "bash") return 1
+  return (v ~ /pipefail/)
+}
+
+# Close the step pass one is holding: a step that carried a `run:` block and
+# resolved to an arming shell hands pass two a pre-armed block, keyed by the
+# line its `run:` sits on. An array rather than a record, because the two passes
+# are one awk invocation and pass two reads it directly.
+function flush_step() {
+  if (steprun > 0 && shell_arms(stepshell)) shellarm[steprun] = 1
+  steprun = 0
+  stepshell = ""
+}
+
+# The command-substitution nesting depth at character `upto` of `s`, starting
+# from the block-level `subdepth` and clamped at zero. Clamped, not merely
+# bounded: the header states why that direction is the safe one.
+function depth_at(s, upto,   i, d, c) {
+  d = subdepth
+  for (i = 1; i < upto; i++) {
+    c = substr(s, i, 1)
+    if (c == "$" && substr(s, i + 1, 1) == "(") { d++; i++ }
+    else if (c == ")" && d > 0) d--
+  }
+  return d
+}
+
+BEGIN { blockcol = -1; steprun = 0; stepkeycol = -1 }
+
+# --- pass one: resolve each step\047s shell, and find any defaults: key ------
+NR == FNR {
+  if (!yaml_key($0)) next
+  if (keyname == "defaults") printf "#defaults\t%s\t%d\n", file, FNR
+  # A list item opens a step, and its own key column is the column every other
+  # key of that step sits at.
+  if (islist) { flush_step(); stepkeycol = keycol }
+  if (keycol != stepkeycol) next
+  # Both `run:` spellings register, block scalar and inline alike. The resolved
+  # shell of the step arms whichever one it carries, so grading only the block
+  # form would leave the inline one unscanned at every arming.
+  if (keyname == "shell") stepshell = keyval
+  else if (keyname == "run") steprun = FNR
+  next
+}
+
+# --- pass two: scan the run: bodies -----------------------------------------
+# Reached only on pass two, because the rule above ends in `next`. The last step
+# of pass one is still open here, so this is where it closes.
+FNR == 1 { flush_step(); blockcol = -1; inrun = 0 }
+
+{
+  if (inrun) {
+    col = match($0, /[^ ]/)
+    tag = substr($0, col ? col : 1)
+    # A blank line, and a mustache section tag rendering as one, belong to the
+    # block scalar rather than ending it.
+    if ($0 ~ /^[[:space:]]*$/ || substr(tag, 1, 3) ~ /^\{\{[#^\/]/) { body($0, FNR); next }
+    if (col > runcol) { body($0, FNR); next }
+    endrun()
+    # Fall through: this same line may itself be the next run: key.
+  }
+  if (yaml_key($0) && keyname == "run") {
+    armed = shellarm[FNR]
+    subdepth = 0
+    prev_pipe = 0
+    pend = 0
+    if (isblock) {
+      inrun = 1
+      runcol = keycol
+    } else {
+      # An inline value is a single command, so it is its own one-line block and
+      # is graded on the spot. It needs the same arming as the block form and
+      # nothing else: a composite step, where the schema makes `shell:`
+      # mandatory, is exactly where a `shell: bash` puts the class on a key\047s
+      # own line. The sibling run-interpolation gate scans this arm too, so
+      # skipping it here would leave the two disagreeing about the same value.
+      body(keyval, FNR)
+      endrun()
+    }
+  }
+}
+
+END { if (inrun) endrun() }
+
+# body: one line of a run: block. Hits are BUFFERED rather than printed, because
+# a block may arm pipefail on a line below a pipeline exactly as a file may.
+function body(l, n,   i, k) {
+  bare = l
+  sub(/^[[:space:]]+/, "", bare)
+  # A full-line comment neither arms pipefail nor carries an executed reader,
+  # and it does NOT close an open pipeline. It is skipped before the depth walk
+  # too: this tree\047s comments quote `$(...)` as prose, and counting those
+  # would drift the depth against real code.
+  if (bare ~ /^#/) return
+  # Predicate and locator are handed the SAME string as well as the same
+  # pattern, so RSTART below is the position of the occurrence that just
+  # answered true rather than of some earlier near-miss.
+  if (!armed && arms_pipefail(l)) {
+    match(l, PIPEFAIL_RE)
+    if (depth_at(l, RSTART) == 0) armed = 1
+  }
+  subdepth = depth_at(l, length(l) + 1)
+  k = scan_pipeline(l)
+  for (i = 1; i <= k; i++) { pend++; pline[pend] = n; ptext[pend] = hitbuf[i] }
+  prev_pipe = carries_pipe(l)
+}
+
+# endrun: the block just ended, so this is where it is graded.
+function endrun(   i) {
+  if (armed)
+    for (i = 1; i <= pend; i++)
+      printf "#hit\t%s\t%d\t`%s` short-circuits a pipeline under pipefail\n", file, pline[i], ptext[i]
+  inrun = 0
+  pend = 0
+}
 '
 
 WORK_DIR="$(mktemp -d "${TMPDIR:-/tmp}/$PROG.XXXXXX")" || {
@@ -295,11 +595,53 @@ trap 'exit 143' TERM
 # because awk is handed the file CONTENT and this is a fact about its name. It
 # rides the same stream as the awk records, so the loop opens one output file
 # and forks nothing per file: `${f##*/}` is what `basename` would have returned.
-for f in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
+#
+# `LC_ALL=C` on both arms, so awk reads BYTES rather than characters. See the
+# YAML loop below for the hazard; it is if anything stronger here, because far
+# more tracked `*.sh` carry a non-ASCII byte than workflow YAML does. Every
+# construct either arm matches on is ASCII, so reading bytes costs neither of
+# them anything, and the two per-file invocations do not disagree about a
+# hazard this file argues is real.
+for f in ${sh_files[@]+"${sh_files[@]}"}; do
   [ -f "$f" ] || continue
   printf '#file\t%s\t%s\n' "${f##*/}" "$f"
-  awk -v file="$f" "$SCAN_AWK" "$f"
+  LC_ALL=C awk -v file="$f" "$READER_AWK$SHELL_AWK" "$f"
 done > "$WORK_DIR/records"
+
+# The YAML arm, into its own record stream: its hits arrive already graded, so
+# they must not reach the closure machinery below, which grades by file rather
+# than by block. Each file is named TWICE, which is what makes the two passes
+# two: pass one resolves the steps, pass two scans the bodies.
+#
+# `LC_ALL=C` for the reason the `*.sh` loop above also takes it: the prose in
+# these files is not ASCII (an arrow in a comment of the code-review-audit
+# template is enough), and awk aborts the whole file on a multibyte conversion
+# failure, which would leave the arm scanning nothing and saying so only as a
+# warning on stderr. Every construct this arm matches on -- YAML indentation,
+# `run:`, `shell:`, the pipe, the reader flags -- is ASCII.
+for f in ${yaml_files[@]+"${yaml_files[@]}"}; do
+  [ -f "$f" ] || continue
+  LC_ALL=C awk -v file="$f" "$READER_AWK$YAML_AWK" "$f" "$f"
+done > "$WORK_DIR/yaml-records"
+
+# The refusal, ahead of any verdict. A `defaults:` key moves the resolved shell
+# for every step under it, which is the one thing the oracle above does not
+# resolve, so the gate stops rather than answer for a surface it has graded on
+# the wrong default. Read with a single awk pass rather than a quiet grep
+# downstream of a pipe: this file arms pipefail, and that is the class it
+# exists to catch.
+defaults_seen="$(awk -F'\t' '$1 == "#defaults" { printf "%s:%s\n", $2, $3 }' "$WORK_DIR/yaml-records")"
+if [ -n "$defaults_seen" ]; then
+  printf '%s\n' "$defaults_seen" >&2
+  cat >&2 <<REFUSAL
+$PROG: a \`defaults:\` key is present in the scanned workflow YAML, at the
+line(s) above. It moves the resolved shell for every \`run:\` step beneath it,
+and this gate resolves a step's own \`shell:\` key only. Grading these steps
+would answer from the wrong default, so nothing was graded. Implementing the
+step-over-job-over-workflow precedence chain is tracked as gaia-react/gaia#1814.
+REFUSAL
+  exit 4
+fi
 
 # Split the one record stream into the three inputs the closure needs. No `||`
 # guard is owed on any of them: awk exits 0 over a file holding no matching
@@ -326,9 +668,16 @@ while : ; do
 done
 
 report=""
-for f in ${GAIA_GUARD_SCAN_FILES[@]+"${GAIA_GUARD_SCAN_FILES[@]}"}; do
+for f in ${sh_files[@]+"${sh_files[@]}"}; do
   grep -qxF -- "$f" "$WORK_DIR/closure" || continue
   hits="$(awk -F'\t' -v f="$f" '$2 == f { printf "%s:%s: %s\n", $2, $3, $4 }' "$WORK_DIR/hits")"
+  [ -z "$hits" ] || report+="$hits"$'\n'
+done
+
+# No closure test on this arm: a `run:` body is its own script, so it is graded
+# by its own step and inherits nothing from the file around it.
+for f in ${yaml_files[@]+"${yaml_files[@]}"}; do
+  hits="$(awk -F'\t' -v f="$f" '$1 == "#hit" && $2 == f { printf "%s:%s: %s\n", $2, $3, $4 }' "$WORK_DIR/yaml-records")"
   [ -z "$hits" ] || report+="$hits"$'\n'
 done
 

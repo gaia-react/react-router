@@ -52,13 +52,21 @@ fixture_repo_bare() {
   git -C "$TMP" init -q .
 }
 
-# fixture_repo: fixture_repo_bare with one benign tracked script, so the
-# discovery is non-empty and a test reaches class detection rather than the
-# empty-surface error. The seed is `seed.sh` rather than `check.sh` so
-# fixture_script below can overwrite the latter without emptying the surface.
+# fixture_repo: fixture_repo_bare with one benign tracked script and one benign
+# tracked workflow, so BOTH discoveries are non-empty and a test reaches class
+# detection rather than an empty-surface error. The seed is `seed.sh` rather
+# than `check.sh` so fixture_script below can overwrite the latter without
+# emptying the surface, and the workflow seed is the same idea one surface over:
+# fixture_workflow writes `probe.yml`, so `seed.yml` survives it.
 fixture_repo() {
   fixture_repo_bare
   fixture_file seed.sh 'true'
+  fixture_file .github/workflows/seed.yml 'jobs:
+  j:
+    steps:
+      - name: seed
+        run: |
+          true'
 }
 
 # fixture_file <relpath> <body>: write <body> verbatim to $TMP/<relpath> and
@@ -86,6 +94,43 @@ fixture_script_unarmed() {
   fixture_file check.sh "#!/usr/bin/env bash
 set -eu
 $1"
+}
+
+# indent <n> <body>: reprint <body> with <n> spaces in front of every line, so a
+# test writes a `run:` body at column 0 and the helper places it inside the
+# block scalar. Written with awk rather than a `sed` substitution so the
+# indentation is data rather than part of a pattern.
+indent() {
+  printf '%s\n' "$2" | awk -v pad="$( printf "%${1}s" '' )" '{ print pad $0 }'
+}
+
+# fixture_workflow <body>: a tracked workflow whose one step carries <body> as
+# its `run:` block, under GitHub's DEFAULT shell -- no `shell:` key, which is
+# every workflow-file step in this repository. The scaffolding is written here
+# rather than repeated in every fixture, so a test body is the block under test
+# and nothing else; `jobs:` is line 1 and the first body line is line 6.
+fixture_workflow() {
+  fixture_file .github/workflows/probe.yml "jobs:
+  j:
+    steps:
+      - name: probe
+        run: |
+$( indent 10 "$1" )"
+}
+
+# fixture_action <shell-value> <body>: a tracked composite action whose one step
+# names <shell-value> as its shell. This is the surface whose arming comes from
+# the RESOLVED SHELL rather than from the body, and GitHub's schema makes
+# `shell:` mandatory for a composite `run:` step. `runs:` is line 1 and the
+# first body line is line 7.
+fixture_action() {
+  fixture_file .github/actions/probe/action.yml "runs:
+  using: composite
+  steps:
+    - name: probe
+      shell: $1
+      run: |
+$( indent 8 "$2" )"
 }
 
 # run_linter: run the gate from inside the fixture repo.
@@ -555,6 +600,267 @@ printf "%s" "$a" | grep -q needle'
   [ "$status" -eq 0 ]
 }
 
+# --- the workflow arm, whose arming is a shell oracle ----------------------
+#
+# The adversarial half `.claude/rules/guards-must-fail.md` demands of a
+# guard-shaped deliverable: this arm is driven into its failing state on each of
+# the two independent things that arm a block, and the refusal is driven into
+# its own. A suite that only proved the arm stays quiet would be satisfied by an
+# arm that never runs.
+
+@test "flags a reader in a run: body armed by the step's shell: bash" {
+  fixture_repo
+  fixture_action bash 'printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/actions/probe/action.yml:7:" <<<"$output" || return 1
+  grep -qF -- "short-circuits a pipeline under pipefail" <<<"$output"
+}
+
+# The other half of the same oracle, and independent of it: a body that arms
+# pipefail itself is armed whatever its shell resolves to. This fixture carries
+# no `shell:` at all, so the resolved shell is the bare default that arms
+# nothing, and only the body text can red it.
+@test "flags a reader in a run: body armed by its own set -o pipefail" {
+  fixture_repo
+  fixture_workflow 'set -euo pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/workflows/probe.yml:7:" <<<"$output"
+}
+
+# The adopter workflow templates render into somebody else's CI, so they are the
+# one surface whose defects this repository's review is the last place able to
+# see. `.tmpl` matches no `*.yml` glob, hence its own pathspec in the set.
+@test "flags a reader in an adopter workflow template" {
+  fixture_repo
+  fixture_file .gaia/cli/src/automation/templates/workflows/probe.yml.tmpl 'jobs:
+  j:
+    steps:
+      - name: probe
+        run: |
+          set -euo pipefail
+          printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "templates/workflows/probe.yml.tmpl:7:" <<<"$output"
+}
+
+# The INLINE `run:` spelling, which is its own one-line block. Grading only the
+# block-scalar form left this unscanned at every arming, and the composite
+# actions are where it bites: the Actions schema makes `shell:` mandatory there,
+# so `shell: bash` arms a reader on the key's own line exactly as it arms one in
+# a block. Both directions are pinned, so the boundary cannot drift back to
+# silence.
+@test "flags a reader in an inline run: value armed by the step's shell" {
+  fixture_repo
+  fixture_file .github/actions/probe/action.yml 'runs:
+  using: composite
+  steps:
+    - name: probe
+      shell: bash
+      run: printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/actions/probe/action.yml:6:" <<<"$output" || return 1
+  grep -qF -- "short-circuits a pipeline under pipefail" <<<"$output"
+}
+
+@test "quiet on an inline run: value under the default shell" {
+  fixture_repo
+  fixture_file .github/workflows/probe.yml 'jobs:
+  j:
+    steps:
+      - name: probe
+        run: printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# A block may arm pipefail on a line BELOW its pipeline, exactly as a file may,
+# so a block is graded when it ENDS rather than where its `set` sits.
+@test "flags a pipeline whose block arms pipefail on a LATER line" {
+  fixture_repo
+  fixture_workflow 'printf "%s" "$a" | grep -q needle
+set -euo pipefail'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/workflows/probe.yml:6:" <<<"$output"
+}
+
+# The default case, and the reason the body-text test alone cannot grade this
+# surface: every workflow-file step in this repository resolves to `bash -e`,
+# which arms no pipefail, so the shape here is not an instance.
+@test "quiet on a run: body under the default shell, which arms no pipefail" {
+  fixture_repo
+  fixture_workflow 'printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# A shell that is neither bash nor a custom invocation naming pipefail arms
+# nothing, so an explicit `shell:` is not by itself an arming signal.
+@test "quiet on a step whose explicit shell is not a pipefail-arming one" {
+  fixture_repo
+  fixture_action sh 'printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# A custom invocation that names pipefail arms the block even though the value
+# is not the bare word `bash`.
+@test "flags a step whose custom shell invocation names pipefail" {
+  fixture_repo
+  fixture_action 'bash -eo pipefail {0}' 'printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/actions/probe/action.yml:7:" <<<"$output"
+}
+
+# THE DISCRIMINATION THIS TREE'S CURRENT STATE TURNS ON. A substitution-scoped
+# `set -o pipefail` arms the subshell and not the block around it, and it is the
+# shape this repository writes wherever a `git diff -z` feeds a `tr`. Reading it
+# as block-level arming would report every one of those blocks.
+#
+# Each spelling gets its own fixture because they are stopped by DIFFERENT
+# mechanisms, and only one of them is the depth test. In the tree's own
+# `$(set -o pipefail; ...)` the `;` sits where the arming pattern requires
+# whitespace or end-of-line, so that spelling never reaches the depth test at
+# all. Spaced before the `;`, and split across lines, the pattern does match and
+# the depth test is the only thing standing between the block and a false arm.
+@test "a substitution-scoped set -o pipefail does not arm the block: tree spelling" {
+  fixture_repo
+  fixture_workflow 'set -eu
+changed=$(set -o pipefail; git diff --name-only -z | tr "\0" "\n")
+printf "%s" "$changed" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+@test "a substitution-scoped set -o pipefail does not arm the block: spaced spelling" {
+  fixture_repo
+  fixture_workflow 'set -eu
+changed=$(set -o pipefail ; git diff --name-only -z | tr "\0" "\n")
+printf "%s" "$changed" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+@test "a substitution-scoped set -o pipefail does not arm the block: split across lines" {
+  fixture_repo
+  fixture_workflow 'set -eu
+changed=$(
+  set -o pipefail
+  git diff --name-only -z | tr "\0" "\n"
+)
+printf "%s" "$changed" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# A block ends at the dedent, so one block's arming must not reach the next
+# step. Without that boundary the armed block here would red the unarmed one
+# below it, which is the whole surface graded by whichever step armed first.
+# The mirror image of the substitution-scoped tests above, and the reason the
+# arming pattern is bound once rather than written twice. Here a genuine
+# block-level arming
+# follows a substitution-scoped one on the SAME line, and the earlier one ends
+# at a `;` where the pattern wants whitespace or end-of-line. A locator carrying
+# its own boundary-less copy of the pattern finds that earlier occurrence, asks
+# the depth test about a position inside the substitution, and reads the block
+# as unarmed: a false negative, which is the direction this gate must not be
+# wrong in. Confirmed to report clean against exactly that shape before the two
+# readers were given one pattern.
+@test "an arming preceded on its line by a boundary-less one still arms the block" {
+  fixture_repo
+  fixture_workflow 'x=$(set -o pipefail; true); set -o pipefail
+printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/workflows/probe.yml:7:" <<<"$output"
+}
+
+@test "a block's arming does not leak into the next step" {
+  fixture_repo
+  fixture_file .github/workflows/probe.yml 'jobs:
+  j:
+    steps:
+      - name: armed
+        run: |
+          set -euo pipefail
+          echo hi
+      - name: unarmed
+        run: |
+          printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# .github/workflows/shell-lint.yml carries two lines spelled exactly `shell:`
+# that name a dorny/paths-filter output inside a `filters: |` block scalar. Read
+# as step keys they would arm blocks that resolve to the bare default.
+@test "a shell: naming a paths-filter output is not read as a step shell" {
+  fixture_repo
+  fixture_file .github/workflows/probe.yml 'jobs:
+  j:
+    steps:
+      - uses: dorny/paths-filter@v4
+        id: filter
+        with:
+          filters: |
+            shell: bash
+              - "**/*.sh"
+      - name: probe
+        run: |
+          printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
+# --- the defaults: refusal --------------------------------------------------
+
+@test "a defaults: key is refused rather than resolved" {
+  fixture_repo
+  fixture_file .github/workflows/probe.yml 'defaults:
+  run:
+    shell: bash
+jobs:
+  j:
+    steps:
+      - name: probe
+        run: |
+          printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 4 ]
+  grep -qF -- ".github/workflows/probe.yml:1" <<<"$output" || return 1
+  # Names the issue that tracks the precedence chain, not merely the word
+  # `defaults`, so the operator handed this has somewhere to go.
+  grep -qF -- "gaia-react/gaia#1814" <<<"$output" || return 1
+  # The refusal replaces the verdict rather than riding alongside one: a status
+  # 4 that still printed `clean` would read as a graded tree. Written as a
+  # positive match for the bad case ending in `return 1`, per
+  # .claude/rules/bats-assertions.md: a `!`-negated absence check is exempted
+  # from `set -e` and would green here whatever the output said.
+  grep -qF -- "lint-sigpipe-readers: clean" <<<"$output" && return 1
+  true
+}
+
+# The refusal reads YAML STRUCTURE, not the word. A `run:` body is shell text,
+# and a line inside one that happens to spell `defaults:` is not a workflow
+# default; refusing on it would take the gate down over a string in a script.
+@test "a defaults: inside a run: body is not read as a workflow default" {
+  fixture_repo
+  fixture_workflow 'set -euo pipefail
+cat <<YAML
+defaults:
+  run:
+    shell: bash
+YAML'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
 # --- discovery is armed, not merely correct --------------------------------
 
 @test "an empty scan set is a hard error, never a clean tree" {
@@ -566,6 +872,20 @@ printf "%s" "$a" | grep -q needle'
   # message carries, so the assertion cannot be satisfied by some other
   # discovery reporting clean over nothing.
   grep -qF -- "the scan surface (shell)" <<<"$output"
+}
+
+# The workflow set gets its own emptiness check rather than riding the union
+# with `shell`, and this is the test that holds the two calls apart. Under a
+# single union call a tracked `*.sh` would carry an empty YAML surface past the
+# check, and the arm above would report clean having opened no workflow at all,
+# which is the fail-open discovery `.claude/rules/guards-must-fail.md` names.
+@test "an empty workflow surface is a hard error, never a clean tree" {
+  fixture_repo_bare
+  fixture_file seed.sh 'true'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- "nothing was scanned" <<<"$output" || return 1
+  grep -qF -- "the scan surface (workflows)" <<<"$output"
 }
 
 # The `|| exit $?` on the discovery call is the whole mechanism here. `|| exit 1`
