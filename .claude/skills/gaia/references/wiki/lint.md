@@ -119,7 +119,7 @@ Run the dead-paths primitive and append a `## #12: Dead repo-relative paths` sec
 .gaia/cli/gaia wiki dead-paths --json
 ```
 
-Returns `{ "dead": [{ "filePath": "...", "line": N, "path": "..." }, ...], "staleMarkers": [...] }`. Both arrays empty means clean.
+Returns `{ "dead": [{ "filePath": "...", "line": N, "path": "..." }, ...], "staleMarkers": [{ "filePath": "...", "line": N, "marker": "...", "problem": "unused" | "missing-reason" | "missing-path" }, ...] }`. Both arrays empty means clean.
 
 ### 3a-i. Exempting an illustration: the `gaia:hypothetical` marker
 
@@ -168,7 +168,7 @@ Otherwise:
 - `wiki/decisions/Quux.md:5` → malformed, no path given
 ```
 
-One line form per `problem` value (`unused`, `missing-reason`, `missing-path`); render each entry from the value the scan reported rather than from the nearest form on offer.
+One line form per `problem` value; render each entry from the value the scan reported rather than from the nearest form on offer.
 
 List every dead reference and every stale marker (one per line), and drop whichever heading has no entries. Do not truncate: the counts are small enough to be actionable.
 

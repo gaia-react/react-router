@@ -271,12 +271,13 @@ type ParsedMarker = {
 // The payload is split at its first colon so a reason may itself contain one.
 // A path carries no colon, which is what makes that split unambiguous.
 //
-// With no colon at all the whole payload is the declared path, and which half
-// the author actually omitted is then a question the split cannot answer: a
-// path carries no whitespace, so a payload that does is a reason written
-// without one. Reading it as a path instead would echo the reason back while
-// asking for a reason, which is the wrong instruction this defect pair exists
-// to avoid handing out.
+// The two defects are told apart by which side of that split came back empty,
+// and only by that. With no colon at all the payload is read as the path and
+// the marker reports a missing reason, which is right for a bare path and is
+// the wrong half to name for a reason someone wrote without the separator.
+// Whitespace does not discriminate the two: a wiki page name routinely carries
+// spaces (`wiki/decisions/Code Audit Team.md`), so reading a spaced payload as
+// prose would refuse the marker every spaced path needs.
 const parseMarker = (match: RegExpExecArray): ParsedMarker => {
   const payload = match[1] ?? '';
   const separator = payload.indexOf(':');
@@ -286,7 +287,7 @@ const parseMarker = (match: RegExpExecArray): ParsedMarker => {
 
   return {
     defect:
-      declared === '' || /\s/.test(declared) ? 'missing-path'
+      declared === '' ? 'missing-path'
       : reason === '' ? 'missing-reason'
       : null,
     path: declared.normalize('NFC'),

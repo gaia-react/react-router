@@ -31674,7 +31674,7 @@ var parseMarker = (match) => {
   const declared = (separator === -1 ? payload : payload.slice(0, separator)).trim();
   const reason = separator === -1 ? "" : payload.slice(separator + 1).trim();
   return {
-    defect: declared === "" || /\s/.test(declared) ? "missing-path" : reason === "" ? "missing-reason" : null,
+    defect: declared === "" ? "missing-path" : reason === "" ? "missing-reason" : null,
     path: declared.normalize("NFC"),
     raw: payload.trim()
   };
