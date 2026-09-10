@@ -220,6 +220,24 @@ teardown() {
 #   filtercount            total dorny/paths-filter steps in the whole file
 #   filterifs              one `<job-id>\t<normalized-if>` line per step, across
 #                         EVERY job, whose `if:` mentions steps.filter.outputs.
+#   stepgates <job-id>      one `<step-name>\t<normalized-if>` line per step in
+#                         that job, in document order; `if` is empty for a
+#                         step with no gate.
+#   stepfield <job-id> <step-name> <field>
+#                         the scalar value of `<field>` (a dotted path reaches
+#                         one level of nesting, e.g. `with.list-files`) on the
+#                         step named `<step-name>` in that job. Empty when the
+#                         field is absent. Exits 2 when no step carries the
+#                         name, or the field resolves to a mapping or list.
+#   filterwith <job-id> <key>
+#                         the value of `<key>` under `with:` on that job's
+#                         dorny/paths-filter step. Empty when the key is
+#                         absent.
+#   filteridjobs            one `<job-id>\t<name-or-uses>` line per step across
+#                         EVERY job whose `id:` is exactly `filter`.
+#   armingifs               one `<job-id>\t<normalized-if>` line per step,
+#                         across EVERY job, whose `if:` mentions
+#                         steps.leg-arming.outputs.
 #   runinterp               one `<job-id>\t<step-name>` line per step whose RAW
 #                         (unnormalized) `run:` body contains a literal `${{`
 #   setupnodecaps          one
@@ -344,18 +362,22 @@ def chain(jid, seen, margin):
     return (cap_of(jid) or 0) + best[0], best[1] + 1
 
 
+def filter_step_for(jid):
+    """That job's dorny/paths-filter step, found by `uses:` identity. Shared
+    by every mode that reads a property of that one step, so the identity
+    check lives in one place."""
+    for step in jobs[jid].get('steps') or []:
+        if isinstance(step, dict) and 'dorny/paths-filter' in str(step.get('uses', '')):
+            return step
+    die('job %r has no dorny/paths-filter step' % jid)
+
+
 def code_list_for(jid):
     """That job's dorny/paths-filter step's `code:` list, as parsed YAML
     entries (bare strings and change-type mappings alike). Shared by
     `codefilter` and `codefilterentries`, which read the same list and differ
     only in whether the change-type key survives."""
-    filter_step = None
-    for step in jobs[jid].get('steps') or []:
-        if isinstance(step, dict) and 'dorny/paths-filter' in str(step.get('uses', '')):
-            filter_step = step
-            break
-    if filter_step is None:
-        die('job %r has no dorny/paths-filter step' % jid)
+    filter_step = filter_step_for(jid)
     filters_raw = (filter_step.get('with') or {}).get('filters')
     if not isinstance(filters_raw, str):
         die('job %r paths-filter step has no filters: string' % jid)
@@ -424,6 +446,81 @@ elif mode == 'filterifs':
                 continue
             gate = normalize(step.get('if', ''))
             if 'steps.filter.outputs.' in gate:
+                print('%s\t%s' % (jid, gate))
+elif mode == 'stepgates':
+    # That job's steps, one `<name>\t<normalized-if>` line per step, in
+    # document order. `name` falls back to `uses:` for an unnamed step, the
+    # same fallback `setupnodecaps` and `runinterp` use, so an anonymous
+    # checkout step still prints an identity rather than an empty field. `if`
+    # is empty for a step with no gate. W19 derives its armed-conjunct and
+    # filter-conjunct sets from this rather than scraping the raw text.
+    require_job(rest[0])
+    for step in jobs[rest[0]].get('steps') or []:
+        if not isinstance(step, dict):
+            continue
+        name = str(step.get('name', '')) or str(step.get('uses', ''))
+        print('%s\t%s' % (name, normalize(step.get('if', ''))))
+elif mode == 'stepfield':
+    # The scalar value of one field on the step named `rest[1]` inside job
+    # `rest[0]`, found by its `name:` field. `rest[2]` may be a dotted path
+    # (`with.list-files`) to reach one level of nesting. Exits 2 on a mapping
+    # or list value, so a caller expecting a scalar cannot silently stringify
+    # a nested structure and get a false comparison; prints nothing when the
+    # field is absent, which lets a caller compare against an expected
+    # literal without special-casing "missing" separately from "empty".
+    require_job(rest[0])
+    wanted, key_path = rest[1], rest[2].split('.')
+    found = False
+    for step in jobs[rest[0]].get('steps') or []:
+        if not isinstance(step, dict) or str(step.get('name', '')) != wanted:
+            continue
+        found = True
+        value = step
+        for part in key_path:
+            value = value.get(part) if isinstance(value, dict) else None
+        if isinstance(value, (dict, list)):
+            die('stepfield: %r on step %r resolves to a %s, not a scalar' % (rest[2], wanted, type(value).__name__))
+        if value is not None:
+            print(str(value))
+        break
+    if not found:
+        die('stepfield: no step named %r in job %r' % (wanted, rest[0]))
+elif mode == 'filterwith':
+    # The value of one `with:` key on job `rest[0]`'s dorny/paths-filter step.
+    # Prints nothing when the key is absent, the same "missing reads as empty"
+    # contract `stepfield` uses, since W19 needs to red identically whether
+    # `list-files:` was changed to another value or deleted outright.
+    require_job(rest[0])
+    step = filter_step_for(rest[0])
+    value = (step.get('with') or {}).get(rest[1])
+    if value is not None:
+        print(str(value))
+elif mode == 'filteridjobs':
+    # One `<job-id>\t<name-or-uses>` line per step across EVERY job whose
+    # `id:` is exactly `filter`. The workflow carries this id on the shards
+    # job's real dorny/paths-filter step and on the two standalone jobs' own
+    # hand-rolled gates (FC-2's `scope_boundaries.never`: widening the
+    # coverage suite's hand-rolled `id: filter` pin is forbidden), and W19
+    # reads this to prove the new arming step joined under a distinct id
+    # rather than colliding with any of those three.
+    for jid, job in jobs.items():
+        for step in job.get('steps') or []:
+            if not isinstance(step, dict):
+                continue
+            if str(step.get('id', '')) == 'filter':
+                name = str(step.get('name', '')) or str(step.get('uses', ''))
+                print('%s\t%s' % (jid, name))
+elif mode == 'armingifs':
+    # One `<job-id>\t<normalized-if>` line per step across EVERY job whose
+    # `if:` mentions steps.leg-arming.outputs. -- the mirror of `filterifs`,
+    # used by W19 to prove the arming conjunct stays inside the shards job
+    # rather than reaching either standalone hop-1 job.
+    for jid, job in jobs.items():
+        for step in job.get('steps') or []:
+            if not isinstance(step, dict):
+                continue
+            gate = normalize(step.get('if', ''))
+            if 'steps.leg-arming.outputs.' in gate:
                 print('%s\t%s' % (jid, gate))
 elif mode == 'runinterp':
     for jid, job in jobs.items():
@@ -5025,4 +5122,342 @@ assert_no_dynamic_wiki_paths() {
     return 1
   }
   grep -qF -- 'wiki/concepts/${page_name}' <<<"$output"
+}
+
+# W19 (SPEC-078 lever two, FC-2). Pins the wiring lever two lands: `json`
+# list-files on the shards job's own paths-filter step, the arming step
+# immediately after it, and the narrowed conjunct
+# (`steps.leg-arming.outputs.arm == 'true'`) on every per-leg `code:`-gated
+# step in that job -- ADDITIONAL to the existing filter conjunct those steps
+# already carry, never a replacement.
+#
+# Every derivation below is scoped to the shards job on purpose, not as an
+# optimization: the two standalone hop-1 jobs (hook-capabilities-live-tree,
+# verb-arming-adoption) each carry their own hand-rolled `id: filter` gate and
+# must never carry the arming conjunct, so an unscoped comparison would red on
+# the merged tree for a reason that is not a real one.
+ARMING_STEP_NAME='Resolve whether this leg holds a suite naming the changed wiki pages'
+
+# w19_armed_names / w19_filtered_names <workflow>: names of every shards-job
+# step whose if: reads steps.leg-arming.outputs.arm / steps.filter.outputs.code
+# respectively, LC_ALL=C sorted, one per line. `filtered` excludes the arming
+# step's own name: its gate admits the filter conjunct so it can hand the
+# script a real answer, but it never gates on its own output, so it is not a
+# member of the set this compares against.
+w19_armed_names() {
+  local workflow="$1" name gate
+  while IFS=$'\t' read -r name gate; do
+    [ -n "$name" ] || continue
+    if printf '%s' "$gate" | grep -qF -- 'steps.leg-arming.outputs.arm'; then
+      printf '%s\n' "$name"
+    fi
+  done < <(read_wf stepgates "$workflow" shards) | LC_ALL=C sort
+}
+
+w19_filtered_names() {
+  local workflow="$1" name gate
+  while IFS=$'\t' read -r name gate; do
+    [ -n "$name" ] || continue
+    [ "$name" = "$ARMING_STEP_NAME" ] && continue
+    if printf '%s' "$gate" | grep -qF -- 'steps.filter.outputs.code'; then
+      printf '%s\n' "$name"
+    fi
+  done < <(read_wf stepgates "$workflow" shards) | LC_ALL=C sort
+}
+
+# assert_list_files_json <workflow>: the shards job's own paths-filter step
+# exposes list-files as exactly json. Several narrowable class pages carry a
+# space in their path, and every other format the action offers is space- or
+# comma-joined, so anything else would silently shred a path and ship the
+# narrowing inert while every criterion here still read green.
+assert_list_files_json() {
+  local workflow="$1" value
+  value="$(read_wf filterwith "$workflow" shards list-files)"
+  [ "$value" = "json" ] && return 0
+  echo "$workflow's shards paths-filter step's list-files is '$value', expected json" >&2
+  return 1
+}
+
+# assert_retained_filter_conjunct <workflow>: no shards-job step reads
+# steps.leg-arming.outputs. without also reading steps.filter.outputs.code --
+# the load-bearing invariant: the arming conjunct is ADDITIONAL, never a
+# replacement, and dropping the filter conjunct from a narrowed step would
+# silently retire it from workflow-filter-coverage.bats's gated set and from
+# W4's population.
+assert_retained_filter_conjunct() {
+  local workflow="$1" name gate gaps=""
+  while IFS=$'\t' read -r name gate; do
+    [ -n "$name" ] || continue
+    printf '%s' "$gate" | grep -qF -- 'steps.leg-arming.outputs.' || continue
+    printf '%s' "$gate" | grep -qF -- 'steps.filter.outputs.code' || gaps="${gaps}${name}; "
+  done < <(read_wf stepgates "$workflow" shards)
+  [ -z "$gaps" ] || {
+    echo "step(s) in shards read the arming conjunct without the filter conjunct: $gaps" >&2
+    return 1
+  }
+  return 0
+}
+
+# assert_conjunct_sets_equal <workflow>: within shards, the set of steps
+# carrying the arming conjunct equals the set carrying the filter conjunct
+# (minus the arming step itself). A step gated indirectly through another
+# step's output -- the CLI-workspace install, gated on
+# steps.needs-cli-workspace.outputs.needed -- never reads either conjunct
+# literally, so it is already absent from both sides without an explicit
+# exclusion.
+assert_conjunct_sets_equal() {
+  local workflow="$1" armed filtered
+  armed="$(w19_armed_names "$workflow")"
+  filtered="$(w19_filtered_names "$workflow")"
+  [ "$armed" = "$filtered" ] && return 0
+  echo "the arming-conjunct and filter-conjunct sets in shards disagree (excluding the arming step, and excluding any step -- e.g. the CLI-workspace install -- gated only indirectly through another step's output)." >&2
+  echo "arming conjunct:" >&2
+  printf '%s\n' "$armed" >&2
+  echo "filter conjunct:" >&2
+  printf '%s\n' "$filtered" >&2
+  return 1
+}
+
+# assert_arming_conjunct_scoped_to_shards <workflow>: no job other than
+# shards carries the arming conjunct. Proves the job scoping above is a real
+# boundary rather than a silent exclusion: hook-capabilities-live-tree and
+# verb-arming-adoption each gate a step on their OWN hand-rolled id: filter
+# step and must never carry steps.leg-arming.outputs. at all.
+assert_arming_conjunct_scoped_to_shards() {
+  local workflow="$1" rows
+  rows="$(read_wf armingifs "$workflow" | awk -F'\t' '$1 != "shards"')"
+  [ -z "$rows" ] && return 0
+  echo "the arming conjunct reached a job outside shards:" >&2
+  printf '%s\n' "$rows" >&2
+  return 1
+}
+
+# assert_arming_step_id_is_leg_arming <workflow>: the arming step's id is
+# leg-arming, never filter -- the workflow already carries three id: filter
+# steps (the shards job's real paths-filter step and the two standalone
+# jobs' hand-rolled gates), and workflow-filter-coverage.bats's hand-rolled
+# pin over the latter two must not widen to a fourth.
+assert_arming_step_id_is_leg_arming() {
+  local workflow="$1" id
+  id="$(read_wf stepfield "$workflow" shards "$ARMING_STEP_NAME" id)"
+  [ "$id" = "leg-arming" ] && return 0
+  echo "the arming step's id is '$id', expected leg-arming" >&2
+  return 1
+}
+
+# assert_arming_fallback_present <workflow>: the arming step's run: body
+# carries the default-to-true case arm, matched as the construct rather than
+# a whole-body snapshot so a comment edit elsewhere in the step never reds
+# this.
+assert_arming_fallback_present() {
+  local workflow="$1" body
+  body="$(read_wf stepfield "$workflow" shards "$ARMING_STEP_NAME" run)"
+  printf '%s' "$body" | grep -qF -- '*) arm=true ;;' && return 0
+  echo "the arming step's run: body is missing its default-to-true case arm" >&2
+  return 1
+}
+
+# assert_arming_body_no_changed_files_leak <workflow>: the arming step's
+# run: body writes only fixed literals to GITHUB_OUTPUT and
+# GITHUB_STEP_SUMMARY, never CHANGED_FILES_JSON -- those two sinks are
+# line-oriented and a changed filename may carry a newline, so nothing
+# derived from the changed-file list may reach either one.
+assert_arming_body_no_changed_files_leak() {
+  local workflow="$1" body
+  body="$(read_wf stepfield "$workflow" shards "$ARMING_STEP_NAME" run)"
+  printf '%s' "$body" | grep -qF -- 'GITHUB_OUTPUT' || {
+    echo "the arming step's run: body no longer writes to GITHUB_OUTPUT" >&2
+    return 1
+  }
+  printf '%s' "$body" | grep -qF -- 'CHANGED_FILES_JSON' && {
+    echo "the arming step's run: body references CHANGED_FILES_JSON directly; nothing derived from the changed-file list may reach GITHUB_OUTPUT or GITHUB_STEP_SUMMARY" >&2
+    return 1
+  }
+  return 0
+}
+
+@test "W19: the shards job's paths-filter step exposes list-files as json" {
+  require_yaml_parser
+  assert_list_files_json "$WORKFLOW"
+}
+
+@test "W19: every shards-job step reading the arming conjunct also reads the filter conjunct" {
+  require_yaml_parser
+  assert_retained_filter_conjunct "$WORKFLOW"
+}
+
+@test "W19: within shards, the arming-conjunct set equals the filter-conjunct set" {
+  require_yaml_parser
+  assert_conjunct_sets_equal "$WORKFLOW"
+}
+
+@test "W19: the arming conjunct never reaches a job other than shards" {
+  require_yaml_parser
+  assert_arming_conjunct_scoped_to_shards "$WORKFLOW"
+}
+
+@test "W19: the arming step's id is leg-arming, and the workflow's other id: filter steps are unchanged" {
+  require_yaml_parser
+  assert_arming_step_id_is_leg_arming "$WORKFLOW"
+
+  local rows
+  rows="$(read_wf filteridjobs "$WORKFLOW")"
+  printf '%s\n' "$rows" | grep -qF -- "$ARMING_STEP_NAME" && {
+    echo "the arming step's name appeared among the id: filter steps" >&2
+    return 1
+  }
+  printf '%s\n' "$rows" | awk -F'\t' '$1 == "shards"' | grep -qF -- 'dorny/paths-filter' || {
+    echo "shards' id: filter step is no longer the real paths-filter step" >&2
+    return 1
+  }
+  printf '%s\n' "$rows" | grep -qF -- 'hook-capabilities-live-tree' || {
+    echo "hook-capabilities-live-tree's hand-rolled id: filter gate is missing" >&2
+    return 1
+  }
+  printf '%s\n' "$rows" | grep -qF -- 'verb-arming-adoption' || {
+    echo "verb-arming-adoption's hand-rolled id: filter gate is missing" >&2
+    return 1
+  }
+}
+
+@test "W19: the arming step's run: body carries the default-to-true fallback" {
+  require_yaml_parser
+  assert_arming_fallback_present "$WORKFLOW"
+}
+
+@test "W19: the arming step's run: body writes only fixed literals, never a changed filename, to GITHUB_OUTPUT or GITHUB_STEP_SUMMARY" {
+  require_yaml_parser
+  assert_arming_body_no_changed_files_leak "$WORKFLOW"
+}
+
+@test "W19 adversarial: list-files changed to shell is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-listfiles-shell.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *list-files: json$')" || return 1
+  mutated="$(printf '%s' "$line" | sed 's/json/shell/')"
+  assert_doctored "$line" "$mutated" "changing list-files to shell" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_list_files_json "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "changing list-files to shell did not red" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: list-files deleted outright is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-listfiles-absent.yml" line
+  line="$(sole_line_matching "$WORKFLOW" '^ *list-files: json$')" || return 1
+  delete_line "$WORKFLOW" "$line" "$doctored"
+
+  run assert_list_files_json "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "deleting list-files did not red" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: the filter conjunct removed from one narrowed step is caught, naming the step" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-drop-filter.yml" line mutated
+  line="$(gate_line_for_step "$WORKFLOW" 'Run a bats shard')" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/ && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')//")"
+  assert_doctored "$line" "$mutated" "dropping the filter conjunct" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_retained_filter_conjunct "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "dropping the filter conjunct from 'Run a bats shard' did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- 'Run a bats shard' || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: the arming conjunct removed from one narrowed step is caught, naming the step" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-drop-arming.yml" line mutated
+  line="$(gate_line_for_step "$WORKFLOW" 'Install pinned bats')" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/ && steps.leg-arming.outputs.arm == 'true'//")"
+  assert_doctored "$line" "$mutated" "dropping the arming conjunct" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_conjunct_sets_equal "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "dropping the arming conjunct from 'Install pinned bats' did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- 'Install pinned bats' || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: a gratuitous arming conjunct added to a shards step with no filter conjunct is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-gratuitous.yml" line mutated
+  line="$(gate_line_for_step "$WORKFLOW" 'Install the CLI workspace for the floor-check suite')" || return 1
+  mutated="${line} && steps.leg-arming.outputs.arm == 'true'"
+  assert_doctored "$line" "$mutated" "adding a gratuitous arming conjunct" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_conjunct_sets_equal "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "adding a gratuitous arming conjunct to 'Install the CLI workspace for the floor-check suite' did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- 'Install the CLI workspace for the floor-check suite' || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: the arming conjunct added to hook-capabilities-live-tree's gated step is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-cross-job.yml" line mutated
+  line="$(gate_line_for_step "$WORKFLOW" 'Run the hook-capabilities checker against the live tree')" || return 1
+  mutated="${line} && steps.leg-arming.outputs.arm == 'true'"
+  assert_doctored "$line" "$mutated" "adding the arming conjunct to a step outside shards" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_arming_conjunct_scoped_to_shards "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "adding the arming conjunct to hook-capabilities-live-tree's gated step did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- 'hook-capabilities-live-tree' || {
+    echo "the refusal did not name the job" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: the arming step's id changed to filter is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-id-filter.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *id: leg-arming$')" || return 1
+  mutated="$(printf '%s' "$line" | sed 's/leg-arming/filter/')"
+  assert_doctored "$line" "$mutated" "changing the arming step's id to filter" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_arming_step_id_is_leg_arming "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "changing the arming step's id to filter did not red" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: the arming step's fallback case arm removed is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-no-fallback.yml" line
+  line="$(sole_line_matching "$WORKFLOW" '^ *\*\) arm=true ;;$')" || return 1
+  delete_line "$WORKFLOW" "$line" "$doctored"
+
+  run assert_arming_fallback_present "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "removing the fallback case arm did not red" >&2
+    return 1
+  }
 }
