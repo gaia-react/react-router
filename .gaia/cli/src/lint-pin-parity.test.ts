@@ -227,16 +227,26 @@ const PARITY_EXEMPT: Record<string, string> = {
   // `eslint --print-config`, against `app/root.tsx` and `.gaia/cli/src/exit.ts`,
   // and both readings are identical in the two workspaces. Nothing in the repo
   // recounts them, because doing so needs the root workspace installed, so
-  // re-take them there whenever a change could enable a rule that reaches either
-  // subject: an `import-x` resolver-settings move for the resolver entry, and for
-  // `eslint-module-utils` any of the rules its own entry names below.
+  // re-take them there on either trigger: an `import-x` resolver-settings move,
+  // or any of the canonical rules the `eslint-module-utils` entry names being
+  // enabled.
+  //
+  // That second trigger reaches BOTH entries, which is why it is stated here
+  // rather than on the entry that makes it obvious. `eslint-module-utils/resolve`
+  // falls back to the default `node` resolver when `import/resolver` is unset,
+  // and it is unset in both workspaces, and that fallback loads
+  // `eslint-import-resolver-node` by conventional name. So enabling a rule that
+  // reaches `eslint-module-utils` starts routing resolution through the resolver
+  // entry's subject as well, and neither exemption survives it. Reading the
+  // resolver entry's own `import-x` condition as its whole trigger is the trap:
+  // that condition never fires in this scenario.
   //
   // Presence parity still binds both, which is the half neither exemption
   // relaxes: each is inside the selector, so if its subject starts reaching rule
   // output the repair is deleting one line here rather than remembering to add a
   // family.
   'eslint-import-resolver-node':
-    'in neither workspace resolved resolver list (import-x/resolver-next names import-x own node resolver plus eslint-import-resolver-typescript), so it resolves no specifier and a version difference changes no rule',
+    'in neither workspace resolved resolver list (import-x/resolver-next names import-x own node resolver plus eslint-import-resolver-typescript), and otherwise reachable only through the eslint-module-utils default-node fallback, which is inert while the rules that entry names are off; so it resolves no specifier and a version difference changes no rule',
 
   // `eslint-module-utils` has TWO consumers here, and naming only the silent one
   // would leave the exemption resting on a premise nobody stated. Its other
@@ -244,9 +254,9 @@ const PARITY_EXEMPT: Record<string, string> = {
   // both resolved configs, so the exemption holds on the narrower fact that the
   // three canonical rules reaching this helper are each off in both workspaces
   // rather than on canonical being unloaded. Enabling any one of them in the
-  // shared preset is therefore what invalidates this entry, which is why the
-  // re-take trigger above names it and why the reason below names the rules
-  // instead of the plugin.
+  // shared preset is therefore what invalidates this entry, and the sibling entry
+  // above with it, which is why the reason below names the rules instead of the
+  // plugin.
   'eslint-module-utils':
     'reaches a rule only through eslint-plugin-import, which contributes no enabled rule to either resolved config, and through canonical require-extension, no-barrel-import and no-export-all, each off in both workspaces; so its version reaches no rule either workspace runs',
 };
@@ -576,12 +586,21 @@ describe('rule-package resolution parity', () => {
   // than silently narrowing every comparison below: without this, deleting the
   // scoped arm would leave every scoped provider unguarded with every test green.
   //
-  // That includes the `typescript-eslint` arm, whose pin is here rather than
-  // inherited from the presence test below it. The two ask different questions on
-  // purpose: this one fails when the ARM goes, the one below fails when the
-  // PACKAGE goes. Leaning on that test for arm coverage would make it look like
-  // duplicate coverage a later reader could delete, and deleting it would then
-  // leave the arm genuinely unpinned.
+  // That includes the `typescript-eslint` arm. The presence test below reds on
+  // arm removal too, because both populations are built through the same pattern,
+  // so this assertion is not that arm's only pin; what it adds is isolation. A
+  // failure here names the arm while a failure there names the package, and the
+  // two events are worth telling apart in the output because their repairs are
+  // opposite: restore the arm, versus accept that the package is gone.
+  //
+  // The resolver family needs a named member for a reason the arms cannot cover.
+  // Its arm is satisfied by `eslint-import-resolver-node`, which `PARITY_EXEMPT`
+  // holds out of the version comparison, so the family's only compared member is
+  // `eslint-import-resolver-typescript`. Were that to leave both lockfiles, the
+  // arm would still match on the exempt sibling and every comparison would stay
+  // green while the family's one version comparison quietly disappeared. That is
+  // the same absence-is-the-interesting-event case the presence test below exists
+  // for, so the guarded member is pinned by name here.
   test('the shared rule-bearing population is non-vacuous and every pattern arm matches', () => {
     expect(shared.length).toBeGreaterThanOrEqual(SHARED_FLOOR);
     expect(shared.some((name) => name.startsWith('@'))).toBe(true);
@@ -590,6 +609,7 @@ describe('rule-package resolution parity', () => {
     expect(
       shared.some((name) => name.startsWith('eslint-import-resolver-'))
     ).toBe(true);
+    expect(shared.includes('eslint-import-resolver-typescript')).toBe(true);
     expect(shared.includes('typescript-eslint')).toBe(true);
     expect(shared.includes('eslint-module-utils')).toBe(true);
   });
