@@ -133,7 +133,7 @@ Mark that line instead. The marker sits on the citation's own line and names the
 
 Three properties are deliberate:
 
-- **Both halves are mandatory.** A marker missing either its path or its reason exempts nothing: the citation still reports, and the marker itself is reported as malformed. The two are reported apart, naming the half that is actually missing, because telling an author to supply the half they already wrote sends them to re-read the part they got right. The reason is what a later reader checks the exemption against.
+- **Both halves are mandatory.** A marker missing either its path or its reason exempts nothing: the citation still reports, and the marker itself is reported as malformed. The two are reported apart, because telling an author to supply the half they already wrote sends them to re-read the part they got right. The first colon is the separator, and which side of that split came back empty is the whole of what tells the two apart, so a marker carrying no colon at all is read as a bare path and reported as missing its reason: write the colon and the report names the half that is genuinely absent. The reason is what a later reader checks the exemption against.
 - **The marker is reported once it stops exempting anything.** If the sentence goes, or the path becomes a real file, the scan reports the marker as unused. An exemption nothing recounts decays into a blind spot for a genuinely dead future citation of the same path.
 - **It is scoped to its one line and to that exact path.** A real citation sitting beside a hypothetical one still reports.
 
