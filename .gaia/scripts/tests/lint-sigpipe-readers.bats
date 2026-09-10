@@ -759,19 +759,15 @@ printf "%s" "$changed" | grep -q needle'
   [ "$status" -eq 0 ]
 }
 
-# A block ends at the dedent, so one block's arming must not reach the next
-# step. Without that boundary the armed block here would red the unarmed one
-# below it, which is the whole surface graded by whichever step armed first.
 # The mirror image of the substitution-scoped tests above, and the reason the
 # arming pattern is bound once rather than written twice. Here a genuine
-# block-level arming
-# follows a substitution-scoped one on the SAME line, and the earlier one ends
-# at a `;` where the pattern wants whitespace or end-of-line. A locator carrying
-# its own boundary-less copy of the pattern finds that earlier occurrence, asks
-# the depth test about a position inside the substitution, and reads the block
-# as unarmed: a false negative, which is the direction this gate must not be
-# wrong in. Confirmed to report clean against exactly that shape before the two
-# readers were given one pattern.
+# block-level arming follows a substitution-scoped one on the SAME line, and the
+# earlier one ends at a `;` where the pattern wants whitespace or end-of-line. A
+# locator carrying its own boundary-less copy of the pattern finds that earlier
+# occurrence, asks the depth test about a position inside the substitution, and
+# reads the block as unarmed: a false negative, which is the direction this gate
+# must not be wrong in. Confirmed to report clean against exactly that shape
+# before the two readers were given one pattern.
 @test "an arming preceded on its line by a boundary-less one still arms the block" {
   fixture_repo
   fixture_workflow 'x=$(set -o pipefail; true); set -o pipefail
@@ -781,6 +777,9 @@ printf "%s" "$a" | grep -q needle'
   grep -qF -- ".github/workflows/probe.yml:7:" <<<"$output"
 }
 
+# A block ends at the dedent, so one block's arming must not reach the next
+# step. Without that boundary the armed block here would red the unarmed one
+# below it, which is the whole surface graded by whichever step armed first.
 @test "a block's arming does not leak into the next step" {
   fixture_repo
   fixture_file .github/workflows/probe.yml 'jobs:
