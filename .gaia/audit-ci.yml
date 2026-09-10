@@ -373,6 +373,7 @@ unowned:
   - ".gaia/tests/**/*.txt"
   - ".gaia/tests/**/*.json"
   - ".gaia/tests/**/*.tsv"
+  - ".gaia/tests/**/*.yml"
   # Pinned to the one file rather than the extension: this is an executable
   # scanner, not fixture data, and it is exempt only because no Python auditor
   # exists to give it to. An extension glob would hand that exemption to a
