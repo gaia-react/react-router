@@ -59,8 +59,8 @@
 #
 # The literal's first capture is the path token and its second is the character
 # that terminated it, so the assertion below compares `.captures[0]` rather than
-# the whole match. Comparing the whole match would compare a name with the
-# closing quote still attached and never match; the library's own header carries
+# the whole match. Comparing the whole match would compare a name with the quote
+# or space that terminated it still attached; the library's own header carries
 # why the terminator is in the literal at all.
 # shellcheck source=../../scripts/hook-registration-lib.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/../../scripts/hook-registration-lib.sh"
