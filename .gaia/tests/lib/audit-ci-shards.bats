@@ -173,7 +173,13 @@ teardown() {
 #                         one path per line, parsed as the nested YAML
 #                         document the `filters:` field's block string holds
 #                         rather than scraped line-by-line, for the same
-#                         reason every other mode here parses structurally.
+#                         reason every other mode here parses structurally. A
+#                         change-type mapping entry (e.g. `- deleted: 'x'`)
+#                         unwraps to its one value, so the one-path-per-line
+#                         contract holds for both the bare-string and the
+#                         mapping shape. A mapping with no values, or with
+#                         more than one, exits 2 naming the offending entry
+#                         rather than guessing which value it meant.
 #                         Exits 2 when the job has no such step or the step
 #                         has no `code:` list.
 #   filtercount            total dorny/paths-filter steps in the whole file
@@ -346,7 +352,13 @@ elif mode == 'codefilter':
     if not isinstance(code_list, list):
         die('job %r filters: block has no code: list' % rest[0])
     for item in code_list:
-        print(str(item))
+        if isinstance(item, dict):
+            values = list(item.values())
+            if len(values) != 1:
+                die('job %r filters: code: entry %r is a change-type mapping with %d values, expected exactly 1' % (rest[0], item, len(values)))
+            print(str(values[0]))
+        else:
+            print(str(item))
 elif mode == 'filtercount':
     count = 0
     for job in jobs.values():
@@ -899,11 +911,18 @@ PY
 
 @test "W4 adversarial: dropping the dispatch admission from one shard step is caught" {
   require_yaml_parser
-  local doctored="$BATS_TEST_TMPDIR/w4.yml"
-  replace_line "$WORKFLOW" \
-    "      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && (steps.filter.outputs.code == 'true' || github.event_name == 'workflow_dispatch')" \
-    "      - if: matrix.shard != 'sandbox' && matrix.shard != 'concurrency' && steps.filter.outputs.code == 'true'" \
-    "$doctored"
+  local doctored="$BATS_TEST_TMPDIR/w4.yml" line mutated
+
+  line="$(gate_line_for_step "$WORKFLOW" 'Run a bats shard')" || return 1
+  # Removes the disjunct wherever it sits in the line, not anchored on
+  # end-of-line, so this survives a later conjunct appended after it.
+  mutated="$(printf '%s' "$line" | sed "s/ || github.event_name == 'workflow_dispatch'//")"
+  assert_doctored "$line" "$mutated" "dropping the dispatch admission" || return 1
+  # This gate line is byte-identical at two sites in the workflow (the apt
+  # step's gate matches it too), and replace_line replaces every line equal
+  # to the search text. Doctoring both still produces the gap this test
+  # asserts, so the double replacement is not a bug here.
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
 
   local jid expr found_gap=""
   while IFS=$'\t' read -r jid expr; do
@@ -1061,11 +1080,15 @@ PY
 
 @test "W8 adversarial: interpolating matrix.shard into a run: body is caught" {
   require_yaml_parser
-  local doctored="$BATS_TEST_TMPDIR/w8.yml"
-  replace_line "$WORKFLOW" \
-    '        run: bash .gaia/tests/bats-shards.sh run "$SHARD"' \
-    '        run: bash .gaia/tests/bats-shards.sh run "${{ matrix.shard }}"' \
-    "$doctored"
+  local doctored="$BATS_TEST_TMPDIR/w8.yml" line mutated
+
+  # Anchored on the script's own path, not on the surrounding if:, so this
+  # stays stable across the if: edits later phases make; those never touch
+  # an existing step's run: body.
+  line="$(sole_line_matching "$WORKFLOW" 'bats-shards\.sh run "\$SHARD"')" || return 1
+  mutated="$(printf '%s' "$line" | sed 's/"\$SHARD"/"${{ matrix.shard }}"/')"
+  assert_doctored "$line" "$mutated" "interpolating matrix.shard" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
 
   [ -n "$(read_wf runinterp "$doctored")" ] || {
     echo "interpolating matrix.shard into the run: body was not caught" >&2
@@ -2008,6 +2031,58 @@ concurrency_tree_needs_packages() {
     return 1
   }
   true
+}
+
+# read_wf codefilter unwraps a change-type mapping entry (`- deleted: 'x'`)
+# to its bare value, which SPEC-078 needs before any check can read the
+# wiki/.state.json entry once it becomes one. Doctored onto
+# .gaia/release-exclude, not wiki/.state.json: SPEC-078 makes the mapping
+# form of the wiki/.state.json entry the real workflow line, so a fixture
+# doctoring that entry would produce a line identical to the real one from
+# that point on, assert_doctored would find no change to make, and this case
+# would go inert on the very next phase. .gaia/release-exclude is a bare
+# entry this change never touches, and W11's own adversarial case above
+# already derives that same line, so the pattern is proven.
+
+@test "read_wf codefilter unwraps a change-type mapping entry to its path" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/codefilter-unwrap.yml" line mutated list
+
+  line="$(sole_line_matching "$WORKFLOW" "^ *- '\\.gaia/release-exclude'\$")" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/^\\( *\\)- '\\(.*\\)'\$/\\1- deleted: '\\2'/")"
+  assert_doctored "$line" "$mutated" "wrapping the entry in a change-type mapping" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  list="$(read_wf codefilter "$doctored" shards)"
+  printf '%s\n' "$list" | grep -qxF -- '.gaia/release-exclude' || {
+    echo "the unwrapped mapping entry did not print its bare path" >&2
+    return 1
+  }
+  printf '%s\n' "$list" | grep -qF -- '{' && {
+    echo "the unwrapped output still carries a Python dict repr" >&2
+    return 1
+  }
+  true
+}
+
+@test "read_wf codefilter refuses a change-type mapping entry with more than one value" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/codefilter-two-value.yml" line mutated
+
+  line="$(sole_line_matching "$WORKFLOW" "^ *- '\\.gaia/release-exclude'\$")" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/^\\( *\\)- '\\(.*\\)'\$/\\1- {deleted: '\\2', renamed: '\\2'}/")"
+  assert_doctored "$line" "$mutated" "wrapping the entry in a two-value mapping" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run read_wf codefilter "$doctored" shards
+  [ "$status" -ne 0 ] || {
+    echo "a two-value change-type mapping entry did not exit non-zero" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- '.gaia/release-exclude' || {
+    echo "the refusal message did not name the offending entry" >&2
+    return 1
+  }
 }
 
 # W12. Every gaia-setup-node step in EVERY workflow is capped with an integer
