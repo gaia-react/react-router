@@ -215,14 +215,18 @@ describe('wiki dead-paths', () => {
   });
 
   test('a marker exempts by exact token, not by prefix', () => {
-    // Widening the membership check into a prefix skip would take every real
-    // citation under the directory with it.
+    // Two widenings are pinned at once, and the second is the one a sibling
+    // citation cannot see: a directory-prefix skip would swallow `deploy.sh`,
+    // while a `startsWith` on the marker's own path swallows only a token that
+    // extends it, which is why `tool.sh.bak` is here rather than `deploy.sh`
+    // alone.
     sandbox.writeFile(
       'wiki/decisions/Routing.md',
-      '# Routing\n\nSee `.claude/commands/tool.sh` and `.claude/commands/deploy.sh`. <!-- gaia:hypothetical .claude/commands/tool.sh: illustration -->\n'
+      '# Routing\n\nSee `.claude/commands/tool.sh`, `.claude/commands/tool.sh.bak` and `.claude/commands/deploy.sh`. <!-- gaia:hypothetical .claude/commands/tool.sh: illustration -->\n'
     );
 
     expect(scanWikiPaths(sandbox.root).dead.map((d) => d.path)).toEqual([
+      '.claude/commands/tool.sh.bak',
       '.claude/commands/deploy.sh',
     ]);
   });
