@@ -31,13 +31,39 @@ GAIA_HOOK_REGISTRATION_LIB=1
 # The one spelling of a hook name inside a registration command, named once.
 # `readonly` is safe under the source guard above: a second source returns before
 # reaching this line, so it can never re-assign a readonly name and error.
-readonly GAIA_HOOK_NAME_RE='\.claude/hooks/[A-Za-z0-9_./-]+\.sh'
+#
+# The trailing group is what makes the path token TERMINATE at `.sh`, and it is
+# load-bearing. The class has to be unanchored on the left, because a
+# registration command wraps the path in a `"$(git rev-parse --show-toplevel
+# …)"` prefix, and it has to end in `.sh`. Those two together let a longer path
+# whose prefix ends in `.sh` yield a match equal to the shorter name: against
+# `.claude/hooks/capture-gh-artifact.sh.bak`, the longest match ending in `.sh`
+# is the real hook's own name. A settings entry pointing at a `.bak`, `.orig` or
+# `.disabled` copy then reads as the hook being registered while no tool call
+# ever reaches the hook. Requiring the next character to be one that cannot
+# continue a path, or requiring there to be no next character, is what closes
+# that.
+#
+# Both consumers drop that trailing group from the value they compare:
+# `gaia_pretooluse_hooks` below strips it with `sed`, and
+# `.gaia/tests/helpers/hook-registration.sh` reads the first capture rather than
+# the whole match. A consumer comparing the raw match instead compares a name
+# with the quote or space that terminated it still attached, and matches
+# nothing.
+readonly GAIA_HOOK_NAME_RE='(\.claude/hooks/[A-Za-z0-9_./-]+\.sh)([^A-Za-z0-9_./-]|$)'
 
 # gaia_pretooluse_hooks <repo_root>
 #
 # Print every hook script registered under `.hooks.PreToolUse` as its path
 # relative to `.claude/hooks/`, one per line, sorted and deduplicated. Needs jq
 # on PATH; the caller checks that and reports its own diagnostic.
+#
+# `grep -oE` prints the whole match, capture groups included, so the second
+# `sed` expression drops the one character `GAIA_HOOK_NAME_RE`'s trailing group
+# may have consumed. The path token always ends in `.sh`, which is what lets
+# that strip be written without a second copy of the path character class: a
+# match is the path plus at most one character, and a match that ended at the
+# end of the command carries none.
 gaia_pretooluse_hooks() {
   local root="$1"
   jq -r '
@@ -48,7 +74,7 @@ gaia_pretooluse_hooks() {
   ' "$root/.claude/settings.json" 2>/dev/null |
     grep -F '.claude/hooks/' |
     grep -oE "$GAIA_HOOK_NAME_RE" |
-    sed -e 's#^\.claude/hooks/##' |
+    sed -e 's#^\.claude/hooks/##' -e 's#\(\.sh\).$#\1#' |
     sort -u
 }
 

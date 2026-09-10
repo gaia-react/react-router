@@ -48,7 +48,7 @@ teardown() {
 good_body() {
   cat <<'EOF'
 <!-- gaia-debt-key: v1 class=holistic/unclassified path=app/services/foo.ts line=42 -->
-<!-- gaia-debt-origin: branch=main mode=adhoc unit=unknown changed=unknown head=unknown -->
+<!-- gaia-debt-origin: branch=main mode=adhoc unit=unknown changed=unknown head=unknown session=unknown -->
 `app/services/foo.ts:42`
 
 ## Failure mode
