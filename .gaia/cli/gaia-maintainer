@@ -31673,8 +31673,9 @@ var parseMarker = (match) => {
   const separator = payload.indexOf(":");
   const declared = (separator === -1 ? payload : payload.slice(0, separator)).trim();
   const reason = separator === -1 ? "" : payload.slice(separator + 1).trim();
+  const pathless = declared === "" || separator === -1 && !declared.includes("/");
   return {
-    defect: declared === "" ? "missing-path" : reason === "" ? "missing-reason" : null,
+    defect: pathless ? "missing-path" : reason === "" ? "missing-reason" : null,
     path: declared.normalize("NFC"),
     raw: payload.trim()
   };
