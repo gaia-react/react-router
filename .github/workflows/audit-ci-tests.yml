@@ -746,11 +746,17 @@ jobs:
         name: Resolve whether this leg holds a suite naming the changed wiki pages
         env:
           LEG_ID: ${{ matrix.shard }}
-          # Bounded against the kernel's per-string MAX_ARG_STRLEN: an
-          # oversized code_files list would fail this step's execve before
-          # leg-arming.sh's own fail-open can run, so the expression withholds
-          # the list above the bound and the resulting empty string arms every
-          # leg through the script's empty-list rule instead.
+          # A changed-file COUNT stands in for the kernel's per-string
+          # MAX_ARG_STRLEN, a BYTE limit, because a workflow expression cannot
+          # measure the rendered list's length directly. At the bound, each
+          # entry averages about 131 bytes before the limit is reached, far
+          # above a typical path, but the count is still a proxy rather than
+          # the real measure: a list of unusually long paths under the count
+          # bound could still exceed the byte limit, which fails this step's
+          # execve and reds the leg rather than silently passing (fail-closed,
+          # never a false green). Above the bound, the expression withholds
+          # the list and the resulting empty string arms every leg through
+          # the script's empty-list rule instead.
           CHANGED_FILES_JSON: ${{ github.event.pull_request.changed_files <= 1000 && steps.filter.outputs.code_files || '' }}
           PR_CHANGED_FILES: ${{ github.event.pull_request.changed_files }}
         run: |

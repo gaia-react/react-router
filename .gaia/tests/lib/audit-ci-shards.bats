@@ -5266,13 +5266,20 @@ assert_arming_fallback_present() {
 # github.event.pull_request.changed_files bound, falling back to '' on an
 # oversized list. An unbounded value can exceed the kernel's per-string
 # MAX_ARG_STRLEN, which fails the step's execve before leg-arming.sh's own
-# fail-open can run (round 1 audit repair). Matched by construct, with the
-# integer wildcarded, so a retune of the bound does not red this.
+# fail-open can run. The match anchors the whole value end to end, `${{` to
+# `}}` with only optional whitespace outside the construct, so no trailing
+# clause after the '' fallback can widen what the expression evaluates. The
+# operator is pinned to <= so a flipped or widened comparison cannot turn the
+# bound into a floor that arms every leg. The integer is pinned to a positive
+# number of at most four digits: wide enough that a retune within that range
+# still matches, narrow enough to rule out an effectively unbounded value --
+# the kernel's per-string limit is 131072 bytes, and a five-digit count could
+# never fit under it at any realistic path length.
 assert_changed_files_json_bounded() {
   local workflow="$1" value
   value="$(read_wf stepfield "$workflow" shards "$ARMING_STEP_NAME" env.CHANGED_FILES_JSON)"
-  printf '%s' "$value" | grep -qE -- "github\.event\.pull_request\.changed_files *[<>=]+ *[0-9]+ *&& *steps\.filter\.outputs\.code_files *\|\| *''" && return 0
-  echo "the '$ARMING_STEP_NAME' step's env.CHANGED_FILES_JSON is '$value', expected steps.filter.outputs.code_files gated behind a github.event.pull_request.changed_files bound with an '' fallback (the guard against an oversized env string failing this step's execve before the script's own fail-open runs)" >&2
+  printf '%s' "$value" | grep -qE -- "^\\\$\{\{ *github\.event\.pull_request\.changed_files *<= *[1-9][0-9]{0,3} *&& *steps\.filter\.outputs\.code_files *\|\| *'' *\}\}\$" && return 0
+  echo "the '$ARMING_STEP_NAME' step's env.CHANGED_FILES_JSON is '$value', expected steps.filter.outputs.code_files gated behind a github.event.pull_request.changed_files <= bound of at most four digits, anchored end to end with an '' fallback (the guard against an oversized env string failing this step's execve before the script's own fail-open runs)" >&2
   return 1
 }
 
@@ -5497,6 +5504,63 @@ assert_arming_body_no_changed_files_leak() {
   run assert_changed_files_json_bounded "$doctored"
   [ "$status" -ne 0 ] || {
     echo "reverting CHANGED_FILES_JSON to the bare code_files expression did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "$ARMING_STEP_NAME" || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: CHANGED_FILES_JSON's <= operator flipped to >= is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-changed-files-json-op-flip.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *CHANGED_FILES_JSON: ')" || return 1
+  mutated="$(printf '%s' "$line" | sed 's/<=/>=/')"
+  assert_doctored "$line" "$mutated" "flipping the <= operator to >=" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_changed_files_json_bounded "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "flipping the <= operator to >= did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "$ARMING_STEP_NAME" || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: CHANGED_FILES_JSON with a trailing clause after the '' fallback is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-changed-files-json-trailing.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *CHANGED_FILES_JSON: ')" || return 1
+  mutated="$(printf '%s' "$line" | sed "s/|| '' }}/|| '' || steps.filter.outputs.code_files }}/")"
+  assert_doctored "$line" "$mutated" "appending a trailing clause after the '' fallback" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_changed_files_json_bounded "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "appending a trailing clause after the '' fallback did not red" >&2
+    return 1
+  }
+  printf '%s\n' "$output" | grep -qF -- "$ARMING_STEP_NAME" || {
+    echo "the refusal did not name the step" >&2
+    return 1
+  }
+}
+
+@test "W19 adversarial: CHANGED_FILES_JSON's bound widened to a five-digit value is caught" {
+  require_yaml_parser
+  local doctored="$BATS_TEST_TMPDIR/w19-changed-files-json-five-digit.yml" line mutated
+  line="$(sole_line_matching "$WORKFLOW" '^ *CHANGED_FILES_JSON: ')" || return 1
+  mutated="$(printf '%s' "$line" | sed 's/<= 1000/<= 10000/')"
+  assert_doctored "$line" "$mutated" "widening the bound to a five-digit value" || return 1
+  replace_line "$WORKFLOW" "$line" "$mutated" "$doctored"
+
+  run assert_changed_files_json_bounded "$doctored"
+  [ "$status" -ne 0 ] || {
+    echo "widening the bound to a five-digit value did not red" >&2
     return 1
   }
   printf '%s\n' "$output" | grep -qF -- "$ARMING_STEP_NAME" || {
