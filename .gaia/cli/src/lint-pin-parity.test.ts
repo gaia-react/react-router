@@ -71,9 +71,11 @@
  * The rule in play there is `import-x/no-unresolved`. `eslint-plugin-import`
  * contributes no enabled rule to either workspace's resolved config, and the
  * resolver list is `import-x`'s own node resolver plus
- * `eslint-import-resolver-typescript`, which is why only that one of the family's
- * three packages earns a version comparison. Both readings come from
- * `eslint --print-config`, the instrument the criterion paragraph below names.
+ * `eslint-import-resolver-typescript`, which is why that resolver is the one
+ * family member earning a version comparison while
+ * `eslint-import-resolver-node` and `eslint-module-utils` are exempted below.
+ * Both readings come from `eslint --print-config`, the instrument the criterion
+ * paragraph below names.
  *
  * The criterion behind both, worth stating once: parity is worth enforcing for a
  * package whose rules a workspace actually runs, and worth nothing for one whose
@@ -223,9 +225,11 @@ const PARITY_EXEMPT: Record<string, string> = {
 
   // Both entries below are read with the criterion paragraph's own instrument,
   // `eslint --print-config`, against `app/root.tsx` and `.gaia/cli/src/exit.ts`,
-  // and both readings are identical in the two workspaces. Re-take them there
-  // when `import-x`'s resolver settings move; nothing in the repo recounts them,
-  // because doing so needs the root workspace installed.
+  // and both readings are identical in the two workspaces. Nothing in the repo
+  // recounts them, because doing so needs the root workspace installed, so
+  // re-take them there whenever a change could enable a rule that reaches either
+  // subject: an `import-x` resolver-settings move for the resolver entry, and for
+  // `eslint-module-utils` any of the rules its own entry names below.
   //
   // Presence parity still binds both, which is the half neither exemption
   // relaxes: each is inside the selector, so if its subject starts reaching rule
@@ -234,8 +238,17 @@ const PARITY_EXEMPT: Record<string, string> = {
   'eslint-import-resolver-node':
     'in neither workspace resolved resolver list (import-x/resolver-next names import-x own node resolver plus eslint-import-resolver-typescript), so it resolves no specifier and a version difference changes no rule',
 
+  // `eslint-module-utils` has TWO consumers here, and naming only the silent one
+  // would leave the exemption resting on a premise nobody stated. Its other
+  // consumer is `eslint-plugin-canonical`, which does contribute enabled rules to
+  // both resolved configs, so the exemption holds on the narrower fact that the
+  // three canonical rules reaching this helper are each off in both workspaces
+  // rather than on canonical being unloaded. Enabling any one of them in the
+  // shared preset is therefore what invalidates this entry, which is why the
+  // re-take trigger above names it and why the reason below names the rules
+  // instead of the plugin.
   'eslint-module-utils':
-    'a helper of eslint-plugin-import, which contributes no enabled rule to either resolved config, so its version reaches no rule either workspace runs',
+    'reaches a rule only through eslint-plugin-import, which contributes no enabled rule to either resolved config, and through canonical require-extension, no-barrel-import and no-export-all, each off in both workspaces; so its version reaches no rule either workspace runs',
 };
 
 // Anti-vacuity floor for the shared population, not a pin on its size. The live
@@ -562,6 +575,13 @@ describe('rule-package resolution parity', () => {
   // the pattern is pinned by a live match, so dropping an arm reds here rather
   // than silently narrowing every comparison below: without this, deleting the
   // scoped arm would leave every scoped provider unguarded with every test green.
+  //
+  // That includes the `typescript-eslint` arm, whose pin is here rather than
+  // inherited from the presence test below it. The two ask different questions on
+  // purpose: this one fails when the ARM goes, the one below fails when the
+  // PACKAGE goes. Leaning on that test for arm coverage would make it look like
+  // duplicate coverage a later reader could delete, and deleting it would then
+  // leave the arm genuinely unpinned.
   test('the shared rule-bearing population is non-vacuous and every pattern arm matches', () => {
     expect(shared.length).toBeGreaterThanOrEqual(SHARED_FLOOR);
     expect(shared.some((name) => name.startsWith('@'))).toBe(true);
@@ -570,6 +590,7 @@ describe('rule-package resolution parity', () => {
     expect(
       shared.some((name) => name.startsWith('eslint-import-resolver-'))
     ).toBe(true);
+    expect(shared.includes('typescript-eslint')).toBe(true);
     expect(shared.includes('eslint-module-utils')).toBe(true);
   });
 
@@ -615,11 +636,21 @@ describe('rule-package resolution parity', () => {
   // entry would drop the package out of the version comparison below as well,
   // which is the one assertion that still has something to say about it.
   //
-  // The honest limit: the version comparison below would also red on an
-  // asymmetric duplicate, because a differing duplicate set gives the two
-  // workspaces differing joined version strings. This test earns its place on the
-  // diagnostic rather than the coverage, naming the duplication directly instead
-  // of reporting it as a version mismatch a reader has to decode.
+  // Two honest limits, in opposite directions. The version comparison below
+  // would also red on an asymmetric duplicate, because a differing duplicate set
+  // gives the two workspaces differing joined version strings, so this test earns
+  // its place on the diagnostic rather than the coverage: it names the
+  // duplication directly instead of reporting it as a version mismatch a reader
+  // has to decode.
+  //
+  // The other limit is coverage this weakening gives up. A SYMMETRIC duplicate of
+  // any guarded provider now passes both this test and the version comparison,
+  // where asserting absence reddened on it; the sorted join makes the two sides
+  // identical strings. So intra-workspace double-loading of a rule provider is
+  // out of scope for this file unless the two workspaces do it differently. That
+  // is the price of the one legitimate symmetric duplicate above, and it is the
+  // narrower loss: a symmetric duplicate is the same resolution on both sides,
+  // which is what this file compares.
   test('both lockfiles duplicate the same guarded packages, if any', () => {
     expect(duplicates(cliPackages)).toStrictEqual(duplicates(rootPackages));
   });
