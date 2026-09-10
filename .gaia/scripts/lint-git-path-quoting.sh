@@ -206,7 +206,7 @@ fi
 # The `*.bats` surface, discovered and hard-errored on separately by the shared
 # library, for the same reason as above: a widened pathspec that quietly missed
 # every suite would still pass this guard's own empty-set check.
-gaia_guard_bats_files lint-git-path-quoting || exit 1
+gaia_guard_bats_files lint-git-path-quoting || exit $?
 
 # scan_file <path>: print one `file:line: message` per unquoted call.
 #

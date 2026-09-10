@@ -259,7 +259,7 @@ fi
 
 # A separate set from scan_files, never a widened pathspec: a tree carrying
 # .sh and no .bats must not pass clean carried by the rest of the surface.
-gaia_guard_bats_files lint-stale-cardinals || exit 1
+gaia_guard_bats_files lint-stale-cardinals || exit $?
 
 # The C-family pathspecs, one per glob `.claude/rules/code-comments.md` binds
 # outside the shell and bats entries, in the rule file's own order. `:(glob)` is

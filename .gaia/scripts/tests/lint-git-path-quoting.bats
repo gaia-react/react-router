@@ -86,6 +86,28 @@ run_linter() {
   run bash -c "cd '$TMP' && bash '$LINTER'"
 }
 
+# 0. The working directory the surface resolves against
+
+# This gate reaches the shared bats accessor and never the shared scan accessor,
+# so nothing else stands between it and a `git ls-files` resolved against cwd.
+# The subtree deliberately holds a tracked suite AND a tracked script, so both
+# narrowed sets come back POPULATED and neither empty-surface refusal fires. A
+# subtree that happened to match nothing would exit non-zero by luck, which is
+# not a guard.
+@test "a run from below the repository root is refused rather than silently narrowed" {
+  fixture_repo
+  fixture_file sub/nested.bats $'@test "nested" {\n  true\n}'
+  fixture_file sub/nested.sh 'true'
+  run bash -c "cd '$TMP/sub' && bash '$LINTER' 2>&1"
+  # Status 2, never 1: 1 is the empty-surface refusal a caller may tolerate where
+  # a suite-less tree is a legitimate one, and this is the narrowing it must not.
+  [ "$status" -eq 2 ]
+  grep -qF -- "run from the repository root" <<<"$output" || return 1
+  grep -qF -- "'sub'" <<<"$output" || return 1
+  grep -qF -- "clean" <<<"$output" && return 1
+  true
+}
+
 # 1. The real scanned tree is clean (regression gate)
 
 @test "the real scanned tree (shell + husky + workflow YAML + markdown) passes the lint" {

@@ -36,10 +36,12 @@
 #
 # Bash surface: the readonly `GAIA_GUARD_AWK` (the awk source), and
 # `gaia_guard_bats_files <label>`, which fills the global array
-# `GAIA_GUARD_BATS_FILES` and returns non-zero on an empty bats surface. The
-# caller reads that status directly:
+# `GAIA_GUARD_BATS_FILES` and returns non-zero on an empty bats surface or a
+# working directory below the repository root. The caller reads that status
+# directly, and forwards it rather than flattening it, so the two stay tellable
+# apart at the exit code:
 #
-#     gaia_guard_bats_files my-guard || exit 1
+#     gaia_guard_bats_files my-guard || exit $?
 #
 # An array rather than a NUL stream on stdout, because bash discards NUL bytes in
 # a command substitution and reading the stream through a process substitution
@@ -742,29 +744,93 @@ function G_resolve(tok,   path, r, junk) {
 }
 '
 
+# _gaia_guard_refuse_below_root <guard-label>: return 2 having said so on stderr
+# when the working directory sits below the repository root, else return 0.
+# Private to the two discovery accessors below, and the one place the refusal is
+# written: both resolve their surface through `git ls-files`, which resolves
+# against the working directory rather than the repository, so from a
+# subdirectory the surface silently narrows to that subtree and the consuming
+# gate reports clean having read a fraction of the tree. The refusal sits in this
+# accessor pair rather than at each call site so that a consumer inherits it
+# without carrying one; a copy per gate is the shape that leaves the next
+# consumer to be found later, having reported clean in the meantime.
+#
+# One call site keeps its own copy regardless, and exactly half of it still
+# earns its place. `lint-errexit-source-guard.sh` also refuses a `--show-prefix`
+# that FAILS, the arm this helper deliberately omits just below, and nothing
+# else refuses that. Its non-empty-prefix arm is redundant with this one: that
+# gate forwards this status verbatim, so its own suite cannot red on that arm's
+# removal, because both the status and the message the suite pins would still
+# arrive from here.
+#
+# `--show-prefix` is empty only at the top level, and it answers without
+# comparing two paths, so a symlinked checkout (`/var` -> `/private/var`, which
+# every bats fixture under `mktemp -d` sits behind) cannot make a correct
+# invocation look wrong.
+#
+# A `--show-prefix` that FAILS is deliberately not refused here. It fails only
+# outside a work tree, and there each accessor's own `git ls-files` fails too:
+# the scan accessor returns 3 naming the set that failed, which is a status a
+# caller is told means something different from this one, and the bats accessor
+# comes back with an empty surface and returns 1. Refusing it here would rename
+# outcomes that are already distinguished and already driven by fixtures.
+_gaia_guard_refuse_below_root() {
+  local label="${1:-guard}"
+  local prefix
+  if prefix="$(git rev-parse --show-prefix 2>/dev/null)" && [ -n "$prefix" ]; then
+    printf '%s: ERROR: run from the repository root; from %s the surface would silently narrow to that subtree; nothing was scanned\n' \
+      "$label" "'${prefix%/}'" >&2
+    return 2
+  fi
+  return 0
+}
+
 # Filled by gaia_guard_bats_files, read by its caller. Declared here so a caller
 # that iterates before calling reads an empty array rather than an unset name.
 GAIA_GUARD_BATS_FILES=()
 
 # gaia_guard_bats_files <guard-label>: fill GAIA_GUARD_BATS_FILES with the
-# tracked bats set and return 0, or return 1 having said so on stderr when the
-# discovery read nothing.
+# tracked bats set, having said on stderr what went wrong on any status but 0.
+# The status is the whole point of the shape, so the caller reads it directly
+# (`gaia_guard_bats_files <label> || exit $?`) rather than through a substitution
+# that would swallow it, and forwards it rather than flattening it to 1.
 #
-# An empty bats surface is a hard error rather than a clean tree: the widened
-# pathspec matching nothing means the discovery is wrong, and a guard that
-# scanned no suite and printed clean is the lie-green failure these gates exist
-# to stop. The status is the whole point of the shape, so the caller reads it
-# directly (`gaia_guard_bats_files <label> || exit 1`) rather than through a
-# substitution that would swallow it.
+# On any status but 0 the array is empty, never the surface a previous call left
+# in it.
+#
+#   0  the surface is non-empty and the array holds it.
+#   1  the discovery resolved and the surface came back empty. A hard error
+#      rather than a clean tree: the widened pathspec matching nothing means the
+#      discovery is wrong, and a guard that scanned no suite and printed clean is
+#      the lie-green failure these gates exist to stop. This is the ONLY status a
+#      caller may tolerate, and only where a suite-less tree is a legitimate one
+#      for it.
+#   2  the working directory is below the repository root, which leaves the
+#      accessor scanning a surface other than the one the guard asked for while
+#      it still reports clean, the discovery-stage failure
+#      `.claude/rules/guards-must-fail.md` names. Distinct from 1 because a
+#      subtree that happens to hold no suite would otherwise return 1 by luck and
+#      a subtree that holds one would return 0 over a fraction of the tree.
 #
 # `core.quotepath=false` and a NUL-delimited read, so a path carrying a
 # non-ASCII byte is not handed over C-quoted and silently dropped. A read loop
 # rather than mapfile, which is bash 4+, because these guards run on stock macOS
 # /bin/bash 3.2.57.
 gaia_guard_bats_files() {
+  # Emptied before anything can return, so a caller that reads the array after a
+  # refusal sees the nothing the refusal's message claims rather than whatever
+  # the previous call left there.
+  GAIA_GUARD_BATS_FILES=()
+
   local label="${1:-guard}"
   local f
-  GAIA_GUARD_BATS_FILES=()
+
+  # The `if` is what keeps the non-zero status readable: a bare call would abort
+  # under the errexit every consuming guard arms before sourcing this library.
+  if ! _gaia_guard_refuse_below_root "$label"; then
+    return 2
+  fi
+
   while IFS= read -r -d '' f; do
     GAIA_GUARD_BATS_FILES+=("$f")
   done < <(git -c core.quotepath=false ls-files -z '*.bats' | LC_ALL=C sort -z)
@@ -875,37 +941,11 @@ gaia_guard_scan_files() {
   fi
   shift
 
-  local scan_tmp sorted_tmp name status seen f scan_prefix
+  local scan_tmp sorted_tmp name status seen f
 
-  # Every set below resolves through `git ls-files`, which resolves against the
-  # working directory rather than the repository, so from a subdirectory the
-  # union silently narrows to that subtree and the consuming gate reports clean
-  # having read a fraction of the tree. The refusal sits in this accessor rather
-  # than at each call site so that a consumer inherits it without carrying one;
-  # a copy per gate is the shape that leaves the next consumer to be found
-  # later, having reported clean in the meantime.
-  #
-  # One call site keeps its own copy regardless, and exactly half of it still
-  # earns its place. `lint-errexit-source-guard.sh` also refuses a
-  # `--show-prefix` that FAILS, the arm this accessor deliberately omits just
-  # below, and nothing else refuses that. Its non-empty-prefix arm is redundant
-  # with this one: that gate forwards this status verbatim, so its own suite
-  # cannot red on that arm's removal, because both the status and the message
-  # the suite pins would still arrive from here.
-  #
-  # `--show-prefix` is empty only at the top level, and it answers without
-  # comparing two paths, so a symlinked checkout (`/var` -> `/private/var`,
-  # which every bats fixture under `mktemp -d` sits behind) cannot make a
-  # correct invocation look wrong.
-  #
-  # A `--show-prefix` that FAILS is deliberately not refused here. It fails only
-  # outside a work tree, and there each set's own `git ls-files` fails too and
-  # returns 3 naming the set that failed, which is a status a caller is told
-  # means something different from this one. Refusing it here would rename an
-  # outcome that is already distinguished and already driven by a fixture.
-  if scan_prefix="$(git rev-parse --show-prefix 2>/dev/null)" && [ -n "$scan_prefix" ]; then
-    printf '%s: ERROR: run from the repository root; from %s the surface would silently narrow to that subtree; nothing was scanned\n' \
-      "$label" "'${scan_prefix%/}'" >&2
+  # The `if` is what keeps the non-zero status readable: a bare call would abort
+  # under the errexit every consuming guard arms before sourcing this library.
+  if ! _gaia_guard_refuse_below_root "$label"; then
     return 2
   fi
 
