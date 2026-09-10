@@ -240,8 +240,9 @@ const PARITY_EXEMPT: Record<string, string> = {
   // falls back to the default `node` resolver when `import/resolver` is unset,
   // and it is unset in both workspaces, and that fallback loads
   // `eslint-import-resolver-node` by conventional name. So enabling a rule that
-  // reaches `eslint-module-utils` starts routing resolution through the resolver
-  // entry's subject as well, and neither exemption survives it. Reading the
+  // resolves specifiers through `eslint-module-utils` starts routing resolution
+  // through the resolver entry's subject as well, and neither exemption survives
+  // it. Reading the
   // resolver entry's own `import-x` condition as its whole trigger is the trap:
   // that condition never fires in this scenario.
   //
