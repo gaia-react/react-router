@@ -31,13 +31,13 @@
  * declarations at the top of the file, as the TypeScript parser reads them,
  * ending at the first statement of any other kind. An import declaration is
  * `import … from`, a side-effect `import '…'`, `import type`, or
- * `import x = require(…)` with or without `export`; `import.meta` and a
- * dynamic `import(…)` are expressions and close the header like any other
- * statement. Comments and blank lines are trivia to the parser, so they never
- * close it. A file may open with its docblock, import, and then import again
- * further down beside the code that needs it (`setup-ci/__tests__/sandbox.ts`);
- * the later import is not part of the header and a JSDoc beside it is not this
- * defect.
+ * `import x = …` (a `require(…)` or a namespace alias) with or without
+ * `export`; `import.meta` and a dynamic `import(…)` are expressions and close
+ * the header like any other statement. Comments and blank lines are trivia to
+ * the parser, so they never close it. A file may open with its docblock,
+ * import, and then import again further down beside the code that needs it
+ * (`setup-ci/__tests__/sandbox.ts`); the later import is not part of the header
+ * and a JSDoc beside it is not this defect.
  *
  * # Why the header is read from the TypeScript AST
  *
@@ -117,13 +117,19 @@ const findStrandedDocblock = (source: string): null | number => {
   ].entries()) {
     for (const comment of ts.getLeadingCommentRanges(source, node.pos) ?? []) {
       // A docblock sharing its line with code is attached to that code, so the
-      // blank-line test applies only to one that ends its line.
+      // blank-line test applies only when the statement it leads starts on a
+      // later line; a trailing comment on the docblock's line is not code. The
+      // end-of-file token is exempt because it can start on that same line in
+      // a file with no final newline, where nothing follows at all.
+      const endsItsLine =
+        node === file.endOfFileToken ||
+        lineOf(node.getStart(file)) > lineOf(comment.end);
       const lineBelow = lineStarts[lineOf(comment.end) + 1] ?? source.length;
 
       if (
         index > 0 &&
         source.startsWith('/**', comment.pos) &&
-        (isImport(node) || (isBlankFrom(comment.end) && isBlankFrom(lineBelow)))
+        (isImport(node) || (endsItsLine && isBlankFrom(lineBelow)))
       ) {
         return lineOf(comment.pos) + 1;
       }
@@ -209,6 +215,11 @@ describe('module docblock placement', () => {
         '',
       ],
       4,
+    ],
+    [
+      'reports a docblock at the end of a file with no final newline',
+      ["import {z} from 'zod';", '', '/**', ' * What this module is.', ' */'],
+      3,
     ],
     // A comment between the docblock and its import must not hide it: that is
     // the shape an `import/order` group banner or an `eslint-disable-next-line`
@@ -441,6 +452,21 @@ describe('module docblock placement', () => {
     ].join('\n');
 
     expect(findStrandedDocblock(source)).toBeNull();
+  });
+
+  // A trailing comment on a docblock's closing line is not code, so it attaches
+  // the docblock to nothing and the blank line below still strands it.
+  test('reports a docblock whose closing line carries a trailing comment', () => {
+    const source = [
+      "import {z} from 'zod';",
+      '/**',
+      ' * What this module is.',
+      ' */ // note',
+      '',
+      'export const value = 1;',
+    ].join('\n');
+
+    expect(findStrandedDocblock(source)).toBe(2);
   });
 
   // A second import block beside the code that needs it is not the header, so
