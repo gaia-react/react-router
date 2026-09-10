@@ -647,6 +647,37 @@ printf "%s" "$a" | grep -q needle'
   grep -qF -- "templates/workflows/probe.yml.tmpl:7:" <<<"$output"
 }
 
+# The INLINE `run:` spelling, which is its own one-line block. Grading only the
+# block-scalar form left this unscanned at every arming, and the composite
+# actions are where it bites: the Actions schema makes `shell:` mandatory there,
+# so `shell: bash` arms a reader on the key's own line exactly as it arms one in
+# a block. Both directions are pinned, so the boundary cannot drift back to
+# silence.
+@test "flags a reader in an inline run: value armed by the step's shell" {
+  fixture_repo
+  fixture_file .github/actions/probe/action.yml 'runs:
+  using: composite
+  steps:
+    - name: probe
+      shell: bash
+      run: printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 1 ]
+  grep -qF -- ".github/actions/probe/action.yml:6:" <<<"$output" || return 1
+  grep -qF -- "short-circuits a pipeline under pipefail" <<<"$output"
+}
+
+@test "quiet on an inline run: value under the default shell" {
+  fixture_repo
+  fixture_file .github/workflows/probe.yml 'jobs:
+  j:
+    steps:
+      - name: probe
+        run: printf "%s" "$a" | grep -q needle'
+  run_linter
+  [ "$status" -eq 0 ]
+}
+
 # A block may arm pipefail on a line BELOW its pipeline, exactly as a file may,
 # so a block is graded when it ENDS rather than where its `set` sits.
 @test "flags a pipeline whose block arms pipefail on a LATER line" {

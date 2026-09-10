@@ -167,20 +167,33 @@
 #
 # `defaults.run.shell`, at job or workflow level, would move the resolved shell
 # for every step under it. This gate REFUSES rather than resolves it: a
-# `defaults:` key anywhere in the scanned YAML exits 4 naming
-# gaia-react/gaia#1814. There are zero in this tree, so the refusal costs
+# BLOCK-STYLE `defaults:` key anywhere in the scanned YAML exits 4 naming
+# gaia-react/gaia#1814. Block-style is the honest qualifier rather than a
+# hedge, because it is exactly what the reader below sees: it takes one leading
+# mapping key per line, so a flow-style `jobs: {j: {defaults: ...}}` reads as
+# the key `jobs` and its nested `defaults:` is never seen. No flow-style
+# workflow YAML exists here, and the same one-key-per-line reading is what every
+# other structural answer this arm gives is built on. There are zero in this tree, so the refusal costs
 # nothing today, and it converts an unimplemented precedence chain into a loud
 # stop rather than a silent wrong answer. That is this tree's own idiom, the
 # same shape gaia-react/gaia#1880's `--show-prefix` refusal takes ahead of
 # discovery. Implementing the chain is a change for the day a `defaults:` key
 # first appears, and this diagnostic is what will name it.
 #
+# BOTH `run:` spellings are scanned. A block scalar is graded when the block
+# ends; an inline value is a single command, so it is its own one-line block and
+# is graded on the spot. Grading only the block form would leave the inline one
+# unscanned at every arming, and a composite step is precisely where that
+# matters: the Actions schema makes `shell:` mandatory there, so a `shell: bash`
+# arms an inline reader exactly as it arms a block one.
+#
 # Known blind spots on this surface, stated rather than discovered later, and
-# all of them FALSE NEGATIVES. A `run:` whose value is a multi-line plain or
-# quoted flow scalar is read as inline, so only its first line is scanned. A
-# mustache partial include inside a body ends the scan there. Both mirror
+# both of them FALSE NEGATIVES. A `run:` whose value is a multi-line plain or
+# quoted flow scalar has only its first line read, the rest being scanned as
+# though they were not part of the value. A mustache partial include inside a
+# body ends the scan there. Both mirror
 # .gaia/scripts/lint-workflow-run-interpolation.sh, which states its own version
-# of each, and neither shape appears in this tree.
+# of each and scans the same two arms, and neither shape appears in this tree.
 #
 # Bash 3.2 compatible. Never `cd`.
 
@@ -469,8 +482,11 @@ NR == FNR {
   # key of that step sits at.
   if (islist) { flush_step(); stepkeycol = keycol }
   if (keycol != stepkeycol) next
+  # Both `run:` spellings register, block scalar and inline alike. The resolved
+  # shell of the step arms whichever one it carries, so grading only the block
+  # form would leave the inline one unscanned at every arming.
   if (keyname == "shell") stepshell = keyval
-  else if (keyname == "run" && isblock) steprun = FNR
+  else if (keyname == "run") steprun = FNR
   next
 }
 
@@ -490,13 +506,24 @@ FNR == 1 { flush_step(); blockcol = -1; inrun = 0 }
     endrun()
     # Fall through: this same line may itself be the next run: key.
   }
-  if (yaml_key($0) && keyname == "run" && isblock) {
-    inrun = 1
-    runcol = keycol
+  if (yaml_key($0) && keyname == "run") {
     armed = shellarm[FNR]
     subdepth = 0
     prev_pipe = 0
     pend = 0
+    if (isblock) {
+      inrun = 1
+      runcol = keycol
+    } else {
+      # An inline value is a single command, so it is its own one-line block and
+      # is graded on the spot. It needs the same arming as the block form and
+      # nothing else: a composite step, where the schema makes `shell:`
+      # mandatory, is exactly where a `shell: bash` puts the class on a key\047s
+      # own line. The sibling run-interpolation gate scans this arm too, so
+      # skipping it here would leave the two disagreeing about the same value.
+      body(keyval, FNR)
+      endrun()
+    }
   }
 }
 
@@ -547,10 +574,17 @@ trap 'exit 143' TERM
 # because awk is handed the file CONTENT and this is a fact about its name. It
 # rides the same stream as the awk records, so the loop opens one output file
 # and forks nothing per file: `${f##*/}` is what `basename` would have returned.
+#
+# `LC_ALL=C` on both arms, so awk reads BYTES rather than characters. See the
+# YAML loop below for the hazard; it is if anything stronger here, because far
+# more tracked `*.sh` carry a non-ASCII byte than workflow YAML does. Every
+# construct either arm matches on is ASCII, so reading bytes costs neither of
+# them anything, and the two per-file invocations do not disagree about a
+# hazard this file argues is real.
 for f in ${sh_files[@]+"${sh_files[@]}"}; do
   [ -f "$f" ] || continue
   printf '#file\t%s\t%s\n' "${f##*/}" "$f"
-  awk -v file="$f" "$READER_AWK$SHELL_AWK" "$f"
+  LC_ALL=C awk -v file="$f" "$READER_AWK$SHELL_AWK" "$f"
 done > "$WORK_DIR/records"
 
 # The YAML arm, into its own record stream: its hits arrive already graded, so
@@ -558,12 +592,12 @@ done > "$WORK_DIR/records"
 # than by block. Each file is named TWICE, which is what makes the two passes
 # two: pass one resolves the steps, pass two scans the bodies.
 #
-# `LC_ALL=C`, so awk reads BYTES rather than characters. The prose in these
-# files is not ASCII (an arrow in a comment of the code-review-audit template is
-# enough), and awk aborts the whole file on a multibyte conversion failure,
-# which would leave the arm scanning nothing and saying so only as a warning.
-# Every construct this arm matches on -- YAML indentation, `run:`, `shell:`, the
-# pipe, the reader flags -- is ASCII, so reading bytes costs it nothing.
+# `LC_ALL=C` for the reason the `*.sh` loop above also takes it: the prose in
+# these files is not ASCII (an arrow in a comment of the code-review-audit
+# template is enough), and awk aborts the whole file on a multibyte conversion
+# failure, which would leave the arm scanning nothing and saying so only as a
+# warning on stderr. Every construct this arm matches on -- YAML indentation,
+# `run:`, `shell:`, the pipe, the reader flags -- is ASCII.
 for f in ${yaml_files[@]+"${yaml_files[@]}"}; do
   [ -f "$f" ] || continue
   LC_ALL=C awk -v file="$f" "$READER_AWK$YAML_AWK" "$f" "$f"

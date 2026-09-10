@@ -106,8 +106,12 @@ jobs:
               # composite actions, which the glob above does not reach. The
               # composite actions are where the sigpipe-reader guard's oracle
               # has the most to say: GitHub's schema makes `shell:` mandatory on
-              # a composite `run:` step, and `shell: bash` arms pipefail, so
-              # every one of those blocks runs armed. For the status-read guard
+              # a composite `run:` step, and every composite step in this tree
+              # declares `shell: bash`, which arms pipefail, so every one of
+              # those blocks runs armed today. Mandatory is not the same claim
+              # as bash: a composite step declaring `sh` or `pwsh` resolves to a
+              # shell arming no pipefail, and the guard is deliberately quiet on
+              # it. For the status-read guard
               # this is the load-bearing half rather than a widening: both
               # instances of its class shipped inside a composite action, and
               # actionlint does not lint composite step bodies at all.
